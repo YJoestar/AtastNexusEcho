@@ -1,0 +1,24 @@
+/**
+ * NEXUS — CSS Variables (Legacy Support)
+ * Kept for reference; Tailwind v4 uses @theme
+ */
+
+:root {
+  --color-bg: #0a0a0f;
+  --color-surface: #11131a;
+  --color-surface-elevated: #1a1d26;
+  --color-border: #2a2e3a;
+  --color-border-subtle: #1e222d;
+  --color-text: #e8e9ec;
+  --color-text-muted: #8b8d94;
+  --color-text-subtle: #5a5d66;
+  --color-accent: #00d4aa;
+  --color-accent-dim: #00a888;
+  --color-accent-bg: #003d33;
+  --color-warning: #ffb800;
+  --color-warning-bg: #3d2e00;
+  --color-danger: #ff4757;
+  --color-danger-bg: #3d0d12;
+  --color-info: #00b4d8;
+  --color-info-bg: #002d3d;
+}

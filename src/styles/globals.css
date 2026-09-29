@@ -1,0 +1,390 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  * {
+    @apply border-nexus-borderSubtle;
+  }
+
+  html {
+    @apply scroll-smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-nexus-bg text-nexus-text font-sans antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  /* Mobile-first: prevent horizontal scroll */
+  html, body, #root {
+    @apply min-h-screen w-full overflow-x-hidden;
+  }
+
+  /* Touch targets minimum 44px */
+  button, a, [role="button"], input, select, textarea {
+    @apply min-h-[44px] min-w-[44px];
+  }
+
+  /* Prefer 48-56px for primary actions */
+  .touch-target-primary {
+    @apply min-h-[48px] min-w-[48px];
+  }
+  .touch-target-comfortable {
+    @apply min-h-[56px] min-w-[56px];
+  }
+
+  /* Focus visible for accessibility */
+  :focus-visible {
+    @apply outline-none ring-2 ring-nexus-accent ring-offset-2 ring-offset-nexus-bg;
+  }
+
+  /* Selection */
+  ::selection {
+    @apply bg-nexus-accent/30 text-nexus-text;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar {
+    @apply w-2 h-2;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-nexus-bg;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-nexus-border rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-nexus-textSubtle;
+  }
+
+  /* Reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  /* Panel - base container for content sections */
+  .panel {
+    @apply bg-nexus-surface border border-nexus-border rounded-2xl shadow-panel p-4 md:p-6 transition-all duration-normal;
+  }
+
+  .panel-elevated {
+    @apply bg-nexus-surfaceElevated border-nexus-border;
+  }
+
+  .panel-hover {
+    @apply hover:shadow-panel-hover hover:border-nexus-accent/30;
+  }
+
+  /* Button variants */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 font-medium rounded-xl px-4 py-2.5
+           touch-target-primary transition-all duration-fast
+           focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-nexus-bg;
+  }
+
+  .btn-primary {
+    @apply btn bg-nexus-accent text-nexus-bg hover:bg-nexus-accentDim
+           active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-secondary {
+    @apply btn bg-nexus-surfaceElevated text-nexus-text border border-nexus-border
+           hover:bg-nexus-border hover:border-nexus-textSubtle
+           active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-ghost {
+    @apply btn bg-transparent text-nexus-textMuted
+           hover:bg-nexus-surfaceElevated hover:text-nexus-text
+           active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-danger {
+    @apply btn bg-nexus-dangerBg text-nexus-danger border border-nexus-danger/30
+           hover:bg-nexus-danger/20 hover:border-nexus-danger
+           active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-warning {
+    @apply btn bg-nexus-warningBg text-nexus-warning border border-nexus-warning/30
+           hover:bg-nexus-warning/20 hover:border-nexus-warning
+           active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  /* Input variants */
+  .input {
+    @apply w-full bg-nexus-bg border border-nexus-border text-nexus-text
+           rounded-xl px-4 py-3 text-base
+           placeholder:text-nexus-textSubtle
+           focus:border-nexus-accent focus:ring-2 focus:ring-nexus-accent/20
+           disabled:opacity-50 disabled:cursor-not-allowed
+           transition-all duration-fast;
+  }
+
+  .input-error {
+    @apply border-nexus-danger focus:border-nexus-danger focus:ring-nexus-danger/20;
+  }
+
+  .label {
+    @apply block text-sm font-medium text-nexus-textMuted mb-1.5;
+  }
+
+  /* Card */
+  .card {
+    @apply panel panel-hover;
+  }
+
+  /* Badge */
+  .badge {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium;
+  }
+
+  .badge-accent {
+    @apply badge bg-nexus-accentBg text-nexus-accent;
+  }
+
+  .badge-warning {
+    @apply badge bg-nexus-warningBg text-nexus-warning;
+  }
+
+  .badge-danger {
+    @apply badge bg-nexus-dangerBg text-nexus-danger;
+  }
+
+  .badge-info {
+    @apply badge bg-nexus-infoBg text-nexus-info;
+  }
+
+  .badge-neutral {
+    @apply badge bg-nexus-borderSubtle text-nexus-textMuted;
+  }
+
+  /* Role badges */
+  .badge-observer {
+    @apply badge bg-cyan-900/40 text-cyan-300 border border-cyan-700/30;
+  }
+
+  .badge-analyst {
+    @apply badge bg-amber-900/40 text-amber-300 border border-amber-700/30;
+  }
+
+  .badge-operator {
+    @apply badge bg-indigo-900/40 text-indigo-300 border border-indigo-700/30;
+  }
+
+  /* Status indicators */
+  .status-dot {
+    @apply w-2.5 h-2.5 rounded-full;
+  }
+
+  .status-active {
+    @apply status-dot bg-nexus-accent;
+  }
+
+  .status-warning {
+    @apply status-dot bg-nexus-warning;
+  }
+
+  .status-danger {
+    @apply status-dot bg-nexus-danger;
+  }
+
+  .status-neutral {
+    @apply status-dot bg-nexus-textSubtle;
+  }
+
+  /* Typography */
+  .text-mono {
+    @apply font-mono tabular-nums;
+  }
+
+  .text-display {
+    @apply font-display font-semibold tracking-tight;
+  }
+
+  .heading-1 {
+    @apply text-display text-4xl md:text-5xl font-bold tracking-tight;
+  }
+
+  .heading-2 {
+    @apply text-display text-3xl md:text-4xl font-bold tracking-tight;
+  }
+
+  .heading-3 {
+    @apply text-display text-2xl md:text-3xl font-semibold tracking-tight;
+  }
+
+  .heading-4 {
+    @apply text-display text-xl md:text-2xl font-semibold;
+  }
+
+  .body-lg {
+    @apply text-lg leading-relaxed;
+  }
+
+  .body {
+    @apply text-base leading-relaxed;
+  }
+
+  .body-sm {
+    @apply text-sm leading-normal;
+  }
+
+  .caption {
+    @apply text-xs leading-normal text-nexus-textMuted;
+  }
+
+  /* Layout */
+  .container-narrow {
+    @apply max-w-3xl mx-auto px-4 md:px-6;
+  }
+
+  .container-wide {
+    @apply max-w-6xl mx-auto px-4 md:px-6;
+  }
+
+  .page {
+    @apply min-h-screen w-full;
+  }
+
+  .page-content {
+    @apply pt-16 pb-8 md:pt-24 md:pb-12 px-4 md:px-6;
+  }
+
+  /* Animations */
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes slide-up {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes slide-down {
+    from { opacity: 0; transform: translateY(-16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 20px -4px rgba(0, 212, 170, 0.4); }
+    50% { box-shadow: 0 0 32px -2px rgba(0, 212, 170, 0.6); }
+  }
+
+  .animate-fade-in {
+    animation: fade-in 200ms ease-out;
+  }
+
+  .animate-slide-up {
+    animation: slide-up 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .animate-slide-down {
+    animation: slide-down 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .animate-pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+
+  /* Staggered animation delays */
+  .stagger-1 { animation-delay: 50ms; }
+  .stagger-2 { animation-delay: 100ms; }
+  .stagger-3 { animation-delay: 150ms; }
+  .stagger-4 { animation-delay: 200ms; }
+  .stagger-5 { animation-delay: 250ms; }
+  .stagger-6 { animation-delay: 300ms; }
+
+  /* QR Scanner overlay */
+  .qr-scanner-overlay {
+    @apply absolute inset-0 bg-black/70 flex items-center justify-center;
+  }
+
+  .qr-scanner-frame {
+    @apply relative w-64 h-64 md:w-80 md:h-80 rounded-2xl border-4 border-nexus-accent/50
+           shadow-[0_0_0_9999px_rgba(0,0,0,0.7)] overflow-hidden;
+  }
+
+  .qr-scanner-line {
+    @apply absolute left-0 right-0 h-1 bg-nexus-accent animate-pulse-glow;
+  }
+
+  /* Loading states */
+  .skeleton {
+    @apply bg-nexus-borderSubtle rounded animate-pulse;
+  }
+
+  .skeleton-text {
+    @apply skeleton h-4 w-full;
+  }
+
+  .skeleton-title {
+    @apply skeleton h-6 w-3/4;
+  }
+
+  .skeleton-card {
+    @apply skeleton h-32 w-full rounded-xl;
+  }
+
+  /* Mobile-specific */
+  @media (max-width: 640px) {
+    .mobile-full {
+      @apply w-full;
+    }
+
+    .mobile-stack {
+      @apply flex-col gap-3;
+    }
+
+    .mobile-text-center {
+      @apply text-center;
+    }
+  }
+
+  /* Print styles */
+  @media print {
+    .no-print {
+      display: none !important;
+    }
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .text-pretty {
+    text-wrap: pretty;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .glass {
+    @apply bg-nexus-surface/80 backdrop-blur-xl border border-nexus-border/50;
+  }
+
+  .glass-strong {
+    @apply bg-nexus-surface/95 backdrop-blur-2xl border border-nexus-border/30;
+  }
+}

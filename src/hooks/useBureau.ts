@@ -1,0 +1,246 @@
+/**
+ * NEXUS — Bureau Data Hook
+ *
+ * Central data management for Bureau operations.
+ * Provides team lists, team details, game state, leaderboard,
+ * audit log, and live activity feed.
+ *
+ * All mutations go through the adminAPI which calls Edge Functions
+ * with service-role verification. The browser is untrusted.
+ */
+
+import { useState, useCallback, useEffect, useRef } from 'react'
+import { adminAPI, type TeamWithStats, type TeamDetailFull, type GameStateAdmin, type LeaderboardEntryAdmin, type AuditLogEntryAdmin, type GameEventAdmin } from '@/lib/admin'
+import { supabase } from '@/lib/supabase'
+import type { TeamStatus } from '@/types'
+
+export interface BureauState {
+  teams: TeamWithStats[]
+  teamDetail: TeamDetailFull | null
+  gameState: GameStateAdmin | null
+  leaderboard: LeaderboardEntryAdmin[]
+  auditLog: AuditLogEntryAdmin[]
+  gameEvents: GameEventAdmin[]
+  isLoading: boolean
+  error: string | null
+}
+
+const BUREAU_REFRESH_INTERVAL = 15000
+
+export function useBureau() {
+  const [teams, setTeams] = useState<TeamWithStats[]>([])
+  const [teamDetail, setTeamDetail] = useState<TeamDetailFull | null>(null)
+  const [gameState, setGameState] = useState<GameStateAdmin | null>(null)
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntryAdmin[]>([])
+  const [auditLog, setAuditLog] = useState<AuditLogEntryAdmin[]>([])
+  const [gameEvents, setGameEvents] = useState<GameEventAdmin[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const clearError = useCallback(() => {
+    setError(null)
+  }, [])
+
+  const fetchTeams = useCallback(async () => {
+    setIsLoading(true)
+    setError(null)
+    try {
+      const data = await adminAPI.listTeams()
+      setTeams(data)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to load teams')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  const fetchTeamDetail = useCallback(async (teamId: string) => {
+    setIsLoading(true)
+    setError(null)
+    try {
+      const detail = await adminAPI.getTeam(teamId)
+      setTeamDetail(detail)
+      return detail
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to load team'
+      setError(msg)
+      throw err
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  const fetchGameState = useCallback(async () => {
+    try {
+      const state = await adminAPI.getGameState()
+      setGameState(state)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to load game state')
+    }
+  }, [])
+
+  const fetchLeaderboard = useCallback(async (sortBy = 'rank', sortDir: 'asc' | 'desc' = 'desc') => {
+    try {
+      const data = await adminAPI.getLeaderboard(sortBy, sortDir)
+      setLeaderboard(data)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to load leaderboard')
+    }
+  }, [])
+
+  const fetchAuditLog = useCallback(async (limit = 100, actionFilter?: string, search?: string) => {
+    try {
+      const data = await adminAPI.getAuditLog(limit, actionFilter, search)
+      setAuditLog(data)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to load audit log')
+    }
+  }, [])
+
+  const fetchGameEvents = useCallback(async (limit = 50, teamId?: string) => {
+    try {
+      const data = await adminAPI.getGameEvents(limit, teamId)
+      setGameEvents(data)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to load game events')
+    }
+  }, [])
+
+  const getTeamById = useCallback((teamId: string): TeamWithStats | undefined => {
+    return teams.find(t => t.id === teamId)
+  }, [teams])
+
+  const getTeamsByStatus = useCallback((status: TeamStatus): TeamWithStats[] => {
+    return teams.filter(t => t.status === status)
+  }, [teams])
+
+  const getTeamsByStage = useCallback((_stage: number): TeamWithStats[] => {
+    return teams.filter(t => t.gameStartedAt !== null)
+  }, [teams])
+
+  const refreshAll = useCallback(async () => {
+    await Promise.allSettled([
+      fetchTeams(),
+      fetchGameState(),
+      fetchLeaderboard(),
+      fetchGameEvents(50),
+    ])
+  }, [fetchTeams, fetchGameState, fetchLeaderboard, fetchGameEvents])
+
+  const bureauState: BureauState = {
+    teams,
+    teamDetail,
+    gameState,
+    leaderboard,
+    auditLog,
+    gameEvents,
+    isLoading,
+    error,
+  }
+
+  return {
+    ...bureauState,
+    teams,
+    teamDetail,
+    gameState,
+    leaderboard,
+    auditLog,
+    gameEvents,
+    fetchTeams,
+    fetchTeamDetail,
+    fetchGameState,
+    fetchLeaderboard,
+    fetchAuditLog,
+    fetchGameEvents,
+    refreshAll,
+    getTeamById,
+    getTeamsByStatus,
+    getTeamsByStage,
+    clearError,
+    setError,
+    BUREAU_REFRESH_INTERVAL,
+  }
+}
+
+export function useBureauRealtime() {
+  const [isConnected, setIsConnected] = useState(true)
+  const [lastSync, setLastSync] = useState<Date | null>(null)
+  const channelsRef = useRef<Map<string, unknown>>(new Map())
+
+  const subscribe = useCallback((
+    channelName: string,
+    config: {
+      event: string
+      schema: string
+      table: string
+      filter?: string
+    },
+    callback: (payload: unknown) => void,
+  ) => {
+    const ch = supabase
+      .channel(channelName)
+      .on('postgres_changes' as never, config as never, callback as never)
+      .subscribe(((status: string) => {
+        if (status === 'SUBSCRIBED') {
+          setIsConnected(true)
+          setLastSync(new Date())
+        }
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          setIsConnected(false)
+        }
+      }) as never)
+
+    channelsRef.current.set(channelName, ch)
+    return ch
+  }, [])
+
+  const unsubscribe = useCallback((channelName: string) => {
+    const ch = channelsRef.current.get(channelName)
+    if (ch) {
+      supabase.removeChannel(ch as Parameters<typeof supabase.removeChannel>[0])
+      channelsRef.current.delete(channelName)
+    }
+  }, [])
+
+  const unsubscribeAll = useCallback(() => {
+    channelsRef.current.forEach((ch, name) => {
+      supabase.removeChannel(ch as Parameters<typeof supabase.removeChannel>[0])
+      channelsRef.current.delete(name)
+    })
+  }, [])
+
+  useEffect(() => {
+    const handleOnline = () => setIsConnected(true)
+    const handleOffline = () => setIsConnected(false)
+
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
+
+    return () => {
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('offline', handleOffline)
+      unsubscribeAll()
+    }
+  }, [unsubscribeAll])
+
+  const getConnectedStatus = (): 'LIVE' | 'RECONNECTING' | 'OFFLINE' => {
+    if (!isConnected) return 'OFFLINE'
+    return 'LIVE'
+  }
+
+  const getConnectionInfo = () => ({
+    status: getConnectedStatus(),
+    lastSync,
+    isConnected,
+  })
+
+  return {
+    isConnected,
+    lastSync,
+    connectionStatus: getConnectedStatus(),
+    connectionInfo: getConnectionInfo(),
+    subscribe,
+    unsubscribe,
+    unsubscribeAll,
+  }
+}
