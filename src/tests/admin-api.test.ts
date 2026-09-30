@@ -284,3 +284,161 @@ describe('listQRCodes', () => {
     expect(lastRequestBody().action).toBe('list-qr-codes')
   })
 })
+
+describe('listPuzzleQA', () => {
+  it('calls the list-puzzle-qa action and returns puzzles', async () => {
+    invoke.mockResolvedValue({
+      data: {
+        success: true,
+        puzzles: [
+          {
+            id: 'node-1',
+            code: 'P17',
+            title: 'The Audio Log',
+            type: 'AUDIO',
+            stage: 4,
+            location: '[SCIENCE BUILDING] — Auditorium Stage',
+            prerequisites: ['P16'],
+            branches: { nextNodes: ['P18'], unlocks: 'P18' },
+            content: { observer: { dataPayload: 'SPECTRUM: 1747 Hz, 2147 Hz' } },
+            answerMetadata: { acceptedAnswer: 'ECHO' },
+            evidence: [],
+            audioEvidence: [
+              {
+                id: 'node-1-content',
+                title: 'Puzzle Content Audio (P17)',
+                type: 'AUDIO',
+                audioUrl: '/audio/p17-audio-log-transmission.mp3',
+                audioExists: true,
+                nodeCode: 'P17',
+              },
+            ],
+          },
+          {
+            id: 'node-2',
+            code: 'P24b',
+            title: 'The Audio Contradiction',
+            type: 'NARRATIVE_INVESTIGATION',
+            stage: 4,
+            location: '[ENGINEERING BLOCK] — Antenna Deck',
+            prerequisites: ['P24'],
+            branches: { nextNodes: ['P25'], unlocks: 'P25' },
+            content: { observer: { dataPayload: 'AUDIO TRANSCRIPT' } },
+            answerMetadata: { acceptedAnswer: 'VALE' },
+            evidence: [
+              {
+                id: 'evid-1',
+                type: 'AUDIO',
+                title: 'Interrogation Recording REC-19',
+                content: { text: '...', audio_url: '/audio/dictaphone-rec-24-gm-key.mp3' },
+                metadata: { nodeCode: 'P32' },
+              },
+            ],
+            audioEvidence: [],
+          },
+        ],
+      },
+      error: null,
+    })
+
+    const result = await adminAPI.listPuzzleQA()
+
+    expect(lastRequestBody().action).toBe('list-puzzle-qa')
+    expect(result).toHaveLength(2)
+    expect(result[0].code).toBe('P17')
+    expect(result[0].audioEvidence).toHaveLength(1)
+    expect(result[0].audioEvidence[0].audioExists).toBe(true)
+    expect(result[1].answerMetadata?.acceptedAnswer).toBe('VALE')
+  })
+
+  it('returns empty array when no puzzles field is present', async () => {
+    invoke.mockResolvedValue({
+      data: { success: true },
+      error: null,
+    })
+
+    const result = await adminAPI.listPuzzleQA()
+    expect(result).toEqual([])
+    expect(lastRequestBody().action).toBe('list-puzzle-qa')
+  })
+})
+
+describe('formatTeamWithStats camelCase', () => {
+  it('reads camelCase fields returned by list-teams edge function', async () => {
+    invoke.mockResolvedValue({
+      data: {
+        success: true,
+        teams: [
+          {
+            id: 'team-1',
+            name: 'Alpha',
+            code: 'A1B2C3',
+            status: 'COMPLETED',
+            createdAt: '2026-09-30T00:00:00Z',
+            startedAt: '2026-09-30T01:00:00Z',
+            completedAt: '2026-09-30T04:00:00Z',
+            score: 150,
+            currentNodeId: 'node-1',
+            currentNodeCode: 'P35',
+            playerCount: 3,
+            playerRoles: ['OBSERVER', 'ANALYST', 'OPERATOR'],
+            hintsUsed: 2,
+            solvedCount: 30,
+            gameStartedAt: '2026-09-30T01:00:00Z',
+            gameDeadline: '2026-09-30T04:30:00Z',
+            gameDurationMinutes: 180,
+            metadata: {},
+          },
+        ],
+      },
+      error: null,
+    })
+
+    const result = await adminAPI.listTeams()
+    expect(result[0].playerCount).toBe(3)
+    expect(result[0].playerRoles).toEqual(['OBSERVER', 'ANALYST', 'OPERATOR'])
+    expect(result[0].hintsUsed).toBe(2)
+    expect(result[0].solvedCount).toBe(30)
+    expect(result[0].currentNodeCode).toBe('P35')
+    expect(result[0].gameStartedAt).toBe('2026-09-30T01:00:00Z')
+    expect(result[0].gameDurationMinutes).toBe(180)
+    expect(result[0].createdAt).toBe('2026-09-30T00:00:00Z')
+  })
+
+  it('still reads snake_case fields for backward compatibility', async () => {
+    invoke.mockResolvedValue({
+      data: {
+        success: true,
+        teams: [
+          {
+            id: 'team-2',
+            name: 'Beta',
+            code: 'D4E5F6',
+            status: 'ACTIVE',
+            created_at: '2026-09-30T00:00:00Z',
+            started_at: '2026-09-30T01:00:00Z',
+            completed_at: null,
+            score: 75,
+            current_node_id: 'node-2',
+            current_node_code: 'P20',
+            player_count: 2,
+            player_roles: ['OBSERVER', 'OPERATOR'],
+            hints_used: 1,
+            solved_count: 15,
+            game_started_at: '2026-09-30T01:00:00Z',
+            game_deadline: '2026-09-30T04:30:00Z',
+            game_duration_minutes: 180,
+            metadata: {},
+          },
+        ],
+      },
+      error: null,
+    })
+
+    const result = await adminAPI.listTeams()
+    expect(result[0].playerCount).toBe(2)
+    expect(result[0].hintsUsed).toBe(1)
+    expect(result[0].solvedCount).toBe(15)
+    expect(result[0].createdAt).toBe('2026-09-30T00:00:00Z')
+  })
+})

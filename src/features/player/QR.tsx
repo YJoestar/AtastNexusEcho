@@ -9,6 +9,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowLeft, QrCode, Camera, CheckCircle, XCircle, AlertTriangle, ScanLine, Keyboard } from 'lucide-react'
 import { useGameEngine, type QRScanResult } from '@/hooks/useGameEngine'
+import { useOffline } from '@/hooks/useOffline'
 import { ROUTES } from '@/app/config'
 import { cn } from '@/lib/utils'
 
@@ -38,7 +39,8 @@ type ScanResult = QRScanResult
 const SCAN_INTERVAL_MS = 250
 
 export function PlayerQR() {
-  const { isOffline, scanQR } = useGameEngine()
+  const { scanQR } = useGameEngine()
+  const { isOffline: browserOffline } = useOffline()
   const [isScanning, setIsScanning] = useState(false)
   const [permission, setPermission] = useState<'prompt' | 'granted' | 'denied'>('prompt')
   const [lastResult, setLastResult] = useState<ScanResult | null>(null)
@@ -58,7 +60,7 @@ export function PlayerQR() {
 
   const submitCode = useCallback(
     async (code: string) => {
-      if (isOffline) {
+      if (browserOffline) {
         setLastResult({ discovered: false, error: 'Cannot scan while offline.' })
         return
       }
@@ -75,7 +77,7 @@ export function PlayerQR() {
         setIsResolving(false)
       }
     },
-    [isOffline, scanQR],
+    [browserOffline, scanQR],
   )
 
   /**
@@ -157,11 +159,6 @@ export function PlayerQR() {
       }
 
       scanIntervalRef.current = window.setInterval(() => {
-        if (isOffline) {
-          setScanningText('Cannot scan while offline')
-          stopScan()
-          return
-        }
         decodeFrame()
       }, SCAN_INTERVAL_MS)
     } catch {
@@ -291,7 +288,7 @@ export function PlayerQR() {
                 <ScanLine className="w-5 h-5" />
                 <span>Start Scanning</span>
               </button>
-              {isOffline && (
+              {browserOffline && (
                 <p className="mt-3 text-sm text-nexus-danger flex items-center justify-center gap-1.5">
                   <AlertTriangle className="w-4 h-4" />
                   Camera unavailable while offline
@@ -429,7 +426,7 @@ export function PlayerQR() {
               />
               <button
                 type="submit"
-                disabled={!manualCode.trim() || isResolving || isOffline}
+                disabled={!manualCode.trim() || isResolving || browserOffline}
                 className="btn-primary touch-target-comfortable flex-shrink-0"
               >
                 Submit

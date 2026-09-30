@@ -37,7 +37,8 @@ export const ROUTES = {
   ADMIN_LEADERBOARD: '/admin/leaderboard',
   ADMIN_GAME_CONTROL: '/admin/game-control',
   ADMIN_AUDIT: '/admin/audit',
-  ADMIN_LOCATIONS: '/admin/locations',
+   ADMIN_LOCATIONS: '/admin/locations',
+   ADMIN_QA_VIEWER: '/admin/qa-viewer',
 
   // Shared
   HOME: '/',

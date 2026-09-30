@@ -279,15 +279,22 @@ Deno.serve(async (req: Request) => {
 
     // --- Log admin action ---
     async function logAction(actionType: string, targetTeamId?: string, targetPlayerId?: string, payload?: Record<string, unknown>) {
-      await supabaseAdmin.from('audit_log').insert({
-        admin_id: user.id,
-        action_type: actionType,
-        target_team_id: targetTeamId ?? null,
-        target_player_id: targetPlayerId ?? null,
-        payload: payload ?? {},
-        reason: (params as Record<string, unknown>).reason as string ?? '',
-        ip_address: clientIp,
-      })
+      try {
+        const { error } = await supabaseAdmin.from('audit_log').insert({
+          admin_id: user.id,
+          action_type: actionType,
+          target_team_id: targetTeamId ?? null,
+          target_player_id: targetPlayerId ?? null,
+          payload: payload ?? {},
+          reason: (params as Record<string, unknown>).reason as string ?? '',
+          ip_address: clientIp,
+        })
+        if (error) {
+          console.warn(`audit_log insert failed for action ${actionType}:`, error.message)
+        }
+      } catch (err: unknown) {
+        console.warn(`logAction threw for action ${actionType}:`, err)
+      }
     }
 
     // --- Route actions ---
@@ -696,14 +703,15 @@ Deno.serve(async (req: Request) => {
         const now = new Date().toISOString()
 
         // If not already WAITING, transition to WAITING first.
-        // The status-transition trigger only allows READY -> WAITING, so this
-        // is a separate step that respects the state machine.
+        // Only READY -> WAITING is valid per the status-transition trigger.
+        // REGISTERED and FORMING teams don't have 3 logged-in players yet,
+        // so they would have been rejected by the player check above.
         if (currentStatus !== 'WAITING') {
           const { error: waitingError } = await supabaseAdmin
             .from('teams')
             .update({ status: 'WAITING', updated_at: now })
             .eq('id', teamId)
-            .in('status', ['REGISTERED', 'FORMING', 'READY'])
+            .in('status', ['READY'])
 
           if (waitingError) {
             return jsonResponse(400, {
@@ -1227,6 +1235,81 @@ Deno.serve(async (req: Request) => {
         return jsonResponse(200, { success: true, leaderboard: ranked })
       }
 
+      case 'list-puzzle-qa': {
+        const { data: nodes, error: nodesError } = await supabaseAdmin
+          .from('puzzle_nodes')
+          .select('id, code, title, type, stage, location, prerequisites, branches, content, answer_metadata, metadata')
+          .order('code')
+
+        if (nodesError) {
+          return jsonResponse(400, { error: nodesError.message })
+        }
+
+        const nodeCodes = (nodes ?? []).map(n => n.code)
+
+        const { data: evidenceItems } = await supabaseAdmin
+          .from('evidence')
+          .select('id, type, title, content, metadata')
+          .in('metadata->nodeCode', nodeCodes)
+
+        const evidenceByNodeCode = new Map<string, typeof evidenceItems>()
+        for (const ev of evidenceItems ?? []) {
+          const nodeCode = ev.metadata?.nodeCode
+          if (!nodeCode) continue
+          if (!evidenceByNodeCode.has(nodeCode)) {
+            evidenceByNodeCode.set(nodeCode, [])
+          }
+          evidenceByNodeCode.get(nodeCode)!.push(ev)
+        }
+
+        const puzzles = (nodes ?? []).map(n => {
+          const nodeEvidence = evidenceByNodeCode.get(n.code) ?? []
+          const audioEvidence = nodeEvidence
+            .filter(e => e.type === 'AUDIO' || (e.content as Record<string, unknown>)?.audio_url)
+            .map(e => ({
+              id: e.id,
+              title: e.title,
+              type: e.type,
+              audioUrl: (e.content as Record<string, unknown>)?.audio_url ?? null,
+              audioExists: Boolean((e.content as Record<string, unknown>)?.audio_url?.toString().startsWith('/audio/')),
+              nodeCode: e.metadata?.nodeCode ?? null,
+            }))
+
+          const observerData = (n.content as Record<string, unknown>)?.observer as Record<string, unknown> | undefined
+          const interactiveData = observerData?.interactiveData as Record<string, unknown> | undefined
+          const contentAudioUrl = interactiveData?.audioUrl
+          const contentAudioClips = interactiveData?.audioClips
+
+          if (contentAudioUrl || contentAudioClips) {
+            audioEvidence.push({
+              id: `${n.id}-content`,
+              title: `Puzzle Content Audio (${n.code})`,
+              type: 'AUDIO',
+              audioUrl: typeof contentAudioUrl === 'string' ? contentAudioUrl : null,
+              audioExists: Boolean(interactiveData),
+              nodeCode: n.code,
+            })
+          }
+
+          return {
+            id: n.id,
+            code: n.code,
+            title: n.title,
+            type: n.type,
+            stage: n.stage,
+            location: n.location,
+            prerequisites: n.prerequisites,
+            branches: n.branches,
+            content: n.content,
+            answerMetadata: n.answer_metadata,
+            evidence: nodeEvidence,
+            audioEvidence,
+          }
+        })
+
+        return jsonResponse(200, { success: true, puzzles })
+      }
+
       case 'send-notification': {
         const { target, teamIds, title, message, type: notifType, priority, targetRoles, reason } = params as {
           target: 'single' | 'multiple' | 'all'
@@ -1424,12 +1507,16 @@ Deno.serve(async (req: Request) => {
         const durationMinutes = Number((durationConfig?.value as string) ?? '180')
         const deadline = new Date(Date.now() + durationMinutes * 60_000).toISOString()
 
-        // Step 1: transition non-WAITING pre-game teams to WAITING first.
-        // The status-transition trigger only allows READY -> WAITING.
-        await supabaseAdmin
+        // Step 1: transition READY teams to WAITING first.
+        // Only READY -> WAITING is valid per the status-transition trigger.
+        // REGISTERED (1 player) and FORMING (2 players) cannot be started
+        // because they don't have all 3 players.
+        const { error: waitingError } = await supabaseAdmin
           .from('teams')
           .update({ status: 'WAITING', updated_at: now })
-          .in('status', ['REGISTERED', 'FORMING', 'READY'])
+          .eq('status', 'READY')
+
+        if (waitingError) return jsonResponse(400, { error: `Could not move teams to WAITING: ${waitingError.message}` })
 
         // Step 2: now transition all WAITING teams to ACTIVE.
         const { data: teams, error: startError } = await supabaseAdmin

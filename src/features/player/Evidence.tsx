@@ -167,33 +167,41 @@ export function PlayerEvidence() {
               const classification = !isString && item.content ? String(item.content.classification) : undefined
 
               return (
-                <div
-                  key={code}
-                  className="panel flex items-start gap-3 p-3"
-                >
-                  <div className="w-12 h-12 rounded-xl bg-nexus-bg flex items-center justify-center flex-shrink-0">
-                    <IconComponent className="w-6 h-6 text-nexus-textSubtle" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-medium text-nexus-text truncate">
-                      {title}
-                    </h4>
-                    <p className="text-xs text-nexus-textMuted mt-0.5 line-clamp-2">
-                      {description}
-                    </p>
-                    <div className="flex items-center gap-2 mt-1.5">
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-nexus-bg text-nexus-textSubtle font-mono">
-                        {typeStr}
-                      </span>
-                      {classification && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-nexus-warningBg/30 text-nexus-warning font-mono">
-                          {String(classification)}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )
+    <div
+      key={code}
+      className="panel flex items-start gap-3 p-3"
+    >
+      <div className="w-12 h-12 rounded-xl bg-nexus-bg flex items-center justify-center flex-shrink-0">
+        <IconComponent className="w-6 h-6 text-nexus-textSubtle" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <h4 className="font-medium text-nexus-text truncate">
+          {title}
+        </h4>
+        <p className="text-xs text-nexus-textMuted mt-0.5 line-clamp-2">
+          {description}
+        </p>
+        <div className="flex items-center gap-2 mt-1.5">
+          <span className="text-[10px] px-1.5 py-0.5 rounded bg-nexus-bg text-nexus-textSubtle font-mono">
+            {typeStr}
+          </span>
+          {classification && (
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-nexus-warningBg/30 text-nexus-warning font-mono">
+              {String(classification)}
+            </span>
+          )}
+        </div>
+        {typeStr === 'AUDIO' && !isString && (item.content as Record<string, unknown> | null)?.audio_url ? (
+          <audio
+            key={code}
+            src={String((item.content as Record<string, unknown>).audio_url)}
+            controls
+            className="mt-2 w-full"
+          />
+        ) : null}
+      </div>
+    </div>
+  )
             })}
           </div>
         )}

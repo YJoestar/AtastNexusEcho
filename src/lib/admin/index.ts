@@ -44,6 +44,15 @@ interface RawTeam {
   player_roles?: string[]
   hints_used?: number
   solved_count?: number
+  playerCount?: number
+  playerRoles?: string[]
+  hintsUsed?: number
+  solvedCount?: number
+  currentNodeCode?: string | null
+  currentNodeId?: string | null
+  gameStartedAt?: string | null
+  gameDeadline?: string | null
+  gameDurationMinutes?: number
 }
 
 interface RawPlayer {
@@ -158,16 +167,17 @@ async function callBureau<T>(body: Record<string, unknown>): Promise<T> {
 }
 
 function formatTeam(raw: RawTeam): Team {
+  const r = raw as unknown as Record<string, unknown>
   return {
     id: raw.id,
     name: raw.name ?? 'Unknown Team',
     code: raw.code,
     status: raw.status as TeamStatus,
-    createdAt: raw.created_at,
-    startedAt: raw.started_at,
-    completedAt: raw.completed_at,
-    currentNodeId: raw.current_node_id,
-    score: raw.score,
+    createdAt: toText(firstPresent(r, ['created_at', 'createdAt']), ''),
+    startedAt: toOptionalText(firstPresent(r, ['started_at', 'startedAt'])),
+    completedAt: toOptionalText(firstPresent(r, ['completed_at', 'completedAt'])),
+    currentNodeId: toText(firstPresent(r, ['current_node_id', 'currentNodeId']), ''),
+    score: toCount(firstPresent(r, ['score'])),
     metadata: (raw.metadata || {}) as unknown as Team['metadata'],
   }
 }
@@ -438,6 +448,13 @@ export const adminAPI = {
       recentSubmissions: result.recentSubmissions.map(formatSubmission),
       recentEvents: result.recentEvents,
     }
+  },
+
+  async listPuzzleQA(): Promise<PuzzleQAEntry[]> {
+    const result = await callBureau<{ puzzles: PuzzleQAEntry[] }>({
+      action: 'list-puzzle-qa',
+    })
+    return result.puzzles ?? []
   },
 
   async getGameState(): Promise<GameStateAdmin> {
@@ -857,16 +874,17 @@ export const adminAPI = {
 
 function formatTeamWithStats(raw: RawTeam): TeamWithStats {
   const base = formatTeam(raw)
+  const r = raw as unknown as Record<string, unknown>
   return {
     ...base,
-    playerCount: raw.player_count ?? 0,
-    playerRoles: raw.player_roles ?? [],
-    hintsUsed: raw.hints_used ?? 0,
-    solvedCount: raw.solved_count ?? 0,
-    currentNodeCode: raw.current_node_code ?? null,
-    gameStartedAt: raw.game_started_at ?? null,
-    gameDeadline: raw.game_deadline ?? null,
-    gameDurationMinutes: raw.game_duration_minutes ?? 180,
+    playerCount: toCount(firstPresent(r, ['playerCount', 'player_count'])),
+    playerRoles: (firstPresent(r, ['playerRoles', 'player_roles']) as string[]) ?? [],
+    hintsUsed: toCount(firstPresent(r, ['hintsUsed', 'hints_used'])),
+    solvedCount: toCount(firstPresent(r, ['solvedCount', 'solved_count'])),
+    currentNodeCode: toOptionalText(firstPresent(r, ['currentNodeCode', 'current_node_code'])),
+    gameStartedAt: toOptionalText(firstPresent(r, ['gameStartedAt', 'game_started_at'])),
+    gameDeadline: toOptionalText(firstPresent(r, ['gameDeadline', 'game_deadline'])),
+    gameDurationMinutes: toCount(firstPresent(r, ['gameDurationMinutes', 'game_duration_minutes']), 180),
   }
 }
 
@@ -958,6 +976,46 @@ function formatSubmission(raw: RawSubmission) {
     submittedAt: raw.submitted_at,
     pointsAwarded: raw.points_awarded,
   }
+}
+
+export interface PuzzleQAEntry {
+  id: string
+  code: string
+  title: string
+  type: string
+  stage: number
+  location: string
+  prerequisites: string[]
+  branches: { nextNodes: string[]; unlocks: string } | null
+  content: Record<string, unknown>
+  answerMetadata: Record<string, unknown> | null
+  evidence: EvidenceQAEntry[]
+  audioEvidence: AudioEvidenceQAEntry[]
+}
+
+export interface EvidenceQAEntry {
+  id: string
+  type: string
+  title: string
+  content: {
+    text?: string
+    source?: string
+    state?: string
+    audio_url?: string
+  }
+  metadata: {
+    nodeCode?: string
+    source?: string
+  }
+}
+
+export interface AudioEvidenceQAEntry {
+  id: string
+  title: string
+  type: string
+  audioUrl: string | null
+  audioExists: boolean
+  nodeCode: string | null
 }
 
 export { AdminAPIError }

@@ -28,6 +28,7 @@ import {
   readEntries,
   readGraphNodes,
   readString,
+  readAudioClips,
   readStringArray,
   type InteractiveData,
 } from './payload'
@@ -195,13 +196,27 @@ const DocumentVisual: Renderer = ({ dataPayload, interactiveData }) => {
 /* audio - a spectrum readout                                                 */
 /* ------------------------------------------------------------------------- */
 
-const AudioVisual: Renderer = ({ dataPayload }) => {
+const AudioVisual: Renderer = ({ dataPayload, interactiveData }) => {
   const frequencies = useMemo(() => extractFrequencies(dataPayload), [dataPayload])
   const peak = frequencies.length > 0 ? Math.max(...frequencies) : 0
+  const audioUrl = readString(interactiveData, 'audioUrl')
+  const audioSpeaker = readString(interactiveData, 'audioSpeaker')
+  const audioTranscript = readString(interactiveData, 'audioTranscript')
 
   return (
     <VisualShell label="Spectrum" tone="accent">
       <div className="space-y-4">
+        {audioUrl && (
+          <div className="flex items-center gap-3 p-3 bg-nexus-bg rounded-xl">
+            <audio src={audioUrl} controls className="flex-1" />
+            {audioSpeaker && (
+              <span className="text-sm font-medium text-nexus-text">{audioSpeaker}</span>
+            )}
+          </div>
+        )}
+        {audioTranscript && (
+          <p className="text-sm text-nexus-textMuted italic">{audioTranscript}</p>
+        )}
         <PayloadText>{dataPayload}</PayloadText>
         {frequencies.length > 0 && (
           <div className="flex items-end gap-2 h-24" role="img" aria-label="Frequency peaks">
@@ -217,7 +232,7 @@ const AudioVisual: Renderer = ({ dataPayload }) => {
           </div>
         )}
         <p className="text-xs text-nexus-textSubtle flex items-center gap-1.5">
-          <Radio className="w-3.5 h-3.5" aria-hidden="true" />
+          <Radio className="w-3.5 h-3.5" aria-hidden={true} />
           Report the peaks exactly as shown - precision matters more than rounding.
         </p>
       </div>
@@ -425,10 +440,38 @@ const DependencyVisual: Renderer = ({ dataPayload, interactiveData }) => {
 
 const EntryLedgerVisual: Renderer = ({ dataPayload, interactiveData }) => {
   const entries = useMemo(() => readEntries(interactiveData), [interactiveData])
+  const audioClips = useMemo(() => readAudioClips(interactiveData), [interactiveData])
+  const audioUrl = readString(interactiveData, 'audioUrl')
+  const audioSpeaker = readString(interactiveData, 'audioSpeaker')
+  const audioTranscript = readString(interactiveData, 'audioTranscript')
 
   return (
     <VisualShell label="Entry Ledger">
       <div className="space-y-4">
+        {audioUrl && (
+          <div className="flex items-center gap-3 p-3 bg-nexus-bg rounded-xl">
+            <audio src={audioUrl} controls className="flex-1" />
+            {audioSpeaker && (
+              <span className="text-sm font-medium text-nexus-text">{audioSpeaker}</span>
+            )}
+          </div>
+        )}
+        {audioTranscript && (
+          <p className="text-sm text-nexus-textMuted italic">{audioTranscript}</p>
+        )}
+        {audioClips.length > 0 && (
+          <div className="space-y-3">
+            <p className="text-xs uppercase tracking-wider text-nexus-textSubtle">Interrogation Recordings</p>
+            {audioClips.map(clip => (
+              <div key={clip.file} className="flex items-center gap-3 p-3 bg-nexus-bg rounded-xl">
+                <audio src={clip.file} controls className="flex-1" />
+                <span className="text-sm font-medium text-nexus-text min-w-[100px]" title={clip.speaker}>
+                  {clip.speaker}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
         <PayloadText>{dataPayload}</PayloadText>
         {entries.length > 0 && (
           <ul className="space-y-2">

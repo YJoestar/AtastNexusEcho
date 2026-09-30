@@ -50,6 +50,24 @@ export interface GraphNode {
   pos: number
 }
 
+export interface AudioClip {
+  speaker: string
+  voice: string
+  file: string
+}
+
+export function readAudioClips(data: InteractiveData, key = 'audioClips'): AudioClip[] {
+  const value = data?.[key]
+  if (!Array.isArray(value)) return []
+  return value
+    .filter((entry): entry is Record<string, unknown> => typeof entry === 'object' && entry !== null)
+    .map(entry => ({
+      speaker: typeof entry.speaker === 'string' ? entry.speaker : 'Unknown',
+      voice: typeof entry.voice === 'string' ? entry.voice : '',
+      file: typeof entry.file === 'string' ? entry.file : '',
+    }))
+}
+
 export function readGraphNodes(data: InteractiveData): GraphNode[] {
   const value = data?.nodes
   if (!Array.isArray(value)) return []
