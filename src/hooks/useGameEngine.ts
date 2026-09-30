@@ -12,9 +12,10 @@
  * title and location are not a spoiler.
  */
 
-import { useState, useCallback, useEffect, useMemo } from 'react'
+import { useState, useCallback, useEffect, useMemo, useContext } from 'react'
 import { useApp } from '@/app/providers'
 import { gameAPI } from '@/lib/game'
+import { QASimulatorContext, type QAContextValue } from '@/contexts/QASimulatorContext'
 import {
   PUZZLES_BY_CODE,
   PUZZLE_COUNT,
@@ -120,6 +121,8 @@ function isTransportFailure(error: unknown): boolean {
 }
 
 export function useGameEngine() {
+  const qaContext: QAContextValue | null = useContext(QASimulatorContext)
+
   const app = useApp()
   const {
     player,
@@ -138,7 +141,9 @@ export function useGameEngine() {
   const connection = useConnection()
   // navigator.onLine alone reports "online" on a dead campus Wi-Fi, so the
   // engine treats a failed server probe exactly like having no link.
-  const isOffline = browserOffline || connection.isOffline
+  const serverIsOffline = browserOffline || connection.isOffline
+
+  const isOffline = qaContext ? qaContext.isOffline : serverIsOffline
 
   const [inventory, setInventory] = useState<MergedInventory | null>(null)
   const [leaderboard, setLeaderboard] = useState<ApiLeaderboardEntry[] | null>(null)
@@ -385,18 +390,18 @@ export function useGameEngine() {
   }, [])
 
   useEffect(() => {
-    if (!isAuthenticated || isOffline) return
+    if (!isAuthenticated || isOffline || qaContext?.isActive) return
     void refreshGameState()
     void fetchNodeProgress()
 
     const interval = setInterval(() => {
-      if (isOffline) return
+      if (isOffline || qaContext?.isActive) return
       void refreshGameState()
       void fetchNodeProgress()
     }, 30000)
 
     return () => clearInterval(interval)
-  }, [isAuthenticated, isOffline, refreshGameState, fetchNodeProgress])
+  }, [isAuthenticated, isOffline, refreshGameState, fetchNodeProgress, qaContext?.isActive])
 
   /**
    * Replay answers that were typed while the link was down.
@@ -407,7 +412,7 @@ export function useGameEngine() {
    * because a replayed correct answer may have unlocked the next node.
    */
   useEffect(() => {
-    if (!isAuthenticated || isOffline || queuedCount === 0) return
+    if (!isAuthenticated || isOffline || queuedCount === 0 || qaContext?.isActive) return
 
     let cancelled = false
     const flush = async () => {
@@ -429,6 +434,7 @@ export function useGameEngine() {
       cancelled = true
     }
     // queuedCount is the trigger; re-running on it changing is the point.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, isOffline, queuedCount, refreshGameState, refreshTeamProgress, fetchNodeProgress])
 
   const solvedNodes = useMemo(
@@ -445,6 +451,7 @@ export function useGameEngine() {
   )
 
   const allNodesForMap = useMemo(() => {
+    if (qaContext?.isActive) return []
     if (!teamProgress && solvedNodes.length === 0) return []
     const solvedSet = new Set(solvedNodes)
     const currentId = teamProgress?.currentNodeId
@@ -471,7 +478,84 @@ export function useGameEngine() {
         locked,
       }
     })
-  }, [teamProgress, solvedNodes, availableNodeIds])
+  }, [teamProgress, solvedNodes, availableNodeIds, qaContext?.isActive])
+
+  // In QA mode, the QASimulatorContext provides all simulated engine behavior
+  // and data. Player screens are unmodified — they call useGameEngine() which
+  // transparently delegates to the simulator instead of gameAPI.
+  if (qaContext?.isActive) {
+    const isSolved = (nodeId: string) =>
+      !!nodeProgress.some(p => p.nodeId === nodeId || p.nodeCode === nodeId)
+    return {
+      player: qaContext.player,
+      team: qaContext.team,
+      role: qaContext.player.role,
+      isInitializing: false,
+      isAuthenticated: true,
+      isOffline: qaContext.isOffline,
+      connection: { isOffline: qaContext.isOffline, lastProbe: null },
+      queuedCount: 0,
+      lastFlush: null,
+      loading: false,
+      isLoading: () => false,
+      gameState: qaContext.gameState,
+      teamProgress: qaContext.teamProgress,
+      notifications: qaContext.notifications,
+      unreadCount: qaContext.notifications.filter(n => !n.isRead).length,
+      nodeProgress: qaContext.nodeProgress,
+      inventory: qaContext.inventory,
+      leaderboard: qaContext.leaderboard,
+      solvedNodes: Array.from(qaContext.solvedNodes),
+      allNodesForMap: qaContext.allNodesForMap,
+      totalNodes: PUZZLE_COUNT,
+      solvedCount: qaContext.solvedNodes.size,
+      availableNodeIds: qaContext.availableNodeIds,
+      fetchNode: async (nodeId: string) => {
+        const node = await qaContext.getNode(nodeId, qaContext.role)
+        if (!node) return null
+        const isSolved = qaContext.solvedNodes.has(nodeId)
+        const isCurrent = nodeId === qaContext.currentNodeId
+        const isNextUp = qaContext.availableNodeIds.includes(nodeId)
+        const status: NodeStatus = isSolved ? 'SOLVED' : isCurrent ? 'IN_PROGRESS' : isNextUp ? 'AVAILABLE' : 'LOCKED'
+        return {
+          code: node.code,
+          title: node.title,
+          type: node.type as PuzzleType,
+          difficulty: node.difficulty,
+          estimatedMinutes: node.estimatedMinutes,
+          location: node.location,
+          stage: node.stage,
+          unlocked: true,
+          isSolved,
+          isCurrent,
+          isNextUp,
+          attempts: 0,
+          hintsUsed: 0,
+          points: node.points,
+          status,
+          narrativeObjective: node.narrativeObjective,
+          roleDependencyLevel: node.roleDependencyLevel,
+          roleContent: node.roleContent,
+          operatorInvestigation: node.operatorInvestigation,
+          coordinationChain: node.coordinationChain,
+          failurePropagation: node.failurePropagation,
+          locationClue: node.locationClue ?? EMPTY_LOCATION_CLUE,
+          evidenceUnlocked: node.evidenceUnlocked,
+          storyReveal: node.storyReveal,
+          whyTeamworkMatters: node.whyTeamworkMatters,
+        } as PlayerNodeView
+      },
+      fetchInventory: qaContext.fetchInventory,
+      fetchLeaderboard: qaContext.fetchLeaderboard,
+      fetchNodeProgress: qaContext.fetchNodeProgress,
+      submitAnswer: qaContext.submitAnswer,
+      requestHint: qaContext.requestHint,
+      scanQR: qaContext.scanQR,
+      markAllNotificationsRead: qaContext.markAllNotificationsRead,
+      markNotificationRead: qaContext.markNotificationRead,
+      isNodeSolved: isSolved,
+    }
+  }
 
   return {
     player,

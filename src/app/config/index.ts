@@ -39,6 +39,7 @@ export const ROUTES = {
   ADMIN_AUDIT: '/admin/audit',
    ADMIN_LOCATIONS: '/admin/locations',
    ADMIN_QA_VIEWER: '/admin/qa-viewer',
+   ADMIN_QA_HUB: '/admin/qa-simulator',
 
   // Shared
   HOME: '/',

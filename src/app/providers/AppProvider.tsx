@@ -10,6 +10,7 @@ import type { Player, Team, Role, TeamStatus, PlayerStatus, TeamProgress, Notifi
 import { supabase } from '@/lib/supabase'
 import { gameAPI } from '@/lib/game'
 import { collectDeviceFingerprint, hashDeviceFingerprint } from '@/lib/auth'
+import { QASimulatorContext } from '@/contexts/QASimulatorContext'
 
 /**
  * Pull the server's own words out of a failed edge function call. supabase-js
@@ -450,5 +451,35 @@ export function useApp() {
   if (!context) {
     throw new Error('useApp must be used within an AppProvider')
   }
+
+  // In QA Simulator mode, delegate to the simulated context so player screens
+  // receive mock data without any production side effects.
+  const qaContext = useContext(QASimulatorContext)
+
+  // Hook must be called unconditionally — the empty callback is a safe no-op
+  // in both QA and production paths.
+  const noopRefresh = useCallback(async () => {}, [])
+
+  if (qaContext?.isActive) {
+    return {
+      player: qaContext.player,
+      team: qaContext.team,
+      role: qaContext.player.role,
+      isAuthenticated: qaContext.isAuthenticated,
+      isInitializing: qaContext.isInitializing,
+      login: qaContext.login,
+      logout: qaContext.logout,
+      refreshGameState: qaContext.refreshGameState,
+      refreshTeamProgress: qaContext.refreshTeamProgress,
+      gameState: qaContext.gameState ?? null,
+      teamProgress: qaContext.teamProgress ?? null,
+      notifications: qaContext.notifications,
+      unreadCount: qaContext.notifications.filter(n => !n.isRead).length,
+      markNotificationRead: qaContext.markNotificationRead,
+      refreshNotifications: noopRefresh,
+      markAllNotificationsRead: qaContext.markAllNotificationsRead,
+    }
+  }
+
   return context
 }

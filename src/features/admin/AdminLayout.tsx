@@ -19,6 +19,7 @@ const ADMIN_NAV = [
   { path: ROUTES.ADMIN_GAME_CONTROL, label: 'Game Control', icon: Gamepad2 },
   { path: ROUTES.ADMIN_LOCATIONS, label: 'Locations', icon: MapPin },
   { path: ROUTES.ADMIN_QA_VIEWER, label: 'QA Viewer', icon: ShieldQuestion },
+  { path: ROUTES.ADMIN_QA_HUB, label: 'Player Simulator', icon: Users },
   { path: ROUTES.ADMIN_AUDIT, label: 'Audit Log', icon: FileText },
 ] as const
 
