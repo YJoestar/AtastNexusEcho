@@ -47,7 +47,7 @@ vi.mock('@/hooks/useBureau', () => ({
 const ISSUED = {
   success: true,
   teamId: 'team-1',
-  teamCode: '23C0A9',
+  teamCode: 'M4X8QZ',
   playerCodes: ['B9E8BA7W', 'C4D2EF31', 'D5A61B02'],
   provisionedPlayers: [
     { name: 'Player 1', role: 'OBSERVER', loginCode: 'B9E8BA7W' },
@@ -103,15 +103,15 @@ describe('Bureau team provisioning', () => {
 
     // ...and the codes the server just issued are still readable.
     await waitFor(() => {
-      expect(screen.getByText('Team Created Successfully')).toBeTruthy()
+      expect(screen.getByText('TEAM READY')).toBeTruthy()
     })
-    expect(screen.getByText('23C0A9')).toBeTruthy()
+    expect(screen.getByText('M4X8QZ')).toBeTruthy()
     expect(screen.getByText('B9E8BA7W')).toBeTruthy()
     expect(screen.getByText('C4D2EF31')).toBeTruthy()
     expect(screen.getByText('D5A61B02')).toBeTruthy()
 
     // The wizard is still open, so DONE is what closes it.
-    expect(screen.getByRole('button', { name: 'DONE' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'RETURN TO TEAM MANAGEMENT' })).toBeTruthy()
   })
 
   it('sends one idempotency key for the whole wizard session so a retry cannot duplicate the team', async () => {
@@ -127,7 +127,7 @@ describe('Bureau team provisioning', () => {
 
     // A new wizard session (reopened) gets its own key, so a genuinely new
     // team can still be created.
-    fireEvent.click(screen.getByRole('button', { name: 'DONE' }))
+    fireEvent.click(screen.getByRole('button', { name: 'RETURN TO TEAM MANAGEMENT' }))
     await createTeamThroughWizard()
     await waitFor(() => {
       expect(createTeamWithPlayers).toHaveBeenCalledTimes(2)
@@ -162,7 +162,7 @@ describe('Bureau team provisioning', () => {
     await waitFor(() => {
       expect(screen.getByText('Role OBSERVER is already assigned on this team')).toBeTruthy()
     })
-    expect(screen.queryByText('Team Created Successfully')).toBeNull()
+    expect(screen.queryByText('TEAM READY')).toBeNull()
     // Still on the wizard, with a working retry — and the same idempotency key.
     expect(screen.getByRole('button', { name: 'CREATE TEAM' })).toBeTruthy()
   })

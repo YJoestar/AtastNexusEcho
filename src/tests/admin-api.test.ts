@@ -53,7 +53,7 @@ describe('createTeamWithPlayers', () => {
       data: {
         success: true,
         idempotent: false,
-        team: { id: 'team-1', code: '23C0A9', name: 'Acceptance Team' },
+        team: { id: 'team-1', code: 'M4X8QZ', name: 'Acceptance Team' },
         players: [
           { player_id: 'p-1', name: 'Ada', role: 'OBSERVER', login_code: 'B9E8BA7W' },
           { player_id: 'p-2', name: 'Grace', role: 'ANALYST', login_code: 'C4D2EF31' },
@@ -80,7 +80,7 @@ describe('createTeamWithPlayers', () => {
 
     expect(result.success).toBe(true)
     expect(result.idempotent).toBe(false)
-    expect(result.teamCode).toBe('23C0A9')
+    expect(result.teamCode).toBe('M4X8QZ')
     expect(result.playerCodes).toEqual(['B9E8BA7W', 'C4D2EF31'])
     expect(result.provisionedPlayers).toEqual([
       { name: 'Ada', role: 'OBSERVER', loginCode: 'B9E8BA7W' },
@@ -93,7 +93,7 @@ describe('createTeamWithPlayers', () => {
       data: {
         success: true,
         idempotent: true,
-        team: { id: 'team-1', code: '23C0A9', name: 'Acceptance Team' },
+        team: { id: 'team-1', code: 'M4X8QZ', name: 'Acceptance Team' },
         players: [{ player_id: 'p-1', name: 'Ada', role: 'OBSERVER', login_code: 'ZZZZZZZZ' }],
       },
       error: null,
@@ -141,7 +141,7 @@ describe('reissueCredentials', () => {
     invoke.mockResolvedValue({
       data: {
         success: true,
-        team: { id: 'team-1', code: '23C0A9', name: 'Acceptance Team' },
+        team: { id: 'team-1', code: 'M4X8QZ', name: 'Acceptance Team' },
         codes: [
           { playerId: 'p-1', role: 'OBSERVER', displayName: 'Ada', loginCode: 'NEW12345' },
           { playerId: 'p-2', role: 'ANALYST', displayName: 'Grace', loginCode: 'NEW67890' },
@@ -154,7 +154,7 @@ describe('reissueCredentials', () => {
 
     const body = lastRequestBody()
     expect(body).toEqual({ action: 'reissue-codes', teamId: 'team-1', playerIds: null })
-    expect(result.teamCode).toBe('23C0A9')
+    expect(result.teamCode).toBe('M4X8QZ')
     expect(result.credentials).toEqual([
       { playerId: 'p-1', role: 'OBSERVER', displayName: 'Ada', loginCode: 'NEW12345' },
       { playerId: 'p-2', role: 'ANALYST', displayName: 'Grace', loginCode: 'NEW67890' },
@@ -165,7 +165,7 @@ describe('reissueCredentials', () => {
     invoke.mockResolvedValue({
       data: {
         success: true,
-        team: { id: 'team-1', code: '23C0A9', name: 'Acceptance Team' },
+        team: { id: 'team-1', code: 'M4X8QZ', name: 'Acceptance Team' },
         codes: [{ playerId: 'p-1', role: 'OBSERVER', displayName: 'Ada', loginCode: 'NEW12345' }],
       },
       error: null,

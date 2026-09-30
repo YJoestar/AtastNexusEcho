@@ -454,16 +454,19 @@ export function TeamCreationWizard({ isOpen, onClose, onSuccess }: TeamCreationW
             </div>
           )}
 
-          {/* Step 4: Generated codes */}
+          {/* Step 4: generated Logic Codes — the Bureau cannot leave without seeing these */}
           {step === 4 && generatedCodes && (
             <div className="text-center space-y-6">
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-nexus-accentBg">
                 <Check className="w-8 h-8 text-nexus-accent" />
               </div>
-              <h3 className="heading-3">Team Created Successfully</h3>
-              <p className="text-nexus-textMuted">
-                Your team and player codes are ready. Distribute them at check-in.
-              </p>
+              <div>
+                <h3 className="heading-3">TEAM READY</h3>
+                <p className="text-nexus-textMuted mt-2 max-w-sm mx-auto">
+                  Give each player their Logic Code. They will use this code to enter the
+                  game. Copy them now — a code is only shown once.
+                </p>
+              </div>
 
               <PlayerCredentialsPanel
                 teamCode={generatedCodes.team}
@@ -496,7 +499,7 @@ export function TeamCreationWizard({ isOpen, onClose, onSuccess }: TeamCreationW
           <div className="flex gap-2">
             {generatedCodes ? (
               <button onClick={finishWizard} className="btn-primary">
-                DONE
+                RETURN TO TEAM MANAGEMENT
               </button>
             ) : (
               <>

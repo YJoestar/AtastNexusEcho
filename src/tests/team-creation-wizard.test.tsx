@@ -65,7 +65,7 @@ describe('TeamCreationWizard', () => {
     createTeamWithPlayers.mockResolvedValue({
       success: true,
       teamId: 'team-1',
-      teamCode: '23C0A9',
+      teamCode: 'M4X8QZ',
       playerCodes: ['B9E8BA7W', 'C4D2EF31', 'D5A61B02'],
       provisionedPlayers: [
         { name: 'Player 1', role: 'OBSERVER', loginCode: 'B9E8BA7W' },
@@ -98,9 +98,9 @@ describe('TeamCreationWizard', () => {
 
     // Step 4 now shows the issued credentials and reports success upward.
     await waitFor(() => {
-      expect(screen.getByText('Team Created Successfully')).toBeTruthy()
+      expect(screen.getByText('TEAM READY')).toBeTruthy()
     })
-    expect(screen.getByText('23C0A9')).toBeTruthy()
+    expect(screen.getByText('M4X8QZ')).toBeTruthy()
     expect(screen.getByText('B9E8BA7W')).toBeTruthy()
     expect(screen.getByText('C4D2EF31')).toBeTruthy()
     expect(screen.getByText('D5A61B02')).toBeTruthy()
@@ -125,7 +125,7 @@ describe('TeamCreationWizard', () => {
       expect(screen.getByText('Role OBSERVER is already assigned on this team')).toBeTruthy()
     })
     // No fabricated success state, and the action stays retryable.
-    expect(screen.queryByText('Team Created Successfully')).toBeNull()
+    expect(screen.queryByText('TEAM READY')).toBeNull()
     expect((screen.getByRole('button', { name: 'CREATE TEAM' }) as HTMLButtonElement).disabled).toBe(false)
   })
 

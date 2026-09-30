@@ -24,7 +24,7 @@ const teamDetail: TeamDetailFull = {
   team: {
     id: 'team-1',
     name: 'Acceptance Team',
-    code: '23C0A9',
+    code: 'M4X8QZ',
     status: 'READY',
     createdAt: '2026-09-30T00:00:00Z',
     startedAt: null,
@@ -101,7 +101,7 @@ async function renderTeamDetail() {
 beforeEach(() => {
   reissueCredentials.mockReset()
   reissueCredentials.mockResolvedValue({
-    teamCode: '23C0A9',
+    teamCode: 'M4X8QZ',
     credentials: [
       { playerId: 'p-1', displayName: 'Ada Lovelace', role: 'OBSERVER', loginCode: 'NEW12345' },
     ],
@@ -132,7 +132,7 @@ describe('Bureau credential recovery', () => {
       expect(screen.getByText('NEW12345')).toBeTruthy()
     })
     // The team code shows in the header badge and in the credentials panel.
-    expect(screen.getAllByText('23C0A9').length).toBeGreaterThan(1)
+    expect(screen.getAllByText('M4X8QZ').length).toBeGreaterThan(1)
   })
 
   it('re-issues a single player from that player’s row', async () => {

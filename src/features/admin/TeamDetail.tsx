@@ -336,10 +336,11 @@ export function AdminTeamDetail() {
       <div className="panel">
         <div className="flex items-center justify-between mb-4 gap-3">
           <div>
-            <h2 className="heading-3">Player Access Codes</h2>
+            <h2 className="heading-3">Player Logic Codes</h2>
             <p className="text-xs text-nexus-textSubtle mt-1">
-              Codes are stored as hashes and are never shown again. Re-issuing rotates them, which
-              immediately invalidates any code already handed out for these players.
+              Codes are stored as hashes and are never shown again, so they cannot be recovered
+              after the fact. Re-issuing rotates them, which immediately invalidates any code
+              already handed out for these players. Refreshing this page never issues anything.
             </p>
           </div>
           <button
@@ -377,9 +378,62 @@ export function AdminTeamDetail() {
             </button>
           </div>
         ) : (
-          <p className="text-sm text-nexus-textMuted">
-            No codes on screen. Re-issue them to print, copy or download a fresh set.
-          </p>
+          <>
+            <p className="text-sm text-nexus-textMuted">
+              No codes on screen. Re-issue them to print, copy or download a fresh set.
+            </p>
+
+            {/* Credential state comes from the persisted player rows, so it is
+                correct after any refresh and never invents a new code. */}
+            <div className="mt-4 space-y-2">
+              {players.map((p, i) => {
+                const state = credentialState(p)
+                return (
+                  <div
+                    key={p.id}
+                    className="flex items-center justify-between gap-3 p-3 bg-nexus-bg rounded-xl border border-nexus-border"
+                  >
+                    <div className="min-w-0">
+                      <span className="text-[10px] uppercase tracking-wider text-nexus-textSubtle">
+                        Player {i + 1}
+                      </span>
+                      <span className="font-medium text-nexus-text block truncate">
+                        {p.displayName}
+                      </span>
+                      <span className="text-[10px] uppercase tracking-wider text-nexus-textSubtle">
+                        {p.role}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span
+                        className={cn(
+                          'text-xs px-2 py-1 rounded-lg',
+                          state.tone === 'live' && 'bg-nexus-accentBg text-nexus-accent',
+                          state.tone === 'used' && 'bg-nexus-surfaceElevated text-nexus-textMuted',
+                          state.tone === 'none' && 'bg-nexus-dangerBg text-nexus-danger',
+                        )}
+                      >
+                        {state.label}
+                      </span>
+                      <button
+                        onClick={() => setReissueScope({
+                          title: 'Re-issue Logic Code',
+                          message: `Re-issue ${p.displayName}'s Logic Code? Any code already distributed for this player stops working immediately.`,
+                          playerIds: [p.id],
+                        })}
+                        disabled={isReissuing}
+                        className="btn-secondary text-xs py-1.5"
+                        aria-label={`Re-issue Logic Code for ${p.displayName}`}
+                      >
+                        {isReissuing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Key className="w-4 h-4" />}
+                        RE-ISSUE
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </>
         )}
       </div>
 
@@ -509,6 +563,20 @@ export function AdminTeamDetail() {
       )}
     </div>
   )
+}
+
+/**
+ * A player's credential state, read from the persisted row only.
+ *
+ * player_login_flow clears login_code_hash on a successful login, so a NULL
+ * hash plus a bound device means "already used", a NULL hash with no device
+ * means "no way in yet", and an auth user with no bound device means "code
+ * issued, not yet used". Nothing here can mint a credential.
+ */
+function credentialState(player: PlayerWithAdminView): { label: string; tone: 'live' | 'used' | 'none' } {
+  if (player.deviceBound) return { label: 'CODE USED', tone: 'used' }
+  if (player.hasAuthUser) return { label: 'CODE ISSUED', tone: 'live' }
+  return { label: 'NO CODE', tone: 'none' }
 }
 
 function PlayerRow({

@@ -15,6 +15,7 @@
  */
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
+import { isValidLoginCode } from '../_shared/logicCode.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -53,16 +54,15 @@ Deno.serve(async (req: Request) => {
 
     const { code, deviceFingerprint, deviceInfo } = await req.json()
 
-    if (!code || typeof code !== 'string' || code.length !== 8) {
+    // Exact same rule as the generator and the client input: LOGIN_CODE_LENGTH
+    // characters from A-Z and 2-9, with I, O, 0 and 1 rejected. Anything else
+    // can never be a valid code, so it is refused before it reaches the
+    // database and before it is counted as a hashing target.
+    if (!isValidLoginCode(code)) {
       return errorResponse(401, 'Invalid access code')
     }
 
     if (!deviceFingerprint || typeof deviceFingerprint !== 'string') {
-      return errorResponse(401, 'Invalid access code')
-    }
-
-    // Validate code format: 8 chars, A-Z and 2-9 only, no I/O/0/1
-    if (!/^[A-Z2-9]{8}$/.test(code)) {
       return errorResponse(401, 'Invalid access code')
     }
 

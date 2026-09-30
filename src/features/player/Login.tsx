@@ -10,29 +10,42 @@ import { Lock, AlertCircle, Loader2, Info } from 'lucide-react'
 import { useApp } from '@/app/providers'
 import { ROUTES } from '@/app/config'
 import { cn } from '@/lib/utils'
-import { validateLoginCodeFormat, LOGIN_CODE_LENGTH, LOGIN_CODE_CHARS } from '@/lib/auth'
+import {
+  LOGIN_CODE_LENGTH,
+  containsForbiddenLogicChars,
+  containsUnknownLogicChars,
+  describeInvalidLogicCode,
+  formatLogicCodeInput,
+  isValidLoginCode,
+} from '@/lib/auth'
 
 export function PlayerLogin() {
   const navigate = useNavigate()
   const { login } = useApp()
   const [accessCode, setAccessCode] = useState('')
+  const [inputWarning, setInputWarning] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
-  const formatCode = (value: string): string => {
-    const upper = value.toUpperCase()
-    const validChars = upper.split('').filter(c => LOGIN_CODE_CHARS.includes(c))
-    return validChars.join('').slice(0, LOGIN_CODE_LENGTH)
-  }
-
   const handleCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatCode(e.target.value.toUpperCase())
-    setAccessCode(formatted)
+    const raw = e.target.value
+
+    // Explain the character before dropping it, so a player who was given a
+    // code containing I/O/0/1 learns why the field looks shorter.
+    if (containsForbiddenLogicChars(raw)) {
+      setInputWarning('That code contains I, O, 0 or 1, which are not part of a logic code. Check your code with the Bureau.')
+    } else if (containsUnknownLogicChars(raw)) {
+      setInputWarning(describeInvalidLogicCode(LOGIN_CODE_LENGTH))
+    } else {
+      setInputWarning('')
+    }
+
+    setAccessCode(formatLogicCodeInput(raw, LOGIN_CODE_LENGTH))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!validateLoginCodeFormat(accessCode) || isLoading) return
+    if (!isValidLoginCode(accessCode) || isLoading) return
 
     setIsLoading(true)
     setError('')
@@ -47,7 +60,8 @@ export function PlayerLogin() {
     }
   }
 
-  const isComplete = validateLoginCodeFormat(accessCode)
+  const isComplete = isValidLoginCode(accessCode)
+  const formatError = accessCode && !isComplete ? describeInvalidLogicCode(LOGIN_CODE_LENGTH) : ''
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
@@ -89,15 +103,21 @@ export function PlayerLogin() {
               <p className="mt-1.5 text-sm text-nexus-textMuted flex items-start gap-1.5">
                 <Info className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
                 <span>
-                  Enter the 8-character code provided by the Bureau.
+                  Enter the {LOGIN_CODE_LENGTH}-character Logic Code provided by the Bureau.
                   Format: A-Z and 2-9 (excluding I, O, 0, 1).
                 </span>
               </p>
             )}
-            {accessCode && !isComplete && (
-              <p className="mt-1.5 text-sm text-nexus-danger flex items-center gap-1">
-                <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
-                Code must be 8 characters (A-Z, 2-9; no I, O, 0, 1)
+            {formatError && (
+              <p className="mt-1.5 text-sm text-nexus-danger flex items-start gap-1.5" role="alert">
+                <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+                <span>{formatError}</span>
+              </p>
+            )}
+            {inputWarning && (
+              <p className="mt-1.5 text-sm text-nexus-danger flex items-start gap-1.5" role="alert">
+                <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+                <span>{inputWarning}</span>
               </p>
             )}
           </div>

@@ -4,6 +4,13 @@
  */
 
 import { z } from 'zod'
+import {
+  LOGIN_CODE_LENGTH,
+  TEAM_CODE_LENGTH,
+  describeInvalidLogicCode,
+  isValidLoginCode,
+  isValidTeamCode,
+} from '@/lib/auth/code-generation'
 
 // ============================================================================
 // PRIMITIVE SCHEMAS
@@ -557,13 +564,20 @@ export const adminActionSchema = z.object({
 // AUTH & BUREAU REQUEST SCHEMAS (Phase 2)
 // ============================================================================
 
+/**
+ * Credential schemas are built from the Logic Code source of truth, so a
+ * request can never be accepted by Zod but rejected by the edge function (or
+ * worse, the other way round).
+ */
 export const loginCodeSchema = z
   .string()
-  .length(8)
-  .regex(/^[A-Z2-9]{8}$/)
-  .refine(val => !/[IO01]/.test(val), {
-    message: 'Login code contains invalid characters',
-  })
+  .length(LOGIN_CODE_LENGTH)
+  .refine(isValidLoginCode, { message: describeInvalidLogicCode() })
+
+export const teamCodeSchema = z
+  .string()
+  .length(TEAM_CODE_LENGTH)
+  .refine(isValidTeamCode, { message: describeInvalidLogicCode(TEAM_CODE_LENGTH) })
 
 export const playerLoginRequestSchema = z.object({
   code: loginCodeSchema,

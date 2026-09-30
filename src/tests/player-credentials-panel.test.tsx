@@ -1,11 +1,11 @@
 /**
- * NEXUS — Player Access Credentials Tests
+ * NEXUS — Player Logic Codes panel
  *
- * The generated codes exist in plaintext exactly once, so the panel that shows
- * them has to be genuinely usable: full untruncated codes, per-code copy with
- * feedback, a copy-all for handing out at check-in, and a download for the
- * paper backup. It must also tell the Bureau that the codes will not be shown
- * again and where to get new ones.
+ * The panel is the only place a player Logic Code is ever readable, so it has
+ * to be usable at a check-in desk: every code in full, one button per player
+ * that copies only that code, one button that copies the whole roster, and a
+ * plain-text download. It also refuses to look authoritative if the server ever
+ * hands it a code the login screen would reject.
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
@@ -28,9 +28,9 @@ beforeEach(() => {
 
 describe('PlayerCredentialsPanel', () => {
   it('shows the team code and every player code in full', () => {
-    render(<PlayerCredentialsPanel teamCode="23C0A9" teamName="Acceptance Team" credentials={credentials} />)
+    render(<PlayerCredentialsPanel teamCode="M4X8QZ" teamName="Acceptance Team" credentials={credentials} />)
 
-    expect(screen.getByText('23C0A9')).toBeTruthy()
+    expect(screen.getByText('M4X8QZ')).toBeTruthy()
     for (const c of credentials) {
       expect(screen.getByText(c.loginCode)).toBeTruthy()
       expect(screen.getByText(c.displayName)).toBeTruthy()
@@ -39,33 +39,36 @@ describe('PlayerCredentialsPanel', () => {
     expect(screen.queryByText(/B9E8…|\.\.\./)).toBeNull()
   })
 
-  it('copies a single code and confirms it', async () => {
-    render(<PlayerCredentialsPanel teamCode="23C0A9" credentials={credentials} />)
+  it('copies one code and nothing else, and confirms it', async () => {
+    render(<PlayerCredentialsPanel teamCode="M4X8QZ" credentials={credentials} />)
 
-    fireEvent.click(screen.getByRole('button', { name: "Copy Grace Hopper's code" }))
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Copy the Logic Code for Grace Hopper' }),
+    )
 
+    expect(writeText).toHaveBeenCalledTimes(1)
     expect(writeText).toHaveBeenCalledWith('C4D2EF31')
     await waitFor(() => {
       expect(
-        screen.getByRole('button', { name: "Copy Grace Hopper's code — copied" }),
+        screen.getByRole('button', { name: 'Copy the Logic Code for Grace Hopper — copied' }),
       ).toBeTruthy()
     })
   })
 
-  it('copies every code in one action', async () => {
-    render(<PlayerCredentialsPanel teamCode="23C0A9" credentials={credentials} />)
+  it('copies every code in one clean, numbered list', async () => {
+    render(<PlayerCredentialsPanel teamCode="M4X8QZ" credentials={credentials} />)
 
-    fireEvent.click(screen.getByRole('button', { name: /COPY ALL/i }))
+    fireEvent.click(screen.getByRole('button', { name: /Copy all codes/i }))
 
     expect(writeText).toHaveBeenCalledTimes(1)
-    const copied = writeText.mock.calls[0][0] as string
-    expect(copied).toContain('Team code: 23C0A9')
-    for (const c of credentials) {
-      expect(copied).toContain(c.loginCode)
-      expect(copied).toContain(c.displayName)
-    }
+    expect(writeText.mock.calls[0][0]).toBe(
+      'Team: M4X8QZ\n' +
+      'Player 1 — B9E8BA7W\n' +
+      'Player 2 — C4D2EF31\n' +
+      'Player 3 — D5A61B02',
+    )
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /COPIED/i })).toBeTruthy()
+      expect(screen.getByRole('button', { name: /copied/i })).toBeTruthy()
     })
   })
 
@@ -75,8 +78,8 @@ describe('PlayerCredentialsPanel', () => {
     Object.assign(URL, { createObjectURL, revokeObjectURL })
     const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
 
-    render(<PlayerCredentialsPanel teamCode="23C0A9" teamName="Acceptance Team" credentials={credentials} />)
-    fireEvent.click(screen.getByRole('button', { name: /DOWNLOAD/i }))
+    render(<PlayerCredentialsPanel teamCode="M4X8QZ" teamName="Acceptance Team" credentials={credentials} />)
+    fireEvent.click(screen.getByRole('button', { name: /Download/i }))
 
     expect(createObjectURL).toHaveBeenCalledTimes(1)
     const blob = createObjectURL.mock.calls[0][0] as Blob
@@ -87,17 +90,36 @@ describe('PlayerCredentialsPanel', () => {
     click.mockRestore()
   })
 
-  it('warns that the codes are single-use and where to re-issue them', () => {
-    render(<PlayerCredentialsPanel teamCode="23C0A9" credentials={credentials} />)
+  it('warns that codes are single-use and where to get new ones', () => {
+    render(<PlayerCredentialsPanel teamCode="M4X8QZ" credentials={credentials} />)
 
     expect(screen.getByText(/single-use/i)).toBeTruthy()
-    expect(screen.getByText(/re-issue/i)).toBeTruthy()
+    expect(screen.getByText(/Re-issue from/i)).toBeTruthy()
+  })
+
+  it('refuses to present a code the login screen would reject', () => {
+    render(
+      <PlayerCredentialsPanel
+        teamCode="M4X8QZ"
+        credentials={[{ playerId: 'p-9', displayName: 'Bad Actor', role: 'OBSERVER', loginCode: 'B9E8BA1W' }]}
+      />,
+    )
+
+    expect(screen.getByRole('alert').textContent).toMatch(/not a valid logic code/i)
+  })
+
+  it('flags a team code outside the alphabet, the way 31E3E5 was', () => {
+    render(<PlayerCredentialsPanel teamCode="31E3E5" credentials={credentials} />)
+
+    const alert = screen.getByRole('alert')
+    expect(alert.textContent).toContain('31E3E5')
+    expect(alert.textContent).toMatch(/do not hand it out/i)
   })
 
   it('disables copy and download when there is nothing to hand out', () => {
     render(<PlayerCredentialsPanel teamCode={null} credentials={[]} />)
 
-    expect((screen.getByRole('button', { name: /COPY ALL/i }) as HTMLButtonElement).disabled).toBe(true)
-    expect((screen.getByRole('button', { name: /DOWNLOAD/i }) as HTMLButtonElement).disabled).toBe(true)
+    expect((screen.getByRole('button', { name: /Copy all codes/i }) as HTMLButtonElement).disabled).toBe(true)
+    expect((screen.getByRole('button', { name: /Download/i }) as HTMLButtonElement).disabled).toBe(true)
   })
 })
