@@ -4,11 +4,12 @@
  * All Bureau (admin) mutations flow through this single function.
  * Each action is verified against the admin_users table.
  * Supported actions:
- *   - provision-team  { teamName, players:[{name, role}] }  (ATOMIC team+players+codes)
+ *   - provision-team  { teamName, players:[{name, role}], idempotencyKey? }
  *   - create-team     { teamName }
  *   - add-player      { teamId, displayName, role }
- *   - generate-code    { playerId }
- *   - generate-codes   { teamId }     (generate codes for all players on a team)
+ *   - generate-code    { playerId }              (rotate one player's code)
+ *   - generate-codes   { teamId }               (rotate every player's code)
+ *   - reissue-codes    { teamId, playerIds? }   (alias of generate-codes)
  *   - start-team       { teamId, reason }
  *   - pause-team       { teamId, reason }
  *   - resume-team      { teamId, reason }
@@ -27,17 +28,39 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
-const LOGIN_CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
-const LOGIN_CODE_LENGTH = 8
+interface ReissueRpcRow {
+  player_id: string
+  name: string
+  player_role: string
+  login_code: string
+  auth_user_id: string | null
+  auth_user_email: string | null
+}
 
-function generateLoginCode(): string {
-  const bytes = new Uint8Array(LOGIN_CODE_LENGTH)
-  crypto.getRandomValues(bytes)
-  let result = ''
-  for (let i = 0; i < LOGIN_CODE_LENGTH; i++) {
-    result += LOGIN_CODE_CHARS[bytes[i] % LOGIN_CODE_CHARS.length]
+interface IssuedCredential {
+  playerId: string
+  name: string
+  role: string
+  loginCode: string
+}
+
+/** An action that failed for a reason the Bureau should see verbatim. */
+class BureauActionError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'BureauActionError'
   }
-  return result
+}
+
+/** Map an action failure onto an HTTP status without leaking internals. */
+function bureauErrorResponse(err: unknown) {
+  const message = err instanceof Error ? err.message : 'Unknown error'
+  if (err instanceof BureauActionError) {
+    const locked = message.includes('roster is locked') || message.includes('Team not found')
+    return jsonResponse(locked ? 403 : 400, { error: message })
+  }
+  console.error('Unexpected bureau-operations error:', err)
+  return jsonResponse(500, { error: 'Internal server error' })
 }
 
 Deno.serve(async (req: Request) => {
@@ -95,6 +118,100 @@ Deno.serve(async (req: Request) => {
     // Get client IP for audit logging
     const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
 
+    // Rotate login codes in the database (transactional) and then make each new
+    // code usable as that player's Supabase Auth password. The database half
+    // returns the plaintext codes exactly once; the Auth half can never join a
+    // SQL transaction, so a failure here is reported and repaired by rotating
+    // again rather than by leaving a code that no one can log in with.
+    async function issueCredentials(
+      teamId: string,
+      playerIds?: string[],
+    ): Promise<{ credentials: IssuedCredential[]; failures: string[] }> {
+      const { data, error } = await supabaseAdminUser.rpc('bureau_reissue_login_codes', {
+        p_team_id: teamId,
+        p_player_ids: playerIds && playerIds.length > 0 ? playerIds : null,
+      })
+
+      if (error) {
+        throw new BureauActionError(error.message)
+      }
+
+      const rows = (Array.isArray(data) ? data : []) as ReissueRpcRow[]
+      const credentials: IssuedCredential[] = []
+      const failures: string[] = []
+
+      for (const row of rows) {
+        // A provisioned player already owns this internal auth user, so the
+        // password is rotated rather than a duplicate user created.
+        if (row.auth_user_id) {
+          const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
+            row.auth_user_id,
+            { password: row.login_code },
+          )
+          if (updateError) {
+            failures.push(`${row.name}: ${updateError.message}`)
+            continue
+          }
+        } else {
+          const internalEmail = row.auth_user_email ?? `nexus+${row.player_id}@internal`
+          const { data: authData, error: createError } = await supabaseAdmin.auth.admin.createUser({
+            email: internalEmail,
+            password: row.login_code,
+            email_confirm: true,
+            user_data: { player_id: row.player_id },
+          })
+
+          if (createError || !authData?.user) {
+            failures.push(`${row.name}: ${createError?.message ?? 'Failed to create auth user'}`)
+            continue
+          }
+
+          const { error: linkError } = await supabaseAdmin
+            .from('players')
+            .update({ auth_user_id: authData.user.id, auth_user_email: internalEmail })
+            .eq('id', row.player_id)
+
+          if (linkError) {
+            failures.push(`${row.name}: ${linkError.message}`)
+            continue
+          }
+        }
+
+        // Only a code whose Auth password now matches its stored hash is
+        // reported, so the Bureau is never handed a code that cannot be used.
+        credentials.push({
+          playerId: row.player_id,
+          name: row.name,
+          role: row.player_role,
+          loginCode: row.login_code,
+        })
+      }
+
+      return { credentials, failures }
+    }
+
+    async function issueCredentialsWithRetry(
+      teamId: string,
+      playerIds?: string[],
+    ): Promise<IssuedCredential[]> {
+      let attempt = await issueCredentials(teamId, playerIds)
+
+      // The stored hash and the Auth password must agree. One automatic
+      // rotation repairs a transient Auth failure and guarantees we never
+      // hand the Bureau a code that cannot be logged in with.
+      if (attempt.failures.length > 0) {
+        attempt = await issueCredentials(teamId, playerIds)
+      }
+
+      if (attempt.failures.length > 0) {
+        throw new BureauActionError(
+          `Could not issue a working login code for ${attempt.failures.join('; ')}. Nothing was reported as issued — retry to rotate again.`,
+        )
+      }
+
+      return attempt.credentials
+    }
+
     const { action, ...params } = await req.json()
 
     // --- Log admin action ---
@@ -113,9 +230,10 @@ Deno.serve(async (req: Request) => {
     // --- Route actions ---
     switch (action) {
       case 'provision-team': {
-        const { teamName, players } = params as {
+        const { teamName, players, idempotencyKey } = params as {
           teamName: string
           players: Array<{ name: string; role: string }>
+          idempotencyKey?: string
         }
 
         if (!teamName || teamName.trim().length < 1 || teamName.length > 50) {
@@ -143,9 +261,16 @@ Deno.serve(async (req: Request) => {
         }
 
         // --- Atomic database half: team + players + login-code hashes ---
+        // One wizard session sends one idempotency key, so a retry (double
+        // submit, lost response) resolves to the same team with freshly
+        // rotated codes instead of provisioning a duplicate team.
         const { data: provisionData, error: provisionError } = await supabaseAdminUser.rpc(
           'bureau_provision_team',
-          { p_team_name: teamName, p_players: players },
+          {
+            p_team_name: teamName,
+            p_players: players,
+            p_idempotency_key: idempotencyKey ?? null,
+          },
         )
 
         if (provisionError) {
@@ -157,6 +282,8 @@ Deno.serve(async (req: Request) => {
           return jsonResponse(500, { error: 'Provisioning returned no result' })
         }
 
+        const replayed = provisioned.replayed === true
+
         const provisionedPlayers: Array<{
           player_id: string
           name: string
@@ -164,11 +291,29 @@ Deno.serve(async (req: Request) => {
           login_code: string
         }> = Array.isArray(provisioned.players) ? provisioned.players : []
 
-        // --- Auth-user half: cannot join the SQL transaction, so compensate ---
+        // --- Auth half: cannot join the SQL transaction, so compensate ---
         const createdAuthUserIds: string[] = []
         try {
           for (const p of provisionedPlayers) {
-            const internalEmail = `nexus+${p.player_id}@internal`
+            const { data: existingPlayer } = await supabaseAdmin
+              .from('players')
+              .select('auth_user_id, auth_user_email')
+              .eq('id', p.player_id)
+              .single()
+
+            // A retried wizard reaches players that already own an auth user.
+            if (existingPlayer?.auth_user_id) {
+              const { error: updateErr } = await supabaseAdmin.auth.admin.updateUserById(
+                existingPlayer.auth_user_id,
+                { password: p.login_code },
+              )
+              if (updateErr) {
+                throw new Error(updateErr.message)
+              }
+              continue
+            }
+
+            const internalEmail = existingPlayer?.auth_user_email ?? `nexus+${p.player_id}@internal`
             const { data: authData, error: authErr } = await supabaseAdmin.auth.admin.createUser({
               email: internalEmail,
               password: p.login_code,
@@ -191,7 +336,19 @@ Deno.serve(async (req: Request) => {
             }
           }
         } catch (provisionFailure: unknown) {
-          // Compensating rollback so no half-provisioned team survives
+          // Compensating rollback so no half-provisioned team survives. A
+          // replayed submission must NOT be rolled back: that team predates
+          // this request and deleting it would destroy the original roster.
+          const reason = provisionFailure instanceof Error ? provisionFailure.message : 'unknown error'
+          console.error('provision-team auth sync failed:', reason)
+
+          if (replayed) {
+            return jsonResponse(500, {
+              error: 'Could not issue working login codes for the existing team. It was left in place — retry to rotate its codes again.',
+              detail: reason,
+            })
+          }
+
           for (const authUserId of createdAuthUserIds) {
             try {
               await supabaseAdmin.auth.admin.deleteUser(authUserId)
@@ -209,8 +366,6 @@ Deno.serve(async (req: Request) => {
               // best-effort cleanup
             }
           }
-          const reason = provisionFailure instanceof Error ? provisionFailure.message : 'unknown error'
-          console.error('provision-team failed, rolled back:', reason)
           return jsonResponse(500, {
             error: 'Provisioning failed and was rolled back. No team was created.',
             detail: reason,
@@ -218,12 +373,13 @@ Deno.serve(async (req: Request) => {
         }
 
         await logAction('TEAM_CREATE', provisioned.team_id, undefined, {
-          action: 'PROVISION',
+          action: replayed ? 'PROVISION_REPLAY' : 'PROVISION',
           players: provisionedPlayers.length,
         })
 
         return jsonResponse(200, {
           success: true,
+          idempotent: replayed,
           team: {
             id: provisioned.team_id,
             code: provisioned.team_code,
@@ -298,138 +454,73 @@ Deno.serve(async (req: Request) => {
           return jsonResponse(400, { error: 'playerId is required' })
         }
 
-        // Check role lock
-        const { data: playerData } = await supabaseAdmin
+        const { data: playerData, error: playerError } = await supabaseAdmin
           .from('players')
           .select('team_id')
           .eq('id', playerId)
           .single()
 
-        if (!playerData) return jsonResponse(404, { error: 'Player not found' })
-
-        const { data: teamData } = await supabaseAdmin
-          .from('teams')
-          .select('status')
-          .eq('id', playerData.team_id)
-          .single()
-
-        if (teamData && ['ACTIVE', 'PAUSED', 'COMPLETED'].includes(teamData.status)) {
-          return jsonResponse(403, { error: 'Cannot generate code: role is locked' })
+        if (playerError || !playerData) {
+          return jsonResponse(404, { error: 'Player not found' })
         }
 
-        const loginCode = generateLoginCode()
+        try {
+          const credentials = await issueCredentialsWithRetry(playerData.team_id, [playerId])
+          const issued = credentials[0]
+          if (!issued) {
+            return jsonResponse(400, { error: 'Player not found' })
+          }
 
-        // Hash the code via SQL function
-        const { data: hashResult } = await supabaseAdmin.rpc('hash_login_code', {
-          input_code: loginCode,
-        })
+          await logAction('ROLE_ASSIGN', playerData.team_id, playerId, { action: 'REISSUE_CODE' })
 
-        // Create Supabase Auth user with the login code as password
-        // The email is internal and never shown to the player
-        const internalEmail = `nexus+${playerId}@internal`
-        const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-          email: internalEmail,
-          password: loginCode,
-          email_confirm: true,
-          user_data: { player_id: playerId },
-        })
-
-        if (authError) {
-          console.error('Auth user creation error:', authError)
-          return jsonResponse(500, { error: 'Failed to create auth user' })
-        }
-
-        // Store the hash and auth user reference
-        const { error: updateError } = await supabaseAdmin
-          .from('players')
-          .update({
-            login_code_hash: hashResult ?? '',
-            auth_user_id: authData.user.id,
-            auth_user_email: internalEmail,
-            status: 'INVITED',
+          return jsonResponse(200, {
+            success: true,
+            playerId,
+            displayName: issued.name,
+            role: issued.role,
+            loginCode: issued.loginCode,
           })
-          .eq('id', playerId)
-
-        if (updateError) return jsonResponse(500, { error: updateError.message })
-
-        await logAction('ROLE_ASSIGN', playerData.team_id, playerId, { action: 'GENERATE_CODE' })
-
-        // Return the plaintext code to the Bureau (for display only)
-        return jsonResponse(200, {
-          success: true,
-          playerId,
-          loginCode,
-        })
+        } catch (issueError: unknown) {
+          return bureauErrorResponse(issueError)
+        }
       }
 
-      case 'generate-codes': {
-        const { teamId } = params as { teamId: string }
+      case 'generate-codes':
+      case 'reissue-codes': {
+        const { teamId, playerIds } = params as { teamId: string; playerIds?: string[] }
         if (!teamId) return jsonResponse(400, { error: 'teamId is required' })
 
-        // Fetch all players on the team without codes
-        const { data: players, error: fetchError } = await supabaseAdmin
-          .from('players')
-          .select('id, role, display_name')
-          .eq('team_id', teamId)
-          .is('login_code_hash', null)
+        try {
+          const credentials = await issueCredentialsWithRetry(teamId, playerIds)
 
-        if (fetchError) return jsonResponse(400, { error: fetchError.message })
-
-        const results: Array<{ playerId: string; role: string; displayName: string; loginCode: string }> = []
-
-        for (const player of players) {
-          const loginCode = generateLoginCode()
-          const { data: hashResult } = await supabaseAdmin.rpc('hash_login_code', {
-            input_code: loginCode,
+          await logAction('ROLE_ASSIGN', teamId, undefined, {
+            action: 'REISSUE_CODES',
+            count: credentials.length,
           })
-          const internalEmail = `nexus+${player.id}@internal`
-          const { data: authData } = await supabaseAdmin.auth.admin.createUser({
-            email: internalEmail,
-            password: loginCode,
-            email_confirm: true,
-            user_data: { player_id: player.id },
-          })
-          await supabaseAdmin
-            .from('players')
-            .update({
-              login_code_hash: hashResult ?? '',
-              auth_user_id: authData?.user?.id,
-              auth_user_email: internalEmail,
-              status: 'INVITED',
-            })
-            .eq('id', player.id)
 
-          results.push({
-            playerId: player.id,
-            role: player.role,
-            displayName: player.display_name,
-            loginCode,
-          })
-        }
-
-        await logAction('ROLE_ASSIGN', teamId, undefined, { action: 'GENERATE_CODES', count: results.length })
-
-        // Transition team to WAITING once codes are generated
-        const { data: team } = await supabaseAdmin
-          .from('teams')
-          .select('status')
-          .eq('id', teamId)
-          .single()
-
-        if (team && team.status === 'READY') {
-          await supabaseAdmin
+          const { data: team } = await supabaseAdmin
             .from('teams')
-            .update({ status: 'WAITING' })
+            .select('id, code, name')
             .eq('id', teamId)
+            .single()
 
-          await supabaseAdmin.from('game_events').insert({
-            type: 'TEAM_STARTED',
-            team_id: teamId,
-            payload: { action: 'CODES_GENERATED' },
+          return jsonResponse(200, {
+            success: true,
+            team: {
+              id: teamId,
+              code: team?.code ?? null,
+              name: team?.name ?? null,
+            },
+            codes: credentials.map(c => ({
+              playerId: c.playerId,
+              role: c.role,
+              displayName: c.name,
+              loginCode: c.loginCode,
+            })),
           })
+        } catch (issueError: unknown) {
+          return bureauErrorResponse(issueError)
         }
-
-        return jsonResponse(200, { success: true, codes: results })
       }
 
       case 'start-team': {

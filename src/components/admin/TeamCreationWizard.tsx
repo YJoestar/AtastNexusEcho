@@ -10,11 +10,12 @@
  * All actions go through adminAPI — server authoritative.
  */
 
-import { useState, useCallback } from 'react'
-import { X, Plus, Check, Trash2, Copy } from 'lucide-react'
+import { useState, useCallback, useRef } from 'react'
+import { X, Plus, Check, Trash2 } from 'lucide-react'
 import { cn, generateId } from '@/lib/utils'
 import { adminAPI } from '@/lib/admin'
 import { TEAM_COLORS, MAX_PLAYERS_PER_TEAM, PLAYER_ROLES } from '@/app/config'
+import { PlayerCredentialsPanel } from '@/components/admin/PlayerCredentialsPanel'
 
 type Step = 1 | 2 | 3 | 4
 
@@ -62,7 +63,15 @@ export function TeamCreationWizard({ isOpen, onClose, onSuccess }: TeamCreationW
   const [generatedCodes, setGeneratedCodes] = useState<{
     team: string
     players: Array<{ name: string; role: string; loginCode: string }>
+    idempotent?: boolean
   } | null>(null)
+
+  /**
+   * One idempotency key per wizard session. A double submit, or a retry after a
+   * lost response, resolves to the same team with freshly rotated codes instead
+   * of creating a second team and orphaning the first roster.
+   */
+  const idempotencyKeyRef = useRef(generateId())
 
   const resetWizard = useCallback(() => {
     setStep(1)
@@ -77,6 +86,7 @@ export function TeamCreationWizard({ isOpen, onClose, onSuccess }: TeamCreationW
     ])
     setRoleAssignments([])
     setGeneratedCodes(null)
+    idempotencyKeyRef.current = generateId()
   }, [])
 
   const handleClose = () => {
@@ -186,14 +196,18 @@ export function TeamCreationWizard({ isOpen, onClose, onSuccess }: TeamCreationW
     const result = await adminAPI.createTeamWithPlayers({
       teamName: teamName.trim(),
       players: roster,
+      idempotencyKey: idempotencyKeyRef.current,
     })
 
     if (result.success) {
       setGeneratedCodes({
         team: result.teamCode,
         players: result.provisionedPlayers,
+        idempotent: result.idempotent,
       })
       setIsSubmitting(false)
+      // Stay mounted on the credentials step: these codes are shown exactly
+      // once, so the parent must not close the wizard here.
       onSuccess()
       return
     }
@@ -205,10 +219,6 @@ export function TeamCreationWizard({ isOpen, onClose, onSuccess }: TeamCreationW
   const finishWizard = () => {
     resetWizard()
     onClose()
-  }
-
-  const copyCode = (code: string) => {
-    navigator.clipboard.writeText(code)
   }
 
   if (!isOpen) return null
@@ -455,56 +465,21 @@ export function TeamCreationWizard({ isOpen, onClose, onSuccess }: TeamCreationW
                 Your team and player codes are ready. Distribute them at check-in.
               </p>
 
-              <div className="space-y-4 text-left">
-                <div className="p-4 bg-nexus-bg rounded-xl border border-nexus-border">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-nexus-text">Team Code</span>
-                    <button
-                      onClick={() => copyCode(generatedCodes.team)}
-                      className="p-1 rounded text-nexus-textSubtle hover:text-nexus-text hover:bg-nexus-surfaceElevated"
-                      aria-label="Copy team code"
-                    >
-                      <Copy className="w-4 h-4" />
-                    </button>
-                  </div>
-                  <code className="text-2xl font-mono font-bold text-nexus-danger mt-1 block">
-                    {generatedCodes.team}
-                  </code>
-                </div>
-
-                <div>
-                  <span className="block text-sm font-medium text-nexus-text mb-2">Player Codes</span>
-                  <div className="space-y-2">
-                    {generatedCodes.players.map(p => (
-                      <div
-                        key={p.loginCode}
-                        className="flex items-center justify-between p-3 bg-nexus-bg rounded-xl border border-nexus-border"
-                      >
-                        <div className="min-w-0">
-                          <span className="font-medium text-nexus-text block truncate">{p.name}</span>
-                          <span className="text-[10px] uppercase tracking-wider text-nexus-textSubtle">
-                            {p.role}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          <code className="text-nexus-accent font-mono">{p.loginCode}</code>
-                          <button
-                            onClick={() => copyCode(p.loginCode)}
-                            className="p-1 rounded text-nexus-textSubtle hover:text-nexus-text hover:bg-nexus-surfaceElevated"
-                            aria-label={`Copy ${p.name}'s code`}
-                          >
-                            <Copy className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <p className="text-xs text-nexus-textSubtle mt-3">
-                    Each code is single-use and is consumed the first time that player logs in.
-                    Copy them now — they are not shown again.
-                  </p>
-                </div>
-              </div>
+              <PlayerCredentialsPanel
+                teamCode={generatedCodes.team}
+                teamName={teamName}
+                credentials={generatedCodes.players.map((p, i) => ({
+                  playerId: `${generatedCodes.team}-${i}`,
+                  displayName: p.name,
+                  role: p.role,
+                  loginCode: p.loginCode,
+                }))}
+                notice={
+                  generatedCodes.idempotent
+                    ? 'This submission had already gone through, so the original team was used and its codes were rotated. No duplicate team was created.'
+                    : undefined
+                }
+              />
             </div>
           )}
         </div>

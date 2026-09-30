@@ -316,6 +316,14 @@ export interface LeaderboardEntryAdmin {
   solvedCount: number
 }
 
+/** A plaintext player access code as returned once to the Bureau. */
+export interface PlayerCredential {
+  playerId: string
+  displayName: string
+  role: string
+  loginCode: string
+}
+
 export const adminAPI = {
   async listTeams(): Promise<TeamWithStats[]> {
     const result = await callBureau<{ teams: RawTeam[] }>({ action: 'list-teams' })
@@ -437,16 +445,38 @@ export const adminAPI = {
     return result.player
   },
 
-  async generateCodes(teamId: string): Promise<Array<{ playerId: string; role: string; displayName: string; loginCode: string }>> {
-    const result = await callBureau<{ codes: Array<{ playerId: string; role: string; displayName: string; loginCode: string }> }>
+  async generateCodes(teamId: string): Promise<PlayerCredential[]> {
+    const result = await callBureau<{ codes: PlayerCredential[] }>
       ({ action: 'generate-codes', teamId })
     return result.codes ?? []
   },
 
-  async generateCode(playerId: string): Promise<{ playerId: string; loginCode: string }> {
-    const result = await callBureau<{ playerId: string; loginCode: string }>
+  /**
+   * Rotate the login codes of a team (or a subset of its players) and return
+   * the new plaintext codes. This is the recovery path: it invalidates any
+   * code issued earlier for the same players, so it is only ever a deliberate
+   * Bureau action.
+   */
+  async reissueCredentials(
+    teamId: string,
+    playerIds?: string[],
+  ): Promise<{ teamCode: string | null; credentials: PlayerCredential[] }> {
+    const result = await callBureau<{
+      team: { id: string; code: string | null; name: string | null }
+      codes: PlayerCredential[]
+    }>({ action: 'reissue-codes', teamId, playerIds: playerIds ?? null })
+    return { teamCode: result.team?.code ?? null, credentials: result.codes ?? [] }
+  },
+
+  async generateCode(playerId: string): Promise<PlayerCredential> {
+    const result = await callBureau<PlayerCredential & { success?: boolean }>
       ({ action: 'generate-code', playerId })
-    return { playerId: result.playerId, loginCode: result.loginCode }
+    return {
+      playerId: result.playerId,
+      displayName: result.displayName,
+      role: result.role,
+      loginCode: result.loginCode,
+    }
   },
 
   async startTeam(teamId: string, reason?: string): Promise<{ teamId: string; startedAt: string }> {
@@ -530,6 +560,12 @@ export const adminAPI = {
   async createTeamWithPlayers(params: {
     teamName: string
     players: Array<{ name: string; deviceId: string; role: string }>
+    /**
+     * One key per wizard session. Re-sending it (double submit, retried request
+     * after a lost response) resolves to the same team with freshly rotated
+     * codes instead of creating a second team.
+     */
+    idempotencyKey?: string
   }): Promise<{
     success: boolean
     teamId: string
@@ -537,16 +573,20 @@ export const adminAPI = {
     playerCodes: string[]
     /** Name + role for each provisioned player, in the order the codes were issued. */
     provisionedPlayers: Array<{ name: string; role: string; loginCode: string }>
+    /** True when this submission matched an earlier one and reused its team. */
+    idempotent?: boolean
     error?: string
   }> {
     try {
       const result = await callBureau<{
+        idempotent?: boolean
         team: { id: string; code: string; name: string }
         players: Array<{ player_id: string; name: string; role: string; login_code: string }>
       }>({
         action: 'provision-team',
         teamName: params.teamName,
         players: params.players.map(p => ({ name: p.name, role: p.role })),
+        idempotencyKey: params.idempotencyKey ?? null,
       })
 
       return {
@@ -559,6 +599,7 @@ export const adminAPI = {
           role: p.role,
           loginCode: p.login_code,
         })),
+        idempotent: result.idempotent === true,
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to create team'

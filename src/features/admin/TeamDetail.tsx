@@ -18,9 +18,10 @@ import { cn, formatNumber } from '@/lib/utils'
 import { formatDateTime, formatDuration } from '@/lib/time'
 import { useBureau } from '@/hooks/useBureau'
 import { ConfirmationDialog } from '@/components/admin/ConfirmationDialog'
+import { PlayerCredentialsPanel } from '@/components/admin/PlayerCredentialsPanel'
 import { TeamStatusBadge } from '@/components/admin/StatusBadge'
 import { adminAPI } from '@/lib/admin'
-import type { TeamDetailFull, PlayerWithAdminView, TeamWithStats } from '@/lib/admin'
+import type { TeamDetailFull, PlayerWithAdminView, TeamWithStats, PlayerCredential } from '@/lib/admin'
 import { PLAYER_ROLES } from '@/app/config'
 
 export function AdminTeamDetail() {
@@ -29,6 +30,20 @@ export function AdminTeamDetail() {
   const [showNotifyDialog, setShowNotifyDialog] = useState(false)
   const [notificationMessage, setNotificationMessage] = useState('')
   const [notifyLoading, setNotifyLoading] = useState(false)
+
+  // Player access codes exist in plaintext only while the Bureau is looking at
+  // them. Re-issuing rotates the stored hash, so an earlier code stops working.
+  const [issuedCodes, setIssuedCodes] = useState<{
+    teamCode: string
+    credentials: PlayerCredential[]
+  } | null>(null)
+  const [reissueScope, setReissueScope] = useState<{
+    title: string
+    message: string
+    playerIds?: string[]
+  } | null>(null)
+  const [isReissuing, setIsReissuing] = useState(false)
+  const [credentialError, setCredentialError] = useState<string | null>(null)
 
   interface PendingAction {
     title: string
@@ -99,6 +114,31 @@ export function AdminTeamDetail() {
       })
     } finally {
       setIsExecuting(false)
+    }
+  }
+
+  /** Rotate login codes and show the new plaintext values exactly once. */
+  const runReissue = async (playerIds?: string[]) => {
+    setIsReissuing(true)
+    setCredentialError(null)
+    try {
+      const result = await adminAPI.reissueCredentials(team.id, playerIds)
+      if (result.credentials.length === 0) {
+        setCredentialError('No login codes were issued.')
+        return
+      }
+      setIssuedCodes({
+        teamCode: result.teamCode ?? team.code,
+        credentials: result.credentials,
+      })
+      void fetchTeamDetail(team.id)
+    } catch (err: unknown) {
+      setCredentialError(
+        err instanceof Error ? err.message : 'Failed to re-issue login codes',
+      )
+    } finally {
+      setIsReissuing(false)
+      setReissueScope(null)
     }
   }
 
@@ -280,17 +320,67 @@ export function AdminTeamDetail() {
                   execute: () => adminAPI.reassignRole(player.id, newRole, 'Role reassigned from detail page'),
                 })
               }
-              onGenerateCode={() =>
-                setPendingAction({
-                  title: 'Generate Login Code',
-                  message: `Generate a new login code for ${player.displayName}?`,
-                  variant: 'primary',
-                  execute: async () => { await adminAPI.generateCode(player.id) },
+              onReissueCode={() =>
+                setReissueScope({
+                  title: 'Re-issue login code',
+                  message: `Re-issue ${player.displayName}'s login code? Any code already distributed for this player stops working immediately.`,
+                  playerIds: [player.id],
                 })
               }
             />
           ))}
         </div>
+      </div>
+
+      {/* Player Access Codes — the recovery path for a lost or uncollected code */}
+      <div className="panel">
+        <div className="flex items-center justify-between mb-4 gap-3">
+          <div>
+            <h2 className="heading-3">Player Access Codes</h2>
+            <p className="text-xs text-nexus-textSubtle mt-1">
+              Codes are stored as hashes and are never shown again. Re-issuing rotates them, which
+              immediately invalidates any code already handed out for these players.
+            </p>
+          </div>
+          <button
+            onClick={() => setReissueScope({
+              title: 'Re-issue all login codes',
+              message: `Re-issue login codes for every player on "${team.name}"? Any code already distributed for these players stops working immediately.`,
+            })}
+            disabled={isReissuing || players.length === 0}
+            className="btn-secondary"
+          >
+            {isReissuing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Key className="w-4 h-4" />}
+            {isReissuing ? 'ISSUING…' : 'RE-ISSUE CODES'}
+          </button>
+        </div>
+
+        {credentialError && (
+          <p className="mb-3 p-3 rounded-xl bg-nexus-dangerBg border border-nexus-danger/30 text-sm text-nexus-danger">
+            {credentialError}
+          </p>
+        )}
+
+        {issuedCodes ? (
+          <div className="space-y-3">
+            <PlayerCredentialsPanel
+              teamCode={issuedCodes.teamCode}
+              teamName={team.name}
+              credentials={issuedCodes.credentials}
+              notice="These codes were just issued. Distribute them now — they will not be shown again."
+            />
+            <button
+              onClick={() => setIssuedCodes(null)}
+              className="btn-secondary text-xs py-1.5"
+            >
+              CLOSE
+            </button>
+          </div>
+        ) : (
+          <p className="text-sm text-nexus-textMuted">
+            No codes on screen. Re-issue them to print, copy or download a fresh set.
+          </p>
+        )}
       </div>
 
       {/* Node Progress */}
@@ -347,6 +437,20 @@ export function AdminTeamDetail() {
           danger={pendingAction.variant === 'danger'}
         >
           <p>{pendingAction.message}</p>
+          <p className="mt-2 text-xs">Team: {team.name} ({team.code})</p>
+        </ConfirmationDialog>
+      )}
+
+      {/* Re-issue confirmation */}
+      {reissueScope && (
+        <ConfirmationDialog
+          isOpen
+          onClose={() => setReissueScope(null)}
+          title={reissueScope.title}
+          confirmAction={{ label: 'RE-ISSUE', variant: 'warning', loading: isReissuing }}
+          onConfirm={() => runReissue(reissueScope.playerIds)}
+        >
+          <p>{reissueScope.message}</p>
           <p className="mt-2 text-xs">Team: {team.name} ({team.code})</p>
         </ConfirmationDialog>
       )}
@@ -410,11 +514,11 @@ export function AdminTeamDetail() {
 function PlayerRow({
   player,
   onReassignRole,
-  onGenerateCode,
+  onReissueCode,
 }: {
   player: PlayerWithAdminView
   onReassignRole: (newRole: string) => void
-  onGenerateCode: () => void
+  onReissueCode: () => void
 }) {
   return (
     <div className="flex items-center justify-between p-3 bg-nexus-bg rounded-xl border border-nexus-border">
@@ -441,15 +545,14 @@ function PlayerRow({
         </div>
       </div>
       <div className="flex gap-2">
-        {!player.hasAuthUser && (
-          <button
-            onClick={onGenerateCode}
-            className="btn-icon btn-secondary"
-            title="Generate login code"
-          >
-            <Key className="w-4 h-4" />
-          </button>
-        )}
+        <button
+          onClick={onReissueCode}
+          className="btn-icon btn-secondary"
+          title={`Re-issue login code for ${player.displayName}`}
+          aria-label={`Re-issue login code for ${player.displayName}`}
+        >
+          <Key className="w-4 h-4" />
+        </button>
         <RoleAssignmentSelect
           currentRole={player.role}
           onChange={onReassignRole}

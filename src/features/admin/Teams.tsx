@@ -232,12 +232,12 @@ export function AdminTeams() {
         </div>
       </div>
 
-      {/* Team Creation Wizard */}
+      {/* Team Creation Wizard — stays open on the credentials step on success,
+          because the generated codes are only ever shown once. */}
       <TeamCreationWizard
         isOpen={isWizardOpen}
         onClose={() => setIsWizardOpen(false)}
         onSuccess={() => {
-          setIsWizardOpen(false)
           void fetchTeams()
         }}
       />
