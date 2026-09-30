@@ -51,7 +51,30 @@ async function callFunction<T>(name: string, body: unknown = {}): Promise<T> {
   })
 
   if (error) {
-    throw new GameAPIError(500, error.message)
+    let message = error.message
+    let status = 500
+
+    const ctx = (error as { context?: { response?: unknown; status?: number } }).context
+    if (ctx) {
+      if (typeof ctx.status === 'number') status = ctx.status
+      const resp = ctx.response
+      if (resp != null) {
+        if (typeof resp === 'string') {
+          try {
+            const parsed = JSON.parse(resp)
+            if (parsed?.error) message = String(parsed.error)
+          } catch {
+            message = resp
+          }
+        } else if (typeof resp === 'object') {
+          const b = resp as { error?: string; message?: string }
+          if (b.error) message = b.error
+          else if (b.message) message = b.message
+        }
+      }
+    }
+
+    throw new GameAPIError(status, message)
   }
 
   const result = data as { success?: boolean; error?: string } | null

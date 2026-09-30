@@ -185,6 +185,19 @@ describe('reissueCredentials', () => {
 
     await expect(adminAPI.reissueCredentials('team-1')).rejects.toThrow(/roster is locked/)
   })
+
+  it('extracts the real error from a non-2xx response context instead of a generic message', async () => {
+    const httpError = new Error('Edge Function returned a non-2xx status code')
+    Object.assign(httpError, { context: {
+      response: { error: 'Cannot issue login codes: team is ACTIVE and its roster is locked' },
+      status: 403,
+    } })
+
+    invoke.mockResolvedValue({ data: null, error: httpError })
+
+    await expect(adminAPI.reissueCredentials('team-1')).rejects.toThrow(/roster is locked/)
+    await expect(adminAPI.reissueCredentials('team-1')).rejects.toMatchObject({ status: 403 })
+  })
 })
 
 describe('generateCode', () => {

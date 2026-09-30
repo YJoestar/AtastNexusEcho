@@ -150,7 +150,33 @@ async function callBureau<T>(body: Record<string, unknown>): Promise<T> {
   })
 
   if (error) {
-    throw new AdminAPIError(500, error.message)
+    // When the edge function returns a non-2xx status, Supabase wraps the
+    // actual error in error.context. Extract it so the user sees the real
+    // reason instead of a generic "non-2xx status code" string.
+    let message = error.message
+    let status = 500
+
+    const ctx = (error as { context?: { response?: unknown; status?: number } }).context
+    if (ctx) {
+      if (typeof ctx.status === 'number') status = ctx.status
+      const resp = ctx.response
+      if (resp != null) {
+        if (typeof resp === 'string') {
+          try {
+            const parsed = JSON.parse(resp)
+            if (parsed?.error) message = String(parsed.error)
+          } catch {
+            message = resp
+          }
+        } else if (typeof resp === 'object') {
+          const b = resp as { error?: string; message?: string }
+          if (b.error) message = b.error
+          else if (b.message) message = b.message
+        }
+      }
+    }
+
+    throw new AdminAPIError(status, message)
   }
 
   const result = data as { success?: boolean; error?: string } | null
