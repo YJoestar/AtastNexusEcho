@@ -26,11 +26,28 @@ interface AppContextValue {
   notifications: Notification[]
   unreadCount: number
   markNotificationRead: (id: string) => void
+  refreshNotifications: () => Promise<void>
+  markAllNotificationsRead: () => Promise<void>
 }
 
 const AppContext = createContext<AppContextValue | null>(null)
 
 const PLAYER_LOGIN_FUNCTION = 'player-login'
+
+const NOTIFICATION_TYPES = new Set([
+  'SYSTEM', 'PUZZLE_UNLOCKED', 'PUZZLE_SOLVED', 'EVIDENCE_FOUND', 'ITEM_ACQUIRED',
+  'FRAGMENT_REVEALED', 'HINT_AVAILABLE', 'TIME_WARNING', 'ROLE_ACTION_REQUIRED',
+  'ADMIN_MESSAGE', 'GAME_PHASE_CHANGE', 'TEAM_STATUS_CHANGE',
+])
+
+/** The server sends free-form strings; narrow them to the known union. */
+function toNotificationType(raw: string): Notification['type'] {
+  return NOTIFICATION_TYPES.has(raw) ? (raw as Notification['type']) : 'SYSTEM'
+}
+
+function toNotificationPriority(raw: string): Notification['priority'] {
+  return raw === 'LOW' || raw === 'HIGH' || raw === 'CRITICAL' ? raw : 'NORMAL'
+}
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [player, setPlayer] = useState<Player | null>(null)
@@ -327,6 +344,63 @@ export function AppProvider({ children }: { children: ReactNode }) {
     )
   }, [])
 
+  /**
+   * Fetch the team's notifications from the server.
+   * The backend (game-notifications -> get_team_notifications) is RLS-scoped to
+   * the caller's own team, so this can only ever return the player's own team's
+   * messages.
+   */
+  const refreshNotifications = useCallback(async () => {
+    if (!isAuthenticated) return
+    try {
+      const data = await gameAPI.getNotifications(false)
+      setNotifications(
+        data.map(n => ({
+          id: n.id,
+          teamId: team?.id ?? '',
+          targetRoles: 'ALL' as const,
+          type: toNotificationType(n.type),
+          title: n.title,
+          message: n.message,
+          priority: toNotificationPriority(n.priority),
+          isRead: n.isRead,
+          createdAt: n.createdAt,
+          readAt: null,
+          actionUrl: n.actionUrl ?? undefined,
+        })),
+      )
+    } catch (err: unknown) {
+      // A failed notification fetch must never block gameplay.
+      console.warn('Notification refresh failed:', err)
+    }
+  }, [isAuthenticated, team?.id])
+
+  /**
+   * Mark notifications read *on the server*, then reflect it locally.
+   * Marking read only in local state would leave unread badges returning after
+   * a refresh.
+   */
+  const markAllNotificationsRead = useCallback(async () => {
+    if (!isAuthenticated) return
+    try {
+      await gameAPI.markNotificationsRead()
+    } catch (err: unknown) {
+      console.warn('Mark notifications read failed:', err)
+    }
+    setNotifications(prev => prev.map(n => ({ ...n, isRead: true, readAt: n.readAt ?? new Date().toISOString() })))
+  }, [isAuthenticated])
+
+  // Keep notifications fresh for the session, and clear them on logout.
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setNotifications([])
+      return
+    }
+    void refreshNotifications()
+    const id = setInterval(() => { void refreshNotifications() }, 30_000)
+    return () => clearInterval(id)
+  }, [isAuthenticated, refreshNotifications])
+
   const value: AppContextValue = {
     player,
     team,
@@ -340,6 +414,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     notifications,
     unreadCount: notifications.filter(n => !n.isRead).length,
     markNotificationRead,
+    refreshNotifications,
+    markAllNotificationsRead,
     refreshGameState,
     refreshTeamProgress,
   }

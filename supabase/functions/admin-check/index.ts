@@ -52,15 +52,12 @@ Deno.serve(async (req: Request) => {
       return jsonResponse(401, { authenticated: true, isAdmin: false, error: 'Not authorized as admin' })
     }
 
-    // Optionally fetch the user's email for display
-    const { data: userData } = await supabaseAdmin.auth.admin.getUser(user.id)
-
     return jsonResponse(200, {
       authenticated: true,
       isAdmin: true,
       adminRole: adminData.role,
       username: adminData.username,
-      email: userData?.user?.email ?? null,
+      email: user.email ?? null,
       userId: user.id,
     })
   } catch (err: unknown) {

@@ -16,6 +16,7 @@ import { cn } from '@/lib/utils'
 import { useGameEngine } from '@/hooks/useGameEngine'
 import { useDiscoveryToast } from '@/hooks/useDiscoveryToast'
 import { DiscoveryToastContainer } from '@/components/ui/DiscoveryToast'
+import { PuzzleVisual } from '@/components/player/puzzle/PuzzleVisual'
 import { HINT_PENALTIES } from '@/content/constants'
 import { useEffect, useState, useRef } from 'react'
 import type { PlayerNodeView } from '@/hooks/useGameEngine'
@@ -30,7 +31,9 @@ export function PlayerNode() {
   const [node, setNode] = useState<PlayerNodeView | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [answer, setAnswer] = useState('')
-  const [submissions, setSubmissions] = useState<{ answer: string; isCorrect: boolean }[]>([])
+  const [submissions, setSubmissions] = useState<
+    { answer: string; isCorrect: boolean; queued: boolean }[]
+  >([])
   const [hints, setHints] = useState<{ level: number; text: string; penalty: number }[]>([])
   const [showHintPanel, setShowHintPanel] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -76,9 +79,14 @@ export function PlayerNode() {
       setSubmissions(prev => [...prev, {
         answer: answer.trim(),
         isCorrect: result.isCorrect,
+        queued: result.queued === true,
       }])
 
-      if (result.isCorrect) {
+      if (result.queued) {
+        // Nothing has been validated yet - the answer is held on the device and
+        // replayed by the game engine the moment the connection returns.
+        showToast('No signal — answer queued and will be sent on reconnect', 'general')
+      } else if (result.isCorrect) {
         setJustSolved(true)
         if (result.nextNodeId) {
           refreshGameState()
@@ -171,7 +179,7 @@ export function PlayerNode() {
   const nextHintCost = hintLevel < 3 ? Math.floor(hintPenaltyMap[hintLevel as 0|1|2] / 60) : 0
 
   return (
-    <div className="page pb-[72px] md:pb-0">
+    <div className="page">
       <div className="page-content max-w-2xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4">
@@ -232,14 +240,16 @@ export function PlayerNode() {
               <span>{node.roleContent.screenTitle}</span>
             </h3>
 
-            {/* Data Payload */}
+            {/* Type-specific visual: each visualType draws its own data payload */}
             <div className="p-4 bg-nexus-bg rounded-xl border border-nexus-borderSubtle">
               <p className="text-xs text-nexus-textSubtle uppercase tracking-wider mb-2">
                 {node.roleContent.visualType ?? 'Data Feed'}
               </p>
-              <p className="text-sm text-nexus-textMuted leading-relaxed">
-                {node.roleContent.dataPayload}
-              </p>
+              <PuzzleVisual
+                type={node.roleContent.visualType}
+                dataPayload={node.roleContent.dataPayload}
+                interactiveData={node.roleContent.interactiveData}
+              />
             </div>
 
             {/* Mission Brief */}
@@ -376,19 +386,19 @@ export function PlayerNode() {
                   }
                   className="input font-mono text-lg text-center"
                   autoComplete="off"
-                  disabled={isSubmitting || isOffline}
+                  disabled={isSubmitting}
                 />
                 {isOffline && (
-                  <p className="mt-1.5 text-sm text-nexus-danger flex items-center gap-1.5">
+                  <p className="mt-1.5 text-sm text-nexus-warning flex items-center gap-1.5">
                     <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
-                    <span>Cannot submit while offline</span>
+                    <span>No signal — your answer will be queued and sent on reconnect</span>
                   </p>
                 )}
               </div>
 
               <button
                 type="submit"
-                disabled={isSubmitting || !answer.trim() || isOffline}
+                disabled={isSubmitting || !answer.trim()}
                 className="btn-primary w-full touch-target-comfortable"
               >
                 {isSubmitting ? (
@@ -399,7 +409,7 @@ export function PlayerNode() {
                 ) : (
                   <>
                     <Send className="w-5 h-5" />
-                    <span>Submit</span>
+                    <span>{isOffline ? 'Queue Answer' : 'Submit'}</span>
                   </>
                 )}
               </button>
@@ -423,10 +433,14 @@ export function PlayerNode() {
                       <span
                         className={cn(
                           'badge text-xs',
-                          sub.isCorrect ? 'badge-accent' : 'badge-neutral',
+                          sub.queued
+                            ? 'badge-warning'
+                            : sub.isCorrect
+                              ? 'badge-accent'
+                              : 'badge-neutral',
                         )}
                       >
-                        {sub.isCorrect ? 'CORRECT' : 'INCORRECT'}
+                        {sub.queued ? 'QUEUED' : sub.isCorrect ? 'CORRECT' : 'INCORRECT'}
                       </span>
                     </div>
                   ))}

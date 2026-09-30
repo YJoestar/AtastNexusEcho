@@ -25,6 +25,7 @@ export const ROUTES = {
   PLAYER_NAVIGATION: '/player/game/navigation',
   PLAYER_QR: '/player/game/qr',
   PLAYER_LEADERBOARD: '/player/game/leaderboard',
+  PLAYER_NOTIFICATIONS: '/player/game/notifications',
   PLAYER_FINAL: '/player/game/final',
   PLAYER_COMPLETE: '/player/game/complete',
 

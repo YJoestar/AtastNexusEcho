@@ -6,12 +6,14 @@
 import { Link } from 'react-router-dom'
 import { Trophy, Flag, Clock, Users, Star, Share2, ArrowLeft, FileText, Package } from 'lucide-react'
 import { useGameEngine } from '@/hooks/useGameEngine'
+import { useApp } from '@/app/providers'
 import { ROUTES, ROLE_LABELS } from '@/app/config'
 import { cn } from '@/lib/utils'
 import { useState, useEffect } from 'react'
 
 export function PlayerComplete() {
   const { player, team, teamProgress, gameState, solvedCount, totalNodes } = useGameEngine()
+  const { logout } = useApp()
   const [showConfetti, setShowConfetti] = useState(true)
 
   useEffect(() => {
@@ -41,7 +43,7 @@ export function PlayerComplete() {
   ]
 
   return (
-    <div className="page pb-[72px] md:pb-0">
+    <div className="page">
       <div className="page-content max-w-2xl mx-auto space-y-6 text-center">
         {/* Confetti Animation */}
         {showConfetti && (
@@ -114,17 +116,35 @@ export function PlayerComplete() {
             <Trophy className="w-5 h-5" />
             <span>View Final Leaderboard</span>
           </Link>
-          <button className="btn-secondary touch-target-comfortable">
+          <button
+            onClick={() => {
+              const shareText =
+                `NEXUS — Mission Complete\n` +
+                `Team: ${team?.name ?? 'Unknown'}\n` +
+                `Role: ${player?.role ?? '—'}\n` +
+                `Score: ${team?.score ?? 0}\n` +
+                `Time: ${team?.startedAt ? formatElapsedTime(team.startedAt) : '—'}`
+              const url = `${window.location.origin}${ROUTES.PLAYER_COMPLETE}`
+              if (navigator.share) {
+                void navigator.share({ title: 'NEXUS — Mission Complete', text: shareText, url }).catch(() => {
+                  void navigator.clipboard?.writeText(`${shareText}\n${url}`)
+                })
+              } else {
+                void navigator.clipboard?.writeText(`${shareText}\n${url}`)
+              }
+            }}
+            className="btn-secondary touch-target-comfortable"
+          >
             <Share2 className="w-5 h-5" />
             <span>Share Results</span>
           </button>
-          <Link
-            to={ROUTES.PLAYER_LOGIN}
+          <button
+            onClick={() => { void logout() }}
             className="btn-ghost touch-target-comfortable"
           >
             <ArrowLeft className="w-5 h-5" />
             <span>Exit to Login</span>
-          </Link>
+          </button>
         </div>
 
         {/* Footer */}

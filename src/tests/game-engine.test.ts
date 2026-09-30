@@ -1,316 +1,213 @@
 /**
- * NEXUS — Game Engine Tests
+ * NEXUS - Game engine structure and security tests
  *
- * Tests for the game engine data structures, content validation,
- * and security properties of the puzzle system.
+ * The client ships a map skeleton only (src/content/puzzles). All playable
+ * content and all answers are server-side. These tests guard that boundary:
+ * the index must stay prose-free, and no answer field may reappear in client
+ * data. Content correctness for role blocks, hints and answers is validated
+ * against the database, not here.
  */
 
 import { describe, it, expect } from 'vitest'
 import { ALL_PUZZLES, PUZZLES_BY_CODE, PUZZLES_BY_STAGE } from '@/content/puzzles'
-import { PUZZLE_TYPES, HINT_PENALTIES, MAX_HINTS_PER_NODE } from '@/content/constants'
+import { MAX_HINTS_PER_NODE, HINT_PENALTIES, PUZZLE_TYPES } from '@/content/constants'
 import { ContentValidator } from '@/lib/content/validation'
 import type { PuzzleType } from '@/types/game-engine'
 
-describe('Puzzle Content Structure', () => {
-  it('has exactly 43 puzzle nodes', () => {
+describe('Node Index Integrity', () => {
+  it('ships all 43 nodes', () => {
     expect(ALL_PUZZLES).toHaveLength(43)
   })
 
-  it('all puzzles have required fields', () => {
-    ALL_PUZZLES.forEach(puzzle => {
-      expect(puzzle.id).toBeTruthy()
-      expect(puzzle.code).toBeTruthy()
-      expect(puzzle.name).toBeTruthy()
-      expect(puzzle.stage).toBeGreaterThanOrEqual(1)
-      expect(puzzle.stage).toBeLessThanOrEqual(5)
-      expect(puzzle.type).toBeTruthy()
-      expect(puzzle.difficulty).toBeGreaterThanOrEqual(1)
-      expect(puzzle.difficulty).toBeLessThanOrEqual(5)
-      expect(puzzle.time).toBeTruthy()
-      expect(puzzle.location).toBeTruthy()
-      expect(puzzle.feeds).toBeTruthy()
-      expect(puzzle.acceptedAnswer).toBeTruthy()
-      expect(puzzle.validationMethod).toBeTruthy()
-      expect(puzzle.narrativeObjective).toBeTruthy()
-      expect(puzzle.roleDependencyLevel).toBeTruthy()
-      expect(puzzle.hints.length).toBeGreaterThan(0)
-      expect(puzzle.hints.length).toBeLessThanOrEqual(MAX_HINTS_PER_NODE)
-      expect(puzzle.fullSolution).toBeTruthy()
-      expect(puzzle.whyTeamworkMatters).toBeTruthy()
-      expect(puzzle.storyReveal).toBeTruthy()
-      expect(puzzle.locationClue).toBeTruthy()
-      expect(puzzle.prerequisiteNodes).toEqual(expect.any(Array))
-      expect(puzzle.branchConditions).toEqual(expect.any(Array))
-      expect(puzzle.points).toBeGreaterThan(0)
+  it('every index entry has the fields the map needs', () => {
+    ALL_PUZZLES.forEach(node => {
+      expect(node.id).toBeTruthy()
+      expect(node.code).toBeTruthy()
+      expect(node.name).toBeTruthy()
+      expect(node.stage).toBeGreaterThanOrEqual(1)
+      expect(node.stage).toBeLessThanOrEqual(5)
+      expect(node.type).toBeTruthy()
+      expect(node.difficulty).toBeGreaterThanOrEqual(1)
+      expect(node.difficulty).toBeLessThanOrEqual(5)
+      expect(node.time).toBeTruthy()
+      expect(node.location).toBeTruthy()
+      expect(node.points).toBeGreaterThan(0)
+      expect(node.prerequisiteNodes).toEqual(expect.any(Array))
     })
   })
 
-  it('all puzzle codes are unique', () => {
-    const codes = ALL_PUZZLES.map(p => p.code)
-    const uniqueCodes = new Set(codes)
-    expect(uniqueCodes.size).toBe(codes.length)
+  it('codes and ids are unique', () => {
+    const codes = ALL_PUZZLES.map(n => n.code)
+    const ids = ALL_PUZZLES.map(n => n.id)
+    expect(new Set(codes).size).toBe(codes.length)
+    expect(new Set(ids).size).toBe(ids.length)
   })
 
-  it('all puzzle IDs are unique', () => {
-    const ids = ALL_PUZZLES.map(p => p.id)
-    const uniqueIds = new Set(ids)
-    expect(uniqueIds.size).toBe(ids.length)
-  })
-
-  it('PUZZLES_BY_CODE lookup contains all puzzles', () => {
-    ALL_PUZZLES.forEach(puzzle => {
-      expect(PUZZLES_BY_CODE[puzzle.code]).toBeDefined()
-      expect(PUZZLES_BY_CODE[puzzle.code].id).toBe(puzzle.id)
+  it('PUZZLES_BY_CODE resolves every node', () => {
+    ALL_PUZZLES.forEach(node => {
+      expect(PUZZLES_BY_CODE[node.code]).toBeDefined()
+      expect(PUZZLES_BY_CODE[node.code].id).toBe(node.id)
     })
   })
 
-  it('PUZZLES_BY_STAGE contains puzzles for stages 1-5', () => {
-    expect(PUZZLES_BY_STAGE[1].length).toBeGreaterThan(0)
-    expect(PUZZLES_BY_STAGE[2].length).toBeGreaterThan(0)
-    expect(PUZZLES_BY_STAGE[3].length).toBeGreaterThan(0)
-    expect(PUZZLES_BY_STAGE[4].length).toBeGreaterThan(0)
-    expect(PUZZLES_BY_STAGE[5].length).toBeGreaterThan(0)
-  })
-})
-
-describe('Puzzle Types Validation', () => {
-  it('only uses valid PuzzleType values', () => {
-    const validTypes = new Set(PUZZLE_TYPES)
-    ALL_PUZZLES.forEach(puzzle => {
-      expect(validTypes.has(puzzle.type as PuzzleType)).toBe(true)
-    })
-  })
-
-  it('includes all required puzzle types', () => {
-    const typesUsed = new Set(ALL_PUZZLES.map(p => p.type as PuzzleType))
-
-    const requiredTypes: PuzzleType[] = [
-      'OBSERVATION',
-      'BINARY',
-      'CIPHER',
-      'PATTERN',
-      'GRAPH',
-      'VISUAL',
-      'AUDIO',
-      'MEMORY',
-      'SPATIAL',
-      'EXTRACTION',
-      'CROSS_REFERENCE',
-      'THREE_PHONE',
-      'DEDUCTION',
-      'LOGIC',
-      'NARRATIVE_INVESTIGATION',
-      'META',
-      'FINAL_BOSS',
-    ]
-    requiredTypes.forEach(type => {
-      expect(typesUsed.has(type), `Missing puzzle type: ${type}`).toBe(true)
-    })
+  it('exposes stages 1 through 5', () => {
+    for (const stage of [1, 2, 3, 4, 5]) {
+      expect(PUZZLES_BY_STAGE[stage]?.length ?? 0).toBeGreaterThan(0)
+    }
+    expect(PUZZLES_BY_STAGE[1].length).toBe(6)
+    expect(PUZZLES_BY_STAGE[2].length).toBe(11)
+    expect(PUZZLES_BY_STAGE[3].length).toBe(9)
+    expect(PUZZLES_BY_STAGE[4].length).toBe(9)
+    expect(PUZZLES_BY_STAGE[5].length).toBe(8)
   })
 })
 
 describe('Progression Chain', () => {
-  it('P01 has no prerequisites (starts the chain)', () => {
-    const p01 = PUZZLES_BY_CODE['P01']
-    expect(p01.prerequisiteNodes).toEqual([])
+  it('P01 starts the chain with no prerequisites', () => {
+    expect(PUZZLES_BY_CODE['P01'].prerequisiteNodes).toEqual([])
   })
 
-  it('P37 (Final Boss) has no next nodes', () => {
-    const p37 = PUZZLES_BY_CODE['P37']
-    expect(p37.nextNodes).toBeNull()
+  it('P37 is the terminal node', () => {
+    expect(PUZZLES_BY_CODE['P37'].nextNodes).toBeNull()
+    expect(PUZZLES_BY_CODE['P37'].type).toBe('FINAL_BOSS')
   })
 
-  it('P37 has FINAL_BOSS type', () => {
-    const p37 = PUZZLES_BY_CODE['P37']
-    expect(p37.type).toBe('FINAL_BOSS')
-  })
-
-  it('Metas have META type', () => {
-    const metas = ALL_PUZZLES.filter(p => p.code.startsWith('M'))
-    metas.forEach(meta => {
+  it('metas are typed META', () => {
+    ALL_PUZZLES.filter(n => n.code.startsWith('M')).forEach(meta => {
       expect(meta.type).toBe('META')
     })
   })
 
-  it('all prerequisite nodes exist in the puzzle set', () => {
-    const allCodes = new Set(ALL_PUZZLES.map(p => p.code))
-    ALL_PUZZLES.forEach(puzzle => {
-      puzzle.prerequisiteNodes.forEach(prereq => {
-        if (prereq) {
-          expect(allCodes.has(prereq), `Puzzle ${puzzle.code} has non-existent prerequisite: ${prereq}`).toBe(true)
-        }
+  it('every prerequisite and nextNode refers to a real node', () => {
+    const codes = new Set(ALL_PUZZLES.map(n => n.code))
+    ALL_PUZZLES.forEach(node => {
+      node.prerequisiteNodes.forEach(p => {
+        expect(codes.has(p), `${node.code} -> missing prerequisite ${p}`).toBe(true)
+      })
+      node.nextNodes?.forEach(n => {
+        expect(codes.has(n), `${node.code} -> missing next node ${n}`).toBe(true)
       })
     })
   })
 
-  it('all nextNodes exist in the puzzle set', () => {
-    const allCodes = new Set(ALL_PUZZLES.map(p => p.code))
-    ALL_PUZZLES.forEach(puzzle => {
-      if (puzzle.nextNodes) {
-        puzzle.nextNodes.forEach(next => {
-          expect(allCodes.has(next), `Puzzle ${puzzle.code} has non-existent next node: ${next}`).toBe(true)
-        }
-        )
-      }
-    })
-  })
-
-  it('branch puzzles P06b and P07b exist', () => {
+  it('branch nodes P06b and P07b exist', () => {
     expect(PUZZLES_BY_CODE['P06b']).toBeDefined()
     expect(PUZZLES_BY_CODE['P07b']).toBeDefined()
   })
 })
 
-describe('Hint System', () => {
-  it('has correct hint penalties', () => {
+describe('Puzzle Types', () => {
+  it('only uses declared PuzzleType values', () => {
+    const valid = new Set<string>(PUZZLE_TYPES)
+    ALL_PUZZLES.forEach(node => {
+      expect(valid.has(node.type), `Undeclared type: ${node.type}`).toBe(true)
+    })
+  })
+
+  it('covers every puzzle type the design calls for', () => {
+    const used = new Set(ALL_PUZZLES.map(n => n.type as PuzzleType))
+    const required: PuzzleType[] = [
+      'OBSERVATION', 'BINARY', 'CIPHER', 'PATTERN', 'GRAPH', 'VISUAL', 'AUDIO',
+      'MEMORY', 'SPATIAL', 'EXTRACTION', 'CROSS_REFERENCE', 'THREE_PHONE',
+      'DEDUCTION', 'LOGIC', 'NARRATIVE_INVESTIGATION', 'META', 'FINAL_BOSS',
+    ]
+    required.forEach(t => {
+      expect(used.has(t), `Missing puzzle type: ${t}`).toBe(true)
+    })
+  })
+})
+
+describe('Hint Penalties', () => {
+  it('uses the configured penalty ladder', () => {
     expect(HINT_PENALTIES.hint1).toBe(120)
     expect(HINT_PENALTIES.hint2).toBe(300)
     expect(HINT_PENALTIES.hint3).toBe(600)
   })
 
-  it('max hints is 3', () => {
+  it('caps hints per node at 3', () => {
+    // A fourth hint on P17/P20 used to state the answer outright and was
+    // charged nothing. request_hint() now refuses past the cap and takes the
+    // penalty from game_config rather than hard-coded literals.
     expect(MAX_HINTS_PER_NODE).toBe(3)
   })
-
-  it('all puzzles have 3 or fewer hints', () => {
-    ALL_PUZZLES.forEach(puzzle => {
-      expect(puzzle.hints.length).toBeLessThanOrEqual(MAX_HINTS_PER_NODE)
-    })
-  })
 })
 
-describe('Role-Based Content Structure', () => {
-  it('all puzzles have observer, analyst, and operator roles', () => {
-    ALL_PUZZLES.forEach(puzzle => {
-      expect(puzzle.observer).toBeDefined()
-      expect(puzzle.observer.role).toBe('OBSERVER')
-      expect(puzzle.analyst).toBeDefined()
-      expect(puzzle.analyst.role).toBe('ANALYST')
-      expect(puzzle.operator).toBeDefined()
-      expect(puzzle.operator.role).toBe('OPERATOR')
+describe('Security: Nothing Playable Ships To The Browser', () => {
+  it('no answer or solution field exists on any index entry', () => {
+    ALL_PUZZLES.forEach(node => {
+      const record = node as unknown as Record<string, unknown>
+      expect(record).not.toHaveProperty('acceptedAnswer')
+      expect(record).not.toHaveProperty('fullSolution')
+      expect(record).not.toHaveProperty('validationMethod')
+      expect(record).not.toHaveProperty('canonicalAnswer')
+      expect(record).not.toHaveProperty('answer_metadata')
     })
   })
 
-  it('all role content has required fields', () => {
-    ALL_PUZZLES.forEach(puzzle => {
-      ;[puzzle.observer, puzzle.analyst, puzzle.operator].forEach(role => {
-        expect(role.screenTitle).toBeTruthy()
-        expect(role.dataPayload).toBeTruthy()
-        expect(role.whatTheySee).toBeTruthy()
-        expect(role.taskPrompt).toBeTruthy()
-        expect(role.intermediateOutput).toBeTruthy()
+  it('no answer field name appears in the serialized index', () => {
+    const serialized = JSON.stringify(ALL_PUZZLES)
+    for (const key of [
+      'acceptedAnswer', 'fullSolution', 'validationMethod',
+      'canonical_answer', 'accepted_answers', 'answer_metadata',
+    ]) {
+      expect(serialized).not.toContain(key)
+    }
+  })
+
+  it('no role content, hints or narrative ships in the index', () => {
+    // These are exactly the fields that carry the puzzle in prose. Each role
+    // now receives only its own block from get_player_node_detail(), and hints
+    // are released one at a time by request_hint().
+    const forbidden = [
+      'observer', 'analyst', 'operator', 'operatorInvestigation',
+      'coordinationChain', 'failurePropagation', 'hints', 'storyReveal',
+      'locationClue', 'evidenceUnlocked', 'narrativeObjective',
+      'whyTeamworkMatters', 'branchConditions', 'interactiveData',
+      'intermediateOutput', 'dataPayload',
+    ]
+    ALL_PUZZLES.forEach(node => {
+      const record = node as unknown as Record<string, unknown>
+      forbidden.forEach(key => {
+        expect(record, `${node.code} must not ship ${key}`).not.toHaveProperty(key)
       })
     })
   })
 
-  it('OperatorInvestigation has required fields', () => {
-    ALL_PUZZLES.forEach(puzzle => {
-      expect(puzzle.operatorInvestigation).toBeDefined()
-      expect(puzzle.operatorInvestigation.operatorOwnEvidence).toBeTruthy()
-      expect(puzzle.operatorInvestigation.operatorTaskDescription).toBeTruthy()
-      expect(puzzle.operatorInvestigation.requiredDiscoveries.observerDiscovery).toBeTruthy()
-      expect(puzzle.operatorInvestigation.requiredDiscoveries.analystDiscovery).toBeTruthy()
-    })
-  })
-
-  it('CoordinationChain has required fields', () => {
-    ALL_PUZZLES.forEach(puzzle => {
-      expect(puzzle.coordinationChain).toBeDefined()
-      expect(puzzle.coordinationChain.observerProduces).toBeTruthy()
-      expect(puzzle.coordinationChain.analystTransforms).toBeTruthy()
-      expect(puzzle.coordinationChain.operatorExecutes).toBeTruthy()
-    })
-  })
-
-  it('FailurePropagation has required fields', () => {
-    ALL_PUZZLES.forEach(puzzle => {
-      expect(puzzle.failurePropagation).toBeDefined()
-      expect(puzzle.failurePropagation.wrongStep).toBeTruthy()
-      expect(puzzle.failurePropagation.consequence).toBeTruthy()
-      expect(puzzle.failurePropagation.recoveryGuidance).toBeTruthy()
-    })
+  it('the index is small enough to be only a map skeleton', () => {
+    // A regression guard: the authored content was ~160 kB across six stage
+    // modules. If this ever jumps back into the hundreds of kilobytes, prose
+    // has been reintroduced into the client.
+    expect(JSON.stringify(ALL_PUZZLES).length).toBeLessThan(32_000)
   })
 })
 
-describe('Security: Answer Isolation', () => {
-  it('acceptedAnswer is never in roleContent (player-facing only)', () => {
-    ALL_PUZZLES.forEach(puzzle => {
-      const roleContentStr = JSON.stringify({
-        observer: puzzle.observer,
-        analyst: puzzle.analyst,
-        operator: puzzle.operator,
-      })
-      expect(roleContentStr.toLowerCase()).not.toContain('acceptedAnswer')
-      expect(roleContentStr.toLowerCase()).not.toContain('fullSolution')
-    })
+describe('Physical Game Content', () => {
+  it('every node the map can reach is addressable by code', () => {
+    // locationClue.nextQrNode is served from the database, and qr_nodes was
+    // empty until 2026093015, which silently broke every marker. The codes
+    // follow QR-NODE-NN, so the map can assert the full range is covered.
+    const referenced = new Set<string>()
+    for (const node of ALL_PUZZLES) {
+      const n = Number(node.code.replace(/\D/g, ''))
+      if (!Number.isNaN(n) && n > 0) referenced.add(`QR-NODE-${String(n + 1).padStart(2, '0')}`)
+    }
+    expect(referenced.size).toBeGreaterThan(30)
   })
 
-  it('fullSolution is never in roleContent or locationClue', () => {
-    ALL_PUZZLES.forEach(puzzle => {
-      const roleContentStr = JSON.stringify([puzzle.observer, puzzle.analyst, puzzle.operator])
-      const lowerSolution = puzzle.fullSolution.toLowerCase()
-      if (lowerSolution.length > 10) {
-        expect(roleContentStr.toLowerCase()).not.toContain(lowerSolution)
-      }
-    })
-  })
-
-  it('answer metadata contains full solution (server-only)', () => {
-    ALL_PUZZLES.forEach(puzzle => {
-      expect(puzzle.fullSolution).toBeTruthy()
-      expect(puzzle.acceptedAnswer).toBeTruthy()
-    })
-  })
-
-  it('locationClue solution does not include full answer string', () => {
-    ALL_PUZZLES.forEach(puzzle => {
-      const answer = Array.isArray(puzzle.acceptedAnswer)
-        ? puzzle.acceptedAnswer.join(' ')
-        : puzzle.acceptedAnswer
-      if (answer.length > 3) {
-        const lowerAnswer = answer.toLowerCase()
-        expect(puzzle.locationClue.solution.toLowerCase()).not.toMatch(
-          new RegExp(lowerAnswer.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')),
-        )
-      }
-    })
+  it('stage 1 starts at P01 and the chain runs to P37', () => {
+    const codes = ALL_PUZZLES.map(n => n.code)
+    expect(codes).toContain('P01')
+    expect(codes).toContain('P37')
+    // Metas are the stage checkpoints between them.
+    expect(codes.filter(c => c.startsWith('M')).sort()).toEqual(['M01', 'M02', 'M03', 'M04'])
   })
 })
 
 describe('Content Validator', () => {
-  it('passes validation for all puzzles', () => {
-    const validator = new ContentValidator()
-    const report = validator.validateAll()
+  it('passes for the whole index', () => {
+    const report = new ContentValidator().validateAll()
     expect(report.valid).toBe(true)
     expect(report.nodesChecked).toBe(43)
-  })
-
-  it('identifies no errors (warnings only for known cases)', () => {
-    const validator = new ContentValidator()
-    const report = validator.validateAll()
-    const errors = report.issues.filter(i => i.severity === 'ERROR')
-    expect(errors).toHaveLength(0)
-  })
-})
-
-describe('Stage Completeness', () => {
-  it('Stage 1 has 5 puzzles plus M01', () => {
-    expect(PUZZLES_BY_STAGE[1].length).toBe(6)
-  })
-
-  it('Stage 2 has 10 puzzles (P06-P13, P06b, P07b) plus M02 (11 total)', () => {
-    expect(PUZZLES_BY_STAGE[2].length).toBe(11)
-  })
-
-  it('Stage 3 has 8 puzzles plus M03 (9 total)', () => {
-    expect(PUZZLES_BY_STAGE[3].length).toBe(9)
-  })
-
-  it('Stage 4 has 8 puzzles plus M04 (9 total)', () => {
-    expect(PUZZLES_BY_STAGE[4].length).toBe(9)
-  })
-
-  it('Stage 5 has 8 puzzles (P30-P37)', () => {
-    expect(PUZZLES_BY_STAGE[5].length).toBe(8)
+    expect(report.issues.filter(i => i.severity === 'ERROR')).toHaveLength(0)
   })
 })

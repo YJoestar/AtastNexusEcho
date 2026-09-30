@@ -1,43 +1,38 @@
 /**
  * NEXUS — Bottom Navigation
- * Mobile-first bottom navigation bar for player screens.
- * Shows the 5 core gameplay destinations with role-colored active state.
+ * Mobile-first bottom navigation bar for the five core gameplay destinations.
+ *
+ * See src/lib/navigation.ts for why the bar is limited to those five routes.
  */
 
-import { NavLink } from 'react-router-dom'
-import {
-  Eye,
-  Package,
-  Brain,
-  QrCode,
-  Trophy,
-} from 'lucide-react'
+import { NavLink, useLocation } from 'react-router-dom'
 import { useApp } from '@/app/providers'
-import { useOffline } from '@/hooks/useOffline'
+import { useConnection } from '@/hooks/useConnection'
+import { useSubmissionQueue } from '@/hooks/useSubmissionQueue'
+import { NAV_ITEMS, shouldRenderBottomNav } from '@/lib/navigation'
 import { ROUTES } from '@/app/config'
 import { cn } from '@/lib/utils'
 
-const NAV_ITEMS = [
-  { path: ROUTES.PLAYER_GAME, label: 'Game', icon: Eye },
-  { path: ROUTES.PLAYER_EVIDENCE, label: 'Evidence', icon: Package },
-  { path: ROUTES.PLAYER_INVENTORY, label: 'Inventory', icon: Brain },
-  { path: ROUTES.PLAYER_QR, label: 'QR', icon: QrCode },
-  { path: ROUTES.PLAYER_LEADERBOARD, label: 'Ranking', icon: Trophy },
-]
-
 export function BottomNav() {
   const { player } = useApp()
-  const { isOffline } = useOffline()
+  const connection = useConnection()
+  const { count: queuedCount } = useSubmissionQueue()
+  const { pathname } = useLocation()
 
   if (!player) return null
 
+  // Not a listed destination (puzzle node, navigation, notifications, final,
+  // completion, login, waiting): render nothing rather than an inert bar.
+  if (!shouldRenderBottomNav(pathname)) return null
+
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-nexus-borderSubtle bg-nexus-surface/95 backdrop-blur">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-nexus-borderSubtle bg-nexus-surface/95 backdrop-blur safe-area-bottom">
       <div className="grid grid-cols-5 gap-1 py-2">
         {NAV_ITEMS.map(item => (
           <NavLink
             key={item.path}
             to={item.path}
+            end
             className={({ isActive }) =>
               cn(
                 'flex flex-col items-center gap-1 py-2 text-xs font-medium transition-all duration-fast',
@@ -66,8 +61,11 @@ export function BottomNav() {
                   />
                 </div>
                 <span>{item.label}</span>
-                {isOffline && item.path === ROUTES.PLAYER_QR && (
+                {connection.status !== 'online' && item.path === ROUTES.PLAYER_QR && (
                   <span className="w-2 h-2 rounded-full bg-nexus-danger animate-pulse" />
+                )}
+                {queuedCount > 0 && item.path === ROUTES.PLAYER_GAME && (
+                  <span className="w-2 h-2 rounded-full bg-nexus-warning animate-pulse" />
                 )}
               </>
             )}

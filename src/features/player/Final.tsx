@@ -8,13 +8,22 @@
  */
 
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Flag, Lock, Unlock, Loader2, AlertCircle, Package, FileText, Key } from 'lucide-react'
 import { useGameEngine } from '@/hooks/useGameEngine'
 import { ROUTES } from '@/app/config'
 import { cn } from '@/lib/utils'
 
+/**
+ * The final answer is validated against the FINAL_BOSS node (P37, "The Final
+ * Boss"). The previous implementation submitted to a node id "FINAL", which
+ * does not exist in the content graph, so the server could never validate a
+ * final answer and this screen could never complete.
+ */
+const FINAL_NODE_ID = 'P37'
+
 export function PlayerFinal() {
+  const navigate = useNavigate()
   const {
     gameState,
     teamProgress,
@@ -46,12 +55,12 @@ export function PlayerFinal() {
     setIsSubmitting(true)
     setError(null)
     try {
-      const result = await submitAnswer('FINAL', answer.trim())
+      const result = await submitAnswer(FINAL_NODE_ID, answer.trim())
       setAttempts(prev => [...prev, answer.trim()])
 
       if (result.isCorrect) {
         setTimeout(() => {
-          window.location.href = ROUTES.PLAYER_COMPLETE
+          navigate(ROUTES.PLAYER_COMPLETE)
         }, 1500)
       }
       setAnswer('')
@@ -70,7 +79,7 @@ export function PlayerFinal() {
   ]
 
   return (
-    <div className="page pb-[72px] md:pb-0">
+    <div className="page">
       <div className="page-content max-w-2xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4">

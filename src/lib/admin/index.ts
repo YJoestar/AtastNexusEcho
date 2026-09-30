@@ -535,27 +535,41 @@ export const adminAPI = {
     teamId: string
     teamCode: string
     playerCodes: string[]
+    /** Name + role for each provisioned player, in the order the codes were issued. */
+    provisionedPlayers: Array<{ name: string; role: string; loginCode: string }>
     error?: string
   }> {
     try {
-      const team = await adminAPI.createTeam(params.teamName)
-      const playerCodes: string[] = []
-
-      for (const player of params.players) {
-        const createdPlayer = await adminAPI.addPlayer(team.id, player.name, player.role)
-        const codeResult = await adminAPI.generateCode(createdPlayer.id)
-        playerCodes.push(codeResult.loginCode)
-      }
+      const result = await callBureau<{
+        team: { id: string; code: string; name: string }
+        players: Array<{ player_id: string; name: string; role: string; login_code: string }>
+      }>({
+        action: 'provision-team',
+        teamName: params.teamName,
+        players: params.players.map(p => ({ name: p.name, role: p.role })),
+      })
 
       return {
         success: true,
-        teamId: team.id,
-        teamCode: team.code,
-        playerCodes,
+        teamId: result.team.id,
+        teamCode: result.team.code,
+        playerCodes: result.players.map(p => p.login_code),
+        provisionedPlayers: result.players.map(p => ({
+          name: p.name,
+          role: p.role,
+          loginCode: p.login_code,
+        })),
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to create team'
-      return { success: false, teamId: '', teamCode: '', playerCodes: [], error: msg }
+      return {
+        success: false,
+        teamId: '',
+        teamCode: '',
+        playerCodes: [],
+        provisionedPlayers: [],
+        error: msg,
+      }
     }
   },
 }

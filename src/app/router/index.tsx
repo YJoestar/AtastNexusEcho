@@ -23,6 +23,7 @@ import { PlayerInventory } from '@/features/player/Inventory'
 import { PlayerNavigation } from '@/features/player/Navigation'
 import { PlayerQR } from '@/features/player/QR'
 import { PlayerLeaderboard } from '@/features/player/Leaderboard'
+import { PlayerNotifications } from '@/features/player/Notifications'
 import { PlayerFinal } from '@/features/player/Final'
 import { PlayerComplete } from '@/features/player/Complete'
 
@@ -130,6 +131,14 @@ export const router = createBrowserRouter([
             element: (
               <ProtectedPlayerRoute>
                 <PlayerLeaderboard />
+              </ProtectedPlayerRoute>
+            ),
+          },
+          {
+            path: 'notifications',
+            element: (
+              <ProtectedPlayerRoute>
+                <PlayerNotifications />
               </ProtectedPlayerRoute>
             ),
           },

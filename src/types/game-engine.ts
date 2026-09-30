@@ -27,6 +27,15 @@ export type NodeStatus = 'LOCKED' | 'AVAILABLE' | 'IN_PROGRESS' | 'SOLVED' | 'SK
 
 export type ValidationMethod = 'exact' | 'case_insensitive' | 'whitespace_normalized' | 'prefix' | 'regex' | 'numeric' | 'symbolic'
 
+/**
+ * Map skeleton for a puzzle node, as shipped to the browser.
+ *
+ * SECURITY: this carries no playable content and no answers. A node's actual
+ * content arrives per role from get_player_node_detail(); answers live only in
+ * puzzle_nodes.answer_metadata and are read exclusively by
+ * submit_puzzle_answer(). The local content module defines its own
+ * NodeIndexEntry type, which is what the app actually imports.
+ */
 export interface PuzzleNode {
   id: string
   code: string
@@ -36,30 +45,9 @@ export interface PuzzleNode {
   difficulty: number
   time: string
   location: string
-  feeds: string
-  unlocks: string | null
-  acceptedAnswer: string | string[]
-  validationMethod: ValidationMethod
-  narrativeObjective: string
-  roleDependencyLevel: string
-  observer: RoleContent
-  analyst: RoleContent
-  operator: RoleContent
-  operatorInvestigation: OperatorInvestigation
-  coordinationChain: CoordinationChain
-  failurePropagation: FailurePropagation
-  hints: string[]
-  fullSolution: string
-  whyTeamworkMatters: string
-  storyReveal: string
-  locationClue: LocationClue
-  evidenceUnlocked: EvidenceUnlocked | null
+  points: number
   prerequisiteNodes: string[]
   nextNodes: string[] | null
-  branchConditions: BranchCondition[]
-  points: number
-  stageGroup?: string
-  roleContent?: RoleContent | null
 }
 
 export interface RoleContent {
@@ -125,6 +113,14 @@ export interface RoleContentMap {
   OPERATOR: RoleContent
 }
 
+/**
+ * Player-facing node payload from get_player_node_detail().
+ *
+ * The server returns only the requesting role's own `roleContent`, and
+ * redacts the accepted answer out of every string it returns - including
+ * `coordinationChain` prose, which states the answer in plain language.
+ * `operatorInvestigation` is non-null for OPERATOR only.
+ */
 export interface NodeDetailPlayerView {
   unlocked: boolean
   code: string
@@ -134,7 +130,18 @@ export interface NodeDetailPlayerView {
   estimatedMinutes: number
   location: string
   stage: number
+  narrativeObjective: string
+  roleDependencyLevel: string
   roleContent: RoleContent | null
+  operatorInvestigation: OperatorInvestigation | null
+  coordinationChain: CoordinationChain | null
+  failurePropagation: FailurePropagation | null
+  locationClue: LocationClue | null
+  evidenceUnlocked: EvidenceUnlocked | null
+  storyReveal: string
+  whyTeamworkMatters: string
+  branchConditions: BranchCondition[]
+  points: number
 }
 
 export interface TeamGameState {
@@ -167,6 +174,14 @@ export interface SubmissionResult {
   attemptNumber: number
   nextNodeId?: string | null
   error?: string
+  /**
+   * Set when the answer could not reach the server and was stored in the local
+   * offline queue instead. It has not been validated: `isCorrect` is false only
+   * because nothing was checked yet.
+   */
+  queued?: boolean
+  /** When the queued entry was stored. */
+  queuedAt?: string
 }
 
 export interface HintResult {

@@ -4,12 +4,12 @@
  * Mobile-first card layout with search and category filters.
  */
 
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowLeft, Package, Key, Hash, Cpu, Pill, Gem, Search, Eye, Info } from 'lucide-react'
+import { ArrowLeft, Package, Key, Hash, Cpu, Pill, Gem, Search, Eye, Info, X } from 'lucide-react'
 import { useGameEngine } from '@/hooks/useGameEngine'
 import { ROUTES } from '@/app/config'
 import { cn } from '@/lib/utils'
-import { useState } from 'react'
 
 const ITEM_TYPES = [
   { value: 'all', label: 'All Items', icon: Package },
@@ -27,6 +27,15 @@ export function PlayerInventory() {
   const { inventory, isLoading, fetchInventory, teamProgress } = useGameEngine()
   const [filter, setFilter] = useState<ItemType>('all')
   const [search, setSearch] = useState('')
+  const [inspected, setInspected] = useState<{ name: string; description: string; type: string; rarity: string; code: string } | null>(null)
+
+  // Inventory is server-authoritative; load it when the screen is opened rather
+  // than relying on the player pressing refresh.
+  useEffect(() => {
+    void fetchInventory()
+    // fetchInventory is stable enough for a mount-and-on-unmount fetch.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const rawInventory = teamProgress?.inventoryOwned ?? {}
   type InventoryItemWithQty = {
@@ -77,7 +86,7 @@ export function PlayerInventory() {
   }
 
   return (
-    <div className="page pb-[72px] md:pb-0">
+    <div className="page">
       <div className="page-content max-w-2xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4">
@@ -232,7 +241,14 @@ export function PlayerInventory() {
                       </div>
                     </div>
                     <button
-                      className="p-2 rounded-lg text-nexus-textMuted hover:text-nexus-text hover:bg-nexus-surfaceElevated transition-colors touch-target-primary opacity-0 group-hover:opacity-100"
+                      onClick={() => setInspected({
+                        name: item.name,
+                        description: item.description,
+                        type: item.type,
+                        rarity: item.rarity,
+                        code: item.code,
+                      })}
+                      className="p-2 rounded-lg text-nexus-textMuted hover:text-nexus-text hover:bg-nexus-surfaceElevated transition-colors touch-target-primary"
                       aria-label={`Inspect ${item.name}`}
                     >
                       <Eye className="w-4 h-4" />
@@ -260,6 +276,43 @@ export function PlayerInventory() {
           </div>
         )}
       </div>
+
+      {/* Inspect dialog — always reachable, never hover-only (phones have no hover) */}
+      {inspected && (
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-nexus-bg/90 backdrop-blur-sm p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label={inspected.name}
+          onClick={() => setInspected(null)}
+        >
+          <div
+            className="panel w-full max-w-md max-h-[80vh] overflow-y-auto"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-3 mb-3">
+              <div>
+                <h3 className="heading-3">{inspected.name}</h3>
+                <p className="text-xs uppercase tracking-wider text-nexus-textSubtle mt-1 font-mono">
+                  {inspected.type} · {inspected.rarity}
+                </p>
+              </div>
+              <button
+                onClick={() => setInspected(null)}
+                className="p-2 -m-1 rounded-lg text-nexus-textSubtle hover:text-nexus-text"
+                aria-label="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <p className="text-nexus-textMuted whitespace-pre-wrap">{inspected.description}</p>
+            <p className="text-xs text-nexus-textSubtle mt-4 font-mono">REF {inspected.code}</p>
+            <button onClick={() => setInspected(null)} className="btn-primary w-full mt-4">
+              CLOSE
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

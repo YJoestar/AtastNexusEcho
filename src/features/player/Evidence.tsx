@@ -9,7 +9,7 @@ import { ArrowLeft, FileText, Image, Music, Video, Database, Box, Search, Filter
 import { useGameEngine } from '@/hooks/useGameEngine'
 import { ROUTES } from '@/app/config'
 import { cn } from '@/lib/utils'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 const EVIDENCE_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   DOCUMENT: FileText,
@@ -37,6 +37,12 @@ export function PlayerEvidence() {
   const { inventory, isLoading, fetchInventory, teamProgress } = useGameEngine()
   const [filter, setFilter] = useState<EvidenceType>('all')
   const [search, setSearch] = useState('')
+
+  // Evidence is server-authoritative; load it on open rather than on button press.
+  useEffect(() => {
+    void fetchInventory()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const evidenceFromApi = inventory?.evidence ?? []
   const evidenceOwnedCodes = teamProgress?.evidenceOwned ?? []
@@ -67,7 +73,7 @@ export function PlayerEvidence() {
   }
 
   return (
-    <div className="page pb-[72px] md:pb-0">
+    <div className="page">
       <div className="page-content max-w-2xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4">
@@ -161,13 +167,12 @@ export function PlayerEvidence() {
               const classification = !isString && item.content ? String(item.content.classification) : undefined
 
               return (
-                <Link
+                <div
                   key={code}
-                  to={`${ROUTES.PLAYER_EVIDENCE}/${code}`}
-                  className="panel panel-hover flex items-start gap-3 p-3 group"
+                  className="panel flex items-start gap-3 p-3"
                 >
                   <div className="w-12 h-12 rounded-xl bg-nexus-bg flex items-center justify-center flex-shrink-0">
-                    <IconComponent className="w-6 h-6 text-nexus-textSubtle group-hover:text-nexus-accent transition-colors" />
+                    <IconComponent className="w-6 h-6 text-nexus-textSubtle" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <h4 className="font-medium text-nexus-text truncate">
@@ -187,7 +192,7 @@ export function PlayerEvidence() {
                       )}
                     </div>
                   </div>
-                </Link>
+                </div>
               )
             })}
           </div>

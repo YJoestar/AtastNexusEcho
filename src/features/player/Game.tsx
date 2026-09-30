@@ -7,9 +7,9 @@
 import { Link } from 'react-router-dom'
 import { Package, MapPin, QrCode, Trophy, ChevronRight, Clock, Target, Brain, Users, Zap } from 'lucide-react'
 import { useGameEngine } from '@/hooks/useGameEngine'
+import { useGameTimer } from '@/hooks/useGameTimer'
 import { ROUTES, ROLE_LABELS, ROLE_THEMES } from '@/app/config'
 import { cn } from '@/lib/utils'
-import { formatTimeRemaining } from '@/lib/time'
 
 export function PlayerGame() {
   const {
@@ -21,6 +21,7 @@ export function PlayerGame() {
     totalNodes,
     allNodesForMap,
   } = useGameEngine()
+  const timer = useGameTimer(gameState?.endsAt)
 
   if (!player || !team) {
     return null
@@ -43,7 +44,7 @@ export function PlayerGame() {
   ]
 
   return (
-    <div className="page pb-[72px] md:pb-0">
+    <div className="page">
       <div className="page-content max-w-2xl mx-auto space-y-6">
         {/* Team Status Bar */}
         <div className="panel flex items-center justify-between">
@@ -61,18 +62,50 @@ export function PlayerGame() {
           </span>
         </div>
 
-        {/* Time Remaining Banner */}
-        {gameState?.endsAt && (
-          <div className="panel bg-nexus-warningBg/20 border border-nexus-warning/30">
+        {/* Time Remaining Banner — derived from the server deadline, ticks live */}
+        {timer.isArmed && (
+          <div
+            className={cn(
+              'panel border',
+              timer.urgency === 'normal' && 'bg-nexus-warningBg/20 border-nexus-warning/30',
+              timer.urgency === 'low' && 'bg-nexus-warningBg/40 border-nexus-warning/50',
+              timer.urgency === 'critical' && 'bg-nexus-dangerBg/40 border-nexus-danger/50',
+              timer.urgency === 'expired' && 'bg-nexus-dangerBg/60 border-nexus-danger',
+            )}
+            role="timer"
+            aria-label={`${timer.formatted} remaining`}
+          >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Clock className="w-5 h-5 text-nexus-warning" />
-                <span className="font-medium text-nexus-warning">Time Remaining</span>
+                <Clock
+                  className={cn(
+                    'w-5 h-5',
+                    timer.urgency === 'normal' ? 'text-nexus-warning' : 'text-nexus-danger',
+                  )}
+                />
+                <span
+                  className={cn(
+                    'font-medium',
+                    timer.urgency === 'normal' ? 'text-nexus-warning' : 'text-nexus-danger',
+                  )}
+                >
+                  {timer.isExpired ? 'Time Expired' : 'Time Remaining'}
+                </span>
               </div>
-              <span className="font-mono text-lg text-nexus-warning">
-                {formatTimeRemaining(gameState.endsAt)}
+              <span
+                className={cn(
+                  'font-mono text-lg font-semibold',
+                  timer.urgency === 'normal' ? 'text-nexus-warning' : 'text-nexus-danger',
+                )}
+              >
+                {timer.formatted}
               </span>
             </div>
+            {timer.urgency === 'critical' && !timer.isExpired && (
+              <p className="text-xs text-nexus-danger mt-2">
+                Under 10 minutes remaining. Finish the current investigation.
+              </p>
+            )}
           </div>
         )}
 

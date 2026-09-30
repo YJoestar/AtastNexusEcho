@@ -4,6 +4,7 @@
  * All Bureau (admin) mutations flow through this single function.
  * Each action is verified against the admin_users table.
  * Supported actions:
+ *   - provision-team  { teamName, players:[{name, role}] }  (ATOMIC team+players+codes)
  *   - create-team     { teamName }
  *   - add-player      { teamId, displayName, role }
  *   - generate-code    { playerId }
@@ -111,6 +112,127 @@ Deno.serve(async (req: Request) => {
 
     // --- Route actions ---
     switch (action) {
+      case 'provision-team': {
+        const { teamName, players } = params as {
+          teamName: string
+          players: Array<{ name: string; role: string }>
+        }
+
+        if (!teamName || teamName.trim().length < 1 || teamName.length > 50) {
+          return jsonResponse(400, { error: 'Team name must be 1-50 characters' })
+        }
+        if (!Array.isArray(players) || players.length < 1) {
+          return jsonResponse(400, { error: 'At least one player is required' })
+        }
+        if (players.length > 3) {
+          return jsonResponse(400, { error: 'A team may have at most 3 players' })
+        }
+
+        const seenRoles = new Set<string>()
+        for (const p of players) {
+          if (!p.name || !p.name.trim()) {
+            return jsonResponse(400, { error: 'Every player needs a name' })
+          }
+          if (!['OBSERVER', 'ANALYST', 'OPERATOR'].includes(p.role)) {
+            return jsonResponse(400, { error: `Invalid role: ${p.role}` })
+          }
+          if (seenRoles.has(p.role)) {
+            return jsonResponse(400, { error: `Role ${p.role} is assigned twice` })
+          }
+          seenRoles.add(p.role)
+        }
+
+        // --- Atomic database half: team + players + login-code hashes ---
+        const { data: provisionData, error: provisionError } = await supabaseAdminUser.rpc(
+          'bureau_provision_team',
+          { p_team_name: teamName, p_players: players },
+        )
+
+        if (provisionError) {
+          return jsonResponse(400, { error: provisionError.message })
+        }
+
+        const provisioned = Array.isArray(provisionData) ? provisionData[0] : provisionData
+        if (!provisioned?.team_id) {
+          return jsonResponse(500, { error: 'Provisioning returned no result' })
+        }
+
+        const provisionedPlayers: Array<{
+          player_id: string
+          name: string
+          role: string
+          login_code: string
+        }> = Array.isArray(provisioned.players) ? provisioned.players : []
+
+        // --- Auth-user half: cannot join the SQL transaction, so compensate ---
+        const createdAuthUserIds: string[] = []
+        try {
+          for (const p of provisionedPlayers) {
+            const internalEmail = `nexus+${p.player_id}@internal`
+            const { data: authData, error: authErr } = await supabaseAdmin.auth.admin.createUser({
+              email: internalEmail,
+              password: p.login_code,
+              email_confirm: true,
+              user_data: { player_id: p.player_id },
+            })
+
+            if (authErr || !authData?.user) {
+              throw new Error(authErr?.message ?? 'Failed to create auth user')
+            }
+            createdAuthUserIds.push(authData.user.id)
+
+            const { error: linkError } = await supabaseAdmin
+              .from('players')
+              .update({ auth_user_id: authData.user.id, auth_user_email: internalEmail })
+              .eq('id', p.player_id)
+
+            if (linkError) {
+              throw new Error(linkError.message)
+            }
+          }
+        } catch (provisionFailure: unknown) {
+          // Compensating rollback so no half-provisioned team survives
+          for (const authUserId of createdAuthUserIds) {
+            try {
+              await supabaseAdmin.auth.admin.deleteUser(authUserId)
+            } catch {
+              // best-effort cleanup
+            }
+          }
+          for (const table of ['game_events', 'audit_log', 'players', 'teams']) {
+            try {
+              await supabaseAdmin.from(table).delete().eq(
+                table === 'teams' ? 'id' : 'team_id',
+                provisioned.team_id,
+              )
+            } catch {
+              // best-effort cleanup
+            }
+          }
+          const reason = provisionFailure instanceof Error ? provisionFailure.message : 'unknown error'
+          console.error('provision-team failed, rolled back:', reason)
+          return jsonResponse(500, {
+            error: 'Provisioning failed and was rolled back. No team was created.',
+            detail: reason,
+          })
+        }
+
+        await logAction('TEAM_CREATE', provisioned.team_id, undefined, {
+          action: 'PROVISION',
+          players: provisionedPlayers.length,
+        })
+
+        return jsonResponse(200, {
+          success: true,
+          team: {
+            id: provisioned.team_id,
+            code: provisioned.team_code,
+            name: teamName,
+          },
+          players: provisionedPlayers,
+        })
+      }
+
       case 'create-team': {
         const { teamName } = params as { teamName: string }
         if (!teamName || teamName.length < 1 || teamName.length > 50) {

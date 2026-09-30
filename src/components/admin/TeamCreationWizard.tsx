@@ -36,8 +36,9 @@ interface TeamCreationWizardProps {
 }
 
 export const TEAM_CREATION_MAX_PLAYERS = MAX_PLAYERS_PER_TEAM
+export const TEAM_CREATION_MIN_PLAYERS = MAX_PLAYERS_PER_TEAM
 
-export function TeamCreationWizard({ isOpen, onClose, onSuccess: _onSuccess }: TeamCreationWizardProps) {
+export function TeamCreationWizard({ isOpen, onClose, onSuccess }: TeamCreationWizardProps) {
   const [step, setStep] = useState<Step>(1)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
@@ -51,13 +52,17 @@ export function TeamCreationWizard({ isOpen, onClose, onSuccess: _onSuccess }: T
   const [players, setPlayers] = useState<PlayerInput[]>([
     { id: '1', name: '', deviceId: '' },
     { id: '2', name: '', deviceId: '' },
+    { id: '3', name: '', deviceId: '' },
   ])
 
   // Step 3 — Role assignments
   const [roleAssignments, setRoleAssignments] = useState<TeamRoleAssignment[]>([])
 
   // Step 4 — Generated codes
-  const [generatedCodes, setGeneratedCodes] = useState<{ team: string; players: string[] } | null>(null)
+  const [generatedCodes, setGeneratedCodes] = useState<{
+    team: string
+    players: Array<{ name: string; role: string; loginCode: string }>
+  } | null>(null)
 
   const resetWizard = useCallback(() => {
     setStep(1)
@@ -65,7 +70,11 @@ export function TeamCreationWizard({ isOpen, onClose, onSuccess: _onSuccess }: T
     setTeamName('')
     setTeamColor(TEAM_COLORS[0])
     setTeamTag('')
-    setPlayers([{ id: '1', name: '', deviceId: '' }, { id: '2', name: '', deviceId: '' }])
+    setPlayers([
+      { id: '1', name: '', deviceId: '' },
+      { id: '2', name: '', deviceId: '' },
+      { id: '3', name: '', deviceId: '' },
+    ])
     setRoleAssignments([])
     setGeneratedCodes(null)
   }, [])
@@ -123,8 +132,8 @@ export function TeamCreationWizard({ isOpen, onClose, onSuccess: _onSuccess }: T
       }
     }
     if (targetStep === 3) {
-      if (getValidPlayers().length < 2) {
-        setError('At least 2 players are required')
+      if (getValidPlayers().length < TEAM_CREATION_MIN_PLAYERS) {
+        setError(`All ${TEAM_CREATION_MIN_PLAYERS} players are required — a team cannot start with fewer`)
         return false
       }
     }
@@ -148,27 +157,54 @@ export function TeamCreationWizard({ isOpen, onClose, onSuccess: _onSuccess }: T
   }
 
   const handleCreateTeam = async () => {
+    if (isSubmitting) return
     setIsSubmitting(true)
     setError('')
 
+    const roster = getValidPlayers().map(p => ({
+      name: p.name.trim(),
+      deviceId: p.deviceId.trim(),
+      role: (roleAssignments.find(ra => ra.playerId === p.id)?.role) ?? '',
+    }))
+
+    // Guard the exact conditions the server enforces, so the Bureau gets a
+    // precise message instead of a generic failure.
+    if (roster.some(r => !r.role)) {
+      setError('All players must have a role assigned')
+      setIsSubmitting(false)
+      return
+    }
+    const duplicateRole = roster.find(
+      (r, i) => roster.findIndex(o => o.role === r.role) !== i,
+    )
+    if (duplicateRole) {
+      setError(`Role ${duplicateRole.role} is assigned to more than one player`)
+      setIsSubmitting(false)
+      return
+    }
+
     const result = await adminAPI.createTeamWithPlayers({
-      teamName: teamName,
-      players: getValidPlayers().map(p => ({
-        name: p.name,
-        deviceId: p.deviceId,
-        role: (roleAssignments.find(ra => ra.playerId === p.id)?.role) ?? 'OBSERVER',
-      })),
+      teamName: teamName.trim(),
+      players: roster,
     })
 
     if (result.success) {
       setGeneratedCodes({
         team: result.teamCode,
-        players: result.playerCodes,
+        players: result.provisionedPlayers,
       })
-    } else {
-      setError(result.error ?? 'Failed to create team')
       setIsSubmitting(false)
+      onSuccess()
+      return
     }
+
+    setError(result.error ?? 'Failed to create team')
+    setIsSubmitting(false)
+  }
+
+  const finishWizard = () => {
+    resetWizard()
+    onClose()
   }
 
   const copyCode = (code: string) => {
@@ -308,7 +344,7 @@ export function TeamCreationWizard({ isOpen, onClose, onSuccess: _onSuccess }: T
                         className="input font-mono text-xs"
                       />
                     </div>
-                    {players.length > 2 && (
+                    {players.length > TEAM_CREATION_MIN_PLAYERS && (
                       <button
                         onClick={() => removePlayer(p.id)}
                         className="pb-2 text-nexus-danger hover:text-nexus-danger/80 transition-colors"
@@ -364,7 +400,51 @@ export function TeamCreationWizard({ isOpen, onClose, onSuccess: _onSuccess }: T
             </div>
           )}
 
-          {/* Step 4: Generate Codes */}
+          {/* Step 4: Review & Generate Codes */}
+          {step === 4 && !generatedCodes && (
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-sm font-medium text-nexus-text">Review</h3>
+                <p className="text-xs text-nexus-textSubtle mt-1">
+                  Creating the team saves it, registers all {getValidPlayers().length} players and
+                  generates one login code per player in a single atomic operation. If any part
+                  fails, nothing is saved.
+                </p>
+              </div>
+
+              <div className="p-4 bg-nexus-bg rounded-xl border border-nexus-border space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs uppercase tracking-wider text-nexus-textSubtle">Team</span>
+                  <span className="font-medium text-nexus-text">{teamName}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs uppercase tracking-wider text-nexus-textSubtle">Tag</span>
+                  <span className="font-mono text-nexus-text">{teamTag}</span>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-sm font-medium text-nexus-text mb-2">
+                  Roster &amp; roles
+                </h3>
+                <div className="space-y-2">
+                  {getValidPlayers().map(p => (
+                    <div
+                      key={p.id}
+                      className="flex items-center justify-between p-3 bg-nexus-bg rounded-xl border border-nexus-border"
+                    >
+                      <span className="font-medium text-nexus-text">{p.name}</span>
+                      <span className="text-xs font-mono uppercase text-nexus-accent">
+                        {getPlayerRole(p.id) || 'NO ROLE'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Step 4: Generated codes */}
           {step === 4 && generatedCodes && (
             <div className="text-center space-y-6">
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-nexus-accentBg">
@@ -395,22 +475,34 @@ export function TeamCreationWizard({ isOpen, onClose, onSuccess: _onSuccess }: T
                 <div>
                   <span className="block text-sm font-medium text-nexus-text mb-2">Player Codes</span>
                   <div className="space-y-2">
-                {getValidPlayers().map((p, idx) => (
-                      <div key={p.id} className="flex items-center justify-between p-3 bg-nexus-bg rounded-xl border border-nexus-border">
-                        <div>
-                          <span className="font-medium text-nexus-text">{p.name}</span>
-                          <code className="ml-2 text-nexus-accent font-mono">{generatedCodes.players[idx] ?? 'N/A'}</code>
+                    {generatedCodes.players.map(p => (
+                      <div
+                        key={p.loginCode}
+                        className="flex items-center justify-between p-3 bg-nexus-bg rounded-xl border border-nexus-border"
+                      >
+                        <div className="min-w-0">
+                          <span className="font-medium text-nexus-text block truncate">{p.name}</span>
+                          <span className="text-[10px] uppercase tracking-wider text-nexus-textSubtle">
+                            {p.role}
+                          </span>
                         </div>
-                        <button
-                          onClick={() => copyCode(generatedCodes.players[idx] ?? '')}
-                          className="p-1 rounded text-nexus-textSubtle hover:text-nexus-text hover:bg-nexus-surfaceElevated"
-                          aria-label={`Copy ${p.name}'s code`}
-                        >
-                          <Copy className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <code className="text-nexus-accent font-mono">{p.loginCode}</code>
+                          <button
+                            onClick={() => copyCode(p.loginCode)}
+                            className="p-1 rounded text-nexus-textSubtle hover:text-nexus-text hover:bg-nexus-surfaceElevated"
+                            aria-label={`Copy ${p.name}'s code`}
+                          >
+                            <Copy className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
+                  <p className="text-xs text-nexus-textSubtle mt-3">
+                    Each code is single-use and is consumed the first time that player logs in.
+                    Copy them now — they are not shown again.
+                  </p>
                 </div>
               </div>
             </div>
@@ -419,7 +511,7 @@ export function TeamCreationWizard({ isOpen, onClose, onSuccess: _onSuccess }: T
 
         {/* Footer Actions */}
         <div className="flex items-center justify-between p-6 border-t border-nexus-borderSubtle bg-nexus-bg/30 rounded-b-2xl">
-          {step === 1 ? (
+          {step === 1 || generatedCodes ? (
             <div />
           ) : (
             <button onClick={prevStep} className="btn-secondary" disabled={isSubmitting}>
@@ -427,21 +519,34 @@ export function TeamCreationWizard({ isOpen, onClose, onSuccess: _onSuccess }: T
             </button>
           )}
           <div className="flex gap-2">
-            <button
-              onClick={handleClose}
-              className="btn-secondary"
-              disabled={isSubmitting}
-            >
-              CANCEL
-            </button>
-            {step < 4 && (
-              <button
-                onClick={step === 4 ? handleCreateTeam : nextStep}
-                className="btn-primary"
-                disabled={isSubmitting}
-              >
-                {step === 4 ? (isSubmitting ? 'CREATING…' : 'GENERATE CODES') : 'NEXT'}
+            {generatedCodes ? (
+              <button onClick={finishWizard} className="btn-primary">
+                DONE
               </button>
+            ) : (
+              <>
+                <button
+                  onClick={handleClose}
+                  className="btn-secondary"
+                  disabled={isSubmitting}
+                >
+                  CANCEL
+                </button>
+                {step < 4 && (
+                  <button onClick={nextStep} className="btn-primary" disabled={isSubmitting}>
+                    NEXT
+                  </button>
+                )}
+                {step === 4 && (
+                  <button
+                    onClick={handleCreateTeam}
+                    className="btn-primary"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? 'CREATING…' : 'CREATE TEAM'}
+                  </button>
+                )}
+              </>
             )}
           </div>
         </div>

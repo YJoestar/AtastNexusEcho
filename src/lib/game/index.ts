@@ -29,6 +29,20 @@ class GameAPIError extends Error {
   }
 }
 
+/**
+ * scan_qr_code() never reveals what a locked marker points to. It answers with
+ * {discovered:false} for anything the team has not reached yet, so a marker
+ * cannot be used to scout ahead.
+ */
+export interface QRScanResponse {
+  discovered: boolean
+  qrLabel?: string
+  nodeCode?: string
+  nodeTitle?: string
+  alreadyClaimed?: boolean
+  error?: string
+}
+
 async function callFunction<T>(name: string, body: unknown = {}): Promise<T> {
   const { data, error } = await supabase.functions.invoke(name, {
     method: 'POST',
@@ -69,8 +83,8 @@ export const gameAPI = {
       .then(res => res.result)
   },
 
-  async scanQR(qrCode: string): Promise<{ discovered: boolean; qrLabel?: string; error?: string }> {
-    return callFunction<{ result: { discovered: boolean; qrLabel?: string; error?: string } }>('game-scan-qr', { qrCode })
+  async scanQR(qrCode: string): Promise<QRScanResponse> {
+    return callFunction<{ result: QRScanResponse }>('game-scan-qr', { qrCode })
       .then(res => res.result)
   },
 

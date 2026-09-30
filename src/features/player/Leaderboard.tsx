@@ -35,7 +35,7 @@ export function PlayerLeaderboard() {
   }
 
   return (
-    <div className="page pb-[72px] md:pb-0">
+    <div className="page">
       <div className="page-content max-w-2xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4">
@@ -94,9 +94,6 @@ export function PlayerLeaderboard() {
                     <th className="p-3 text-xs font-semibold text-nexus-textSubtle uppercase tracking-wider text-right w-24">
                       Score
                     </th>
-                    <th className="p-3 text-xs font-semibold text-nexus-textSubtle uppercase tracking-wider text-right w-20">
-                      Solved
-                    </th>
                     <th className="p-3 text-xs font-semibold text-nexus-textSubtle uppercase tracking-wider text-right w-24">
                       Time
                     </th>
@@ -109,7 +106,6 @@ export function PlayerLeaderboard() {
                   {leaderboard.map(entry => {
                     const isCurrentTeam = entry.teamCode === team?.code
                     const isCompleted = entry.status === 'COMPLETED'
-                    const solvedPct = entry.score > 0 ? `${entry.score} pts` : '—'
                     return (
                       <tr
                         key={entry.teamCode}
@@ -158,9 +154,6 @@ export function PlayerLeaderboard() {
                         </td>
                         <td className="p-3 text-right font-mono font-medium text-nexus-text">
                           {entry.score.toLocaleString()}
-                        </td>
-                        <td className="p-3 text-right text-nexus-textMuted font-mono">
-                          {solvedPct}
                         </td>
                         <td className="p-3 text-right text-nexus-textMuted font-mono">
                           {formatTime(entry.elapsedMinutes)}

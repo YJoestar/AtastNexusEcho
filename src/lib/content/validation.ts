@@ -1,11 +1,18 @@
 /**
  * NEXUS — Content Validation
- * Validates puzzle seed content for structural integrity and data correctness
+ *
+ * Validates the client-side node index for structural integrity.
+ *
+ * SCOPE: this runs in the browser and can only see src/content/puzzles, which
+ * is a map skeleton — codes, titles, locations, dependencies. It deliberately
+ * holds no role content, no hints and no answers, so those are validated
+ * server-side against puzzle_nodes rather than here. See
+ * supabase/migrations/2026093010_server_authoritative_puzzles.sql.
  */
 
-import type { PuzzleNode, ContentValidationIssue, ContentValidationReport } from '../../types/game-engine'
+import type { ContentValidationIssue, ContentValidationReport } from '../../types/game-engine'
 import { PUZZLE_TYPES } from '../../content/constants'
-import { ALL_PUZZLES, PUZZLES_BY_CODE } from '../../content/puzzles'
+import { ALL_PUZZLES, PUZZLES_BY_CODE, type NodeIndexEntry } from '../../content/puzzles'
 
 export class ContentValidator {
   private issues: ContentValidationIssue[] = []
@@ -20,7 +27,6 @@ export class ContentValidator {
     }
 
     this.validateProgression()
-    this.validateCrossReferences()
     this.validateRoleDependencies()
 
     return {
@@ -31,7 +37,7 @@ export class ContentValidator {
   }
 
   private validateNode(
-    puzzle: PuzzleNode,
+    puzzle: NodeIndexEntry,
     seenCodes: Set<string>,
     seenIds: Set<string>,
   ): void {
@@ -47,7 +53,7 @@ export class ContentValidator {
     }
     seenIds.add(puzzle.id)
 
-    if (!PUZZLE_TYPES.includes(puzzle.type)) {
+    if (!PUZZLE_TYPES.includes(puzzle.type as (typeof PUZZLE_TYPES)[number])) {
       this.addIssue(code, `Invalid puzzle type: ${puzzle.type}`, 'ERROR')
     }
 
@@ -55,77 +61,61 @@ export class ContentValidator {
       this.addIssue(code, `Difficulty out of range [1-5]: ${puzzle.difficulty}`, 'WARNING')
     }
 
-    if (!puzzle.name || puzzle.name.length < 1) {
+    if (!puzzle.name) {
       this.addIssue(code, 'Missing puzzle name', 'ERROR')
     }
 
-    if (!puzzle.location || puzzle.location.length < 1) {
+    if (!puzzle.location) {
       this.addIssue(code, 'Missing location', 'WARNING')
     }
 
-    if (!puzzle.acceptedAnswer) {
-      this.addIssue(code, 'Missing accepted answer', 'ERROR')
+    if (puzzle.points <= 0) {
+      this.addIssue(code, `Non-positive points: ${puzzle.points}`, 'ERROR')
     }
 
-    if (!puzzle.hints || puzzle.hints.length === 0) {
-      this.addIssue(code, 'No hints defined', 'WARNING')
+    if (!puzzle.time) {
+      this.addIssue(code, 'Missing time estimate', 'WARNING')
     }
 
-    if (puzzle.hints && puzzle.hints.length > 3) {
-      this.addIssue(code, `Too many hints: ${puzzle.hints.length} (max 3)`, 'WARNING')
-    }
-
-    if (!puzzle.observer || !puzzle.analyst || !puzzle.operator) {
-      this.addIssue(code, 'Missing role-specific content for one or more roles', 'ERROR')
-    }
-
-    if (puzzle.nextNodes && puzzle.nextNodes.length > 0) {
+    if (puzzle.nextNodes) {
       for (const nextId of puzzle.nextNodes) {
-        if (!PUZZLES_BY_CODE[nextId] && !nextId.startsWith('M') && !nextId.startsWith('GM') && !nextId.startsWith('FB')) {
-          this.addIssue(code, `next_node_id '${nextId}' does not exist`, 'ERROR')
+        if (!PUZZLES_BY_CODE[nextId]) {
+          this.addIssue(code, `nextNode '${nextId}' does not exist`, 'ERROR')
         }
       }
     }
 
-    if (puzzle.prerequisiteNodes) {
-      for (const prereqId of puzzle.prerequisiteNodes) {
-        if (!PUZZLES_BY_CODE[prereqId]) {
-          this.addIssue(code, `prerequisite '${prereqId}' does not exist`, 'ERROR')
-        }
+    for (const prereqId of puzzle.prerequisiteNodes) {
+      if (!PUZZLES_BY_CODE[prereqId]) {
+        this.addIssue(code, `prerequisite '${prereqId}' does not exist`, 'ERROR')
       }
     }
   }
 
   private validateProgression(): void {
-    const solved = new Set<string>()
+    const seen = new Set<string>()
 
     for (const puzzle of ALL_PUZZLES) {
-      solved.add(puzzle.code)
+      seen.add(puzzle.code)
 
-      if (puzzle.prerequisiteNodes) {
-        for (const prereq of puzzle.prerequisiteNodes) {
-          if (!solved.has(prereq) && !prereq.startsWith('M') && !prereq.startsWith('GM') && !prereq.startsWith('FB')) {
-            this.addIssue(puzzle.code, `Prerequisite '${prereq}' not yet solved in progression chain`, 'WARNING')
-          }
+      for (const prereq of puzzle.prerequisiteNodes) {
+        if (!seen.has(prereq)) {
+          this.addIssue(
+            puzzle.code,
+            `Prerequisite '${prereq}' is not declared earlier in the progression chain`,
+            'WARNING',
+          )
         }
       }
     }
   }
 
-  private validateCrossReferences(): void {
-    for (const puzzle of ALL_PUZZLES) {
-      if (puzzle.fullSolution && puzzle.fullSolution.length < 3) {
-        this.addIssue(puzzle.code, 'fullSolution appears too brief (may be incomplete)', 'WARNING')
-      }
-    }
-  }
-
+  /**
+   * Difficulty tiers and role content are validated server-side; the client
+   * index has neither. Kept as a hook for future index-level checks.
+   */
   private validateRoleDependencies(): void {
-    for (const puzzle of ALL_PUZZLES) {
-      if (puzzle.roleDependencyLevel === 'D5' && !puzzle.operatorInvestigation) {
-        this.addIssue(puzzle.code, 'D5 difficulty requires operatorInvestigation with requiredDiscoveries', 'WARNING')
-      }
-    }
+    // no-op by design
   }
 
   private addIssue(nodeId: string, issue: string, severity: 'ERROR' | 'WARNING'): void {

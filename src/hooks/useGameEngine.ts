@@ -2,28 +2,35 @@
  * NEXUS — Game Engine Hook
  *
  * Central data-fetching and state management for the player experience.
- * Merges server API responses with local puzzle content.
  *
- * SECURITY: This hook NEVER returns acceptedAnswer, fullSolution,
- * or any server-side validation patterns to the UI layer.
- * intermediateOutput is filtered out for OPERATOR role.
+ * SECURITY: the game is server-authoritative. Player content comes from
+ * get_player_node_detail(), which returns only the requesting role's own block
+ * and redacts the accepted answer from every player-visible string. Answer
+ * validation happens entirely inside submit_puzzle_answer(); no answer ever
+ * reaches the browser. The local content bundle in src/content/puzzles carries
+ * no answers and is used only for the pre-auth node map, where a locked node's
+ * title and location are not a spoiler.
  */
 
 import { useState, useCallback, useEffect, useMemo } from 'react'
 import { useApp } from '@/app/providers'
 import { gameAPI } from '@/lib/game'
-import { PUZZLES_BY_CODE, PUZZLE_COUNT, ALL_PUZZLES } from '@/content/puzzles'
-import { HINT_PENALTIES } from '@/content/constants'
+import {
+  PUZZLES_BY_CODE,
+  PUZZLE_COUNT,
+  ALL_PUZZLES,
+  type NodeIndexEntry,
+} from '@/content/puzzles'
 import { useOffline } from '@/hooks/useOffline'
-import type { Role } from '@/types'
+import { useConnection } from '@/hooks/useConnection'
+import {
+  enqueueSubmission,
+  flushSubmissionQueue,
+  getLastFlush,
+  queueSize,
+  recordFlush,
+} from '@/lib/offlineQueue'
 import type {
-  PuzzleNode,
-  RoleContent,
-  OperatorInvestigation,
-  CoordinationChain,
-  FailurePropagation,
-  LocationClue,
-  EvidenceUnlocked,
   NodeDetailPlayerView,
   HintResult as ApiHintResult,
   SubmissionResult as ApiSubmissionResult,
@@ -54,15 +61,14 @@ export interface PlayerNodeView {
   status: NodeStatus
   narrativeObjective: string
   roleDependencyLevel: string
-  roleContent: RoleContent | null
-  operatorInvestigation: OperatorInvestigation | null
-  coordinationChain: CoordinationChain | null
-  failurePropagation: FailurePropagation | null
-  locationClue: LocationClue
-  evidenceUnlocked: EvidenceUnlocked | null
+  roleContent: NodeDetailPlayerView['roleContent']
+  operatorInvestigation: NodeDetailPlayerView['operatorInvestigation']
+  coordinationChain: NodeDetailPlayerView['coordinationChain']
+  failurePropagation: NodeDetailPlayerView['failurePropagation']
+  locationClue: NonNullable<NodeDetailPlayerView['locationClue']>
+  evidenceUnlocked: NodeDetailPlayerView['evidenceUnlocked']
   storyReveal: string
   whyTeamworkMatters: string
-  hints: string[]
 }
 
 export interface MergedInventory {
@@ -74,6 +80,11 @@ export interface MergedInventory {
 export interface QRScanResult {
   discovered: boolean
   qrLabel?: string
+  /** Set when the marker maps to a puzzle node the team has now unlocked. */
+  nodeCode?: string
+  nodeTitle?: string
+  /** Another member of the team already claimed this non-puzzle marker. */
+  alreadyClaimed?: boolean
   message?: string
   error?: string
 }
@@ -86,27 +97,26 @@ function parseTimeToMinutes(timeStr: string): number {
   return num
 }
 
-function getRoleContent(puzzle: PuzzleNode, role: Role): RoleContent {
-  switch (role) {
-    case 'OBSERVER':
-      return puzzle.observer
-    case 'ANALYST':
-      return puzzle.analyst
-    case 'OPERATOR':
-      return puzzle.operator
-    default:
-      return puzzle.observer
-  }
+const EMPTY_LOCATION_CLUE: NonNullable<NodeDetailPlayerView['locationClue']> = {
+  format: '',
+  clueText: '',
+  solution: '',
+  nextPhysicalLocation: '',
+  nextQrNode: null,
+  explanation: '',
 }
 
-function sanitizeRoleContent(content: RoleContent, role: Role): RoleContent {
-  if (role === 'OPERATOR') {
-    return {
-      ...content,
-      intermediateOutput: '',
-    }
-  }
-  return content
+/**
+ * The server's own rejections are answers ("Rate limited", "Node not
+ * accessible", "Game not active") and must reach the player. A transport
+ * failure means the request never got an answer at all, which is the only case
+ * where the text can safely be kept and replayed later.
+ */
+const TRANSPORT_FAILURE = /failed to fetch|network ?error|load failed|fetch failed|aborted|timeout/i
+
+function isTransportFailure(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error ?? '')
+  return TRANSPORT_FAILURE.test(message)
 }
 
 export function useGameEngine() {
@@ -118,17 +128,23 @@ export function useGameEngine() {
     isInitializing,
     isAuthenticated,
     refreshGameState,
+    refreshTeamProgress,
     gameState,
     teamProgress,
     notifications,
     markNotificationRead,
   } = app
-  const { isOffline } = useOffline()
+  const { isOffline: browserOffline } = useOffline()
+  const connection = useConnection()
+  // navigator.onLine alone reports "online" on a dead campus Wi-Fi, so the
+  // engine treats a failed server probe exactly like having no link.
+  const isOffline = browserOffline || connection.isOffline
 
   const [inventory, setInventory] = useState<MergedInventory | null>(null)
   const [leaderboard, setLeaderboard] = useState<ApiLeaderboardEntry[] | null>(null)
   const [nodeProgress, setNodeProgress] = useState<NodeProgressEntry[]>([])
   const [loadingKeys, setLoadingKeys] = useState<Set<string>>(new Set())
+  const [queuedCount, setQueuedCount] = useState(() => queueSize())
 
   const setLoading = useCallback((key: string, value: boolean) => {
     setLoadingKeys(prev => {
@@ -197,146 +213,133 @@ export function useGameEngine() {
       try {
         apiNode = await gameAPI.getNode(nodeId, role)
       } catch (err) {
-        console.warn('API getNode failed, using local data:', err)
-      }
-
-      const puzzle = PUZZLES_BY_CODE[nodeId]
-      const progress = findProgressEntry(nodeId)
-
-      if (!puzzle && !apiNode) {
+        // Without the server response there is no role-appropriate content to
+        // show, so fail closed rather than substituting a different role's
+        // block from the local bundle.
+        console.warn('getNode failed:', err)
         setLoading('node', false)
         return null
       }
 
-      if (!puzzle && apiNode) {
-        setLoading('node', false)
-        return {
-          code: apiNode.code,
-          title: apiNode.title,
-          type: apiNode.type as PuzzleType,
-          difficulty: apiNode.difficulty,
-          estimatedMinutes: apiNode.estimatedMinutes,
-          location: apiNode.location,
-          stage: apiNode.stage,
-          unlocked: apiNode.unlocked,
-          isSolved: false,
-          isCurrent: false,
-          isNextUp: false,
-          attempts: 0,
-          hintsUsed: 0,
-          points: 0,
-          status: apiNode.unlocked ? 'AVAILABLE' : 'LOCKED',
-          narrativeObjective: '',
-          roleDependencyLevel: '',
-          roleContent: apiNode.roleContent,
-          operatorInvestigation: null,
-          coordinationChain: null,
-          failurePropagation: null,
-          locationClue: {
-            format: '',
-            clueText: '',
-            solution: '',
-            nextPhysicalLocation: '',
-            nextQrNode: null,
-            explanation: '',
-          },
-          evidenceUnlocked: null,
-          storyReveal: '',
-          whyTeamworkMatters: '',
-          hints: [],
-        }
-      }
+      const localPuzzle: NodeIndexEntry | undefined = PUZZLES_BY_CODE[nodeId]
+      const progressEntry = findProgressEntry(nodeId)
 
-      if (!puzzle) {
+      if (!apiNode?.unlocked) {
         setLoading('node', false)
         return null
       }
 
-      const apiRoleContent = apiNode?.roleContent
-      const localRoleContent = getRoleContent(puzzle, role)
-      const roleContent = sanitizeRoleContent(
-        apiRoleContent ?? localRoleContent,
-        role,
-      )
-
-      const progressEntry = progress
       const isSolved = progressEntry?.status === 'SOLVED'
 
       const currentNodeId = teamProgress?.currentNodeId
       const availableIds = teamProgress?.availableNodeIds ?? []
-      const isCurrent = puzzle.code === currentNodeId
-      const isNextUp = availableIds.includes(puzzle.code) && !isCurrent && !isSolved
+      const code = apiNode.code
+      const isCurrent = code === currentNodeId
+      const isNextUp = availableIds.includes(code) && !isCurrent && !isSolved
 
       let status: NodeStatus = 'LOCKED'
       if (isSolved) status = 'SOLVED'
-      else if (apiNode?.unlocked || isCurrent) status = 'IN_PROGRESS'
+      else if (apiNode.unlocked || isCurrent) status = 'IN_PROGRESS'
       else if (isNextUp) status = 'AVAILABLE'
 
       setLoading('node', false)
 
       return {
-        code: puzzle.code,
-        title: puzzle.name,
-        type: puzzle.type,
-        difficulty: puzzle.difficulty,
-        estimatedMinutes: parseTimeToMinutes(puzzle.time),
-        location: puzzle.location,
-        stage: puzzle.stage,
-        unlocked: apiNode?.unlocked ?? puzzle.prerequisiteNodes.length === 0,
+        code,
+        title: apiNode.title,
+        type: apiNode.type as PuzzleType,
+        difficulty: apiNode.difficulty,
+        // The server sends the authoritative estimate; the local bundle is only
+        // a fallback for the pre-auth map.
+        estimatedMinutes: apiNode.estimatedMinutes || (localPuzzle ? parseTimeToMinutes(localPuzzle.time) : 0),
+        location: apiNode.location,
+        stage: apiNode.stage,
+        unlocked: apiNode.unlocked,
         isSolved,
         isCurrent,
         isNextUp,
         attempts: progressEntry?.attempts ?? 0,
         hintsUsed: progressEntry?.hintsUsed ?? 0,
-        points: puzzle.points,
+        points: apiNode.points,
         status,
-        narrativeObjective: puzzle.narrativeObjective,
-        roleDependencyLevel: puzzle.roleDependencyLevel,
-        roleContent,
-        operatorInvestigation: puzzle.operatorInvestigation ?? null,
-        coordinationChain: puzzle.coordinationChain ?? null,
-        failurePropagation: puzzle.failurePropagation ?? null,
-        locationClue: puzzle.locationClue,
-        evidenceUnlocked: puzzle.evidenceUnlocked ?? null,
-        storyReveal: puzzle.storyReveal,
-        whyTeamworkMatters: puzzle.whyTeamworkMatters,
-        hints: puzzle.hints,
+        narrativeObjective: apiNode.narrativeObjective,
+        roleDependencyLevel: apiNode.roleDependencyLevel,
+        roleContent: apiNode.roleContent,
+        operatorInvestigation: apiNode.operatorInvestigation ?? null,
+        coordinationChain: apiNode.coordinationChain ?? null,
+        failurePropagation: apiNode.failurePropagation ?? null,
+        locationClue: apiNode.locationClue ?? EMPTY_LOCATION_CLUE,
+        evidenceUnlocked: apiNode.evidenceUnlocked ?? null,
+        storyReveal: apiNode.storyReveal,
+        whyTeamworkMatters: apiNode.whyTeamworkMatters,
       }
     },
     [role, findProgressEntry, teamProgress, setLoading],
   )
 
+  /**
+   * Submit an answer.
+   *
+   * With no usable connection the answer is persisted locally and replayed by
+   * the flush effect below instead of being thrown away, so a player who loses
+   * signal between buildings does not lose a solved puzzle. A link that dies
+   * mid-request is treated the same way: the fetch rejects, and the text is
+   * queued rather than lost.
+   *
+   * Hints and QR scans are deliberately NOT queueable - a hint costs time and a
+   * scan mutates team state, so neither may be replayed speculatively.
+   */
   const submitAnswer = useCallback(
     async (nodeId: string, answer: string): Promise<ApiSubmissionResult> => {
+      const trimmed = answer.trim()
+
       if (isOffline) {
-        throw new Error('Cannot submit while offline. Restore connection to submit.')
+        const entry = enqueueSubmission(nodeId, trimmed)
+        setQueuedCount(queueSize())
+        return {
+          isCorrect: false,
+          pointsAwarded: 0,
+          attemptNumber: 0,
+          nextNodeId: null,
+          queued: true,
+          queuedAt: entry.queuedAt,
+        }
       }
-      return gameAPI.submitAnswer(nodeId, answer)
+
+      try {
+        return await gameAPI.submitAnswer(nodeId, trimmed)
+      } catch (error) {
+        // A transport failure is recoverable, so keep the answer. Anything the
+        // server actually rejected (wrong answer, rate limit, node not
+        // accessible) is a real error and must surface to the player.
+        if (!isTransportFailure(error)) throw error
+        enqueueSubmission(nodeId, trimmed)
+        setQueuedCount(queueSize())
+        return {
+          isCorrect: false,
+          pointsAwarded: 0,
+          attemptNumber: 0,
+          nextNodeId: null,
+          queued: true,
+          queuedAt: new Date().toISOString(),
+        }
+      }
     },
     [isOffline],
   )
 
   const requestHint = useCallback(
     async (nodeId: string, hintNumber: number): Promise<ApiHintResult> => {
-      try {
-        return await gameAPI.useHint(nodeId, hintNumber)
-      } catch (err) {
-        const puzzle = PUZZLES_BY_CODE[nodeId]
-        if (puzzle && puzzle.hints[hintNumber - 1]) {
-          const penaltyMap: Record<number, number> = {
-            1: HINT_PENALTIES.hint1,
-            2: HINT_PENALTIES.hint2,
-            3: HINT_PENALTIES.hint3,
-          }
-          return {
-            hint: puzzle.hints[hintNumber - 1],
-            penaltySeconds: penaltyMap[hintNumber] ?? 0,
-          }
-        }
-        throw err
+      // Hints are served one at a time by request_hint(), which records the
+      // usage and applies the time penalty. There is deliberately no local
+      // fallback: a cached copy would hand out a hint without recording it,
+      // and the last hint on several nodes states the answer outright.
+      if (isOffline) {
+        throw new Error('Cannot request hints while offline. Restore connection to continue.')
       }
+      return gameAPI.useHint(nodeId, hintNumber)
     },
-    [],
+    [isOffline],
   )
 
   const scanQR = useCallback(
@@ -353,6 +356,9 @@ export function useGameEngine() {
         return {
           discovered: result.discovered,
           qrLabel: result.qrLabel,
+          nodeCode: result.nodeCode,
+          nodeTitle: result.nodeTitle,
+          alreadyClaimed: result.alreadyClaimed,
           message: result.discovered
             ? undefined
             : 'ACCESS DENIED. The system recognizes the marker, but whatever it points to remains sealed.',
@@ -391,6 +397,39 @@ export function useGameEngine() {
 
     return () => clearInterval(interval)
   }, [isAuthenticated, isOffline, refreshGameState, fetchNodeProgress])
+
+  /**
+   * Replay answers that were typed while the link was down.
+   *
+   * Runs whenever the connection turns usable and the queue is non-empty. The
+   * flush is spaced and capped internally so it cannot trip the server's
+   * per-team rate limit, and authoritative state is refreshed afterwards
+   * because a replayed correct answer may have unlocked the next node.
+   */
+  useEffect(() => {
+    if (!isAuthenticated || isOffline || queuedCount === 0) return
+
+    let cancelled = false
+    const flush = async () => {
+      const report = await flushSubmissionQueue({
+        send: (nodeId, answer) => gameAPI.submitAnswer(nodeId, answer),
+      })
+      if (cancelled) return
+      setQueuedCount(report.remaining)
+      if (report.sent.length > 0) {
+        recordFlush(report.sent)
+        void refreshGameState()
+        void refreshTeamProgress()
+        void fetchNodeProgress()
+      }
+    }
+
+    void flush()
+    return () => {
+      cancelled = true
+    }
+    // queuedCount is the trigger; re-running on it changing is the point.
+  }, [isAuthenticated, isOffline, queuedCount, refreshGameState, refreshTeamProgress, fetchNodeProgress])
 
   const solvedNodes = useMemo(
     () =>
@@ -440,7 +479,10 @@ export function useGameEngine() {
     role,
     isInitializing,
     isAuthenticated,
-    isOffline,
+isOffline,
+    connection,
+    queuedCount,
+    lastFlush: getLastFlush(),
     loading: loadingKeys.size > 0,
     isLoading,
     gameState,

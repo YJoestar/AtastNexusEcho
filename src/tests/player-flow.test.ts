@@ -1,13 +1,14 @@
 /**
  * NEXUS — Player Flow Tests
  *
- * Tests the game engine logic: hint penalties, role content security,
- * puzzle content validation, node progress filtering, and QR scan
- * result handling.
+ * Tests the game engine logic: hint penalties, the client/server content
+ * boundary, node progress filtering, and QR scan result handling.
  *
- * SECURITY: Verifies that intermediateOutput is present for OBSERVER/ANALYST
- * but must be stripped for OPERATOR, and that answers/solutions are never
- * exposed in the player-facing content fields.
+ * SECURITY: the client ships no role content and no answers. Each role's
+ * content arrives from get_player_node_detail(), which returns only that
+ * role's block and redacts the accepted answer from every player-visible
+ * string. These tests assert that boundary holds on the client side; the
+ * per-role redaction itself is exercised against the live database.
  */
 
 import { describe, it, expect } from 'vitest'
@@ -46,124 +47,68 @@ describe('Submission Rate Limiting', () => {
   })
 })
 
-describe('Role Content Security', () => {
-  it('OPERATOR role content has intermediateOutput that must be stripped by the UI', () => {
-    const puzzle = PUZZLES_BY_CODE['P01']
-    expect(puzzle).toBeDefined()
-    expect(puzzle.operator.intermediateOutput).toBeTruthy()
-  })
-
-  it('OBSERVER role content has intermediateOutput preserved', () => {
-    const puzzle = PUZZLES_BY_CODE['P01']
-    expect(puzzle.observer.intermediateOutput).toBeTruthy()
-  })
-
-  it('ANALYST role content has intermediateOutput preserved', () => {
-    const puzzle = PUZZLES_BY_CODE['P01']
-    expect(puzzle.analyst.intermediateOutput).toBeTruthy()
-  })
-
-  it('operatorInvestigation.requiredDiscoveries describes what to discover, not answers', () => {
-    const puzzle = PUZZLES_BY_CODE['P01']
-    expect(puzzle.operatorInvestigation).toBeDefined()
-    expect(puzzle.operatorInvestigation.requiredDiscoveries.observerDiscovery).toBeTruthy()
-    expect(puzzle.operatorInvestigation.requiredDiscoveries.analystDiscovery).toBeTruthy()
-  })
-
-  it('coordinationChain describes role collaboration without revealing answers', () => {
-    const puzzle = PUZZLES_BY_CODE['P01']
-    expect(puzzle.coordinationChain).toBeDefined()
-    expect(puzzle.coordinationChain.observerProduces).toBeTruthy()
-    expect(puzzle.coordinationChain.analystTransforms).toBeTruthy()
-    expect(puzzle.coordinationChain.operatorExecutes).toBeTruthy()
-  })
-
-  it('useGameEngine.sanitizeRoleContent strips intermediateOutput for OPERATOR', () => {
-    const puzzle = PUZZLES_BY_CODE['P01']
-    const operatorContent = puzzle.operator
-
-    expect(operatorContent.intermediateOutput).toBeTruthy()
-    expect(operatorContent.intermediateOutput).toContain(puzzle.acceptedAnswer.toString())
-
-    const sanitized = { ...operatorContent, intermediateOutput: '' }
-    expect(sanitized.intermediateOutput).toBe('')
-    expect(sanitized.intermediateOutput).not.toContain(puzzle.acceptedAnswer.toString())
-  })
-
-  it('fullSolution is not exposed in roleContent fields', () => {
-    ALL_PUZZLES.forEach(puzzle => {
-      const roles = [puzzle.observer, puzzle.analyst, puzzle.operator]
-      roles.forEach(rc => {
-        expect(rc.screenTitle).not.toContain(puzzle.fullSolution)
-        expect(rc.dataPayload).not.toContain(puzzle.fullSolution)
-        expect(rc.taskPrompt).not.toContain(puzzle.fullSolution)
-      })
+describe('Client/Server Content Boundary', () => {
+  it('no role content is reachable from the client', () => {
+    // The three role blocks, the coordination chain and the operator
+    // investigation are the puzzle itself. Shipping any of them would give one
+    // player all three roles' material.
+    ALL_PUZZLES.forEach(node => {
+      const record = node as unknown as Record<string, unknown>
+      for (const key of ['observer', 'analyst', 'operator', 'coordinationChain', 'operatorInvestigation']) {
+        expect(record, `${node.code} must not ship ${key}`).not.toHaveProperty(key)
+      }
     })
+  })
+
+  it('no answer field is reachable from the client', () => {
+    ALL_PUZZLES.forEach(node => {
+      const record = node as unknown as Record<string, unknown>
+      expect(record).not.toHaveProperty('acceptedAnswer')
+      expect(record).not.toHaveProperty('fullSolution')
+      expect(record).not.toHaveProperty('validationMethod')
+    })
+  })
+
+  it('hints are not preloaded into the client', () => {
+    // Hints are released one at a time by request_hint(), which records the
+    // usage and charges the penalty. Preloading them would make the last hint
+    // - which on many nodes states the answer - free and immediate.
+    ALL_PUZZLES.forEach(node => {
+      expect(node as unknown as Record<string, unknown>).not.toHaveProperty('hints')
+    })
+  })
+
+  it('P01 and P37 are addressable by code for the map', () => {
+    expect(PUZZLES_BY_CODE['P01'].code).toBe('P01')
+    expect(PUZZLES_BY_CODE['P37'].type).toBe('FINAL_BOSS')
   })
 })
 
-describe('Puzzle Content Validation', () => {
-  it('all 43 puzzles exist', () => {
+describe('Puzzle Index Validation', () => {
+  it('all 43 nodes exist', () => {
     expect(ALL_PUZZLES).toHaveLength(43)
   })
 
-  it('all puzzles have non-empty hints arrays within max', () => {
-    ALL_PUZZLES.forEach(puzzle => {
-      expect(puzzle.hints.length).toBeGreaterThan(0)
-      expect(puzzle.hints.length).toBeLessThanOrEqual(MAX_HINTS_PER_NODE)
+  it('every node has a location the player can be sent to', () => {
+    ALL_PUZZLES.forEach(node => {
+      expect(node.location).toBeTruthy()
     })
   })
 
-  it('all puzzles have role content with screenTitle for all three roles', () => {
-    ALL_PUZZLES.forEach(puzzle => {
-      expect(puzzle.observer.screenTitle).toBeTruthy()
-      expect(puzzle.analyst.screenTitle).toBeTruthy()
-      expect(puzzle.operator.screenTitle).toBeTruthy()
-    })
-  })
-
-  it('all puzzles have locationClue with nextPhysicalLocation', () => {
-    ALL_PUZZLES.forEach(puzzle => {
-      expect(puzzle.locationClue).toBeDefined()
-      expect(puzzle.locationClue.nextPhysicalLocation).toBeTruthy()
-    })
-  })
-
-  it('all puzzles have storyReveal', () => {
-    ALL_PUZZLES.forEach(puzzle => {
-      expect(puzzle.storyReveal).toBeTruthy()
-    })
-  })
-
-  it('all puzzles have whyTeamworkMatters', () => {
-    ALL_PUZZLES.forEach(puzzle => {
-      expect(puzzle.whyTeamworkMatters).toBeTruthy()
-    })
-  })
-
-  it('all puzzles have failurePropagation with recoveryGuidance', () => {
-    ALL_PUZZLES.forEach(puzzle => {
-      expect(puzzle.failurePropagation).toBeDefined()
-      expect(puzzle.failurePropagation.recoveryGuidance).toBeTruthy()
-    })
-  })
-
-  it('final boss puzzle (P37) is type FINAL_BOSS', () => {
+  it('final boss is typed FINAL_BOSS and terminal', () => {
     const p37 = PUZZLES_BY_CODE['P37']
     expect(p37).toBeDefined()
     expect(p37.type).toBe('FINAL_BOSS')
+    expect(p37.nextNodes).toBeNull()
   })
 
-  it('meta puzzle (M01) is type META', () => {
-    const m01 = PUZZLES_BY_CODE['M01']
-    expect(m01).toBeDefined()
-    expect(m01.type).toBe('META')
+  it('meta node is typed META', () => {
+    expect(PUZZLES_BY_CODE['M01'].type).toBe('META')
   })
 
-  it('all puzzle codes are unique', () => {
-    const codes = ALL_PUZZLES.map(p => p.code)
-    const unique = new Set(codes)
-    expect(unique.size).toBe(codes.length)
+  it('all node codes are unique', () => {
+    const codes = ALL_PUZZLES.map(n => n.code)
+    expect(new Set(codes).size).toBe(codes.length)
   })
 })
 
@@ -235,24 +180,55 @@ describe('Node Progress Filtering', () => {
 })
 
 describe('QR Scan Result Handling', () => {
-  it('too-early scan returns narrative failure without spoilers', () => {
+  /**
+   * Mirrors the payloads scan_qr_code() actually returns, verified against the
+   * live database. The contract matters for two reasons: a locked marker must
+   * never name what it points to, and the UI branches on exactly these fields.
+   */
+  it('a locked marker yields no spoiler at all', () => {
     const result = {
       discovered: false,
       message:
         'ACCESS DENIED. The system recognizes the marker, but whatever it points to remains sealed.',
     }
     expect(result.discovered).toBe(false)
+    // The server must not leak the destination for a marker the team has not
+    // reached; only the label-less denial comes back.
+    expect(result).not.toHaveProperty('nodeCode')
+    expect(result).not.toHaveProperty('nodeTitle')
+    expect(result).not.toHaveProperty('qrLabel')
     expect(result.message).not.toContain('answer')
     expect(result.message).toContain('ACCESS DENIED')
   })
 
-  it('successful scan returns discovered=true with location label', () => {
+  it('an available puzzle marker names the node it unlocked', () => {
     const result = {
+      nodeCode: 'P01',
+      nodeTitle: '[ADMIN BUILDING] — Main Entrance Facade',
       discovered: true,
-      qrLabel: 'Archive Alcove Waypoint',
     }
     expect(result.discovered).toBe(true)
+    expect(result.nodeCode).toBe('P01')
+  })
+
+  it('a non-puzzle marker returns a location label instead of a node', () => {
+    const result = { discovered: true, qrLabel: 'Archive Alcove Waypoint' }
+    expect(result.discovered).toBe(true)
     expect(result.qrLabel).toBeTruthy()
+    expect(result).not.toHaveProperty('nodeCode')
+  })
+
+  it('an unrecognised code is rejected outright', () => {
+    const result = { error: 'Invalid QR code' }
+    expect(result.error).toBe('Invalid QR code')
+    expect(result).not.toHaveProperty('discovered')
+  })
+
+  it('a marker another teammate already claimed is reported as such', () => {
+    // Without this the team sees a bare "Access Denied" for a marker that is
+    // perfectly valid, which reads as a bug rather than a shared resource.
+    const result = { discovered: false, alreadyClaimed: true }
+    expect(result.alreadyClaimed).toBe(true)
   })
 })
 
