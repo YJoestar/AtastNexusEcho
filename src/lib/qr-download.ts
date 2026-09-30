@@ -1,5 +1,3 @@
-import { jsPDF } from 'jspdf'
-import QRCode from 'qrcode'
 import { QRCodeEntry } from '@/lib/admin'
 import { APP_CONFIG } from '@/app/config'
 
@@ -53,6 +51,12 @@ export async function generateQRCodeSheet(
   }
 
   try {
+    const QRCodeModule = await import('qrcode')
+    const QRCode = QRCodeModule.default ?? QRCodeModule
+
+    const jsPDFModule = await import('jspdf')
+    const { jsPDF } = jsPDFModule
+
     const items = qrCodes.map(qr => ({
       code: qr.code,
       puzzleNodeCode: qr.puzzleNodeCode,

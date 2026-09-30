@@ -211,3 +211,76 @@ describe('generateCode', () => {
     })
   })
 })
+
+describe('listQRCodes', () => {
+  it('normalizes camelCase and snake_case fields from the edge function', async () => {
+    invoke.mockResolvedValue({
+      data: {
+        success: true,
+        qrCodes: [
+          {
+            id: 'qr-1',
+            code: 'QR-NODE-02',
+            label: '[ADMIN BUILDING] — Main Entrance Facade',
+            type: 'NAVIGATION',
+            puzzle_node_id: 'node-1',
+            position: { x: 0, y: 0 },
+            metadata: { puzzleCode: 'P01', stage: 1 },
+            puzzle_nodes: {
+              code: 'P01',
+              title: 'The Facade',
+              type: 'OBSERVATION',
+              stage: 1,
+              location: '[ADMIN BUILDING] — Main Entrance Facade',
+            },
+          },
+          {
+            id: 'qr-2',
+            code: 'QR-NODE-37',
+            label: '[NEXUS CORE] — GM Observation Deck',
+            type: 'NAVIGATION',
+            puzzle_node_id: 'node-2',
+            position: { x: 0, y: 35 },
+            metadata: { puzzleCode: 'P36', stage: 5 },
+            puzzle_nodes: {
+              code: 'P36',
+              title: 'The GM Intervention',
+              type: 'META',
+              stage: 5,
+              location: '[NEXUS CORE] — GM Observation Deck',
+            },
+          },
+        ],
+      },
+      error: null,
+    })
+
+    const result = await adminAPI.listQRCodes()
+
+    expect(result).toHaveLength(2)
+    expect(result[0]).toEqual({
+      id: 'qr-1',
+      code: 'QR-NODE-02',
+      label: '[ADMIN BUILDING] — Main Entrance Facade',
+      type: 'NAVIGATION',
+      puzzleNodeCode: 'P01',
+      puzzleNodeTitle: 'The Facade',
+      puzzleNodeType: 'OBSERVATION',
+      puzzleNodeStage: 1,
+      puzzleNodeLocation: '[ADMIN BUILDING] — Main Entrance Facade',
+    })
+    expect(result[1].puzzleNodeStage).toBe(5)
+    expect(lastRequestBody().action).toBe('list-qr-codes')
+  })
+
+  it('returns empty array when no qrCodes field is present', async () => {
+    invoke.mockResolvedValue({
+      data: { success: true },
+      error: null,
+    })
+
+    const result = await adminAPI.listQRCodes()
+    expect(result).toEqual([])
+    expect(lastRequestBody().action).toBe('list-qr-codes')
+  })
+})
