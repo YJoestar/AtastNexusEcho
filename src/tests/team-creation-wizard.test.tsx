@@ -36,10 +36,8 @@ function advanceToStepFour() {
   fireEvent.click(screen.getByRole('button', { name: 'NEXT' }))
 
   const nameInputs = screen.getAllByPlaceholderText('Player name')
-  const deviceInputs = screen.getAllByPlaceholderText('Device identifier')
   nameInputs.forEach((el, i) => {
     fireEvent.change(el, { target: { value: `Player ${i + 1}` } })
-    fireEvent.change(deviceInputs[i], { target: { value: `device-${i + 1}` } })
   })
   fireEvent.click(screen.getByRole('button', { name: 'NEXT' }))
 
@@ -137,10 +135,8 @@ describe('TeamCreationWizard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'NEXT' }))
 
     const nameInputs = screen.getAllByPlaceholderText('Player name')
-    const deviceInputs = screen.getAllByPlaceholderText('Device identifier')
     nameInputs.forEach((el, i) => {
       fireEvent.change(el, { target: { value: `Player ${i + 1}` } })
-      fireEvent.change(deviceInputs[i], { target: { value: `device-${i + 1}` } })
     })
     fireEvent.click(screen.getByRole('button', { name: 'NEXT' }))
     // Deliberately skip role assignment.
@@ -159,10 +155,8 @@ describe('TeamCreationWizard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'NEXT' }))
 
     const nameInputs = screen.getAllByPlaceholderText('Player name')
-    const deviceInputs = screen.getAllByPlaceholderText('Device identifier')
     nameInputs.forEach((el, i) => {
       fireEvent.change(el, { target: { value: `Player ${i + 1}` } })
-      fireEvent.change(deviceInputs[i], { target: { value: `device-${i + 1}` } })
     })
     fireEvent.click(screen.getByRole('button', { name: 'NEXT' }))
 

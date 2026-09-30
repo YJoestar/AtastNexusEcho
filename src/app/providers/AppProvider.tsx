@@ -11,6 +11,19 @@ import { supabase } from '@/lib/supabase'
 import { gameAPI } from '@/lib/game'
 import { collectDeviceFingerprint, hashDeviceFingerprint } from '@/lib/auth'
 
+/**
+ * Pull the server's own words out of a failed edge function call. supabase-js
+ * hands back a non-2xx response as an error whose body holds the real reason,
+ * and that reason is often the only actionable thing the player can be told.
+ */
+function readFunctionErrorMessage(error: unknown): string | null {
+  if (!error || typeof error !== 'object') return null
+  const context = (error as { context?: unknown }).context
+  if (!context || typeof context !== 'object') return null
+  const message = (context as { error?: unknown }).error
+  return typeof message === 'string' && message.length > 0 ? message : null
+}
+
 interface AppContextValue {
   player: Player | null
   team: Team | null
@@ -185,7 +198,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
       })
 
       if (funcError || !result || !result.success) {
-        return { success: false, error: result?.error ?? funcError?.message ?? 'Login failed' }
+        // A non-2xx response still carries the server's own explanation in the
+        // error body — for example "this phone is already registered to another
+        // player". Falling back to a generic message would leave the player
+        // guessing, so the server's words win whenever there are any.
+        const serverMessage = readFunctionErrorMessage(funcError)
+        return {
+          success: false,
+          error: result?.error ?? serverMessage ?? 'Login failed',
+        }
       }
 
       // The edge function returns the auth session tokens directly.

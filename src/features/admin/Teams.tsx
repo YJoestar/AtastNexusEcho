@@ -8,12 +8,13 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  Users, Search, Play, Pause, Loader2, Copy, Send,
+  Users, Search, Play, Pause, Loader2, Copy, Send, Key,
 } from 'lucide-react'
 import { ROUTES } from '@/app/config'
 import { cn, formatNumber } from '@/lib/utils'
 import { useBureau } from '@/hooks/useBureau'
 import { TeamCreationWizard } from '@/components/admin/TeamCreationWizard'
+import { TeamCodesModal } from '@/components/admin/TeamCodesModal'
 import { TeamStatusBadge } from '@/components/admin/StatusBadge'
 import { ConfirmationDialog } from '@/components/admin/ConfirmationDialog'
 import { adminAPI } from '@/lib/admin'
@@ -27,6 +28,7 @@ const STATUS_FILTERS: (TeamStatus | 'ALL')[] = [
 export function AdminTeams() {
   const navigate = useNavigate()
   const [isWizardOpen, setIsWizardOpen] = useState(false)
+  const [codesTeam, setCodesTeam] = useState<TeamWithStats | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<TeamStatus | 'ALL'>('ALL')
   const [confirmAction, setConfirmAction] = useState<{
@@ -57,8 +59,13 @@ export function AdminTeams() {
     return matchesSearch && matchesStatus
   })
 
-  const handleStartTeam = (team: TeamWithStats) => {
-    setConfirmAction({
+  // One click, straight to the codes. No confirmation step: reading a code
+  // changes nothing, and a player waiting at the desk should not face a dialog.
+  const openTeamCodes = (team: TeamWithStats) => {
+    setCodesTeam(team)
+  }
+
+  const handleStartTeam = (team: TeamWithStats) => {    setConfirmAction({
       team,
       action: 'start',
       title: 'Start Team',
@@ -224,6 +231,7 @@ export function AdminTeams() {
                     onPause={() => handlePauseTeam(team)}
                     onResume={() => handleResumeTeam(team)}
                     onNotify={() => sendNotification(team)}
+                    onShowCodes={() => openTeamCodes(team)}
                   />
                 ))
               )}
@@ -233,13 +241,21 @@ export function AdminTeams() {
       </div>
 
       {/* Team Creation Wizard — stays open on the credentials step on success,
-          because the generated codes are only ever shown once. */}
+          so the freshly issued codes can be read out before it is closed. */}
       <TeamCreationWizard
         isOpen={isWizardOpen}
         onClose={() => setIsWizardOpen(false)}
         onSuccess={() => {
           void fetchTeams()
         }}
+      />
+
+      {/* Read-only code display — one click per team, never rotates a code. */}
+      <TeamCodesModal
+        isOpen={codesTeam !== null}
+        teamId={codesTeam?.id ?? null}
+        teamNameHint={codesTeam?.name ?? null}
+        onClose={() => setCodesTeam(null)}
       />
 
       {/* Confirmation Dialog */}
@@ -273,6 +289,7 @@ function TeamRow({
   onPause,
   onResume,
   onNotify,
+  onShowCodes,
 }: {
   team: TeamWithStats
   onTeamClick: () => void
@@ -281,6 +298,7 @@ function TeamRow({
   onPause: () => void
   onResume: () => void
   onNotify: () => void
+  onShowCodes: () => void
 }) {
   const statusActionMap: Record<string, JSX.Element> = {
     ACTIVE: (
@@ -363,6 +381,14 @@ function TeamRow({
               <Play className="w-4 h-4" />
             </button>
           )}
+          <button
+            onClick={onShowCodes}
+            className="btn-icon btn-secondary"
+            title="Show team codes"
+            aria-label={`Show login codes for ${team.name}`}
+          >
+            <Key className="w-4 h-4" />
+          </button>
           <button
             onClick={onNotify}
             className="btn-icon btn-secondary"

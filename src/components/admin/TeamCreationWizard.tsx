@@ -3,7 +3,7 @@
  *
  * Multi-step flow:
  *  1. Create team (name, color, tag)
- *  2. Register players (name, device ID)
+ *  2. Register players (name)
  *  3. Assign roles (captain, hacker, coder, speaker)
  *  4. Generate unique access codes
  *
@@ -22,7 +22,6 @@ type Step = 1 | 2 | 3 | 4
 interface PlayerInput {
   id: string
   name: string
-  deviceId: string
 }
 
 interface TeamRoleAssignment {
@@ -51,9 +50,9 @@ export function TeamCreationWizard({ isOpen, onClose, onSuccess }: TeamCreationW
 
   // Step 2 — Players
   const [players, setPlayers] = useState<PlayerInput[]>([
-    { id: '1', name: '', deviceId: '' },
-    { id: '2', name: '', deviceId: '' },
-    { id: '3', name: '', deviceId: '' },
+    { id: '1', name: '' },
+    { id: '2', name: '' },
+    { id: '3', name: '' },
   ])
 
   // Step 3 — Role assignments
@@ -80,9 +79,9 @@ export function TeamCreationWizard({ isOpen, onClose, onSuccess }: TeamCreationW
     setTeamColor(TEAM_COLORS[0])
     setTeamTag('')
     setPlayers([
-      { id: '1', name: '', deviceId: '' },
-      { id: '2', name: '', deviceId: '' },
-      { id: '3', name: '', deviceId: '' },
+      { id: '1', name: '' },
+      { id: '2', name: '' },
+      { id: '3', name: '' },
     ])
     setRoleAssignments([])
     setGeneratedCodes(null)
@@ -100,7 +99,7 @@ export function TeamCreationWizard({ isOpen, onClose, onSuccess }: TeamCreationW
       setError(`Maximum ${TEAM_CREATION_MAX_PLAYERS} players per team`)
       return
     }
-    setPlayers([...players, { id: generateId(), name: '', deviceId: '' }])
+    setPlayers([...players, { id: generateId(), name: '' }])
   }
 
   const removePlayer = (id: string) => {
@@ -108,11 +107,11 @@ export function TeamCreationWizard({ isOpen, onClose, onSuccess }: TeamCreationW
     setRoleAssignments(roleAssignments.filter(ra => ra.playerId !== id))
   }
 
-  const updatePlayer = (id: string, field: 'name' | 'deviceId', value: string) => {
+  const updatePlayer = (id: string, field: 'name', value: string) => {
     setPlayers(players.map(p => p.id === id ? { ...p, [field]: value } : p))
   }
 
-  const getValidPlayers = () => players.filter(p => p.name.trim() && p.deviceId.trim())
+  const getValidPlayers = () => players.filter(p => p.name.trim())
 
   // --- Role Assignment Auto-Assign ---
   const autoAssignRoles = () => {
@@ -173,7 +172,6 @@ export function TeamCreationWizard({ isOpen, onClose, onSuccess }: TeamCreationW
 
     const roster = getValidPlayers().map(p => ({
       name: p.name.trim(),
-      deviceId: p.deviceId.trim(),
       role: (roleAssignments.find(ra => ra.playerId === p.id)?.role) ?? '',
     }))
 
@@ -344,16 +342,6 @@ export function TeamCreationWizard({ isOpen, onClose, onSuccess }: TeamCreationW
                         className="input"
                       />
                     </div>
-                    <div className="flex-1">
-                      <label className="label text-xs">Device ID</label>
-                      <input
-                        type="text"
-                        value={p.deviceId}
-                        onChange={e => updatePlayer(p.id, 'deviceId', e.target.value)}
-                        placeholder="Device identifier"
-                        className="input font-mono text-xs"
-                      />
-                    </div>
                     {players.length > TEAM_CREATION_MIN_PLAYERS && (
                       <button
                         onClick={() => removePlayer(p.id)}
@@ -367,7 +355,8 @@ export function TeamCreationWizard({ isOpen, onClose, onSuccess }: TeamCreationW
                 ))}
               </div>
               <p className="text-xs text-nexus-textSubtle mt-2">
-                Device ID is the unique identifier for the player's device at the event.
+                Each player gets their own device automatically when they log in on their
+                phone. Nothing to enter here.
               </p>
             </div>
           )}
@@ -390,7 +379,6 @@ export function TeamCreationWizard({ isOpen, onClose, onSuccess }: TeamCreationW
                   <div key={p.id} className="flex items-center gap-3 p-3 bg-nexus-bg rounded-xl border border-nexus-border">
                     <div className="flex-1">
                       <span className="font-medium text-nexus-text">{p.name}</span>
-                      <span className="text-xs text-nexus-textSubtle ml-2">{p.deviceId}</span>
                     </div>
                     <div className="w-48">
                       <select

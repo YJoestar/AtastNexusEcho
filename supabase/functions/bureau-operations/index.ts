@@ -10,6 +10,7 @@
  *   - generate-code    { playerId }              (rotate one player's code)
  *   - generate-codes   { teamId }               (rotate every player's code)
  *   - reissue-codes    { teamId, playerIds? }   (alias of generate-codes)
+ *   - reveal-codes     { teamId }               (read only — never rotates)
  *   - start-team       { teamId, reason }
  *   - pause-team       { teamId, reason }
  *   - resume-team      { teamId, reason }
@@ -21,6 +22,7 @@
  */
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
+import { encryptLoginCode, decryptLoginCode } from '../_shared/loginCodeCipher.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -42,6 +44,29 @@ interface IssuedCredential {
   name: string
   role: string
   loginCode: string
+}
+
+/** A roster row as `reveal-codes` needs it: hash presence, cipher, identity. */
+interface RosterCredentialRow {
+  id: string
+  display_name: string
+  role: string
+  status: string
+  login_code_hash: string | null
+  login_code_cipher: string | null
+}
+
+interface RevealedPlayerCode {
+  playerId: string
+  displayName: string
+  role: string
+  status: string
+  /** null when there is no code to show, or it cannot be decrypted. */
+  loginCode: string | null
+  /** A live code whose ciphertext is unreadable: only a re-issue can fix it. */
+  needsReissue: boolean
+  /** The player already logged in, so the code was consumed on purpose. */
+  used: boolean
 }
 
 /** An action that failed for a reason the Bureau should see verbatim. */
@@ -118,6 +143,31 @@ Deno.serve(async (req: Request) => {
     // Get client IP for audit logging
     const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
 
+    // Store each issued code encrypted so the admin can display that same code
+    // again later without it ever being written to the database in the clear.
+    // Best effort: if this fails the code still works for login, and the display
+    // honestly reports it as needing a re-issue instead of showing nothing.
+    async function persistLoginCodeCiphers(
+      issued: Array<{ playerId: string; loginCode: string }>,
+    ): Promise<void> {
+      await Promise.all(
+        issued.map(async credential => {
+          try {
+            const cipher = await encryptLoginCode(credential.loginCode)
+            const { error: cipherError } = await supabaseAdmin
+              .from('players')
+              .update({ login_code_cipher: cipher })
+              .eq('id', credential.playerId)
+            if (cipherError) {
+              console.error('Could not store the encrypted code:', cipherError.message)
+            }
+          } catch (err: unknown) {
+            console.error('Could not store the encrypted code:', err)
+          }
+        }),
+      )
+    }
+
     // Rotate login codes in the database (transactional) and then make each new
     // code usable as that player's Supabase Auth password. The database half
     // returns the plaintext codes exactly once; the Auth half can never join a
@@ -186,6 +236,8 @@ Deno.serve(async (req: Request) => {
           loginCode: row.login_code,
         })
       }
+
+      await persistLoginCodeCiphers(credentials)
 
       return { credentials, failures }
     }
@@ -377,6 +429,8 @@ Deno.serve(async (req: Request) => {
           players: provisionedPlayers.length,
         })
 
+        await persistLoginCodeCiphers(provisionedPlayers)
+
         return jsonResponse(200, {
           success: true,
           idempotent: replayed,
@@ -521,6 +575,70 @@ Deno.serve(async (req: Request) => {
         } catch (issueError: unknown) {
           return bureauErrorResponse(issueError)
         }
+      }
+
+      // Read the codes a team already has. This never rotates anything: a
+      // player asking "what was my code?" must not lose the code they are
+      // holding. A player whose code is absent here is reported as needing a
+      // re-issue — never given a guess, and never rotated behind their back.
+      case 'reveal-codes': {
+        const { teamId } = params as { teamId: string }
+        if (!teamId) return jsonResponse(400, { error: 'teamId is required' })
+
+        const { data: team, error: teamError } = await supabaseAdmin
+          .from('teams')
+          .select('id, code, name')
+          .eq('id', teamId)
+          .single()
+
+        if (teamError || !team) {
+          return jsonResponse(404, { error: 'Team not found' })
+        }
+
+        const { data: roster, error: rosterError } = await supabaseAdmin
+          .from('players')
+          .select('id, display_name, role, status, login_code_hash, login_code_cipher')
+          .eq('team_id', teamId)
+          .order('created_at', { ascending: true })
+
+        if (rosterError) {
+          return jsonResponse(500, { error: rosterError.message })
+        }
+
+        const players = await Promise.all(
+          (roster ?? []).map(async (player: RosterCredentialRow): Promise<RevealedPlayerCode> => {
+            // A code exists only while its hash does: the hash is cleared the
+            // moment the player logs in, and clearing it clears the cipher too.
+            const hasActiveCode =
+              typeof player.login_code_hash === 'string' && player.login_code_hash.length > 0
+            const loginCode = hasActiveCode
+              ? await decryptLoginCode(player.login_code_cipher ?? null)
+              : null
+
+            return {
+              playerId: player.id,
+              displayName: player.display_name,
+              role: player.role,
+              status: player.status,
+              loginCode,
+              // The admin is told plainly which codes need a re-issue instead of
+              // being left staring at an empty slot.
+              needsReissue: hasActiveCode && loginCode === null,
+              used: !hasActiveCode,
+            }
+          }),
+        )
+
+        await logAction('CODE_REVEAL', teamId, undefined, {
+          action: 'REVEAL_CODES',
+          count: players.filter(p => p.loginCode !== null).length,
+        })
+
+        return jsonResponse(200, {
+          success: true,
+          team: { id: team.id, code: team.code, name: team.name },
+          players,
+        })
       }
 
       case 'start-team': {

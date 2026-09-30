@@ -83,6 +83,17 @@ Deno.serve(async (req: Request) => {
 
     if (loginError) {
       console.error('Login flow error:', loginError)
+
+      // The code was right; the phone was not. Device identities are unique, so
+      // this phone is already bound to a different player. Saying "invalid code"
+      // here would send the player round in circles retyping a code that works.
+      if (loginError.code === '23505') {
+        return errorResponse(
+          409,
+          'This phone is already registered to another player. Each player needs their own phone.',
+        )
+      }
+
       return errorResponse(401, 'Invalid access code')
     }
 

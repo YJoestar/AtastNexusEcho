@@ -368,7 +368,7 @@ export function AdminTeamDetail() {
               teamCode={issuedCodes.teamCode}
               teamName={team.name}
               credentials={issuedCodes.credentials}
-              notice="These codes were just issued. Distribute them now — they will not be shown again."
+              notice="These codes were just issued. Read them out now — or reopen them any time with Show codes on the Teams list, up until each player logs in."
             />
             <button
               onClick={() => setIssuedCodes(null)}

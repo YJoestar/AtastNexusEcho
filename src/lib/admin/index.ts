@@ -324,6 +324,27 @@ export interface PlayerCredential {
   loginCode: string
 }
 
+/** One player's code as it exists right now, read without rotating anything. */
+export interface RevealedPlayerCode {
+  playerId: string
+  displayName: string
+  role: string
+  status: string
+  /** null when there is no code to show, or it cannot be decrypted. */
+  loginCode: string | null
+  /** A live code whose stored copy is unreadable: only a re-issue can fix it. */
+  needsReissue: boolean
+  /** The player already logged in, so their code was consumed on purpose. */
+  used: boolean
+}
+
+export interface RevealedTeamCodes {
+  teamId: string
+  teamCode: string | null
+  teamName: string | null
+  players: RevealedPlayerCode[]
+}
+
 export const adminAPI = {
   async listTeams(): Promise<TeamWithStats[]> {
     const result = await callBureau<{ teams: RawTeam[] }>({ action: 'list-teams' })
@@ -468,6 +489,27 @@ export const adminAPI = {
     return { teamCode: result.team?.code ?? null, credentials: result.codes ?? [] }
   },
 
+  /**
+   * Read the codes a team already has.
+   *
+   * This is deliberately not `reissueCredentials`: looking at a code must never
+   * destroy it. A player whose code is missing gets `needsReissue`, and only an
+   * explicit re-issue rotates anything.
+   */
+  async revealTeamCodes(teamId: string): Promise<RevealedTeamCodes> {
+    const result = await callBureau<{
+      team: { id: string; code: string | null; name: string | null }
+      players: RevealedPlayerCode[]
+    }>({ action: 'reveal-codes', teamId })
+
+    return {
+      teamId: result.team?.id ?? teamId,
+      teamCode: result.team?.code ?? null,
+      teamName: result.team?.name ?? null,
+      players: result.players ?? [],
+    }
+  },
+
   async generateCode(playerId: string): Promise<PlayerCredential> {
     const result = await callBureau<PlayerCredential & { success?: boolean }>
       ({ action: 'generate-code', playerId })
@@ -559,7 +601,7 @@ export const adminAPI = {
 
   async createTeamWithPlayers(params: {
     teamName: string
-    players: Array<{ name: string; deviceId: string; role: string }>
+    players: Array<{ name: string; role: string }>
     /**
      * One key per wizard session. Re-sending it (double submit, retried request
      * after a lost response) resolves to the same team with freshly rotated

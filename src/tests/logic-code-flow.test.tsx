@@ -195,10 +195,8 @@ async function provisionThroughWizard(): Promise<PlayerCredential[]> {
   fireEvent.click(screen.getByRole('button', { name: 'NEXT' }))
 
   const nameInputs = screen.getAllByPlaceholderText('Player name')
-  const deviceInputs = screen.getAllByPlaceholderText('Device identifier')
   nameInputs.forEach((el, i) => {
     fireEvent.change(el, { target: { value: `Player ${i + 1}` } })
-    fireEvent.change(deviceInputs[i], { target: { value: `device-${i + 1}` } })
   })
   fireEvent.click(screen.getByRole('button', { name: 'NEXT' }))
   fireEvent.click(screen.getByRole('button', { name: 'Auto-assign' }))
@@ -320,6 +318,34 @@ describe('Admin creates players, then a player logs in', () => {
 
     expect((screen.getByRole('button', { name: /Connect to Investigation/i }) as HTMLButtonElement).disabled).toBe(true)
     expect(invoke.mock.calls.length).toBe(before)
+  })
+
+  it('tells the player why the login failed when the phone is the problem', async () => {
+    const issued = await provisionThroughWizard()
+
+    // A non-2xx response arrives as an error whose body carries the real reason.
+    // Reporting a generic failure here would send the player round retyping a
+    // code that was perfectly valid.
+    invoke.mockImplementationOnce(async () => ({
+      data: null,
+      error: {
+        message: 'Edge Function returned a non-2xx status code',
+        context: {
+          error: 'This phone is already registered to another player. Each player needs their own phone.',
+        },
+      },
+    }))
+
+    renderPlayerLogin()
+    typeCode(issued[1].loginCode)
+    fireEvent.click(screen.getByRole('button', { name: /Connect to Investigation/i }))
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/phone is already registered to another player/i),
+      ).toBeTruthy()
+    })
+    expect(screen.queryByText('Login failed. Please try again.')).toBeNull()
   })
 })
 
