@@ -674,19 +674,59 @@ Deno.serve(async (req: Request) => {
           })
         }
 
-        const { data, error } = await supabaseAdminUser.rpc('bureau_start_team', {
+        // Read the team's current status to decide on the transition path.
+        const { data: teamRow, error: teamFetchError } = await supabaseAdmin
+          .from('teams')
+          .select('status')
+          .eq('id', teamId)
+          .single()
+
+        if (teamFetchError) return jsonResponse(400, { error: teamFetchError.message })
+
+        const currentStatus = teamRow?.status
+
+        // Only teams in pre-game statuses can be started.
+        const preGameStatuses = ['REGISTERED', 'FORMING', 'READY', 'WAITING']
+        if (!preGameStatuses.includes(currentStatus ?? '')) {
+          return jsonResponse(400, {
+            error: `Team must be in a pre-game status to start, current status is ${currentStatus}`,
+          })
+        }
+
+        const now = new Date().toISOString()
+
+        // If not already WAITING, transition to WAITING first.
+        // The status-transition trigger only allows READY -> WAITING, so this
+        // is a separate step that respects the state machine.
+        if (currentStatus !== 'WAITING') {
+          const { error: waitingError } = await supabaseAdmin
+            .from('teams')
+            .update({ status: 'WAITING', updated_at: now })
+            .eq('id', teamId)
+            .in('status', ['REGISTERED', 'FORMING', 'READY'])
+
+          if (waitingError) {
+            return jsonResponse(400, {
+              error: `Could not move team to WAITING status: ${waitingError.message}`,
+            })
+          }
+        }
+
+        // Now transition WAITING -> ACTIVE. bureau_start_team does this and
+        // also logs the audit + game event.
+        const { data: rpcData, error: rpcError } = await supabaseAdminUser.rpc('bureau_start_team', {
           p_team_id: teamId,
           p_reason: reason ?? 'Started by Bureau',
         })
 
-        if (error) {
-          if (error.message.includes('WAITING')) {
+        if (rpcError) {
+          if (rpcError.message.includes('WAITING')) {
             return jsonResponse(400, { error: 'Team must be in WAITING status to start' })
           }
-          return jsonResponse(400, { error: error.message })
+          return jsonResponse(400, { error: rpcError.message })
         }
 
-        return jsonResponse(200, { success: true, teamId, startedAt: data[0]?.started_at })
+        return jsonResponse(200, { success: true, teamId, startedAt: rpcData[0]?.started_at })
       }
 
       case 'pause-team': {
@@ -1384,6 +1424,14 @@ Deno.serve(async (req: Request) => {
         const durationMinutes = Number((durationConfig?.value as string) ?? '180')
         const deadline = new Date(Date.now() + durationMinutes * 60_000).toISOString()
 
+        // Step 1: transition non-WAITING pre-game teams to WAITING first.
+        // The status-transition trigger only allows READY -> WAITING.
+        await supabaseAdmin
+          .from('teams')
+          .update({ status: 'WAITING', updated_at: now })
+          .in('status', ['REGISTERED', 'FORMING', 'READY'])
+
+        // Step 2: now transition all WAITING teams to ACTIVE.
         const { data: teams, error: startError } = await supabaseAdmin
           .from('teams')
           .update({
@@ -1393,7 +1441,7 @@ Deno.serve(async (req: Request) => {
             game_deadline: deadline,
             updated_at: now,
           })
-          .in('status', ['REGISTERED', 'FORMING', 'READY', 'WAITING'])
+          .eq('status', 'WAITING')
           .select('id')
 
         if (startError) return jsonResponse(400, { error: startError.message })
@@ -1439,10 +1487,13 @@ Deno.serve(async (req: Request) => {
           teamsPaused: (teams ?? []).length,
         })
       }
-
       case 'end-game': {
         const { reason } = params as { reason?: string }
         const now = new Date().toISOString()
+
+        // The status-transition trigger only allows ACTIVE -> COMPLETED
+        // and PAUSED -> COMPLETED. Teams in pre-game (WAITING/READY/etc.)
+        // are not ended by end-game — use reset-game for those.
         const { data: teams, error: endError } = await supabaseAdmin
           .from('teams')
           .update({
@@ -1450,7 +1501,7 @@ Deno.serve(async (req: Request) => {
             completed_at: now,
             updated_at: now,
           })
-          .in('status', ['ACTIVE', 'PAUSED', 'WAITING', 'READY'])
+          .in('status', ['ACTIVE', 'PAUSED'])
           .select('id')
 
         if (endError) return jsonResponse(400, { error: endError.message })
