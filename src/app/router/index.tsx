@@ -35,6 +35,7 @@ import { AdminTeamDetail } from '@/features/admin/TeamDetail'
 import { AdminLeaderboard } from '@/features/admin/Leaderboard'
 import { AdminGameControl } from '@/features/admin/GameControl'
 import { AdminAudit } from '@/features/admin/Audit'
+import { AdminLocations } from '@/features/admin/Locations'
 
 // eslint-disable-next-line react-refresh/only-export-components
 function ProtectedPlayerRoute({ children }: { children: ReactNode }) {
@@ -216,6 +217,14 @@ export const router = createBrowserRouter([
             element: (
               <ProtectedAdminRoute>
                 <AdminAudit />
+              </ProtectedAdminRoute>
+            ),
+          },
+          {
+            path: 'locations',
+            element: (
+              <ProtectedAdminRoute>
+                <AdminLocations />
               </ProtectedAdminRoute>
             ),
           },

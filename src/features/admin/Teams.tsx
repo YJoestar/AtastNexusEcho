@@ -11,7 +11,7 @@ import {
   Users, Search, Play, Pause, Loader2, Copy, Send, Key,
 } from 'lucide-react'
 import { ROUTES } from '@/app/config'
-import { cn, formatNumber } from '@/lib/utils'
+import { cn, formatNumber, getAvatarInitials } from '@/lib/utils'
 import { useBureau } from '@/hooks/useBureau'
 import { TeamCreationWizard } from '@/components/admin/TeamCreationWizard'
 import { TeamCodesModal } from '@/components/admin/TeamCodesModal'
@@ -337,7 +337,7 @@ function TeamRow({
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-nexus-surfaceElevated flex items-center justify-center">
             <span className="font-display font-bold text-sm text-nexus-danger">
-              {team.name.substring(0, 2).toUpperCase()}
+              {getAvatarInitials(team.name)}
             </span>
           </div>
           <div>

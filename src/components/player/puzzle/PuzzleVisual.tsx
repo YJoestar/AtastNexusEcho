@@ -542,6 +542,76 @@ const FinalBossVisual: Renderer = ({ dataPayload, interactiveData }) => (
 )
 
 /* ------------------------------------------------------------------------- */
+/* cipher-text - a rail-fence / substitution ciphertext readout              */
+/* ------------------------------------------------------------------------- */
+
+const CipherTextVisual: Renderer = ({ dataPayload, interactiveData }) => {
+  const cipherText = readString(interactiveData, 'cipherText')
+  const hint = readString(interactiveData, 'hint')
+
+  return (
+    <VisualShell label="Cipher Text" tone="accent">
+      <div className="space-y-4">
+        <PayloadText>{dataPayload}</PayloadText>
+        {cipherText && (
+          <pre className="font-mono text-lg tracking-widest text-nexus-text bg-nexus-surfaceElevated border border-nexus-borderSubtle rounded-lg p-3 break-all">
+            {cipherText}
+          </pre>
+        )}
+        {hint && <PayloadText className="text-nexus-info">{hint}</PayloadText>}
+        <RecallLine data={interactiveData} />
+      </div>
+    </VisualShell>
+  )
+}
+
+/* ------------------------------------------------------------------------- */
+/* grid-maze - a pathfinding grid readout                                     */
+/* ------------------------------------------------------------------------- */
+
+const GridMazeVisual: Renderer = ({ dataPayload, interactiveData }) => {
+  const gridString = readString(interactiveData, 'gridString')
+  const hint = readString(interactiveData, 'hint')
+  const rows = useMemo(() => (gridString ? gridString.split(/\s*\/\s*/) : []), [gridString])
+
+  return (
+    <VisualShell label="Grid Maze" tone="accent">
+      <div className="space-y-4">
+        <PayloadText>{dataPayload}</PayloadText>
+        {rows.length > 0 && (
+          <div className="inline-grid gap-[2px] bg-nexus-borderSubtle p-1 rounded-lg">
+            {rows.map((row, r) =>
+              Array.from(row).map((cell, c) => {
+                const isWall = cell === '#'
+                const isStart = cell === 'S'
+                const isEnd = cell === 'E'
+                return (
+                  <Slot
+                    key={`${r}-${c}`}
+                    empty={cell === '.' || cell === ' '}
+                    className={cn(
+                      'w-7 h-7 text-center text-xs',
+                      isWall && 'bg-nexus-bg border border-nexus-border',
+                      isStart && 'border-nexus-info bg-nexus-infoBg/30 text-nexus-info font-bold',
+                      isEnd && 'border-nexus-success bg-nexus-success/20 text-nexus-success font-bold',
+                    )}
+                    aria-label={isWall ? `wall at ${r},${c}` : isStart ? `start` : isEnd ? `end` : `open at ${r},${c}`}
+                  >
+                    {isWall ? '▉' : cell === '.' || cell === ' ' ? '' : cell}
+                  </Slot>
+                )
+              }),
+            )}
+          </div>
+        )}
+        {hint && <PayloadText className="text-nexus-info">{hint}</PayloadText>}
+        <RecallLine data={interactiveData} />
+      </div>
+    </VisualShell>
+  )
+}
+
+/* ------------------------------------------------------------------------- */
 /* fallback                                                                  */
 /* ------------------------------------------------------------------------- */
 
@@ -577,6 +647,8 @@ const RENDERERS: Record<string, Renderer> = {
   'contradiction-hunt': EntryLedgerVisual,
   'timeline-investigation': EntryLedgerVisual,
   'three-phone': ThreePhoneVisual,
+  'cipher-text': CipherTextVisual,
+  'grid-maze': GridMazeVisual,
   meta: MetaVisual,
   'final-boss': FinalBossVisual,
 }

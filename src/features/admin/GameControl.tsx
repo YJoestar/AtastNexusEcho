@@ -12,11 +12,16 @@ import { formatDateTime, formatTimeRemaining } from '@/lib/time'
 import { useBureau } from '@/hooks/useBureau'
 import { TeamStatusBadge } from '@/components/admin/StatusBadge'
 import { ConfirmationDialog } from '@/components/admin/ConfirmationDialog'
+import { adminAPI } from '@/lib/admin'
 import type { TeamStatus } from '@/types'
 
+type GameAction = 'start' | 'pause' | 'end' | 'reset' | null
+
 export function AdminGameControl() {
-  const [showEndConfirm, setShowEndConfirm] = useState(false)
+  const [actionConfirmOpen, setActionConfirmOpen] = useState<GameAction>(null)
   const [isSaving, setIsSaving] = useState(false)
+  const [isActionLoading, setIsActionLoading] = useState(false)
+  const [actionError, setActionError] = useState<string | null>(null)
 
   const {
     gameState,
@@ -52,23 +57,89 @@ export function AdminGameControl() {
   const gameDuration = config?.game_duration_minutes as number ?? 180
   const startedAt = config?.game_started_at as string | null
 
+  const activeTeams = teams.filter(t => t.status === 'ACTIVE').length
+  const completedTeams = teams.filter(t => ['COMPLETED', 'DISQUALIFIED', 'ABANDONED'].includes(t.status)).length
+  const preStartTeams = teams.filter(t => ['REGISTERED', 'FORMING', 'READY', 'WAITING'].includes(t.status)).length
+
   const handleSaveConfig = async () => {
     setIsSaving(true)
+    setActionError(null)
     try {
-      await new Promise(r => setTimeout(r, 500))
+      const durationMinutes = gameDuration
+      await adminAPI.updateGameConfig({
+        game_duration_minutes: String(durationMinutes),
+      }, 'Game duration updated from Game Control')
+      void fetchGameState()
+    } catch (err: unknown) {
+      setActionError(err instanceof Error ? err.message : 'Failed to save config')
     } finally {
       setIsSaving(false)
     }
   }
 
-  const handleEndGame = async () => {
-    setShowEndConfirm(false)
-    void fetchGameState()
+  const executeAction = async () => {
+    if (!actionConfirmOpen) return
+    setIsActionLoading(true)
+    setActionError(null)
+
+    try {
+      switch (actionConfirmOpen) {
+        case 'start':
+          await adminAPI.startGame('Game started by Bureau')
+          break
+        case 'pause':
+          await adminAPI.pauseGame('Game paused by Bureau')
+          break
+        case 'end':
+          await adminAPI.endGame('Game ended by Bureau')
+          break
+        case 'reset':
+          await adminAPI.resetGame('Game reset by Bureau')
+          break
+      }
+      void fetchGameState()
+      void fetchTeams()
+    } catch (err: unknown) {
+      setActionError(err instanceof Error ? err.message : 'Action failed')
+    } finally {
+      setIsActionLoading(false)
+      setActionConfirmOpen(null)
+    }
   }
 
-  const allActiveTeamsCompleted = teams.every(t =>
-    ['COMPLETED', 'DISQUALIFIED', 'ABANDONED'].includes(t.status)
-  )
+  const getConfirmTitle = (action: GameAction) => {
+    switch (action) {
+      case 'start': return 'Start Game'
+      case 'pause': return 'Pause Game'
+      case 'end': return 'End Game'
+      case 'reset': return 'Reset Game'
+      default: return ''
+    }
+  }
+
+  const getConfirmMessage = (action: GameAction) => {
+    switch (action) {
+      case 'start':
+        return `Start the game for all ${preStartTeams} pre-start team(s)? The game timer will begin for all teams.`
+      case 'pause':
+        return `Pause the game for all ${activeTeams} active team(s)? Their timers will stop.`
+      case 'end':
+        return `End the game? All ${teams.filter(t => !['COMPLETED', 'DISQUALIFIED', 'ABANDONED'].includes(t.status)).length} in-progress team(s) will be marked as completed.`
+      case 'reset':
+        return 'Reset the game? This will clear all teams\' progression data. This cannot be undone.'
+      default:
+        return ''
+    }
+  }
+
+  const getConfirmVariant = (action: GameAction) => {
+    switch (action) {
+      case 'end': return 'danger'
+      case 'reset': return 'danger'
+      case 'pause': return 'warning'
+      default: return 'primary'
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -76,7 +147,7 @@ export function AdminGameControl() {
       <div className="flex items-center justify-between">
         <h1 className="heading-2">Game Control</h1>
         <button
-          onClick={() => { void fetchGameState() }}
+          onClick={() => { void fetchGameState(); void fetchTeams() }}
           disabled={isLoading}
           className="btn-secondary text-xs py-1.5"
         >
@@ -86,9 +157,9 @@ export function AdminGameControl() {
       </div>
 
       {/* Error */}
-      {error && (
+      {(error || actionError) && (
         <div className="p-3 rounded-xl bg-nexus-dangerBg border border-nexus-danger/30 text-nexus-danger text-sm animate-slide-down">
-          {error}
+          {actionError ?? error}
         </div>
       )}
 
@@ -182,20 +253,29 @@ export function AdminGameControl() {
         <h2 className="heading-3 mb-4">Game Lifecycle Actions</h2>
         <div className="flex flex-wrap gap-3">
           {gameStatus === 'NOT_STARTED' && (
-            <button className="btn-primary">
+            <button
+              onClick={() => setActionConfirmOpen('start')}
+              disabled={isActionLoading || preStartTeams === 0}
+              className="btn-primary"
+            >
               <Play className="w-4 h-4" />
               Start Game
             </button>
           )}
           {gameStatus === 'RUNNING' && (
             <>
-              <button className="btn-warning">
+              <button
+                onClick={() => setActionConfirmOpen('pause')}
+                disabled={isActionLoading || activeTeams === 0}
+                className="btn-warning"
+              >
                 <Pause className="w-4 h-4" />
                 Pause Game
               </button>
-              {allActiveTeamsCompleted && (
+              {completedTeams === teams.length && (
                 <button
-                  onClick={() => setShowEndConfirm(true)}
+                  onClick={() => setActionConfirmOpen('end')}
+                  disabled={isActionLoading}
                   className="btn-danger"
                 >
                   <Square className="w-4 h-4" />
@@ -205,13 +285,21 @@ export function AdminGameControl() {
             </>
           )}
           {gameStatus === 'PAUSED' && (
-            <button className="btn-primary">
-              <Play className="w-4 h-4" />
-              Resume Game
+            <button
+              onClick={() => setActionConfirmOpen('reset')}
+              disabled={isActionLoading}
+              className="btn-primary"
+            >
+              <RotateCcw className="w-4 h-4" />
+              <span>Reset Game</span>
             </button>
           )}
           {gameStatus === 'ENDED' && (
-            <button className="btn-secondary">
+            <button
+              onClick={() => setActionConfirmOpen('reset')}
+              disabled={isActionLoading}
+              className="btn-secondary"
+            >
               <RotateCcw className="w-4 h-4" />
               Reset Game
             </button>
@@ -219,33 +307,29 @@ export function AdminGameControl() {
         </div>
         <p className="text-xs text-nexus-textSubtle mt-3">
           {gameStatus === 'NOT_STARTED'
-            ? 'Start the game to begin the team timer.'
+            ? `Start the game to begin the team timer for ${preStartTeams} team(s).`
             : gameStatus === 'RUNNING'
-            ? `Game is live. ${teams.filter(t => t.status === 'ACTIVE').length} teams currently playing.`
+            ? `Game is live. ${activeTeams} teams currently playing.`
             : gameStatus === 'PAUSED'
-            ? 'Game is paused. Resume to continue.'
+            ? 'Game is paused. Reset to restart all teams.'
             : 'Game has ended. All teams are finalized.'}
         </p>
       </div>
 
       {/* Confirmation Dialog */}
       <ConfirmationDialog
-        isOpen={showEndConfirm}
-        onClose={() => setShowEndConfirm(false)}
-        title="End Game"
+        isOpen={!!actionConfirmOpen}
+        onClose={() => setActionConfirmOpen(null)}
+        title={getConfirmTitle(actionConfirmOpen)}
         confirmAction={{
-          label: 'END GAME',
-          variant: 'danger',
+          label: actionConfirmOpen === 'reset' ? 'RESET GAME' : actionConfirmOpen === 'end' ? 'END GAME' : actionConfirmOpen === 'pause' ? 'PAUSE GAME' : 'START GAME',
+          variant: getConfirmVariant(actionConfirmOpen),
+          loading: isActionLoading,
         }}
-        onConfirm={handleEndGame}
-        danger
+        onConfirm={executeAction}
+        danger={actionConfirmOpen === 'end' || actionConfirmOpen === 'reset'}
       >
-        <p>All teams must be completed or disqualified to end the game.</p>
-        {showEndConfirm && (
-          <p className="mt-2 text-xs">
-            Active teams: {teams.filter(t => !['COMPLETED', 'DISQUALIFIED', 'ABANDONED'].includes(t.status)).length}
-          </p>
-        )}
+        <p>{actionConfirmOpen ? getConfirmMessage(actionConfirmOpen) : ''}</p>
       </ConfirmationDialog>
     </div>
   )

@@ -6,7 +6,7 @@
 
 import { useEffect, useMemo } from 'react'
 import { RefreshCw } from 'lucide-react'
-import { cn, formatNumber } from '@/lib/utils'
+import { cn, formatNumber, getAvatarInitials } from '@/lib/utils'
 import { formatDuration } from '@/lib/time'
 import { useBureau } from '@/hooks/useBureau'
 import { TeamStatusBadge } from '@/components/admin/StatusBadge'
@@ -124,7 +124,7 @@ export function AdminLeaderboard() {
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-lg bg-nexus-surfaceElevated flex items-center justify-center">
                             <span className="font-display font-bold text-sm text-nexus-danger">
-                              {entry.teamName.substring(0, 2).toUpperCase()}
+                              {getAvatarInitials(entry.teamName)}
                             </span>
                           </div>
                           <div>

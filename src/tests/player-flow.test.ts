@@ -85,8 +85,8 @@ describe('Client/Server Content Boundary', () => {
 })
 
 describe('Puzzle Index Validation', () => {
-  it('all 43 nodes exist', () => {
-    expect(ALL_PUZZLES).toHaveLength(43)
+  it('all 47 nodes exist', () => {
+    expect(ALL_PUZZLES).toHaveLength(47)
   })
 
   it('every node has a location the player can be sent to', () => {

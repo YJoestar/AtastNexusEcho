@@ -718,7 +718,10 @@ export type AdminActionType =
   | 'GAME_RESUME'
   | 'GAME_END'
   | 'CONFIG_UPDATE'
-  | 'ANNOUNCEMENT_SEND'
+   | 'ANNOUNCEMENT_SEND'
+   | 'LOCATION_CREATE'
+   | 'LOCATION_UPDATE'
+   | 'LOCATION_DELETE'
 
 export interface AdminAction {
   id: string

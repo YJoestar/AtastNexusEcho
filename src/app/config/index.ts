@@ -37,6 +37,7 @@ export const ROUTES = {
   ADMIN_LEADERBOARD: '/admin/leaderboard',
   ADMIN_GAME_CONTROL: '/admin/game-control',
   ADMIN_AUDIT: '/admin/audit',
+  ADMIN_LOCATIONS: '/admin/locations',
 
   // Shared
   HOME: '/',
@@ -210,3 +211,27 @@ export const PUZZLE_TYPE_LABELS = {
   META: 'Meta',
   FINAL: 'Final',
 } as const
+
+export const NOTIFICATION_TYPE_OPTIONS = [
+  { value: 'SYSTEM', label: 'System' },
+  { value: 'ADMIN_MESSAGE', label: 'Admin Message' },
+  { value: 'PUZZLE_UNLOCKED', label: 'Puzzle Unlocked' },
+  { value: 'PUZZLE_SOLVED', label: 'Puzzle Solved' },
+  { value: 'HINT_AVAILABLE', label: 'Hint Available' },
+  { value: 'EVIDENCE_FOUND', label: 'Evidence Found' },
+  { value: 'ITEM_ACQUIRED', label: 'Item Acquired' },
+  { value: 'FRAGMENT_REVEALED', label: 'Fragment Revealed' },
+  { value: 'TIME_WARNING', label: 'Time Warning' },
+  { value: 'ROLE_ACTION_REQUIRED', label: 'Role Action Required' },
+  { value: 'GAME_PHASE_CHANGE', label: 'Game Phase Change' },
+  { value: 'TEAM_STATUS_CHANGE', label: 'Team Status Change' },
+] as const
+
+export const NOTIFICATION_PRIORITY_OPTIONS = [
+  { value: 'LOW', label: 'Low' },
+  { value: 'NORMAL', label: 'Normal' },
+  { value: 'HIGH', label: 'High' },
+  { value: 'CRITICAL', label: 'Critical' },
+] as const
+
+export const LOCATION_STATUSES = ['ACTIVE', 'INACTIVE'] as const

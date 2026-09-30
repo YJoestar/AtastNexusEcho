@@ -24,6 +24,8 @@ export const CONTENT_VISUAL_TYPES = [
   'contradiction-hunt',
   'timeline-investigation',
   'three-phone',
+  'cipher-text',
+  'grid-maze',
   'meta',
   'final-boss',
 ] as const
@@ -47,6 +49,8 @@ export const RENDERED_VISUAL_TYPES = [
   'contradiction-hunt',
   'timeline-investigation',
   'three-phone',
+  'cipher-text',
+  'grid-maze',
   'meta',
   'final-boss',
 ] as const

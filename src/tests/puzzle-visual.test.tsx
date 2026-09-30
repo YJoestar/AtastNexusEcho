@@ -95,6 +95,34 @@ describe('PuzzleVisual registry', () => {
     expect(screen.getAllByLabelText(/decode slot/)).toHaveLength(7)
   })
 
+  it('draws the cipher-text readout for rail-fence nodes', () => {
+    render(
+      <PuzzleVisual
+        type="cipher-text"
+        dataPayload="SCANNED SURFACE: a length of copper tape with etched letters."
+        interactiveData={{ cipherText: 'XGWHGOHLMGVLIMGSXLPFSLLVX', hint: 'Three rows.' }}
+      />,
+    )
+    expect(screen.getByText('Cipher Text')).toBeTruthy()
+    expect(screen.getByText(/XGWHGOHLMGVLIMGSXLPFSLLVX/)).toBeTruthy()
+    expect(screen.getByText('Three rows.')).toBeTruthy()
+  })
+
+  it('draws the grid maze for pathfinding nodes', () => {
+    render(
+      <PuzzleVisual
+        type="grid-maze"
+        dataPayload="GRID MAP (6x6)"
+        interactiveData={{ gridString: 'S#.... / ..###. / ..#... / ..#... / ...... / .....E', hint: 'Alternating-axis.' }}
+      />,
+    )
+    expect(screen.getByText('Grid Maze')).toBeTruthy()
+    expect(screen.getByText('S')).toBeTruthy()
+    expect(screen.getByText('E')).toBeTruthy()
+    expect(screen.getAllByLabelText(/wall at/)).toHaveLength(6)
+    expect(screen.getByText('Alternating-axis.')).toBeTruthy()
+  })
+
   it('draws the symbol board for a `puzzle` node and places symbols into slots', () => {
     render(
       <PuzzleVisual

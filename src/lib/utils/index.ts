@@ -213,13 +213,27 @@ export function bytesToSize(bytes: number, decimals: number = 2): string {
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(decimals))} ${sizes[i]}`
 }
 
-export function getInitials(name: string, max: number = 2): string {
-  return name
+export function getInitials(name: string | null | undefined, max: number = 2): string {
+  const trimmed = (name ?? '').trim()
+  if (trimmed.length === 0) return '?'
+  return trimmed
     .split(' ')
     .slice(0, max)
     .map(part => part[0])
     .join('')
     .toUpperCase()
+}
+
+/**
+ * Initials for a square avatar badge. Unlike {@link getInitials} this keeps the
+ * leading-characters behaviour the admin tables have always used, but tolerates
+ * missing or blank names so a malformed record renders a placeholder instead of
+ * throwing mid-render and blanking the whole table.
+ */
+export function getAvatarInitials(name: string | null | undefined, max: number = 2): string {
+  const trimmed = (name ?? '').trim()
+  if (trimmed.length === 0) return '?'
+  return trimmed.slice(0, max).toUpperCase()
 }
 
 export function hashString(str: string): number {

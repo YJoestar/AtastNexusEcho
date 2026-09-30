@@ -7,7 +7,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
   Users, Target, AlertTriangle, TrendingUp, Clock, Play, Pause,
-  Lightbulb, Unlock, RefreshCw, Plus,
+  Lightbulb, Unlock, RefreshCw, Plus, Bell,
 } from 'lucide-react'
 import { ROUTES } from '@/app/config'
 import { cn, formatNumber, formatPercent } from '@/lib/utils'
@@ -16,6 +16,7 @@ import { useBureau } from '@/hooks/useBureau'
 import { TeamCreationWizard } from '@/components/admin/TeamCreationWizard'
 import { TeamStatusBadge } from '@/components/admin/StatusBadge'
 import { ConnectionStatus } from '@/components/admin/ConnectionStatus'
+import { CustomNotificationModal } from '@/components/admin/CustomNotificationModal'
 import type { TeamStatus } from '@/types'
 
 const TEAM_STATUS_GROUPS: Record<string, TeamStatus[]> = {
@@ -27,6 +28,7 @@ const TEAM_STATUS_GROUPS: Record<string, TeamStatus[]> = {
 export function AdminDashboard() {
   const navigate = useNavigate()
   const [isWizardOpen, setIsWizardOpen] = useState(false)
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
   const {
     teams,
     gameState,
@@ -108,7 +110,8 @@ export function AdminDashboard() {
   }
 
   return (
-    <div className="space-y-6">
+    <>
+      <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -133,6 +136,13 @@ export function AdminDashboard() {
           >
             <Plus className="w-4 h-4" />
             <span>Create Team</span>
+          </button>
+          <button
+            onClick={() => setIsNotificationsOpen(true)}
+            className="btn-secondary"
+          >
+            <Bell className="w-4 h-4" />
+            <span>Send Notification</span>
           </button>
         </div>
       </div>
@@ -233,6 +243,17 @@ export function AdminDashboard() {
         }}
       />
     </div>
+
+    <CustomNotificationModal
+      isOpen={isNotificationsOpen}
+      onClose={() => setIsNotificationsOpen(false)}
+      teams={teams}
+      onNotificationSent={() => {
+        void fetchTeams()
+        setIsNotificationsOpen(false)
+      }}
+    />
+    </>
   )
 }
 

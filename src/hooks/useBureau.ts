@@ -10,7 +10,7 @@
  */
 
 import { useState, useCallback, useEffect, useRef } from 'react'
-import { adminAPI, type TeamWithStats, type TeamDetailFull, type GameStateAdmin, type LeaderboardEntryAdmin, type AuditLogEntryAdmin, type GameEventAdmin } from '@/lib/admin'
+import { adminAPI, type TeamWithStats, type TeamDetailFull, type GameStateAdmin, type LeaderboardEntryAdmin, type AuditLogEntryAdmin, type GameEventAdmin, type LocationEntry } from '@/lib/admin'
 import { supabase } from '@/lib/supabase'
 import type { TeamStatus } from '@/types'
 
@@ -21,6 +21,7 @@ export interface BureauState {
   leaderboard: LeaderboardEntryAdmin[]
   auditLog: AuditLogEntryAdmin[]
   gameEvents: GameEventAdmin[]
+  locations: LocationEntry[]
   isLoading: boolean
   error: string | null
 }
@@ -34,6 +35,7 @@ export function useBureau() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntryAdmin[]>([])
   const [auditLog, setAuditLog] = useState<AuditLogEntryAdmin[]>([])
   const [gameEvents, setGameEvents] = useState<GameEventAdmin[]>([])
+  const [locations, setLocations] = useState<LocationEntry[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -97,7 +99,7 @@ export function useBureau() {
     }
   }, [])
 
-  const fetchGameEvents = useCallback(async (limit = 50, teamId?: string) => {
+   const fetchGameEvents = useCallback(async (limit = 50, teamId?: string) => {
     try {
       const data = await adminAPI.getGameEvents(limit, teamId)
       setGameEvents(data)
@@ -105,6 +107,40 @@ export function useBureau() {
       setError(err instanceof Error ? err.message : 'Failed to load game events')
     }
   }, [])
+
+   const fetchLocations = useCallback(async () => {
+    setIsLoading(true)
+    setError(null)
+    try {
+      const data = await adminAPI.listLocations()
+      setLocations(data)
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to load locations')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+   const saveLocation = useCallback(async (params: {
+    nodeId?: string
+    nodeCode?: string
+    name: string
+    status?: 'ACTIVE' | 'INACTIVE'
+    reason?: string
+  }) => {
+    setError(null)
+    const result = await adminAPI.saveLocation(params)
+    await fetchLocations()
+    return result
+  }, [fetchLocations])
+
+   const deleteLocation = useCallback(async (nodeId?: string, reason?: string) => {
+    setError(null)
+    const result = await adminAPI.deleteLocation(nodeId, reason)
+    await fetchLocations()
+    return result
+  }, [fetchLocations])
+
 
   const getTeamById = useCallback((teamId: string): TeamWithStats | undefined => {
     return teams.find(t => t.id === teamId)
@@ -124,8 +160,9 @@ export function useBureau() {
       fetchGameState(),
       fetchLeaderboard(),
       fetchGameEvents(50),
+      fetchLocations(),
     ])
-  }, [fetchTeams, fetchGameState, fetchLeaderboard, fetchGameEvents])
+  }, [fetchTeams, fetchGameState, fetchLeaderboard, fetchGameEvents, fetchLocations])
 
   const bureauState: BureauState = {
     teams,
@@ -134,6 +171,7 @@ export function useBureau() {
     leaderboard,
     auditLog,
     gameEvents,
+    locations,
     isLoading,
     error,
   }
@@ -146,12 +184,16 @@ export function useBureau() {
     leaderboard,
     auditLog,
     gameEvents,
+    locations,
     fetchTeams,
     fetchTeamDetail,
     fetchGameState,
     fetchLeaderboard,
     fetchAuditLog,
     fetchGameEvents,
+    fetchLocations,
+    saveLocation,
+    deleteLocation,
     refreshAll,
     getTeamById,
     getTeamsByStatus,

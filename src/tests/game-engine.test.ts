@@ -15,8 +15,8 @@ import { ContentValidator } from '@/lib/content/validation'
 import type { PuzzleType } from '@/types/game-engine'
 
 describe('Node Index Integrity', () => {
-  it('ships all 43 nodes', () => {
-    expect(ALL_PUZZLES).toHaveLength(43)
+  it('ships all 47 nodes', () => {
+    expect(ALL_PUZZLES).toHaveLength(47)
   })
 
   it('every index entry has the fields the map needs', () => {
@@ -56,8 +56,8 @@ describe('Node Index Integrity', () => {
     }
     expect(PUZZLES_BY_STAGE[1].length).toBe(6)
     expect(PUZZLES_BY_STAGE[2].length).toBe(11)
-    expect(PUZZLES_BY_STAGE[3].length).toBe(9)
-    expect(PUZZLES_BY_STAGE[4].length).toBe(9)
+    expect(PUZZLES_BY_STAGE[3].length).toBe(10)
+    expect(PUZZLES_BY_STAGE[4].length).toBe(12)
     expect(PUZZLES_BY_STAGE[5].length).toBe(8)
   })
 })
@@ -207,7 +207,7 @@ describe('Content Validator', () => {
   it('passes for the whole index', () => {
     const report = new ContentValidator().validateAll()
     expect(report.valid).toBe(true)
-    expect(report.nodesChecked).toBe(43)
+    expect(report.nodesChecked).toBe(47)
     expect(report.issues.filter(i => i.severity === 'ERROR')).toHaveLength(0)
   })
 })

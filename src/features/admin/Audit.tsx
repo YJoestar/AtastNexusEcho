@@ -5,7 +5,7 @@
  */
 
 import { useEffect, useMemo, useState } from 'react'
-import { Search, RefreshCw, AlertCircle, Shield, Users, Play, Pause, Lightbulb, Send, Clock, Trash2 } from 'lucide-react'
+import { Search, RefreshCw, AlertCircle, Shield, Users, Play, Pause, Lightbulb, Send, Clock, Trash2, MapPin } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { formatDateTime } from '@/lib/time'
 import { useBureau } from '@/hooks/useBureau'
@@ -37,6 +37,9 @@ const ACTION_ICONS: Record<string, JSX.Element> = {
   EVIDENCE_GRANT: <Shield className="w-4 h-4 text-cyan-400" />,
   ITEM_GRANT: <Shield className="w-4 h-4 text-amber-400" />,
   FRAGMENT_REVEAL: <Shield className="w-4 h-4 text-purple-400" />,
+  LOCATION_CREATE: <MapPin className="w-4 h-4 text-nexus-info" />,
+  LOCATION_UPDATE: <MapPin className="w-4 h-4 text-nexus-warning" />,
+  LOCATION_DELETE: <MapPin className="w-4 h-4 text-nexus-danger" />,
 }
 
 export function AdminAudit() {

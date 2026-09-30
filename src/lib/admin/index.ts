@@ -160,7 +160,7 @@ async function callBureau<T>(body: Record<string, unknown>): Promise<T> {
 function formatTeam(raw: RawTeam): Team {
   return {
     id: raw.id,
-    name: raw.name,
+    name: raw.name ?? 'Unknown Team',
     code: raw.code,
     status: raw.status as TeamStatus,
     createdAt: raw.created_at,
@@ -316,6 +316,61 @@ export interface LeaderboardEntryAdmin {
   solvedCount: number
 }
 
+export interface LocationEntry {
+  id: string
+  nodeId: string
+  nodeCode: string
+  nodeTitle: string
+  nodeType: string
+  nodeStage: number
+  name: string
+  status: 'ACTIVE' | 'INACTIVE'
+  createdAt: string
+  updatedAt: string
+  createdBy: string | null
+  updatedBy: string | null
+}
+
+export interface LocationHistoryEntry {
+  id: string
+  locationId: string
+  nodeId: string
+  name: string
+  status: string
+  createdAt: string
+  createdBy: string | null
+  reason: string | null
+}
+
+/**
+ * The Bureau edge function serialises leaderboard rows in camelCase. These
+ * helpers normalise each field so a single malformed or legacy row degrades to a
+ * safe default instead of throwing mid-render and blanking the whole table.
+ */
+function firstPresent(source: Record<string, unknown>, keys: string[]): unknown {
+  for (const key of keys) {
+    const value = source[key]
+    if (value !== undefined && value !== null) return value
+  }
+  return undefined
+}
+
+function toText(value: unknown, fallback = ''): string {
+  if (typeof value === 'string') return value
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value)
+  return fallback
+}
+
+function toOptionalText(value: unknown): string | null {
+  if (value === undefined || value === null || value === '') return null
+  return toText(value)
+}
+
+function toCount(value: unknown, fallback = 0): number {
+  const parsed = typeof value === 'number' ? value : Number(value)
+  return Number.isFinite(parsed) ? parsed : fallback
+}
+
 /** A plaintext player access code as returned once to the Bureau. */
 export interface PlayerCredential {
   playerId: string
@@ -381,38 +436,26 @@ export const adminAPI = {
   },
 
   async getLeaderboard(sortBy = 'rank', sortDir: 'asc' | 'desc' = 'desc'): Promise<LeaderboardEntryAdmin[]> {
-    const result = await callBureau<{
-      leaderboard: Array<{
-        team_id: string
-        team_name: string
-        team_code: string
-        score: number
-        status: string
-        started_at: string | null
-        completed_at: string | null
-        current_node_code: string | null
-        current_node_id: string | null
-        hints_used: number
-        time_elapsed_minutes: number
-        solved_count: number
-        rank: number
-      }>
-    }>({ action: 'get-admin-leaderboard', sortBy, sortDir })
+    // `get-admin-leaderboard` responds with camelCase keys. The snake_case names
+    // are still accepted so an older deployed function keeps rendering.
+    const result = await callBureau<{ leaderboard?: Record<string, unknown>[] | null }>({
+      action: 'get-admin-leaderboard', sortBy, sortDir,
+    })
 
-    return (result.leaderboard ?? []).map(e => ({
-      rank: e.rank,
-      teamId: e.team_id,
-      teamName: e.team_name,
-      teamCode: e.team_code,
-      score: e.score,
-      status: e.status as TeamStatus,
-      startedAt: e.started_at,
-      completedAt: e.completed_at,
-      currentNodeCode: e.current_node_code,
-      currentNodeId: e.current_node_id,
-      hintsUsed: e.hints_used,
-      timeElapsedMinutes: e.time_elapsed_minutes,
-      solvedCount: e.solved_count,
+    return (result.leaderboard ?? []).map((e, index) => ({
+      rank: toCount(firstPresent(e, ['rank']), index + 1),
+      teamId: toText(firstPresent(e, ['teamId', 'team_id'])),
+      teamName: toText(firstPresent(e, ['teamName', 'team_name']), 'Unknown Team'),
+      teamCode: toText(firstPresent(e, ['teamCode', 'team_code']), '—'),
+      score: toCount(firstPresent(e, ['score'])),
+      status: toText(firstPresent(e, ['status']), 'REGISTERED') as TeamStatus,
+      startedAt: toOptionalText(firstPresent(e, ['startedAt', 'started_at'])),
+      completedAt: toOptionalText(firstPresent(e, ['completedAt', 'completed_at'])),
+      currentNodeCode: toOptionalText(firstPresent(e, ['currentNodeCode', 'current_node_code'])),
+      currentNodeId: toOptionalText(firstPresent(e, ['currentNodeId', 'current_node_id'])),
+      hintsUsed: toCount(firstPresent(e, ['hintsUsed', 'hints_used'])),
+      timeElapsedMinutes: toCount(firstPresent(e, ['timeElapsedMinutes', 'time_elapsed_minutes'])),
+      solvedCount: toCount(firstPresent(e, ['solvedCount', 'solved_count'])),
     }))
   },
 
@@ -589,15 +632,136 @@ export const adminAPI = {
     return result
   },
 
-  async manualUnlock(params: {
-    teamId: string
-    nodeId: string
-    reason: string
-  }): Promise<unknown> {
-    const result = await callBureau<{ result: unknown }>
-      ({ action: 'manual_unlock', teamId: params.teamId, nodeId: params.nodeId, reason: params.reason })
-    return result.result
-  },
+   async manualUnlock(params: {
+     teamId: string
+     nodeId: string
+     reason: string
+   }): Promise<unknown> {
+     const result = await callBureau<{ result: unknown }>
+       ({ action: 'manual_unlock', teamId: params.teamId, nodeId: params.nodeId, reason: params.reason })
+     return result.result
+   },
+
+   async startGame(reason?: string): Promise<{ teamsStarted: number; startedAt: string; deadline: string }> {
+     const result = await callBureau<{ teamsStarted: number; startedAt: string; deadline: string }>
+       ({ action: 'start-game', reason: reason ?? 'Game started by Bureau' })
+     return result
+   },
+
+   async pauseGame(reason?: string): Promise<{ teamsPaused: number }> {
+     const result = await callBureau<{ teamsPaused: number }>
+       ({ action: 'pause-game', reason: reason ?? 'Game paused by Bureau' })
+     return result
+   },
+
+   async endGame(reason?: string): Promise<{ teamsEnded: number }> {
+     const result = await callBureau<{ teamsEnded: number }>
+       ({ action: 'end-game', reason: reason ?? 'Game ended by Bureau' })
+     return result
+   },
+
+   async resetGame(reason: string): Promise<{ teamsReset: number }> {
+     const result = await callBureau<{ teamsReset: number }>
+       ({ action: 'reset-game', reason })
+     return result
+   },
+
+    async updateGameConfig(config: Record<string, unknown>, reason?: string): Promise<{ updatedKeys: string[] }> {
+      const result = await callBureau<{ updatedKeys: string[] }>
+        ({ action: 'update-game-config', config, reason: reason ?? 'Config updated by Bureau' })
+      return result
+    },
+
+    async listLocations(): Promise<LocationEntry[]> {
+      const result = await callBureau<{ locations?: unknown[] | null }>({
+        action: 'list-locations',
+      })
+
+      return (result.locations ?? []).map(loc => {
+        const l = loc as Record<string, unknown>
+        const pg = (l.puzzle_nodes ?? {}) as Record<string, unknown>
+        return {
+          id: toText(firstPresent(l, ['id']), ''),
+          nodeId: toText(firstPresent(l, ['node_id'])),
+          nodeCode: toText(firstPresent(pg, ['code'])),
+          nodeTitle: toText(firstPresent(pg, ['title']), 'Unknown Node'),
+          nodeType: toText(firstPresent(pg, ['type']), 'OBSERVATION'),
+          nodeStage: toCount(firstPresent(pg, ['stage']), 1),
+          name: toText(firstPresent(l, ['name']), ''),
+          status: (toText(firstPresent(l, ['status']), 'ACTIVE') as 'ACTIVE' | 'INACTIVE'),
+          createdAt: toText(firstPresent(l, ['created_at']), new Date().toISOString()),
+          updatedAt: toText(firstPresent(l, ['updated_at']), new Date().toISOString()),
+          createdBy: toOptionalText(firstPresent(l, ['created_by'])),
+          updatedBy: toOptionalText(firstPresent(l, ['updated_by'])),
+        }
+      })
+    },
+
+    async getLocation(nodeId: string): Promise<{ location: LocationEntry | null; history: LocationHistoryEntry[] }> {
+      const result = await callBureau<{
+        location?: Record<string, unknown> | null
+        history?: unknown[] | null
+      }>({ action: 'get-location', nodeId })
+
+      const loc = result.location
+      const pg = (loc as Record<string, unknown> | null)?.puzzle_nodes ?? {}
+      const pgRecord = pg as Record<string, unknown>
+
+      const location: LocationEntry | null = loc ? {
+        id: toText(firstPresent(loc, ['id'])),
+        nodeId: toText(firstPresent(loc, ['node_id'])),
+        nodeCode: toText(firstPresent(pgRecord, ['code']), ''),
+        nodeTitle: toText(firstPresent(pgRecord, ['title']), 'Unknown Node'),
+        nodeType: toText(firstPresent(pgRecord, ['type']), 'OBSERVATION'),
+        nodeStage: toCount(firstPresent(pgRecord, ['stage']), 1),
+        name: toText(firstPresent(loc, ['name']), ''),
+        status: toText(firstPresent(loc, ['status']), 'ACTIVE') as 'ACTIVE' | 'INACTIVE',
+        createdAt: toText(firstPresent(loc, ['created_at']), new Date().toISOString()),
+        updatedAt: toText(firstPresent(loc, ['updated_at']), new Date().toISOString()),
+        createdBy: toOptionalText(firstPresent(loc, ['created_by'])),
+        updatedBy: toOptionalText(firstPresent(loc, ['updated_by'])),
+      } : null
+
+      const history: LocationHistoryEntry[] = (result.history ?? []).map(h => {
+        const hist = h as Record<string, unknown>
+        return {
+          id: toText(firstPresent(hist, ['id'])),
+          locationId: toText(firstPresent(hist, ['location_id'])),
+          nodeId: toText(firstPresent(hist, ['node_id'])),
+          name: toText(firstPresent(hist, ['name']), ''),
+          status: toText(firstPresent(hist, ['status']), 'ACTIVE'),
+          createdAt: toText(firstPresent(hist, ['created_at']), new Date().toISOString()),
+          createdBy: toOptionalText(firstPresent(hist, ['created_by'])),
+          reason: toOptionalText(firstPresent(hist, ['reason'])),
+        }
+      })
+
+      return { location, history }
+    },
+
+    async saveLocation(params: {
+      nodeId?: string
+      nodeCode?: string
+      name: string
+      status?: 'ACTIVE' | 'INACTIVE'
+      reason?: string
+    }): Promise<{ success: boolean; action: 'created' | 'updated' }> {
+      const result = await callBureau<{ success: boolean; action: string }>
+        ({ action: 'create-location', ...params })
+      return { success: result.success ?? true, action: (result.action ?? 'created') as 'created' | 'updated' }
+    },
+
+    async deleteLocation(nodeId?: string, reason?: string): Promise<{ success: boolean }> {
+      const result = await callBureau<{ success: boolean }>
+        ({ action: 'delete-location', nodeId, reason })
+      return { success: result.success ?? true }
+    },
+
+    async deleteLocationByCode(nodeCode: string, reason?: string): Promise<{ success: boolean }> {
+      const result = await callBureau<{ success: boolean }>
+        ({ action: 'delete-location', nodeCode, reason })
+      return { success: result.success ?? true }
+    },
 
   async createTeamWithPlayers(params: {
     teamName: string

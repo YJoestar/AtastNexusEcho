@@ -5,7 +5,7 @@
 
 import { useState } from 'react'
 import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, Users, Trophy, Gamepad2, FileText, LogOut, ChevronLeft, Wifi, WifiOff, RefreshCw } from 'lucide-react'
+import { LayoutDashboard, Users, Trophy, Gamepad2, FileText, LogOut, ChevronLeft, Wifi, WifiOff, RefreshCw, MapPin } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ROUTES } from '@/app/config'
 import { useAdmin } from '@/app/providers/AdminProvider'
@@ -17,6 +17,7 @@ const ADMIN_NAV = [
   { path: ROUTES.ADMIN_TEAMS, label: 'Teams', icon: Users },
   { path: ROUTES.ADMIN_LEADERBOARD, label: 'Leaderboard', icon: Trophy },
   { path: ROUTES.ADMIN_GAME_CONTROL, label: 'Game Control', icon: Gamepad2 },
+  { path: ROUTES.ADMIN_LOCATIONS, label: 'Locations', icon: MapPin },
   { path: ROUTES.ADMIN_AUDIT, label: 'Audit Log', icon: FileText },
 ] as const
 

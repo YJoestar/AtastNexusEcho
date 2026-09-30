@@ -14,7 +14,7 @@ import {
   Loader2, Key,
 } from 'lucide-react'
 import { ROUTES } from '@/app/config'
-import { cn, formatNumber } from '@/lib/utils'
+import { cn, formatNumber, getAvatarInitials } from '@/lib/utils'
 import { formatDateTime, formatDuration } from '@/lib/time'
 import { useBureau } from '@/hooks/useBureau'
 import { ConfirmationDialog } from '@/components/admin/ConfirmationDialog'
@@ -593,7 +593,7 @@ function PlayerRow({
       <div className="flex items-center gap-3">
         <div className="w-8 h-8 rounded-lg bg-nexus-surfaceElevated flex items-center justify-center">
           <span className="font-display font-bold text-sm">
-            {player.displayName.substring(0, 2).toUpperCase()}
+            {getAvatarInitials(player.displayName)}
           </span>
         </div>
         <div>

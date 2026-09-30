@@ -18,7 +18,17 @@
  *   - disqualify-team  { teamId, reason }
  *   - reset-team       { teamId, reason }
  *   - reassign-role    { playerId, newRole, reason }
- *   - get-team-details { teamId }
+   *   - get-team-details { teamId }
+   *   - start-game     { reason }           (start all pre-start teams)
+   *   - pause-game     { reason }           (pause all active teams)
+   *   - end-game       { reason }           (complete all active/paused teams)
+   *   - reset-game     { reason }           (reset all teams' progression)
+ *   - update-game-config { config }       (update game_config key/values)
+ *   - list-locations        { }              (list all locations with node info)
+ *   - get-location          { nodeId }       (get location override + history for a node)
+ *   - create-location       { nodeId, name, status?, reason? }
+ *   - delete-location       { nodeId, reason? }
+ *   - send-notification     { target, teamIds?, title, message, notifType?, priority?, targetRoles?, reason? }
  */
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
@@ -1358,6 +1368,403 @@ Deno.serve(async (req: Request) => {
         await logAction('NODE_UNLOCK', teamId, undefined, { nodeId: unlockNodeId, reason: unlockReason, manual: true })
 
         return jsonResponse(200, { success: true, result: data })
+      }
+
+      case 'start-game': {
+        const { reason } = params as { reason?: string }
+        const now = new Date().toISOString()
+
+        const { data: durationConfig } = await supabaseAdmin
+          .from('game_config')
+          .select('value')
+          .eq('key', 'game_duration_minutes')
+          .single()
+
+        const durationMinutes = Number((durationConfig?.value as string) ?? '180')
+        const deadline = new Date(Date.now() + durationMinutes * 60_000).toISOString()
+
+        const { data: teams, error: startError } = await supabaseAdmin
+          .from('teams')
+          .update({
+            status: 'ACTIVE',
+            started_at: now,
+            game_started_at: now,
+            game_deadline: deadline,
+            updated_at: now,
+          })
+          .in('status', ['REGISTERED', 'FORMING', 'READY', 'WAITING'])
+          .select('id')
+
+        if (startError) return jsonResponse(400, { error: startError.message })
+
+        for (const t of teams ?? []) {
+          await logAction('GAME_START', t.id, undefined, { startedAt: now, deadline, reason })
+          await supabaseAdmin.from('game_events').insert({
+            type: 'GAME_STARTED',
+            team_id: t.id,
+            payload: { startedAt: now, deadline, reason },
+          })
+        }
+
+        return jsonResponse(200, {
+          success: true,
+          teamsStarted: (teams ?? []).length,
+          startedAt: now,
+          deadline,
+        })
+      }
+
+      case 'pause-game': {
+        const { reason } = params as { reason?: string }
+        const { data: teams, error: pauseError } = await supabaseAdmin
+          .from('teams')
+          .update({ status: 'PAUSED', updated_at: new Date().toISOString() })
+          .eq('status', 'ACTIVE')
+          .select('id')
+
+        if (pauseError) return jsonResponse(400, { error: pauseError.message })
+
+        for (const t of teams ?? []) {
+          await logAction('GAME_PAUSE', t.id, undefined, { reason })
+          await supabaseAdmin.from('game_events').insert({
+            type: 'GAME_PAUSED',
+            team_id: t.id,
+            payload: { reason },
+          })
+        }
+
+        return jsonResponse(200, {
+          success: true,
+          teamsPaused: (teams ?? []).length,
+        })
+      }
+
+      case 'end-game': {
+        const { reason } = params as { reason?: string }
+        const now = new Date().toISOString()
+        const { data: teams, error: endError } = await supabaseAdmin
+          .from('teams')
+          .update({
+            status: 'COMPLETED',
+            completed_at: now,
+            updated_at: now,
+          })
+          .in('status', ['ACTIVE', 'PAUSED', 'WAITING', 'READY'])
+          .select('id')
+
+        if (endError) return jsonResponse(400, { error: endError.message })
+
+        for (const t of teams ?? []) {
+          await logAction('GAME_END', t.id, undefined, { reason })
+          await supabaseAdmin.from('game_events').insert({
+            type: 'GAME_ENDED',
+            team_id: t.id,
+            payload: { reason },
+          })
+        }
+
+        return jsonResponse(200, {
+          success: true,
+          teamsEnded: (teams ?? []).length,
+        })
+      }
+
+      case 'reset-game': {
+        const { reason } = params as { reason?: string }
+        if (!reason) return jsonResponse(400, { error: 'reason is required for reset' })
+
+        const { data: allTeams, error: fetchError } = await supabaseAdmin
+          .from('teams')
+          .select('id')
+          .not('status', 'in', '(COMPLETED, DISQUALIFIED, ABANDONED)')
+
+        if (fetchError) return jsonResponse(400, { error: fetchError.message })
+
+        let resetCount = 0
+        for (const t of allTeams ?? []) {
+          const { error: resetError } = await supabaseAdminUser.rpc('bureau_reset_team', {
+            p_team_id: t.id,
+            p_reason: reason,
+          })
+          if (resetError) {
+            console.warn(`Reset failed for team ${t.id}:`, resetError.message)
+            continue
+          }
+          await logAction('TEAM_UPDATE', t.id, undefined, { action: 'GAME_RESET', reason })
+          resetCount++
+        }
+
+        return jsonResponse(200, {
+          success: true,
+          teamsReset: resetCount,
+        })
+      }
+
+      case 'update-game-config': {
+        const { config } = params as { config: Record<string, unknown> }
+        if (!config || typeof config !== 'object') {
+          return jsonResponse(400, { error: 'config object is required' })
+        }
+
+        const now = new Date().toISOString()
+        const updatedKeys: string[] = []
+
+        for (const [key, value] of Object.entries(config)) {
+          if (['id', 'created_at', 'updated_at', 'updated_by'].includes(key)) continue
+          if (value === null || value === undefined) continue
+
+          const { error: upsertError } = await supabaseAdmin
+            .from('game_config')
+            .upsert({
+              key,
+              value: typeof value === 'string' ? `"${value}"` : JSON.stringify(value),
+              description: null,
+              updated_at: now,
+              updated_by: user.id,
+            })
+            .select('key')
+
+          if (upsertError) {
+            console.warn(`Config update failed for ${key}:`, upsertError.message)
+          } else {
+            updatedKeys.push(key)
+          }
+        }
+
+        await logAction('CONFIG_UPDATE', undefined, undefined, {
+          keys: updatedKeys,
+          reason: (params as Record<string, unknown>).reason as string ?? '',
+        })
+
+        return jsonResponse(200, {
+          success: true,
+          updatedKeys,
+        })
+      }
+
+      case 'list-locations': {
+        const { data: locations } = await supabaseAdmin
+          .from('locations')
+          .select(`
+            id,
+            node_id,
+            name,
+            status,
+            created_at,
+            updated_at,
+            created_by,
+            updated_by,
+            puzzle_nodes:node_id (code, title, type, stage)
+          `)
+          .order('puzzle_nodes.code', { foreignTable: 'puzzle_nodes', ascending: true })
+
+        return jsonResponse(200, {
+          success: true,
+          locations: locations ?? [],
+        })
+      }
+
+      case 'get-location': {
+        const { nodeId } = params as { nodeId?: string }
+
+        if (!nodeId) {
+          return jsonResponse(400, { error: 'nodeId is required' })
+        }
+
+        const { data: location } = await supabaseAdmin
+          .from('locations')
+          .select(`
+            id,
+            node_id,
+            name,
+            status,
+            created_at,
+            updated_at,
+            created_by,
+            updated_by,
+            puzzle_nodes:node_id (code, title, type, stage)
+          `)
+          .eq('node_id', nodeId)
+          .order('created_at', { ascending: false })
+          .maybeSingle()
+
+        const { data: history } = await supabaseAdmin
+          .from('location_history')
+          .select('*')
+          .eq('node_id', nodeId)
+          .order('created_at', { ascending: false })
+
+        return jsonResponse(200, {
+          success: true,
+          location: location ?? null,
+          history: history ?? [],
+        })
+      }
+
+      case 'create-location': {
+        const { nodeId, nodeCode, name, status, reason } = params as {
+          nodeId?: string
+          nodeCode?: string
+          name: string
+          status?: string
+          reason?: string
+        }
+
+        let resolvedNodeId = nodeId
+
+        if (!resolvedNodeId && nodeCode) {
+          const { data: nodeData } = await supabaseAdmin
+            .from('puzzle_nodes')
+            .select('id')
+            .eq('code', nodeCode)
+            .maybeSingle()
+          resolvedNodeId = nodeData?.id
+        }
+
+        if (!resolvedNodeId) {
+          return jsonResponse(400, { error: 'nodeId or nodeCode is required' })
+        }
+
+        if (!name || name.trim().length < 1 || name.trim().length > 200) {
+          return jsonResponse(400, { error: 'Location name must be 1-200 characters' })
+        }
+
+        const validStatus = ['ACTIVE', 'INACTIVE']
+        if (status && !validStatus.includes(status)) {
+          return jsonResponse(400, { error: 'Invalid status' })
+        }
+
+        const { data: existing } = await supabaseAdmin
+          .from('locations')
+          .select('id')
+          .eq('node_id', resolvedNodeId)
+          .maybeSingle()
+
+        const now = new Date().toISOString()
+
+        if (existing) {
+          const { error: histError } = await supabaseAdmin.from('location_history').insert({
+            location_id: existing.id,
+            node_id: resolvedNodeId,
+            name: name.trim(),
+            status: status ?? 'ACTIVE',
+            created_by: user.id,
+            reason: reason ?? '',
+          })
+
+          if (histError) {
+            console.warn('Failed to write location history:', histError.message)
+          }
+
+          const { error: updateError } = await supabaseAdmin
+            .from('locations')
+            .update({
+              name: name.trim(),
+              status: status ?? 'ACTIVE',
+              updated_at: now,
+              updated_by: user.id,
+            })
+            .eq('node_id', resolvedNodeId)
+
+          if (updateError) {
+            return jsonResponse(400, { error: updateError.message })
+          }
+
+          await logAction('LOCATION_UPDATE', undefined, undefined, { nodeId: resolvedNodeId, name, reason })
+
+          return jsonResponse(200, { success: true, action: 'updated' })
+        } else {
+          const { data: newLocation, error: insertError } = await supabaseAdmin
+            .from('locations')
+            .insert({
+              node_id: resolvedNodeId,
+              name: name.trim(),
+              status: status ?? 'ACTIVE',
+              created_by: user.id,
+            })
+            .select()
+            .single()
+
+          if (insertError) {
+            return jsonResponse(400, { error: insertError.message })
+          }
+
+          const { error: histError } = await supabaseAdmin.from('location_history').insert({
+            location_id: newLocation.id,
+            node_id: resolvedNodeId,
+            name: name.trim(),
+            status: status ?? 'ACTIVE',
+            created_by: user.id,
+            reason: reason ?? '',
+          })
+
+          if (histError) {
+            console.warn('Failed to write location history:', histError.message)
+          }
+
+          await logAction('LOCATION_CREATE', undefined, undefined, { nodeId: resolvedNodeId, name, reason })
+
+          return jsonResponse(200, { success: true, action: 'created', location: newLocation })
+        }
+      }
+
+      case 'delete-location': {
+        const { nodeId, nodeCode, reason } = params as {
+          nodeId?: string
+          nodeCode?: string
+          reason?: string
+        }
+
+        let resolvedNodeId = nodeId
+
+        if (!resolvedNodeId && nodeCode) {
+          const { data: nodeData } = await supabaseAdmin
+            .from('puzzle_nodes')
+            .select('id')
+            .eq('code', nodeCode)
+            .maybeSingle()
+          resolvedNodeId = nodeData?.id
+        }
+
+        if (!resolvedNodeId) {
+          return jsonResponse(400, { error: 'nodeId or nodeCode is required' })
+        }
+
+        const { data: existing } = await supabaseAdmin
+          .from('locations')
+          .select('id, name, status')
+          .eq('node_id', resolvedNodeId)
+          .maybeSingle()
+
+        if (!existing) {
+          return jsonResponse(404, { error: 'No location override found for this node' })
+        }
+
+        const { error: histError } = await supabaseAdmin.from('location_history').insert({
+          location_id: existing.id,
+          node_id: resolvedNodeId,
+          name: existing.name,
+          status: 'INACTIVE',
+          created_by: user.id,
+          reason: reason ?? 'Location override removed by Bureau',
+        })
+
+        if (histError) {
+          console.warn('Failed to write location history on delete:', histError.message)
+        }
+
+        const { error: deleteError } = await supabaseAdmin
+          .from('locations')
+          .delete()
+          .eq('node_id', resolvedNodeId)
+
+        if (deleteError) {
+          return jsonResponse(400, { error: deleteError.message })
+        }
+
+        await logAction('LOCATION_DELETE', undefined, undefined, { nodeId: resolvedNodeId, oldName: existing.name, reason })
+
+        return jsonResponse(200, { success: true })
       }
 
       default:
