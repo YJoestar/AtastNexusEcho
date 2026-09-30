@@ -1771,36 +1771,58 @@ Deno.serve(async (req: Request) => {
        case 'list-qr-codes': {
          const { data: qrNodes, error: qrError } = await supabaseAdmin
            .from('qr_nodes')
-           .select(`
-             id,
-             code,
-             label,
-             type,
-             puzzle_node_id,
-             position,
-             metadata,
-             puzzle_nodes:puzzle_node_id (code, title, type, stage, location)
-           `)
-           .order('puzzle_nodes.code', { foreignTable: 'puzzle_nodes', ascending: true })
+           .select('id, code, label, type, puzzle_node_id, position, metadata')
 
          if (qrError) {
            return jsonResponse(400, { error: qrError.message })
          }
 
+         const nodeIds = (qrNodes ?? []).map((q: { puzzle_node_id: string | null }) => q.puzzle_node_id).filter(Boolean)
+         const { data: puzzleNodes } = await supabaseAdmin
+           .from('puzzle_nodes')
+           .select('id, code, title, type, stage, location')
+           .in('id', nodeIds)
+
+         const nodeMap = new Map<string, { code: string; title: string; type: string; stage: number; location: string }>()
+         for (const node of puzzleNodes ?? []) {
+           nodeMap.set(node.id, {
+             code: node.code,
+             title: node.title,
+             type: node.type,
+             stage: node.stage,
+             location: node.location ?? '',
+           })
+         }
+
+         const enriched = (qrNodes ?? []).map((q: Record<string, unknown>) => {
+           const nodeId = q.puzzle_node_id as string | null
+           const nodeInfo = nodeId ? nodeMap.get(nodeId) : null
+           return {
+             id: q.id,
+             code: q.code,
+             label: q.label,
+             type: q.type,
+             puzzle_node_id: nodeId,
+             position: q.position,
+             metadata: q.metadata,
+             puzzle_node: nodeInfo,
+           }
+         })
+
          const now = new Date().toISOString()
          await logAction('QR_DOWNLOAD', undefined, undefined, {
-           qrCount: qrNodes?.length ?? 0,
+           qrCount: enriched.length,
          })
 
          await supabaseAdmin.from('game_events').insert({
            type: 'ADMIN_ACTION',
-           payload: { action: 'QR_DOWNLOAD', qrCount: qrNodes?.length ?? 0 },
+           payload: { action: 'QR_DOWNLOAD', qrCount: enriched.length },
            metadata: { source: 'bureau', timestamp: now },
          })
 
          return jsonResponse(200, {
            success: true,
-           qrCodes: qrNodes ?? [],
+           qrCodes: enriched,
          })
        }
 

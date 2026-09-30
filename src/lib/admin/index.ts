@@ -716,7 +716,7 @@ export const adminAPI = {
 
       return (result.qrCodes ?? []).map(qr => {
         const q = qr as Record<string, unknown>
-        const pg = (q.puzzle_nodes ?? {}) as Record<string, unknown>
+        const pg = (q.puzzle_node ?? q.puzzle_nodes ?? {}) as Record<string, unknown>
         return {
           id: toText(firstPresent(q, ['id']), ''),
           code: toText(firstPresent(q, ['code']), ''),
