@@ -29,6 +29,7 @@
  *   - create-location       { nodeId, name, status?, reason? }
  *   - delete-location       { nodeId, reason? }
  *   - send-notification     { target, teamIds?, title, message, notifType?, priority?, targetRoles?, reason? }
+ *   - list-qr-codes          { }               (list all QR codes with puzzle node info for printing)
  */
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
@@ -1767,7 +1768,43 @@ Deno.serve(async (req: Request) => {
         return jsonResponse(200, { success: true })
       }
 
-      default:
+       case 'list-qr-codes': {
+         const { data: qrNodes, error: qrError } = await supabaseAdmin
+           .from('qr_nodes')
+           .select(`
+             id,
+             code,
+             label,
+             type,
+             puzzle_node_id,
+             position,
+             metadata,
+             puzzle_nodes:puzzle_node_id (code, title, type, stage, location)
+           `)
+           .order('puzzle_nodes.code', { foreignTable: 'puzzle_nodes', ascending: true })
+
+         if (qrError) {
+           return jsonResponse(400, { error: qrError.message })
+         }
+
+         const now = new Date().toISOString()
+         await logAction('QR_DOWNLOAD', undefined, undefined, {
+           qrCount: qrNodes?.length ?? 0,
+         })
+
+         await supabaseAdmin.from('game_events').insert({
+           type: 'ADMIN_ACTION',
+           payload: { action: 'QR_DOWNLOAD', qrCount: qrNodes?.length ?? 0 },
+           metadata: { source: 'bureau', timestamp: now },
+         })
+
+         return jsonResponse(200, {
+           success: true,
+           qrCodes: qrNodes ?? [],
+         })
+       }
+
+       default:
          return jsonResponse(400, { error: `Unknown action: ${action}` })
     }
   } catch (err: unknown) {

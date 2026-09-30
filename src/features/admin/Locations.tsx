@@ -8,11 +8,13 @@
  */
 
 import { useEffect, useMemo, useState } from 'react'
-import { MapPin, Search, RefreshCw, Edit, AlertCircle } from 'lucide-react'
+import { MapPin, Search, RefreshCw, Edit, AlertCircle, Download, Loader2 } from 'lucide-react'
 import { cn, getAvatarInitials } from '@/lib/utils'
 import { useBureau } from '@/hooks/useBureau'
 import { ALL_PUZZLES } from '@/content/puzzles'
 import { LocationEditor } from '@/components/admin/LocationEditor'
+import { adminAPI } from '@/lib/admin'
+import { generateQRCodeSheet } from '@/lib/qr-download'
 import type { LocationEntry } from '@/lib/admin'
 import type { NodeIndexEntry } from '@/content/puzzles'
 import { PUZZLE_TYPE_LABELS } from '@/app/config'
@@ -28,6 +30,8 @@ export function AdminLocations() {
   const [isEditorOpen, setIsEditorOpen] = useState(false)
   const [editorNode, setEditorNode] = useState<NodeIndexEntry | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
+  const [isDownloading, setIsDownloading] = useState(false)
+  const [downloadError, setDownloadError] = useState<string | null>(null)
 
   useEffect(() => {
     void fetchLocations()
@@ -77,21 +81,54 @@ export function AdminLocations() {
             Override physical locations for puzzle nodes without regenerating QR codes.
           </p>
         </div>
-        <button
-          onClick={() => void fetchLocations()}
-          disabled={isLoading}
-          className="btn-secondary text-xs py-1.5"
-        >
-          <RefreshCw className={cn('w-4 h-4', isLoading && 'animate-spin')} />
-          <span>Refresh</span>
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={async () => {
+              setIsDownloading(true)
+              setDownloadError(null)
+              try {
+                const qrCodes = await adminAPI.listQRCodes()
+                const result = await generateQRCodeSheet(qrCodes)
+                if (!result.success) {
+                  setDownloadError(result.error ?? 'Failed to generate QR sheet')
+                }
+              } catch (err: unknown) {
+                setDownloadError(err instanceof Error ? err.message : 'Failed to generate QR sheet')
+              } finally {
+                setIsDownloading(false)
+              }
+            }}
+            disabled={isDownloading}
+            className="btn-primary text-xs py-1.5"
+          >
+            {isDownloading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Generating…</span>
+              </>
+            ) : (
+              <>
+                <Download className="w-4 h-4" />
+                <span>⬇️ Download All QR Codes</span>
+              </>
+            )}
+          </button>
+          <button
+            onClick={() => void fetchLocations()}
+            disabled={isLoading}
+            className="btn-secondary text-xs py-1.5"
+          >
+            <RefreshCw className={cn('w-4 h-4', isLoading && 'animate-spin')} />
+            <span>Refresh</span>
+          </button>
+        </div>
       </div>
 
       {/* Error */}
-      {error && (
+      {(error || downloadError) && (
         <div className="p-3 rounded-xl bg-nexus-dangerBg/20 border border-nexus-danger/30 text-nexus-danger text-sm flex items-start gap-2">
           <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-          <span>{error}</span>
+          <span>{error || downloadError}</span>
         </div>
       )}
 

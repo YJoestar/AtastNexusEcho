@@ -300,6 +300,18 @@ export interface GameStateAdmin {
   config: Record<string, unknown>
 }
 
+export interface QRCodeEntry {
+  id: string
+  code: string
+  label: string
+  type: string
+  puzzleNodeCode: string
+  puzzleNodeTitle: string
+  puzzleNodeType: string
+  puzzleNodeStage: number
+  puzzleNodeLocation: string
+}
+
 export interface LeaderboardEntryAdmin {
   rank: number
   teamId: string
@@ -672,7 +684,7 @@ export const adminAPI = {
       return result
     },
 
-    async listLocations(): Promise<LocationEntry[]> {
+     async listLocations(): Promise<LocationEntry[]> {
       const result = await callBureau<{ locations?: unknown[] | null }>({
         action: 'list-locations',
       })
@@ -693,6 +705,28 @@ export const adminAPI = {
           updatedAt: toText(firstPresent(l, ['updated_at']), new Date().toISOString()),
           createdBy: toOptionalText(firstPresent(l, ['created_by'])),
           updatedBy: toOptionalText(firstPresent(l, ['updated_by'])),
+        }
+      })
+    },
+
+    async listQRCodes(): Promise<QRCodeEntry[]> {
+      const result = await callBureau<{ qrCodes?: unknown[] | null }>({
+        action: 'list-qr-codes',
+      })
+
+      return (result.qrCodes ?? []).map(qr => {
+        const q = qr as Record<string, unknown>
+        const pg = (q.puzzle_nodes ?? {}) as Record<string, unknown>
+        return {
+          id: toText(firstPresent(q, ['id']), ''),
+          code: toText(firstPresent(q, ['code']), ''),
+          label: toText(firstPresent(q, ['label']), ''),
+          type: toText(firstPresent(q, ['type']), ''),
+          puzzleNodeCode: toText(firstPresent(pg, ['code']), ''),
+          puzzleNodeTitle: toText(firstPresent(pg, ['title']), 'Unknown Node'),
+          puzzleNodeType: toText(firstPresent(pg, ['type']), ''),
+          puzzleNodeStage: toCount(firstPresent(pg, ['stage']), 1),
+          puzzleNodeLocation: toText(firstPresent(pg, ['location']), ''),
         }
       })
     },

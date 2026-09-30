@@ -722,6 +722,7 @@ export type AdminActionType =
    | 'LOCATION_CREATE'
    | 'LOCATION_UPDATE'
    | 'LOCATION_DELETE'
+   | 'QR_DOWNLOAD'
 
 export interface AdminAction {
   id: string
