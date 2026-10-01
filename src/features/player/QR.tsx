@@ -234,13 +234,13 @@ export function PlayerQR() {
                     <div className="absolute -bottom-2 -left-2 w-8 h-8 border-b-4 border-l-4 border-nexus-accent rounded-bl-2xl" />
                     <div className="absolute -bottom-2 -right-2 w-8 h-8 border-b-4 border-r-4 border-nexus-accent rounded-br-2xl" />
                   </div>
-                  <div className="absolute left-4 right-4 h-1 bg-nexus-accent animate-pulse-glow rounded-full" />
+                  <div className="absolute left-4 right-4 h-1 bg-nexus-accent" />
                 </div>
               </div>
 
               {/* Status Bar */}
               <div className="absolute bottom-4 left-4 right-4">
-                <div className="bg-nexus-bg/90 backdrop-blur-sm rounded-xl px-4 py-3 text-center">
+                <div className="bg-nexus-bg/90 rounded border border-nexus-border px-4 py-3 text-center">
                   <p className="text-sm text-nexus-textMuted">
                     {scanningText || 'Scanning…'}
                   </p>
@@ -250,7 +250,7 @@ export function PlayerQR() {
               {/* Cancel Button */}
               <button
                 onClick={stopScan}
-                className="absolute top-4 right-4 p-2 rounded-xl bg-nexus-dangerBg/90 backdrop-blur-sm border border-nexus-danger/30 text-nexus-danger hover:bg-nexus-danger/20 transition-colors touch-target-primary"
+                className="absolute top-4 right-4 p-2 bg-nexus-dangerBg border border-nexus-danger/30 text-nexus-danger hover:bg-nexus-danger/20 transition-colors touch-target-primary"
                 aria-label="Cancel scan"
               >
                 <XCircle className="w-5 h-5" />

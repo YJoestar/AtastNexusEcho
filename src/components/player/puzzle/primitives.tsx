@@ -1,9 +1,8 @@
 /**
- * NEXUS - Puzzle renderer primitives
+ * NEXUS — Puzzle renderer primitives
  *
- * Small shared building blocks for the per-visualType renderers. Kept separate
- * from the registry so each piece stays trivially testable and so the renderers
- * file can export components only (react-refresh lint rule).
+ * Small shared building blocks for the per-visualType renderers.
+ * Uses NEXUS border language: partial borders, not rounded rectangles.
  */
 
 import type { ReactNode } from 'react'
@@ -22,13 +21,13 @@ export function VisualShell({
 }) {
   const toneClass =
     tone === 'accent'
-      ? 'border-nexus-accent/30 bg-nexus-accentBg/10'
+      ? 'border-l-2 border-t-2 border-nexus-accent/30'
       : tone === 'warning'
-        ? 'border-nexus-warning/30 bg-nexus-warningBg/10'
-        : 'border-nexus-borderSubtle bg-nexus-bg'
+        ? 'border-l-2 border-t-2 border-nexus-warning/30'
+        : 'border-nexus-border'
 
   return (
-    <div className={cn('rounded-xl border p-4', toneClass, className)}>
+    <div className={cn('bg-nexus-surfaceElevated border p-4', toneClass, className)}>
       {label && (
         <p className="text-xs uppercase tracking-wider text-nexus-textSubtle mb-3">{label}</p>
       )}
@@ -62,11 +61,10 @@ export function Slot({
     <span
       aria-label={ariaLabel}
       className={cn(
-        'inline-flex min-w-[2.25rem] min-h-[2.25rem] items-center justify-center px-2 rounded-lg border text-lg',
-        empty
-          ? 'border-dashed border-nexus-border text-nexus-textSubtle'
-          : 'border-nexus-border bg-nexus-surfaceElevated text-nexus-text',
-        active && 'border-nexus-accent bg-nexus-accentBg/30 text-nexus-accent',
+        'inline-flex min-w-[2.25rem] min-h-[2.25rem] items-center justify-center px-2 text-lg',
+        'border border-nexus-border bg-nexus-bg text-nexus-text',
+        empty && 'border-dashed border-nexus-borderSubtle text-nexus-textSubtle',
+        active && 'border-l-2 border-t-2 border-nexus-accent text-nexus-accent',
         className,
       )}
     >
@@ -88,7 +86,7 @@ export function GlyphTile({ glyph, index }: { glyph: string; index: number }) {
 
 export function KeyValue({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-baseline justify-between gap-3 py-1">
+    <div className="flex items-baseline justify-between gap-3 py-1 border-b border-nexus-border/30">
       <span className="text-xs uppercase tracking-wider text-nexus-textSubtle shrink-0">{label}</span>
       <span className="font-mono text-sm text-nexus-text text-right break-all">{value}</span>
     </div>
@@ -97,7 +95,7 @@ export function KeyValue({ label, value }: { label: string; value: string }) {
 
 export function RecallBadge({ puzzleCode }: { puzzleCode: string }) {
   return (
-    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-nexus-info/30 bg-nexus-infoBg/40 text-nexus-info text-xs font-medium">
+    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 border border-nexus-accent/30 bg-nexus-accentBg/20 text-nexus-accent text-xs font-medium">
       RECALL · {puzzleCode}
     </span>
   )

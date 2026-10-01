@@ -37,13 +37,13 @@ export function StatusBadge({
   const style = variantStyles[variant] ?? variantStyles.default
   return (
     <span className={cn(
-      'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border',
+      'inline-flex items-center gap-1.5 px-2.5 py-0.75 text-xs border',
       dot && 'pl-2',
       style,
       className,
     )}>
       {dot && (
-        <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" aria-hidden="true" />
+        <span className="w-1.5 h-1.5 rounded-full bg-current" aria-hidden="true" />
       )}
       {icon && <span className="w-3.5 h-3.5 flex-shrink-0" aria-hidden="true">{icon}</span>}
       <span>{children}</span>

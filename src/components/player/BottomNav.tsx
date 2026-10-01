@@ -62,10 +62,10 @@ export function BottomNav() {
                 </div>
                 <span>{item.label}</span>
                 {connection.status !== 'online' && item.path === ROUTES.PLAYER_QR && (
-                  <span className="w-2 h-2 rounded-full bg-nexus-danger animate-pulse" />
+                  <span className="w-2 h-2 rounded-full bg-nexus-danger" />
                 )}
                 {queuedCount > 0 && item.path === ROUTES.PLAYER_GAME && (
-                  <span className="w-2 h-2 rounded-full bg-nexus-warning animate-pulse" />
+                  <span className="w-2 h-2 rounded-full bg-nexus-warning" />
                 )}
               </>
             )}

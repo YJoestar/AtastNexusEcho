@@ -48,10 +48,10 @@ export function PlayerGame() {
       <div className="page-content max-w-2xl mx-auto space-y-6">
         {/* Team Status Bar */}
         <div className="panel flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-nexus-accentBg flex items-center justify-center">
-              <span className="text-nexus-accent font-display font-bold text-xl">N</span>
-            </div>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 border border-nexus-accent/30 bg-nexus-accentBg flex items-center justify-center">
+                <span className="text-nexus-accent font-display font-bold text-xl">N</span>
+              </div>
             <div>
               <p className="font-semibold text-nexus-text text-lg">{team.name}</p>
               <p className="text-xs text-nexus-textMuted font-mono">{team.code}</p>
@@ -121,9 +121,9 @@ export function PlayerGame() {
             </span>
           </div>
 
-          <div className="h-3 bg-nexus-bg rounded-full overflow-hidden">
+          <div className="h-3 bg-nexus-bg overflow-hidden">
             <div
-              className="h-full bg-nexus-accent rounded-full transition-all duration-500"
+              className="h-full bg-nexus-accent transition-all duration-500"
               style={{ width: `${progressPercent}%` }}
             />
           </div>
@@ -177,7 +177,7 @@ export function PlayerGame() {
                     to={ROUTES.PLAYER_NODE.replace(':nodeId', node.code)}
                     className="panel panel-hover flex items-center gap-3 p-3 group"
                   >
-                    <div className="w-10 h-10 rounded-xl bg-nexus-bg flex items-center justify-center flex-shrink-0">
+                    <div className="w-10 h-10 bg-nexus-bg flex items-center justify-center flex-shrink-0 border border-nexus-border">
                       <Target className="w-5 h-5 text-nexus-textSubtle group-hover:text-nexus-accent transition-colors" />
                     </div>
                     <div className="flex-1 min-w-0">
@@ -242,7 +242,7 @@ export function PlayerGame() {
             <div className="flex items-center gap-2">
               {gameState?.status === 'RUNNING' ? (
                 <>
-                  <span className="w-2 h-2 rounded-full bg-nexus-accent animate-pulse" />
+                  <span className="w-2 h-2 rounded-full bg-nexus-accent" />
                   <span className="text-sm text-nexus-text">Active</span>
                 </>
               ) : (

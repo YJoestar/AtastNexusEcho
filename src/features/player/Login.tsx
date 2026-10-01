@@ -68,7 +68,7 @@ export function PlayerLogin() {
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="w-20 h-20 rounded-2xl bg-nexus-accentBg flex items-center justify-center mx-auto mb-4">
+          <div className="w-20 h-20 border-2 border-nexus-accent/30 bg-nexus-accentBg flex items-center justify-center mx-auto mb-4">
             <span className="text-nexus-accent font-display font-bold text-4xl">N</span>
           </div>
           <h1 className="heading-2 text-nexus-text">NEXUS</h1>
@@ -76,7 +76,7 @@ export function PlayerLogin() {
         </div>
 
         {/* Login Form */}
-        <form onSubmit={handleSubmit} className="panel space-y-6" noValidate>
+        <form onSubmit={handleSubmit} className="nexus-document space-y-6" noValidate>
           {/* Access Code */}
           <div>
             <label htmlFor="accessCode" className="label">Access Code</label>
@@ -124,7 +124,7 @@ export function PlayerLogin() {
 
           {/* Error Message */}
           {error && (
-            <div className="p-3 rounded-xl bg-nexus-dangerBg border border-nexus-danger/30 flex items-start gap-2 animate-slide-down">
+            <div className="p-3 border border-nexus-danger/30 flex items-start gap-2 animate-slide-down">
               <AlertCircle className="w-5 h-5 flex-shrink-0 text-nexus-danger mt-0.5" />
               <p className="text-sm text-nexus-danger">{error}</p>
             </div>
@@ -134,7 +134,7 @@ export function PlayerLogin() {
           <button
             type="submit"
             disabled={isLoading || !isComplete}
-            className="btn-primary w-full touch-target-comfortable"
+            className="nexus-btn nexus-btn-primary w-full touch-target-comfortable"
           >
             {isLoading ? (
               <>

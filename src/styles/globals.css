@@ -2,14 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ====================================================================
+   NEXUS ECHO — Visual Foundation
+   Restrained archival system. No glass, no glow, no rounded repetition.
+==================================================================== */
+
 @layer base {
   :root {
     color-scheme: dark;
 
-    /* Safe-area insets for notched / home-indicator devices. The viewport meta
-       sets viewport-fit=cover, so the layout extends under the notch and the
-       indicator bar; these are the only things that keep content reachable.
-       Every value degrades to 0px on devices without insets. */
+    /* Safe-area insets for notched / home-indicator devices. */
     --safe-top: env(safe-area-inset-top, 0px);
     --safe-right: env(safe-area-inset-right, 0px);
     --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -28,7 +30,6 @@
   body {
     @apply bg-nexus-bg text-nexus-text font-sans antialiased;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
-    /* 100dvh tracks the collapsing mobile browser chrome; 100vh overflows it. */
     min-height: 100vh;
     min-height: 100dvh;
   }
@@ -52,28 +53,28 @@
     @apply min-h-[56px] min-w-[56px];
   }
 
-  /* Focus visible for accessibility */
+  /* Focus — restrained, no glowing ring */
   :focus-visible {
-    @apply outline-none ring-2 ring-nexus-accent ring-offset-2 ring-offset-nexus-bg;
+    @apply outline-none ring-1 ring-nexus-accent ring-offset-1 ring-offset-nexus-bg;
   }
 
   /* Selection */
   ::selection {
-    @apply bg-nexus-accent/30 text-nexus-text;
+    @apply bg-nexus-accent/20 text-nexus-bg;
   }
 
-  /* Scrollbar */
+  /* Scrollbar — subtle */
   ::-webkit-scrollbar {
-    @apply w-2 h-2;
+    @apply w-1.5 h-1.5;
   }
   ::-webkit-scrollbar-track {
     @apply bg-nexus-bg;
   }
   ::-webkit-scrollbar-thumb {
-    @apply bg-nexus-border rounded-full;
+    @apply bg-nexus-borderSubtle;
   }
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-nexus-textSubtle;
+    @apply bg-nexus-border;
   }
 
   /* Reduced motion */
@@ -88,138 +89,223 @@
 }
 
 @layer components {
-  /* Panel - base container for content sections */
-  .panel {
-    @apply bg-nexus-surface border border-nexus-border rounded-2xl shadow-panel p-4 md:p-6 transition-all duration-normal;
+  /* ==================================================================
+     NEXUS Surface System
+     Multiple surface levels — not every surface is a card.
+     Background → Archive → Case → Evidence → Control
+  ================================================================== */
+
+  /* LEVEL 1 — Archive environment */
+  .archive-surface {
+    @apply bg-nexus-surface border-b border-nexus-border;
   }
 
-  .panel-elevated {
-    @apply bg-nexus-surfaceElevated border-nexus-border;
+  /* LEVEL 2 — Case surface */
+  .case-surface {
+    @apply bg-nexus-surfaceElevated;
   }
 
-  .panel-hover {
-    @apply hover:shadow-panel-hover hover:border-nexus-accent/30;
+  /* LEVEL 3 — Evidence object */
+  .evidence-surface {
+    @apply bg-nexus-surface;
   }
 
-  /* Button variants */
-  .btn {
-    @apply inline-flex items-center justify-center gap-2 font-medium rounded-xl px-4 py-2.5
-           touch-target-primary transition-all duration-fast
-           focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-nexus-bg;
+  /* LEVEL 4 — Interactive control */
+  .control-surface {
+    @apply bg-nexus-bg;
   }
 
-  .btn-primary {
-    @apply btn bg-nexus-accent text-nexus-bg hover:bg-nexus-accentDim
-           active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
+  /* ==================================================================
+     NEXUS Border Language
+     Partial borders, corner markers, registration lines.
+     No full rounded rectangles around everything.
+  ================================================================== */
+
+  /* Document-style edge — top and left borders only, like a physical page */
+  .document-edge {
+    @apply border-l border-t;
   }
 
-  .btn-secondary {
-    @apply btn bg-nexus-surfaceElevated text-nexus-text border border-nexus-border
-           hover:bg-nexus-border hover:border-nexus-textSubtle
-           active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
+  .document-edge-sm {
+    @apply border-l border-t border-nexus-border;
   }
 
-  .btn-ghost {
-    @apply btn bg-transparent text-nexus-textMuted
-           hover:bg-nexus-surfaceElevated hover:text-nexus-text
-           active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
+  /* Registration frame — thin line on three sides, open bottom */
+  .registration-frame {
+    @apply border-t border-r border-l border-nexus-border;
   }
 
-  .btn-danger {
-    @apply btn bg-nexus-dangerBg text-nexus-danger border border-nexus-danger/30
-           hover:bg-nexus-danger/20 hover:border-nexus-danger
-           active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
+  /* Corner markers — small brackets at corners */
+  .corner-tl {
+    position: relative;
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 1.5rem;
+      height: 1.5rem;
+      border-top: 1px solid var(--tw-colors-nexus-border);
+      border-left: 1px solid var(--tw-colors-nexus-border);
+    }
+  }
+  .corner-tr {
+    position: relative;
+    &::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 1.5rem;
+      height: 1.5rem;
+      border-top: 1px solid var(--tw-colors-nexus-border);
+      border-right: 1px solid var(--tw-colors-nexus-border);
+    }
+  }
+  .corner-br {
+    position: relative;
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      width: 1.5rem;
+      height: 1.5rem;
+      border-bottom: 1px solid var(--tw-colors-nexus-border);
+      border-right: 1px solid var(--tw-colors-nexus-border);
+    }
+  }
+  .corner-bl {
+    position: relative;
+    &::before {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 1.5rem;
+      height: 1.5rem;
+      border-bottom: 1px solid var(--tw-colors-nexus-border);
+      border-left: 1px solid var(--tw-colors-nexus-border);
+    }
   }
 
-  .btn-warning {
-    @apply btn bg-nexus-warningBg text-nexus-warning border border-nexus-warning/30
-           hover:bg-nexus-warning/20 hover:border-nexus-warning
-           active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
+  /* Interrupted rule — dashed line for section separation */
+  .divider-dashed {
+    @apply border-t border-dashed border-nexus-border;
   }
 
-  /* Input variants */
-  .input {
-    @apply w-full bg-nexus-bg border border-nexus-border text-nexus-text
-           rounded-xl px-4 py-3 text-base
-           placeholder:text-nexus-textSubtle
-           focus:border-nexus-accent focus:ring-2 focus:ring-nexus-accent/20
-           disabled:opacity-50 disabled:cursor-not-allowed
+  /* Solid thin separator */
+  .divider-solid {
+    @apply border-t border-nexus-border;
+  }
+
+  /* ==================================================================
+     NEXUS Panels — restrained, not generic cards
+  ================================================================== */
+
+  .nexus-panel {
+    @apply bg-nexus-surfaceElevated border border-nexus-border p-4;
+  }
+
+  .nexus-panel-sm {
+    @apply bg-nexus-surfaceElevated border border-nexus-border p-3;
+  }
+
+  /* Document-style panel — top/left borders for physical feel */
+  .nexus-document {
+    @apply bg-nexus-surface border-l-2 border-t-2 border-nexus-border p-4;
+  }
+
+  /* Flat panel — no border, just background for tight groupings */
+  .nexus-flat {
+    @apply bg-nexus-surface;
+  }
+
+  /* ==================================================================
+     NEXUS Buttons — functional, not decorative
+  ================================================================== */
+
+  .nexus-btn {
+    @apply inline-flex items-center justify-center gap-2 font-medium
+           text-sm px-4 py-2.5 min-h-[44px]
+           focus-visible:ring-1 focus-visible:ring-nexus-accent
            transition-all duration-fast;
   }
 
-  .input-error {
-    @apply border-nexus-danger focus:border-nexus-danger focus:ring-nexus-danger/20;
+  .nexus-btn-primary {
+    @apply nexus-btn bg-nexus-accent text-nexus-bg
+           hover:bg-nexus-accentDim;
   }
 
-  .label {
-    @apply block text-sm font-medium text-nexus-textMuted mb-1.5;
+  .nexus-btn-secondary {
+    @apply nexus-btn bg-nexus-surfaceElevated text-nexus-text border border-nexus-border
+           hover:border-nexus-border;
   }
 
-  /* Card */
-  .card {
-    @apply panel panel-hover;
+  .nexus-btn-ghost {
+    @apply nexus-btn bg-transparent text-nexus-textMuted
+           hover:bg-nexus-surfaceElevated hover:text-nexus-text;
   }
 
-  /* Badge */
-  .badge {
-    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium;
+  .nexus-btn-ghost-accent {
+    @apply nexus-btn bg-transparent text-nexus-accent
+           hover:bg-nexus-accentBg/30;
   }
 
-  .badge-accent {
-    @apply badge bg-nexus-accentBg text-nexus-accent;
+  .nexus-btn-sm {
+    @apply px-3 py-1.5 text-xs min-h-[36px];
   }
 
-  .badge-warning {
-    @apply badge bg-nexus-warningBg text-nexus-warning;
+  /* ==================================================================
+     NEXUS Badges — small, contextual, not rounded pills
+  ================================================================== */
+
+  .nexus-badge {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 text-xs;
+    border: 1px solid var(--tw-colors-nexus-borderSubtle);
+    background: var(--tw-colors-nexus-surface);
   }
 
-  .badge-danger {
-    @apply badge bg-nexus-dangerBg text-nexus-danger;
+  .nexus-badge-accent {
+    @apply nexus-badge text-nexus-accent border-nexus-accent/30;
+    background: var(--tw-colors-nexus-accentBg);
   }
 
-  .badge-info {
-    @apply badge bg-nexus-infoBg text-nexus-info;
+  .nexus-badge-warning {
+    @apply nexus-badge text-nexus-warning border-nexus-warning/30;
+    background: var(--tw-colors-nexus-warningBg);
   }
 
-  .badge-neutral {
-    @apply badge bg-nexus-borderSubtle text-nexus-textMuted;
+  .nexus-badge-danger {
+    @apply nexus-badge text-nexus-danger border-nexus-danger/30;
+    background: var(--tw-colors-nexus-dangerBg);
   }
 
-  /* Role badges */
-  .badge-observer {
-    @apply badge bg-cyan-900/40 text-cyan-300 border border-cyan-700/30;
-  }
+  /* ==================================================================
+     NEXUS Status Indicators — meaningful, not decorative
+  ================================================================== */
 
-  .badge-analyst {
-    @apply badge bg-amber-900/40 text-amber-300 border border-amber-700/30;
-  }
-
-  .badge-operator {
-    @apply badge bg-indigo-900/40 text-indigo-300 border border-indigo-700/30;
-  }
-
-  /* Status indicators */
   .status-dot {
-    @apply w-2.5 h-2.5 rounded-full;
+    @apply w-2 h-2;
   }
 
   .status-active {
     @apply status-dot bg-nexus-accent;
   }
-
   .status-warning {
     @apply status-dot bg-nexus-warning;
   }
-
   .status-danger {
     @apply status-dot bg-nexus-danger;
   }
-
-  .status-neutral {
-    @apply status-dot bg-nexus-textSubtle;
+  .status-inactive {
+    @apply status-dot bg-nexus-inactive;
   }
 
-  /* Typography */
+  /* ==================================================================
+     Typography — distinguish system from evidence
+  ================================================================== */
+
   .text-mono {
     @apply font-mono tabular-nums;
   }
@@ -228,60 +314,69 @@
     @apply font-display font-semibold tracking-tight;
   }
 
-  .heading-1 {
-    @apply text-display text-4xl md:text-5xl font-bold tracking-tight;
+  .text-system {
+    @apply font-system;
   }
 
-  .heading-2 {
+  .text-evidence {
+    @apply font-evidence;
+  }
+
+  .heading-1 {
     @apply text-display text-3xl md:text-4xl font-bold tracking-tight;
   }
-
-  .heading-3 {
-    @apply text-display text-2xl md:text-3xl font-semibold tracking-tight;
+  .heading-2 {
+    @apply text-display text-2xl md:text-3xl font-bold tracking-tight;
   }
-
+  .heading-3 {
+    @apply text-display text-xl md:text-2xl font-semibold tracking-tight;
+  }
   .heading-4 {
-    @apply text-display text-xl md:text-2xl font-semibold;
+    @apply text-display text-lg md:text-xl font-semibold;
+  }
+  .heading-5 {
+    @apply text-display text-base font-semibold uppercase tracking-wider;
   }
 
   .body-lg {
     @apply text-lg leading-relaxed;
   }
-
   .body {
     @apply text-base leading-relaxed;
   }
-
   .body-sm {
     @apply text-sm leading-normal;
   }
-
   .caption {
     @apply text-xs leading-normal text-nexus-textMuted;
   }
 
-  /* Layout */
+  /* Metadata — monospace for IDs, codes, timestamps */
+  .meta {
+    @apply text-xs font-mono text-nexus-textSubtle;
+  }
+
+  /* ==================================================================
+     Layout helpers
+  ================================================================== */
+
   .container-narrow {
     @apply max-w-3xl mx-auto px-4 md:px-6;
   }
-
   .container-wide {
     @apply max-w-6xl mx-auto px-4 md:px-6;
   }
+  .container-7xl {
+    @apply max-w-7xl mx-auto px-4 md:px-6;
+  }
 
-  /* 100dvh tracks the collapsing mobile browser chrome; 100vh overflows it and
-   hides the bottom of a phone screen. Written as plain declarations because the
-   project pins Tailwind 3.4, whose min-h-* scale has no dvh entry. */
-.page {
-    @apply w-full;
-    min-height: 100vh;
-    min-height: 100dvh;
+  /* Full-viewport app shell */
+  .page {
+    @apply w-full min-h-[100vh] min-h-[100dvh];
   }
 
   .page-content {
-    @apply pt-16 pb-8 md:pt-24 md:pb-12;
-    /* Horizontal insets keep landscape content clear of a notch on the left or
-       right edge (notably iPhone in landscape). */
+    @apply pt-16 pb-8 md:pt-20 md:pb-12;
     padding-left: calc(1rem + var(--safe-left));
     padding-right: calc(1rem + var(--safe-right));
   }
@@ -293,154 +388,147 @@
     }
   }
 
-  /* Animations */
+  /* ==================================================================
+     Animations — purposeful, never infinite or decorative
+  ================================================================== */
+
   @keyframes fade-in {
     from { opacity: 0; }
     to { opacity: 1; }
   }
-
   @keyframes slide-up {
     from { opacity: 0; transform: translateY(16px); }
     to { opacity: 1; transform: translateY(0); }
   }
-
   @keyframes slide-down {
     from { opacity: 0; transform: translateY(-16px); }
     to { opacity: 1; transform: translateY(0); }
   }
-
-  @keyframes pulse-glow {
-    0%, 100% { box-shadow: 0 0 20px -4px rgba(0, 212, 170, 0.4); }
-    50% { box-shadow: 0 0 32px -2px rgba(0, 212, 170, 0.6); }
+  @keyframes signal-acquire {
+    0% { opacity: 0.3; transform: scaleY(0.3); }
+    50% { opacity: 0.8; transform: scaleY(0.8); }
+    100% { opacity: 1; transform: scaleY(1); }
   }
 
   .animate-fade-in {
     animation: fade-in 200ms ease-out;
   }
-
   .animate-slide-up {
     animation: slide-up 300ms cubic-bezier(0.4, 0, 0.2, 1);
   }
-
   .animate-slide-down {
     animation: slide-down 300ms cubic-bezier(0.4, 0, 0.2, 1);
   }
-
-  .animate-pulse-glow {
-    animation: pulse-glow 2s ease-in-out infinite;
+  .animate-signal-acquire {
+    animation: signal-acquire 300ms cubic-bezier(0.2, 0.8, 0.2, 1);
   }
 
-  /* Staggered animation delays */
-  .stagger-1 { animation-delay: 50ms; }
-  .stagger-2 { animation-delay: 100ms; }
-  .stagger-3 { animation-delay: 150ms; }
-  .stagger-4 { animation-delay: 200ms; }
-  .stagger-5 { animation-delay: 250ms; }
-  .stagger-6 { animation-delay: 300ms; }
+  /* Staggered children */
+  .stagger-1 { animation-delay: 40ms; }
+  .stagger-2 { animation-delay: 80ms; }
+  .stagger-3 { animation-delay: 120ms; }
+  .stagger-4 { animation-delay: 160ms; }
+  .stagger-5 { animation-delay: 200ms; }
+  .stagger-6 { animation-delay: 240ms; }
 
-  /* QR Scanner overlay */
-  .qr-scanner-overlay {
-    @apply absolute inset-0 bg-black/70 flex items-center justify-center;
-  }
+  /* Loading skeleton — subtle, no animation spam */
+  .skeleton { @apply bg-nexus-borderSubtle; }
+  .skeleton-text { @apply skeleton h-3 w-3/4 mb-1; }
+  .skeleton-title { @apply skeleton h-5 w-1/2 mb-2; }
+  .skeleton-body { @apply skeleton h-4 w-full mb-1; }
+  .skeleton-card { @apply skeleton h-32 w-full border border-nexus-border; }
 
-  .qr-scanner-frame {
-    @apply relative w-64 h-64 md:w-80 md:h-80 rounded-2xl border-4 border-nexus-accent/50
-           shadow-[0_0_0_9999px_rgba(0,0,0,0.7)] overflow-hidden;
-  }
-
-  .qr-scanner-line {
-    @apply absolute left-0 right-0 h-1 bg-nexus-accent animate-pulse-glow;
-  }
-
-  /* Loading states */
-  .skeleton {
-    @apply bg-nexus-borderSubtle rounded animate-pulse;
-  }
-
-  .skeleton-text {
-    @apply skeleton h-4 w-full;
-  }
-
-  .skeleton-title {
-    @apply skeleton h-6 w-3/4;
-  }
-
-  .skeleton-card {
-    @apply skeleton h-32 w-full rounded-xl;
-  }
-
-  /* Mobile-specific */
-  @media (max-width: 640px) {
-    .mobile-full {
-      @apply w-full;
-    }
-
-    .mobile-stack {
-      @apply flex-col gap-3;
-    }
-
-    .mobile-text-center {
-      @apply text-center;
-    }
-  }
+  /* QR Scanner */
+  .scanner-frame { @apply relative w-64 h-64 md:w-80 md:h-80 border-2 border-nexus-accent/30 overflow-hidden; }
+  .scanner-line { @apply absolute left-0 right-0 h-px bg-nexus-accent; }
+  .qr-scanner-overlay { @apply absolute inset-0 bg-black/70 flex items-center justify-center; }
+  .qr-scanner-frame { @apply relative w-64 h-64 md:w-80 md:h-80 border-4 border-nexus-accent/30 overflow-hidden; }
+  .qr-scanner-line { @apply absolute left-0 right-0 h-1 bg-nexus-accent; }
 
   /* Print styles */
   @media print {
-    .no-print {
-      display: none !important;
-    }
+    .no-print { display: none !important; }
   }
+
+  /* ==================================================================
+     Backward-compatible utility classes
+     Styled with NEXUS design language
+  ================================================================== */
+
+  /* Panels */
+  .panel {
+    @apply bg-nexus-surfaceElevated border border-nexus-border hover:shadow-panel-elevated transition-all duration-normal p-4 md:p-6;
+  }
+  .panel-elevated { @apply bg-nexus-surface border-nexus-border; }
+  .panel-hover { @apply hover:shadow-panel-elevated; }
+  .card { @apply bg-nexus-surfaceElevated border border-nexus-border hover:shadow-panel-elevated p-4 md:p-6 transition-all duration-normal; }
+
+  /* Buttons */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 font-medium px-4 py-2.5 text-sm min-h-[44px] transition-all duration-fast focus-visible:ring-2 focus-visible:ring-nexus-accent focus-visible:ring-offset-2 focus-visible:ring-offset-nexus-bg;
+  }
+  .btn-primary { @apply btn bg-nexus-accent text-nexus-bg hover:bg-nexus-accentDim active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed; }
+  .btn-secondary { @apply btn bg-nexus-surfaceElevated text-nexus-text border border-nexus-border hover:bg-nexus-border hover:border-nexus-textSubtle active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed; }
+  .btn-ghost { @apply btn bg-transparent text-nexus-textMuted hover:bg-nexus-surfaceElevated hover:text-nexus-text active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed; }
+  .btn-danger { @apply btn bg-nexus-dangerBg text-nexus-danger border border-nexus-danger/30 hover:bg-nexus-danger/20 hover:border-nexus-danger active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed; }
+  .btn-warning { @apply btn bg-nexus-warningBg text-nexus-warning border border-nexus-warning/30 hover:bg-nexus-warning/20 hover:border-nexus-warning active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed; }
+
+  /* Inputs */
+  .input {
+    @apply w-full bg-nexus-bg border border-nexus-border text-nexus-text px-4 py-3 text-base placeholder:text-nexus-textSubtle focus:border-nexus-accent focus:ring-2 focus:ring-nexus-accent/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-fast;
+  }
+  .input-error { @apply border-nexus-danger focus:border-nexus-danger focus:ring-nexus-danger/20; }
+  .label { @apply block text-sm font-medium text-nexus-textMuted mb-1.5; }
+
+  /* Badges */
+  .badge { @apply inline-flex items-center gap-1.5 px-2.5 py-1 text-xs border; }
+  .badge-accent { @apply badge text-nexus-accent border-nexus-accent/30 bg-nexus-accentBg/20; }
+  .badge-warning { @apply badge text-nexus-warning border-nexus-warning/30 bg-nexus-warningBg/20; }
+  .badge-danger { @apply badge text-nexus-danger border-nexus-danger/30 bg-nexus-dangerBg/20; }
+  .badge-info { @apply badge text-nexus-info border-nexus-info/30 bg-nexus-infoBg/20; }
+  .badge-neutral { @apply badge text-nexus-textMuted border-nexus-borderSubtle bg-nexus-borderSubtle/20; }
+  .badge-observer { @apply badge text-nexus-accent border-nexus-accent/30 bg-nexus-accentBg/20; }
+  .badge-analyst { @apply badge text-nexus-warning border-nexus-warning/30 bg-nexus-warningBg/20; }
+  .badge-operator { @apply badge text-nexus-blue border-nexus-blue/30 bg-nexus-blueBg/20; }
+
+  /* Status indicators */
+  .status-dot { @apply w-2.5 h-2.5 rounded-full; }
+  .status-active { @apply status-dot bg-nexus-accent; }
+  .status-warning { @apply status-dot bg-nexus-warning; }
+  .status-danger { @apply status-dot bg-nexus-danger; }
+  .status-neutral { @apply status-dot bg-nexus-textSubtle; }
+
+  /* Subtle overlay — not glassmorphism */
+  .surface-overlay { @apply bg-nexus-surfaceElevated/80 border border-nexus-border; }
 }
 
 @layer utilities {
-  /* Safe-area helpers. The viewport is viewport-fit=cover, so fixed bars must
-     add their own inset or they sit under the notch / home indicator. */
-  .safe-area-top {
-    padding-top: var(--safe-top);
-  }
-
-  .safe-area-bottom {
-    padding-bottom: var(--safe-bottom);
-  }
-
+  /* Safe-area helpers */
+  .safe-area-top { padding-top: var(--safe-top); }
+  .safe-area-bottom { padding-bottom: var(--safe-bottom); }
   .safe-area-x {
     padding-left: var(--safe-left);
     padding-right: var(--safe-right);
   }
+  .safe-area-b { padding-bottom: var(--safe-bottom); }
 
-  .safe-area-b {
-    padding-bottom: var(--safe-bottom);
-  }
-
-  /* Full-viewport app shell. 100dvh tracks the mobile browser chrome so a
-     sticky header and a fixed bottom bar stay on screen; 100vh is the fallback
-     for browsers without dynamic viewport units. */
+  /* Full-viewport app shell */
   .app-viewport {
     min-height: 100vh;
     min-height: 100dvh;
   }
 
-  .text-balance {
-    text-wrap: balance;
-  }
-
-  .text-pretty {
-    text-wrap: pretty;
-  }
+  .text-balance { text-wrap: balance; }
+  .text-pretty { text-wrap: pretty; }
 
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
-  }
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
 
-  .glass {
-    @apply bg-nexus-surface/80 backdrop-blur-xl border border-nexus-border/50;
-  }
-
-  .glass-strong {
-    @apply bg-nexus-surface/95 backdrop-blur-2xl border border-nexus-border/30;
+  /* Subtle texture overlay — archival grain, not wallpaper */
+  .archive-texture {
+    background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%230d1017' fill-opacity='0.3'%3E%3Ccircle cx='50' cy='50' r='0.5'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
   }
 }

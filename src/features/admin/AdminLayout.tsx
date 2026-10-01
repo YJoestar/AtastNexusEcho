@@ -95,7 +95,7 @@ export function AdminLayout() {
               <span
                 className={cn(
                   'w-2 h-2 rounded-full flex-shrink-0',
-                  isConnected ? 'bg-nexus-accent animate-pulse' : 'bg-nexus-danger',
+                   isConnected ? 'bg-nexus-accent' : 'bg-nexus-danger',
                 )}
               />
               <span className="text-nexus-textMuted">

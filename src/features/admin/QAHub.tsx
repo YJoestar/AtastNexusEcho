@@ -12,7 +12,7 @@
  * useApp() and useGameEngine().
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   Play,
   RotateCcw,
@@ -68,11 +68,14 @@ function QAHubInner() {
   const [devicePreset, setDevicePreset] = useState('desktop')
   const [nodeJumpInput, setNodeJumpInput] = useState('')
 
+  const hasInitialized = useRef(false)
+
   useEffect(() => {
-    if (!isStarted) {
+    if (!hasInitialized.current) {
+      hasInitialized.current = true
       qa.resetSimulation()
     }
-  }, [isStarted, qa])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const solvedCount = qa.solvedNodes.size
   const totalNodes = ALL_PUZZLES.length

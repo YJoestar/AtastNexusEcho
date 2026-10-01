@@ -66,10 +66,10 @@ export function PlayerWaiting() {
       {/* Status Header */}
       <div className="w-full max-w-md text-center mb-8">
         <div className={cn(
-          'inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-4',
+          'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium mb-4 border',
           isStarted
-            ? 'bg-nexus-accentBg text-nexus-accent'
-            : 'bg-nexus-warningBg text-nexus-warning',
+            ? 'border-nexus-accent/30 bg-nexus-accentBg/20 text-nexus-accent'
+            : 'border-nexus-warning/30 bg-nexus-warningBg/20 text-nexus-warning',
         )}>
           {isStarted ? (
             <>
@@ -78,7 +78,7 @@ export function PlayerWaiting() {
             </>
           ) : (
             <>
-              <Clock className="w-4 h-4 animate-pulse" />
+              <Clock className="w-4 h-4" />
               <span>Waiting for Start</span>
             </>
           )}
@@ -91,7 +91,7 @@ export function PlayerWaiting() {
       </div>
 
       {/* Countdown or Game Start */}
-      <div className="w-full max-w-md panel text-center animate-slide-up">
+      <div className="w-full max-w-md nexus-document text-center animate-slide-up">
         {!isStarted ? (
           <>
             <div className="mb-6">
@@ -104,7 +104,7 @@ export function PlayerWaiting() {
             </div>
 
             {countdown > 0 && (
-              <div className="bg-nexus-bg rounded-xl p-6 mb-6">
+              <div className="nexus-panel p-6 mb-6 text-center">
                 <div className="text-5xl md:text-7xl font-mono font-bold text-nexus-accent tabular-nums">
                   {formatTime(countdown)}
                 </div>
@@ -113,17 +113,17 @@ export function PlayerWaiting() {
             )}
 
             <div className="grid grid-cols-3 gap-4 text-center">
-              <div className="p-3 bg-nexus-bg rounded-xl">
+              <div className="nexus-panel p-3 text-center">
                 <Users className="w-6 h-6 text-nexus-accent mx-auto mb-2" />
                 <p className="text-sm text-nexus-textMuted">Team Size</p>
                 <p className="font-mono text-lg text-nexus-text">3</p>
               </div>
-              <div className="p-3 bg-nexus-bg rounded-xl">
+              <div className="nexus-panel p-3 text-center">
                 <Clock className="w-6 h-6 text-nexus-warning mx-auto mb-2" />
                 <p className="text-sm text-nexus-textMuted">Duration</p>
                 <p className="font-mono text-lg text-nexus-text">3h</p>
               </div>
-              <div className="p-3 bg-nexus-bg rounded-xl">
+              <div className="nexus-panel p-3 text-center">
                 <Shield className="w-6 h-6 text-nexus-info mx-auto mb-2" />
                 <p className="text-sm text-nexus-textMuted">Your Role</p>
                 <p className="font-medium text-nexus-text">{ROLE_LABELS[player.role]}</p>
@@ -133,7 +133,7 @@ export function PlayerWaiting() {
         ) : (
           <button
             onClick={() => navigate(ROUTES.PLAYER_GAME)}
-            className="btn-primary w-full touch-target-comfortable"
+            className="nexus-btn nexus-btn-primary w-full touch-target-comfortable"
           >
             <CheckCircle className="w-5 h-5" />
             <span>Enter Game</span>
@@ -143,11 +143,11 @@ export function PlayerWaiting() {
 
       {/* Role Reminder */}
       <div className={cn(
-        'w-full max-w-md mt-6 panel animate-fade-in',
+        'w-full max-w-md mt-6 nexus-document',
         roleTheme?.bg,
       )}>
         <h3 className="heading-4 mb-4 flex items-center gap-2">
-          <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center', roleTheme?.bg)}>
+          <div className={cn('w-8 h-8 flex items-center justify-center border border-nexus-border', roleTheme?.bg)}>
             <User className={cn('w-5 h-5', roleTheme?.text)} />
           </div>
           <span className={roleTheme?.text}>Your Role: {ROLE_LABELS[player.role]}</span>

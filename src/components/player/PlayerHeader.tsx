@@ -91,7 +91,7 @@ export function PlayerHeader() {
           >
             <Bell className="w-4 h-4" aria-hidden="true" />
             {unreadCount > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-nexus-danger text-white text-[10px] font-bold flex items-center justify-center">
+              <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 flex items-center justify-center border border-nexus-danger text-nexus-danger text-[10px] font-bold">
                 {unreadCount > 9 ? '9+' : unreadCount}
               </span>
             )}
@@ -122,7 +122,7 @@ export function PlayerHeader() {
           </button>
           {queuedCount > 0 && (
             <span
-              className="min-w-[18px] h-[18px] px-1 rounded-full bg-nexus-warningBg text-nexus-warning text-[10px] font-bold flex items-center justify-center"
+              className="min-w-[18px] h-[18px] px-1 border border-nexus-warning text-nexus-warning text-[10px] font-bold flex items-center justify-center"
               aria-hidden="true"
             >
               {queuedCount}

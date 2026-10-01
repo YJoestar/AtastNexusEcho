@@ -108,9 +108,9 @@ export const TEAM_STATUSES = [
 export const PLAYER_STATUSES = ['INVITED', 'ACTIVE', 'OFFLINE', 'REMOVED'] as const
 
 export const ROLE_COLORS = {
-  OBSERVER: { bg: 'bg-cyan-950/30', text: 'text-cyan-300', border: 'border-cyan-800/40', icon: 'eye' },
-  ANALYST: { bg: 'bg-amber-950/30', text: 'text-amber-300', border: 'border-amber-800/40', icon: 'brain' },
-  OPERATOR: { bg: 'bg-indigo-950/30', text: 'text-indigo-300', border: 'border-indigo-800/40', icon: 'wrench' },
+  OBSERVER: { bg: 'bg-nexus-accent/5', text: 'text-nexus-accent', border: 'border-nexus-accent/20', icon: 'eye' },
+  ANALYST: { bg: 'bg-nexus-warning/5', text: 'text-nexus-warning', border: 'border-nexus-warning/20', icon: 'brain' },
+  OPERATOR: { bg: 'bg-nexus-blue/5', text: 'text-nexus-blue', border: 'border-nexus-blue/20', icon: 'wrench' },
 } as const
 
 export const ROLE_SUBTITLES: Record<string, string> = {
@@ -131,43 +131,43 @@ export const ROLE_THEMES: Record<string, {
   OBSERVER: {
     subtitle: 'FIELD OBSERVATION',
     icon: 'Eye',
-    bg: 'bg-cyan-950/30',
-    text: 'text-cyan-300',
-    border: 'border-cyan-800/40',
-    accent: 'bg-cyan-400',
-    badge: 'bg-cyan-900/40 text-cyan-300 border border-cyan-700/30',
+    bg: 'bg-nexus-accent/5',
+    text: 'text-nexus-accent',
+    border: 'border-nexus-accent/20',
+    accent: 'bg-nexus-accent',
+    badge: 'bg-nexus-accent/10 text-nexus-accent border border-nexus-accent/30',
   },
   ANALYST: {
     subtitle: 'PATTERN ANALYSIS',
     icon: 'Brain',
-    bg: 'bg-amber-950/30',
-    text: 'text-amber-300',
-    border: 'border-amber-800/40',
-    accent: 'bg-amber-400',
-    badge: 'bg-amber-900/40 text-amber-300 border border-amber-700/30',
+    bg: 'bg-nexus-warning/5',
+    text: 'text-nexus-warning',
+    border: 'border-nexus-warning/20',
+    accent: 'bg-nexus-warning',
+    badge: 'bg-nexus-warning/10 text-nexus-warning border border-nexus-warning/30',
   },
   OPERATOR: {
     subtitle: 'SYSTEM SYNTHESIS',
     icon: 'Wrench',
-    bg: 'bg-indigo-950/30',
-    text: 'text-indigo-300',
-    border: 'border-indigo-800/40',
-    accent: 'bg-indigo-400',
-    badge: 'bg-indigo-900/40 text-indigo-300 border border-indigo-700/30',
+    bg: 'bg-nexus-blue/5',
+    text: 'text-nexus-blue',
+    border: 'border-nexus-blue/20',
+    accent: 'bg-nexus-blue',
+    badge: 'bg-nexus-blue/10 text-nexus-blue border border-nexus-blue/30',
   },
 } as const
 
 export const STATUS_COLORS = {
-  REGISTERED: { bg: 'bg-neutral-900/40', text: 'text-neutral-300', dot: 'bg-neutral-400' },
-  FORMING: { bg: 'bg-blue-900/40', text: 'text-blue-300', dot: 'bg-blue-400' },
-  READY: { bg: 'bg-cyan-900/40', text: 'text-cyan-300', dot: 'bg-cyan-400' },
-  WAITING: { bg: 'bg-yellow-900/40', text: 'text-yellow-300', dot: 'bg-yellow-400' },
-  ACTIVE: { bg: 'bg-emerald-900/40', text: 'text-emerald-300', dot: 'bg-emerald-400' },
-  PAUSED: { bg: 'bg-blue-900/40', text: 'text-blue-300', dot: 'bg-blue-400' },
-  COMPLETED: { bg: 'bg-purple-900/40', text: 'text-purple-300', dot: 'bg-purple-400' },
-  DISQUALIFIED: { bg: 'bg-red-900/40', text: 'text-red-300', dot: 'bg-red-400' },
-  ABANDONED: { bg: 'bg-gray-900/40', text: 'text-gray-300', dot: 'bg-gray-400' },
-  RESET: { bg: 'bg-neutral-900/40', text: 'text-neutral-400', dot: 'bg-neutral-500' },
+  REGISTERED: { bg: 'bg-nexus-surface', text: 'text-nexus-textSubtle', dot: 'bg-nexus-inactive' },
+  FORMING: { bg: 'bg-nexus-blueBg/40', text: 'text-nexus-blue', dot: 'bg-nexus-blue' },
+  READY: { bg: 'bg-nexus-accentBg/40', text: 'text-nexus-accent', dot: 'bg-nexus-accent' },
+  WAITING: { bg: 'bg-nexus-warningBg/40', text: 'text-nexus-warning', dot: 'bg-nexus-warning' },
+  ACTIVE: { bg: 'bg-nexus-infoBg/40', text: 'text-nexus-info', dot: 'bg-nexus-info' },
+  PAUSED: { bg: 'bg-nexus-blueBg/40', text: 'text-nexus-blue', dot: 'bg-nexus-blue' },
+  COMPLETED: { bg: 'bg-nexus-surface', text: 'text-nexus-text', dot: 'bg-nexus-accent' },
+  DISQUALIFIED: { bg: 'bg-nexus-dangerBg/40', text: 'text-nexus-danger', dot: 'bg-nexus-danger' },
+  ABANDONED: { bg: 'bg-nexus-surface', text: 'text-nexus-textSubtle', dot: 'bg-nexus-inactive' },
+  RESET: { bg: 'bg-nexus-surface', text: 'text-nexus-textSubtle', dot: 'bg-nexus-border' },
 } as const
 
 export type StatusColorKey = keyof typeof STATUS_COLORS
@@ -175,14 +175,14 @@ export type StatusColorKey = keyof typeof STATUS_COLORS
 export const MAX_PLAYERS_PER_TEAM = 3
 
 export const TEAM_COLORS = [
-  { name: 'Red', value: 'red', hex: '#EF4444' },
-  { name: 'Blue', value: 'blue', hex: '#3B82F6' },
-  { name: 'Green', value: 'green', hex: '#10B981' },
-  { name: 'Purple', value: 'purple', hex: '#8B5CF6' },
-  { name: 'Amber', value: 'amber', hex: '#F59E0B' },
-  { name: 'Cyan', value: 'cyan', hex: '#06B6D4' },
-  { name: 'Rose', value: 'rose', hex: '#F43F5E' },
-  { name: 'Indigo', value: 'indigo', hex: '#6366F1' },
+  { name: 'Red', value: 'red', hex: '#d94e48' },
+  { name: 'Blue', value: 'blue', hex: '#5a6fa0' },
+  { name: 'Green', value: 'green', hex: '#5fd0c0' },
+  { name: 'Purple', value: 'purple', hex: '#8b73a0' },
+  { name: 'Amber', value: 'amber', hex: '#e6a326' },
+  { name: 'Cyan', value: 'cyan', hex: '#5fd0c0' },
+  { name: 'Rose', value: 'rose', hex: '#d94e48' },
+  { name: 'Indigo', value: 'indigo', hex: '#5a6fa0' },
 ] as const
 
 export const PLAYER_ROLES = ['OBSERVER', 'ANALYST', 'OPERATOR'] as const
@@ -190,10 +190,10 @@ export const PLAYER_ROLES = ['OBSERVER', 'ANALYST', 'OPERATOR'] as const
 export type PlayerRole = (typeof PLAYER_ROLES)[number]
 
 export const PLAYER_STATUS_COLORS = {
-  INVITED: { bg: 'bg-neutral-900/40', text: 'text-neutral-300', dot: 'bg-neutral-400' },
-  ACTIVE: { bg: 'bg-emerald-900/40', text: 'text-emerald-300', dot: 'bg-emerald-400' },
-  OFFLINE: { bg: 'bg-gray-900/40', text: 'text-gray-300', dot: 'bg-gray-400' },
-  REMOVED: { bg: 'bg-red-900/40', text: 'text-red-300', dot: 'bg-red-400' },
+  INVITED: { bg: 'bg-nexus-surface', text: 'text-nexus-textSubtle', dot: 'bg-nexus-inactive' },
+  ACTIVE: { bg: 'bg-nexus-infoBg/40', text: 'text-nexus-info', dot: 'bg-nexus-info' },
+  OFFLINE: { bg: 'bg-nexus-surface', text: 'text-nexus-textSubtle', dot: 'bg-nexus-border' },
+  REMOVED: { bg: 'bg-nexus-dangerBg/40', text: 'text-nexus-danger', dot: 'bg-nexus-danger' },
 } as const
 
 export const DIFFICULTY_LABELS = {

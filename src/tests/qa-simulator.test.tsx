@@ -97,6 +97,30 @@ describe('QA Simulator', () => {
     })
   })
 
+  it('allows selecting a starting state without the selection being reset', async () => {
+    render(<QAHub />)
+
+    await waitFor(() => {
+      expect(screen.getByText('Player Experience Simulator')).toBeTruthy()
+    })
+
+    const allButtons = screen.getAllByRole('button')
+    const partialButton = allButtons.find(
+      btn => btn.querySelector('.font-medium')?.textContent === 'Partial Progress',
+    )
+    expect(partialButton).toBeTruthy()
+    fireEvent.click(partialButton!)
+
+    await waitFor(() => {
+      const buttons = screen.getAllByRole('button')
+      const partialBtn = buttons.find(
+        btn => btn.querySelector('.font-medium')?.textContent === 'Partial Progress',
+      )
+      expect(partialBtn).toBeTruthy()
+      expect(partialBtn?.className).toMatch(/border-nexus-accent/)
+    })
+  })
+
   it('starts simulation and renders the embedded player view', async () => {
     render(<QAHub />)
 

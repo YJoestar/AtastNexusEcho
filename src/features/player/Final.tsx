@@ -83,10 +83,10 @@ export function PlayerFinal() {
       <div className="page-content max-w-2xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4">
-          <Link
-            to={ROUTES.PLAYER_GAME}
-            className="p-2 rounded-xl text-nexus-textMuted hover:text-nexus-text hover:bg-nexus-surfaceElevated transition-colors touch-target-primary"
-          >
+                <Link
+                  to={ROUTES.PLAYER_GAME}
+                  className="p-2 text-nexus-textMuted hover:text-nexus-text hover:bg-nexus-surfaceElevated transition-colors touch-target-primary"
+                >
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div>
@@ -98,18 +98,18 @@ export function PlayerFinal() {
         </div>
 
         {/* Phase Indicator */}
-        <div className="panel relative overflow-hidden">
+        <div className="nexus-document relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-r from-nexus-dangerBg/20 via-nexus-bg to-nexus-dangerBg/20" />
           <div className="relative flex items-center justify-center py-8 px-4">
             <div className="flex items-center gap-4">
               <div
                 className={cn(
-                  'w-16 h-16 rounded-2xl flex items-center justify-center',
+                  'w-16 h-16 flex items-center justify-center border-2',
                   isCompleted
-                    ? 'bg-nexus-accentBg'
+                    ? 'border-nexus-accent/30 bg-nexus-accentBg'
                     : unlocked
-                      ? 'bg-nexus-accentBg'
-                      : 'bg-nexus-dangerBg',
+                      ? 'border-nexus-accent/30 bg-nexus-accentBg'
+                      : 'border-nexus-danger/30 bg-nexus-dangerBg',
                 )}
               >
                 {isCompleted || unlocked ? (
@@ -145,7 +145,7 @@ export function PlayerFinal() {
 
         {/* Locked State */}
         {!unlocked && !isCompleted && (
-          <div className="panel space-y-4">
+          <div className="nexus-document space-y-4">
             <div className="flex items-center gap-3">
               <Lock className="w-6 h-6 text-nexus-warning" />
               <div>
@@ -163,9 +163,9 @@ export function PlayerFinal() {
                   {solved} / {totalNodes}
                 </span>
               </div>
-              <div className="h-3 bg-nexus-bg rounded-full overflow-hidden">
+              <div className="h-3 bg-nexus-bg overflow-hidden">
                 <div
-                  className="h-full bg-nexus-warning rounded-full transition-all duration-500"
+                  className="h-full bg-nexus-warning transition-all duration-500"
                   style={{ width: `${(solved / totalNodes) * 100}%` }}
                 />
               </div>
@@ -176,7 +176,7 @@ export function PlayerFinal() {
 
             <Link
               to={ROUTES.PLAYER_GAME}
-              className="btn-secondary w-full touch-target-comfortable"
+              className="nexus-btn nexus-btn-secondary touch-target-comfortable"
             >
               <ArrowLeft className="w-4 h-4" />
               <span>Return to Game</span>
@@ -186,7 +186,7 @@ export function PlayerFinal() {
 
         {/* Available — Solving Phase */}
         {(unlocked || isCompleted) && (
-          <div className="panel space-y-6">
+            <div className="nexus-panel space-y-6">
             <div className="space-y-3">
               <h3 className="heading-4">Final Protocol Briefing</h3>
               <p className="text-nexus-textMuted">
@@ -227,12 +227,12 @@ export function PlayerFinal() {
                         <span className="font-mono text-lg text-nexus-text">
                           {item.count} / {item.required}
                         </span>
-                        <div className="h-1.5 w-16 bg-nexus-borderSubtle rounded-full overflow-hidden">
-                          <div
-                            className={cn(
-                              'h-full rounded-full transition-all',
-                              met ? 'bg-nexus-accent' : 'bg-nexus-textSubtle',
-                            )}
+                <div className="h-1.5 w-16 bg-nexus-borderSubtle overflow-hidden">
+                  <div
+                    className={cn(
+                      'h-full transition-all',
+                      met ? 'bg-nexus-accent' : 'bg-nexus-textSubtle',
+                    )}
                             style={{
                               width: `${Math.min(100, (item.count / item.required) * 100)}%`,
                             }}
@@ -273,7 +273,7 @@ export function PlayerFinal() {
                 <button
                   type="submit"
                   disabled={isSubmitting || !answer.trim() || isOffline}
-                  className="btn-danger w-full touch-target-comfortable"
+                  className="nexus-btn nexus-btn-primary w-full touch-target-comfortable"
                 >
                   {isSubmitting ? (
                     <>
@@ -288,12 +288,12 @@ export function PlayerFinal() {
                   )}
                 </button>
 
-                {error && (
-                  <div className="p-3 rounded-xl bg-nexus-dangerBg border border-nexus-danger/30 flex items-start gap-2">
-                    <AlertCircle className="w-5 h-5 text-nexus-danger flex-shrink-0 mt-0.5" />
-                    <p className="text-sm text-nexus-danger">{error}</p>
-                  </div>
-                )}
+                  {error && (
+                    <div className="p-3 border border-nexus-danger/30 flex items-start gap-2">
+                      <AlertCircle className="w-5 h-5 text-nexus-danger flex-shrink-0 mt-0.5" />
+                      <p className="text-sm text-nexus-danger">{error}</p>
+                    </div>
+                  )}
 
                 {attempts.length > 0 && (
                   <div className="space-y-2">
@@ -304,12 +304,12 @@ export function PlayerFinal() {
                       {attempts.map((attempt, i) => (
                         <div
                           key={i}
-                          className="flex items-center justify-between p-2 bg-nexus-bg rounded-lg text-sm"
+                          className="flex items-center justify-between p-2 border-b border-nexus-borderSubtle text-sm"
                         >
                           <code className="font-mono text-nexus-text truncate">
                             {attempt}
                           </code>
-                          <span className="badge-neutral text-xs">Rejected</span>
+                          <span className="nexus-badge text-xs">Rejected</span>
                         </div>
                       ))}
                     </div>
@@ -320,7 +320,7 @@ export function PlayerFinal() {
 
             {/* Completed State */}
             {isCompleted && (
-              <div className="panel bg-nexus-accentBg/20 border-nexus-accent/30 text-center animate-slide-up">
+              <div className="nexus-document bg-nexus-accentBg/20 border-nexus-accent/30 text-center animate-slide-up">
                 <Unlock className="w-12 h-12 text-nexus-accent mx-auto mb-4" />
                 <h2 className="heading-2 text-nexus-accent mb-2">
                   PROTOCOL COMPLETE
@@ -330,7 +330,7 @@ export function PlayerFinal() {
                 </p>
                 <Link
                   to={ROUTES.PLAYER_COMPLETE}
-                  className="btn-primary touch-target-comfortable"
+                  className="nexus-btn nexus-btn-primary touch-target-comfortable"
                 >
                   <Flag className="w-4 h-4" />
                   <span>View Completion Report</span>
@@ -342,7 +342,7 @@ export function PlayerFinal() {
 
         {/* Time Warning */}
         {gameState?.endsAt && !isCompleted && unlocked && (
-          <div className="panel bg-nexus-dangerBg/30 border border-nexus-danger/30">
+          <div className="nexus-document border-nexus-danger/30">
             <div className="flex items-center gap-2">
               <AlertCircle className="w-5 h-5 text-nexus-danger" />
               <span className="font-medium text-nexus-danger">Time Critical</span>

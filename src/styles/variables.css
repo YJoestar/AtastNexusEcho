@@ -1,24 +1,48 @@
 /**
  * NEXUS — CSS Variables (Legacy Support)
- * Kept for reference; Tailwind v4 uses @theme
+ * Mirrored from Tailwind theme for runtime access.
+ * Kept for components that reference CSS variables directly.
  */
 
 :root {
-  --color-bg: #0a0a0f;
-  --color-surface: #11131a;
-  --color-surface-elevated: #1a1d26;
+  /* Background hierarchy */
+  --color-bg: #080810;
+  --color-surface: #0d1017;
+  --color-surface-elevated: #161821;
+  --color-surface-subtle: #0f1219;
+
+  /* Borders */
   --color-border: #2a2e3a;
-  --color-border-subtle: #1e222d;
-  --color-text: #e8e9ec;
-  --color-text-muted: #8b8d94;
-  --color-text-subtle: #5a5d66;
-  --color-accent: #00d4aa;
-  --color-accent-dim: #00a888;
-  --color-accent-bg: #003d33;
-  --color-warning: #ffb800;
-  --color-warning-bg: #3d2e00;
-  --color-danger: #ff4757;
-  --color-danger-bg: #3d0d12;
-  --color-info: #00b4d8;
-  --color-info-bg: #002d3d;
+  --color-border-subtle: #222632;
+  --color-border-strong: #3a3f4d;
+
+  /* Text */
+  --color-text: #e6e7ea;
+  --color-text-muted: #9a9ba3;
+  --color-text-subtle: #6a6b72;
+
+  /* NEXUS institutional accent — faded cyan */
+  --color-accent: #5fd0c0;
+  --color-accent-dim: #4bb59d;
+  --color-accent-bg: #003333;
+
+  /* Warning — controlled amber */
+  --color-warning: #e6a326;
+  --color-warning-bg: #2e2200;
+
+  /* Critical — muted red */
+  --color-danger: #d94e48;
+  --color-danger-bg: #2e1212;
+
+  /* Institutional blue */
+  --color-blue: #5a6fa0;
+  --color-blue-bg: #1a1e2a;
+
+  /* System states */
+  --color-info: #5fd0c0;
+  --color-info-bg: #003333;
+  --color-success: #5fd0c0;
+  --color-success-bg: #003333;
+  --color-inactive: #4a4a56;
+  --color-inactive-bg: #1a1a22;
 }

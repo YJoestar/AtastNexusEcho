@@ -241,10 +241,10 @@ export function TeamCreationWizard({ isOpen, onClose, onSuccess }: TeamCreationW
           {[1, 2, 3, 4].map(s => (
             <div key={s} className="flex items-center gap-1.5">
               <div className={cn(
-                'w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-all',
+                'w-8 h-8 flex items-center justify-center text-sm font-medium transition-all border',
                 step === s
-                  ? 'bg-nexus-danger text-white'
-                  : 'bg-nexus-borderSubtle/30 text-nexus-textMuted',
+                  ? 'border-nexus-danger bg-nexus-dangerBg/20 text-nexus-danger'
+                  : 'border-nexus-borderSubtle bg-nexus-borderSubtle/10 text-nexus-textMuted',
               )}>
                 {s}
               </div>
