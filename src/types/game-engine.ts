@@ -157,6 +157,7 @@ export interface TeamGameState {
   progress: {
     solvedCount: number
     currentNodeId: string | null
+    availableNodeIds: string[]
   }
   currentNode: {
     code: string

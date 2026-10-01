@@ -339,7 +339,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         teamId: team.id,
         solvedNodes,
         currentNodeId: gameState.currentNode?.code ?? null,
-        availableNodeIds: [],
+        availableNodeIds: gameState.progress?.availableNodeIds ?? [],
         evidenceOwned: [],
         inventoryOwned: {},
         fragmentsOwned: [],

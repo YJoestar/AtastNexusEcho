@@ -37,9 +37,17 @@ Deno.serve(async (req: Request) => {
       p_answer: answer,
     })
 
+    if (data && typeof data === 'object' && 'error' in data && data.error) {
+      const rpcError = data.error as string
+      const status = mapRpcErrorToStatus(rpcError)
+      return errorResponse(status, rpcError)
+    }
+
     if (error) {
       console.error('submit_puzzle_answer error:', error)
-      return errorResponse(429, 'Too many submissions. Please wait before trying again.')
+      const status = mapSupabaseErrorToStatus(error)
+      const message = (error as { message?: string }).message ?? 'Submission failed'
+      return errorResponse(status, message)
     }
 
     return jsonResponse(200, { success: true, result: data })
@@ -58,4 +66,25 @@ function jsonResponse(status: number, body: unknown) {
 
 function errorResponse(status: number, message: string) {
   return jsonResponse(status, { success: false, error: message })
+}
+
+const RATE_LIMIT_PATTERNS = /rate limit|too many/i
+
+function mapRpcErrorToStatus(message: string): number {
+  if (RATE_LIMIT_PATTERNS.test(message)) return 429
+  if (/no team|not authentic/i.test(message)) return 401
+  if (/not active|not accessible|not found|forbidden|permission/i.test(message)) return 403
+  if (/invalid|malformed|missing|required/i.test(message)) return 400
+  return 500
+}
+
+function mapSupabaseErrorToStatus(error: unknown): number {
+  let text = ''
+  if (typeof error === 'object' && error !== null) {
+    const e = error as { message?: string; hint?: string; details?: string; code?: string }
+    text = [e.message, e.hint, e.details, e.code].filter(Boolean).join(' ').toLowerCase()
+  }
+  if (RATE_LIMIT_PATTERNS.test(text)) return 429
+  if (/rate_limit|23505|23503/.test(text)) return 429
+  return 400
 }
