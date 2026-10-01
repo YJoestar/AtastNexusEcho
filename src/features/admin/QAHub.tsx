@@ -20,6 +20,7 @@ import { cn } from '@/lib/utils'
 import { QASimulatorProvider, useQA } from '@/contexts/QASimulatorContext'
 import type { Role, SimulationType } from '@/contexts/QASimulatorContext'
 import { QAPlayerShell } from '@/features/admin/QAPlayerShell'
+import { SCAN_LOCATIONS, TEST_CODE, type ScanLocation } from '@/lib/qr'
 
 const SIMULATION_TYPES: { value: SimulationType; label: string; description: string }[] = [
   { value: 'FRESH', label: 'Fresh Start', description: 'No nodes solved — walk the progression from scratch' },
@@ -44,7 +45,7 @@ function QAHubInner() {
   const qa = useQA()
   const [isStarted, setIsStarted] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
-  const [activeTab, setActiveTab] = useState<'controls' | 'inspector' | 'nodes'>('controls')
+  const [activeTab, setActiveTab] = useState<'controls' | 'inspector' | 'nodes' | 'qr'>('controls')
   const [devicePreset, setDevicePreset] = useState('desktop')
   const [nodeJumpInput, setNodeJumpInput] = useState('')
 
@@ -303,7 +304,18 @@ function QAHubInner() {
             >
               Node Index ({solvedCount}/{totalNodes})
             </button>
-          </nav>
+              <button
+                onClick={() => setActiveTab('qr')}
+                className={cn(
+                  'px-4 py-2 text-sm font-medium border-b-2 transition-colors',
+                  activeTab === 'qr'
+                    ? 'border-nexus-accent text-nexus-accent'
+                    : 'border-transparent text-nexus-textMuted hover:text-nexus-text',
+                )}
+              >
+                QR Inventory
+              </button>
+            </nav>
 
           <div className="p-4">
             {activeTab === 'controls' && (
@@ -517,6 +529,73 @@ function QAHubInner() {
                     </div>
                   )
                 })}
+              </div>
+          )}
+
+            {activeTab === 'qr' && (
+              <div className="space-y-4">
+                <h3 className="font-medium text-nexus-text">
+                  QR Code Inventory ({SCAN_LOCATIONS.length} total)
+                </h3>
+                <div className="text-sm text-nexus-textMuted mb-2">
+                  All codes resolve through the unified validation pipeline.
+                  Test code: <code className="font-mono">{TEST_CODE}</code> — always resolves to LOC-000 (maps to P01).
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-nexus-borderSubtle">
+                        <th className="text-left py-2 px-3 font-medium text-nexus-textMuted">Loc ID</th>
+                        <th className="text-left py-2 px-3 font-medium text-nexus-textMuted">Node</th>
+                        <th className="text-left py-2 px-3 font-medium text-nexus-textMuted">Name</th>
+                        <th className="text-center py-2 px-3 font-medium text-nexus-textMuted">Stage</th>
+                        <th className="text-left py-2 px-3 font-medium text-nexus-textMuted">Building</th>
+                        <th className="text-left py-2 px-3 font-medium text-nexus-textMuted">QR Payload</th>
+                        <th className="text-left py-2 px-3 font-medium text-nexus-textMuted">Manual Code</th>
+                        <th className="text-center py-2 px-3 font-medium text-nexus-textMuted">Type</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {SCAN_LOCATIONS.map((loc: ScanLocation) => (
+                        <tr
+                          key={loc.locationId}
+                          className="border-b border-nexus-borderSubtle/30 hover:bg-nexus-surfaceElevated/30"
+                        >
+                          <td className="py-2 px-3">
+                            <code className="font-mono text-xs text-nexus-accent">{loc.locationId}</code>
+                          </td>
+                          <td className="py-2 px-3">
+                            <code className="font-mono text-xs">{loc.scanNodeId}</code>
+                          </td>
+                          <td className="py-2 px-3 text-nexus-textMuted">{loc.nodeName}</td>
+                          <td className="py-2 px-3 text-center">{loc.nodeStage}</td>
+                          <td className="py-2 px-3 text-nexus-textMuted">{loc.building}</td>
+                          <td className="py-2 px-3">
+                            <code className="font-mono text-xs text-nexus-textSubtle break-all">
+                              {loc.qrPayload}
+                            </code>
+                          </td>
+                          <td className="py-2 px-3">
+                            <code className="font-mono text-xs text-nexus-textSubtle break-all">
+                              {loc.manualCode}
+                            </code>
+                          </td>
+                          <td className="py-2 px-3 text-center">
+                            <span className={cn(
+                              'text-xs px-2 py-0.5 rounded',
+                              loc.resultType === 'TEST'
+                                ? 'bg-nexus-infoBg/20 text-nexus-info'
+                                : 'bg-nexus-accentBg/20 text-nexus-accent',
+                            )}>
+                              {loc.resultType}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
           </div>

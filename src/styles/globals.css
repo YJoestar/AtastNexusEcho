@@ -983,6 +983,60 @@
   /* A discontinuity: the trace simply is not there. */
   .waveform-break { stroke: var(--nx-danger); stroke-width: 1; }
 
+  .evidence-board {
+    background-image:
+      repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 13px,
+        rgba(216,214,208,0.018) 13px,
+        rgba(216,214,208,0.018) 14px
+      );
+  }
+
+  .evidence-board-pin {
+    position: relative;
+    z-index: 2;
+  }
+
+  .evidence-board-canvas {
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  /* ==================================================================
+     TERMINAL FRAME
+     A live NEXUS System panel. Monospace age, deep charcoal, a single
+     institutional-blue edge. The panel is the machine talking.
+     ================================================================== */
+
+  .terminal-frame {
+    position: relative;
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    line-height: 1.5;
+  }
+
+  .terminal-header {
+    font-size: 0.625rem;
+    letter-spacing: 0.125em;
+    text-transform: uppercase;
+  }
+
+  .terminal-monitor {
+    border-color: var(--nx-accent);
+  }
+  .terminal-monitor .terminal-header {
+    background-color: var(--nx-accent-bg);
+  }
+
+  .terminal-register {
+    border-color: var(--nx-textSubtle);
+  }
+  .terminal-register .terminal-header {
+    background-color: var(--nx-surfaceSubtle);
+  }
+
   /* ==================================================================
      CASE TRANSITION
      "OPENING CASE FILE" — honest timing, never an invented delay.

@@ -60,6 +60,10 @@ export {
 
 export { ScanStation, SurveillanceFrame } from './Surveillance'
 
+export { TerminalFrame, type TerminalVariant } from './TerminalFrame'
+
+export { EvidenceBoard, type EvidencePin, type EvidenceLink } from './EvidenceBoard'
+
 export { AnomalyArtifact, WithheldLine } from './Anomaly'
 
 export {

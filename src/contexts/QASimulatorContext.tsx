@@ -49,6 +49,7 @@ import type {
 import type { NodeProgress } from '@/types'
 import { ALL_PUZZLES, PUZZLES_BY_CODE, PUZZLE_COUNT } from '@/content/puzzles'
 import type { NodeIndexEntry } from '@/content/puzzles'
+import { validateAnyCode, toQRScanResult } from '@/lib/qr'
 
 export type SimulationType = 'FRESH' | 'PARTIAL' | 'COMPLETE' | 'CUSTOM'
 
@@ -623,21 +624,17 @@ export function QASimulatorProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      const match = ALL_PUZZLES.find(p => p.code === qrCode || p.code === qrCode.replace('QR-', ''))
-      if (match) {
-        return {
-          discovered: true,
-          qrLabel: `${match.name} Marker`,
-          nodeCode: match.code,
-          nodeTitle: match.name,
-          message: `Marker for ${match.name} at ${match.location} detected.`,
-        }
-      }
+      const validationResult = validateAnyCode(qrCode)
+      const scanResult = toQRScanResult(validationResult)
 
       return {
-        discovered: false,
-        message: 'ACCESS DENIED. The system recognizes the marker, but whatever it points to remains sealed.',
-        error: 'unknown_marker',
+        discovered: scanResult.discovered,
+        qrLabel: scanResult.qrLabel,
+        nodeCode: scanResult.nodeCode,
+        nodeTitle: scanResult.nodeTitle,
+        alreadyClaimed: scanResult.alreadyClaimed,
+        message: scanResult.message,
+        error: scanResult.error,
       }
     },
     [isOffline],

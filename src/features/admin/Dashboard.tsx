@@ -6,6 +6,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { BureauIcons } from '@/components/bureau'
+import { TerminalFrame } from '@/components/bureau'
 import { ROUTES } from '@/app/config'
 import { cn, formatNumber, formatPercent } from '@/lib/utils'
 import { formatDateTime, formatTimeRemaining } from '@/lib/time'
@@ -289,18 +290,13 @@ function TeamStatusCard({
   teams: ReturnType<typeof useBureau>['teams']
   onTeamClick: (id: string) => void
 }) {
-  const statusColors: Record<string, string> = {
-    'Pending Start': 'text-nexus-textMuted',
-    'In Progress': 'text-nexus-accent',
-    'Finished': 'text-nexus-textMuted',
-  }
-
   return (
-    <div className="nexus-ops-panel">
-      <div className="mb-4">
-        <span className="nexus-ops-label">Field unit status</span>
-        <h3 className={cn('heading-4 mt-2', statusColors[title])}>{title}</h3>
-      </div>
+    <TerminalFrame
+      title="Field unit status"
+      reference={title as string}
+      variant="register"
+      className="h-full"
+    >
       {teams.length === 0 ? (
         <div className="text-center py-6 text-nexus-textSubtle text-sm">
           No teams in this status
@@ -311,7 +307,7 @@ function TeamStatusCard({
             <button
               key={team.id}
               onClick={() => onTeamClick(team.id)}
-              className="w-full flex items-center gap-3 p-3 text-left border border-nexus-border bg-nexus-bg hover:bg-nexus-surfaceElevated transition-colors"
+              className="w-full flex items-center gap-3 p-2.5 text-left border border-nexus-border bg-nexus-bg hover:bg-nexus-surfaceElevated transition-colors"
             >
               <TeamStatusBadge status={team.status} showDot />
               <span className="font-medium flex-1 truncate">{team.name}</span>
@@ -320,7 +316,7 @@ function TeamStatusCard({
           ))}
         </div>
       )}
-    </div>
+    </TerminalFrame>
   )
 }
 
@@ -338,14 +334,15 @@ function StatCard({
   subtitle: string
 }) {
   return (
-    <div className="nexus-ops-panel">
-      <div className="flex items-center justify-between mb-3">
-        <p className="text-sm text-nexus-textMuted">{title}</p>
-        <Icon className={cn('bureau-icon w- h-5 opacity-70', color)} />
-      </div>
-      <p className={cn('font-display font-bold text-2xl', color)}>{value}</p>
+    <TerminalFrame
+      title={title}
+      reference={String(value)}
+      icon={<Icon className={cn('bureau-icon w-4 h-4', color)} />}
+      variant="register"
+    >
+      <p className="font-display font-bold text-xl text-nexus-text">{value}</p>
       <p className="text-xs text-nexus-textSubtle mt-1">{subtitle}</p>
-    </div>
+    </TerminalFrame>
   )
 }
 

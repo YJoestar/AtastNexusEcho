@@ -1,8 +1,10 @@
 /**
  * NEXUS — Player QR Scanner
- * Camera-based QR scanning with narrative failure states.
- * When a QR marker is scanned too early, shows a clinical
- * "ACCESS DENIED" message instead of revealing spoilers.
+ *
+ * Camera-based QR scanning with narrative failure states and a unified
+ * validation pipeline. All codes (QR payloads, manual codes, test codes)
+ * resolve through the same canonical ScanLocation registry, ensuring
+ * client and QA simulator always agree.
  */
 
 import { useState, useRef, useEffect, useCallback, useContext } from 'react'
@@ -14,11 +16,6 @@ import { QASimulatorContext } from '@/contexts/QASimulatorContext'
 import { ROUTES } from '@/app/config'
 import { cn } from '@/lib/utils'
 
-/**
- * jsQR is ~120 kB of decoder that only matters once a player opens the
- * scanner, so it is loaded on demand rather than shipped in the entry chunk.
- * It is only ever imported from decodeFrame, which cannot run before startScan.
- */
 type JsQrFn = (
   data: Uint8ClampedArray,
   width: number,
@@ -34,10 +31,74 @@ async function loadJsQr(): Promise<JsQrFn> {
   return jsQrPromise
 }
 
-type ScanResult = QRScanResult
-
-/** How often the video frame is sampled and decoded. */
 const SCAN_INTERVAL_MS = 250
+
+type CameraState =
+  | 'IDLE'
+  | 'REQUESTING_CAMERA'
+  | 'CAMERA_READY'
+  | 'SCANNING'
+  | 'UNSUPPORTED'
+  | 'PERMISSION_DENIED'
+  | 'NO_CAMERA'
+  | 'INSECURE_CONTEXT'
+  | 'STREAM_FAILED'
+  | 'DETECTION_UNAVAILABLE'
+
+const CAMERA_STATE_LABELS: Record<CameraState, { title: string; description: string; icon: ReactNode }> = {
+  IDLE: {
+    title: 'Ready to Scan',
+    description: 'Point your camera at a NEXUS QR marker to unlock puzzles, evidence, or navigation points.',
+    icon: <BureauIcons.QrCode className="bureau-icon w-12 h-12 text-nexus-accent" />,
+  },
+  REQUESTING_CAMERA: {
+    title: 'Requesting Camera',
+    description: 'Waiting for camera access…',
+    icon: <BureauIcons.Camera className="bureau-icon w-12 h-12 text-nexus-textSubtle animate-pulse" />,
+  },
+  CAMERA_READY: {
+    title: 'Camera Ready',
+    description: 'Position a QR marker within the frame.',
+    icon: <BureauIcons.Camera className="bureau-icon w-12 h-12 text-nexus-accent" />,
+  },
+  SCANNING: {
+    title: 'Scanning…',
+    description: 'Position QR code within frame',
+    icon: <BureauIcons.ScanLine className="bureau-icon w-12 h-12 text-nexus-accent animate-pulse" />,
+  },
+  UNSUPPORTED: {
+    title: 'Camera Not Supported',
+    description: 'Your browser does not support the APIs required for camera-based scanning.',
+    icon: <BureauIcons.AlertTriangle className="bureau-icon w-16 h-16 text-nexus-danger mx-auto" />,
+  },
+  PERMISSION_DENIED: {
+    title: 'Camera Access Denied',
+    description: 'Please enable camera permissions in your browser settings to scan QR codes.',
+    icon: <BureauIcons.ShieldQuestion className="bureau-icon w-16 h-16 text-nexus-warning mx-auto" />,
+  },
+  NO_CAMERA: {
+    title: 'No Camera Found',
+    description: 'No camera device was detected. Try connecting a webcam or use manual entry.',
+    icon: <BureauIcons.Video className="bureau-icon w-16 h-16 text-nexus-danger mx-auto" />,
+  },
+  INSECURE_CONTEXT: {
+    title: 'Insecure Context',
+    description: 'Camera access requires an HTTPS connection. Manual entry is available below.',
+    icon: <BureauIcons.Shield className="bureau-icon w-16 h-16 text-nexus-danger mx-auto" />,
+  },
+  STREAM_FAILED: {
+    title: 'Camera Stream Failed',
+    description: 'The camera stream could not be started. Try again or use manual entry.',
+    icon: <BureauIcons.WifiOff className="bureau-icon w-16 h-16 text-nexus-danger mx-auto" />,
+  },
+  DETECTION_UNAVAILABLE: {
+    title: 'Decoder Unavailable',
+    description: 'The QR decoder failed to load. Try again or use manual entry.',
+    icon: <BureauIcons.AlertTriangle className="bureau-icon w-16 h-16 text-nexus-warning mx-auto" />,
+  },
+}
+
+import type { ReactNode } from 'react'
 
 export function PlayerQR() {
   const { scanQR } = useGameEngine()
@@ -45,19 +106,17 @@ export function PlayerQR() {
   const isOffline = connection.isOffline
   const qaContext = useContext(QASimulatorContext)
   const isQASimulation = !!qaContext?.isActive
-  const [isScanning, setIsScanning] = useState(false)
-  const [permission, setPermission] = useState<'prompt' | 'granted' | 'denied'>('prompt')
-  const [lastResult, setLastResult] = useState<ScanResult | null>(null)
-  const [scanningText, setScanningText] = useState('')
+
+  const [cameraState, setCameraState] = useState<CameraState>('IDLE')
+  const [lastResult, setLastResult] = useState<QRScanResult | null>(null)
   const [isResolving, setIsResolving] = useState(false)
   const [showManualEntry, setShowManualEntry] = useState(false)
   const [manualCode, setManualCode] = useState('')
+
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const scanIntervalRef = useRef<number | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
-  // Guards against submitting the same marker repeatedly while the camera
-  // keeps decoding it at 4 fps.
   const lastScannedRef = useRef<{ code: string; at: number } | null>(null)
   const jsQrRef = useRef<JsQrFn | null>(null)
   const decodingRef = useRef(false)
@@ -65,7 +124,11 @@ export function PlayerQR() {
   const submitCode = useCallback(
     async (code: string) => {
       if (isOffline) {
-        setLastResult({ discovered: false, error: 'Cannot scan while offline.' })
+        setLastResult({
+          discovered: false,
+          error: 'offline',
+          message: 'Cannot scan while offline.',
+        })
         return
       }
       setIsResolving(true)
@@ -75,7 +138,8 @@ export function PlayerQR() {
       } catch (err) {
         setLastResult({
           discovered: false,
-          error: err instanceof Error ? err.message : 'Scan failed. Try again.',
+          message: err instanceof Error ? err.message : 'Scan failed. Try again.',
+          error: 'scan_failed',
         })
       } finally {
         setIsResolving(false)
@@ -84,11 +148,6 @@ export function PlayerQR() {
     [isOffline, scanQR],
   )
 
-  /**
-   * Pull the current video frame into an offscreen canvas and decode it.
-   * jsQR needs raw RGBA pixels, which only the canvas provides, so the video
-   * element alone is not enough.
-   */
   const decodeFrame = useCallback(async () => {
     const video = videoRef.current
     const canvas = canvasRef.current
@@ -98,21 +157,20 @@ export function PlayerQR() {
     const height = video.videoHeight
     if (!width || !height) return
 
-    // Cap the working size: decoding a 1080p frame on every tick is enough to
-    // drop frames on mid-range phones, and QR codes stay readable much smaller.
     const maxSide = 640
     const scale = Math.min(1, maxSide / Math.max(width, height))
     canvas.width = Math.round(width * scale)
     canvas.height = Math.round(height * scale)
 
     const ctx = canvas.getContext('2d', { willReadFrequently: true })
-    if (!ctx) return
+    if (!ctx) {
+      setCameraState('DETECTION_UNAVAILABLE')
+      return
+    }
 
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
 
-    // Drop the frame if the decoder has not finished loading or the previous
-    // decode is still running, so slow devices skip rather than queue.
     if (!jsQrRef.current || decodingRef.current) return
     decodingRef.current = true
     let result: { data: string } | null = null
@@ -135,73 +193,166 @@ export function PlayerQR() {
     if (last && last.code === code && now - last.at < 3000) return
     lastScannedRef.current = { code, at: now }
 
-    setScanningText('Marker recognized')
     void submitCode(code)
   }, [submitCode])
 
-  const startScan = async () => {
-    setPermission('prompt')
+  const startScan = useCallback(async () => {
+    if (isOffline) {
+      setCameraState('INSECURE_CONTEXT')
+      return
+    }
+
+    setCameraState('REQUESTING_CAMERA')
     setLastResult(null)
     lastScannedRef.current = null
 
     if (isQASimulation) {
-      setPermission('granted')
-      setIsScanning(true)
-      setScanningText('Simulation mode — no camera required')
+      setCameraState('CAMERA_READY')
+      return
+    }
+
+    if (typeof window === 'undefined' || !window.isSecureContext) {
+      setCameraState('INSECURE_CONTEXT')
+      return
+    }
+
+    if (!navigator?.mediaDevices?.getUserMedia) {
+      setCameraState('UNSUPPORTED')
       return
     }
 
     try {
-      setScanningText('Requesting camera access…')
-      // Warm the decoder while the permission prompt and first frames resolve,
-      // so the first decodable frame is not wasted waiting on the import.
       const loadPromise = loadJsQr()
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: 'environment' },
       })
+
+      const tracks = stream.getVideoTracks()
+      if (tracks.length === 0) {
+        stream.getTracks().forEach(track => track.stop())
+        streamRef.current = null
+        setCameraState('NO_CAMERA')
+        return
+      }
+
       streamRef.current = stream
-      jsQrRef.current = await loadPromise
-      setPermission('granted')
-      setIsScanning(true)
-      setScanningText('Position QR code within frame')
+
+      try {
+        jsQrRef.current = await loadPromise
+      } catch {
+        jsQrRef.current = null
+        setCameraState('DETECTION_UNAVAILABLE')
+        streamRef.current?.getTracks().forEach(track => track.stop())
+        streamRef.current = null
+        return
+      }
+
+      setCameraState('CAMERA_READY')
 
       if (videoRef.current) {
         videoRef.current.srcObject = stream
         await videoRef.current.play().catch(() => {})
       }
 
+      if (!streamRef.current) {
+        setCameraState('STREAM_FAILED')
+        return
+      }
+
+      setCameraState('SCANNING')
+
       scanIntervalRef.current = window.setInterval(() => {
-        decodeFrame()
+        void decodeFrame()
       }, SCAN_INTERVAL_MS)
-    } catch {
-      setPermission('denied')
-      setScanningText('Camera access denied')
+    } catch (err: unknown) {
+      const name = err instanceof Error ? err.name : ''
+
+      streamRef.current?.getTracks().forEach(track => track.stop())
+      streamRef.current = null
+
+      if (
+        name === 'NotAllowedError' ||
+        name === 'PermissionDeniedError' ||
+        (err instanceof DOMException && err.name === 'NotAllowedError')
+      ) {
+        setCameraState('PERMISSION_DENIED')
+      } else if (
+        name === 'NotFoundError' ||
+        (err instanceof DOMException && err.name === 'NotFoundError')
+      ) {
+        setCameraState('NO_CAMERA')
+      } else {
+        setCameraState('STREAM_FAILED')
+      }
     }
-  }
+  }, [isOffline, isQASimulation, decodeFrame])
 
   const stopScan = useCallback(() => {
-    setIsScanning(false)
-    setScanningText('')
+    setCameraState('IDLE')
+    setLastResult(null)
+    setShowManualEntry(false)
+    setManualCode('')
+
     if (videoRef.current) {
       videoRef.current.srcObject = null
     }
     streamRef.current?.getTracks().forEach(track => track.stop())
     streamRef.current = null
+    jsQrRef.current = null
     if (scanIntervalRef.current) {
       clearInterval(scanIntervalRef.current)
       scanIntervalRef.current = null
     }
   }, [])
-  // Release the camera on unmount, otherwise the indicator stays lit and the
-  // next scan has to wait for the browser to reclaim the device.
-  useEffect(() => stopScan, [stopScan])
+
+  useEffect(() => {
+    return () => {
+      if (scanIntervalRef.current) {
+        clearInterval(scanIntervalRef.current)
+        scanIntervalRef.current = null
+      }
+      streamRef.current?.getTracks().forEach(track => track.stop())
+      streamRef.current = null
+    }
+  }, [])
+
+  const isScanning = cameraState === 'SCANNING'
+
+  const renderCameraError = () => {
+    const stateInfo = CAMERA_STATE_LABELS[cameraState]
+    if (cameraState === 'IDLE' || cameraState === 'CAMERA_READY') return null
+
+    const isRetryable = [
+      'REQUESTING_CAMERA',
+      'INSECURE_CONTEXT',
+      'STREAM_FAILED',
+      'DETECTION_UNAVAILABLE',
+    ].includes(cameraState)
+
+    return (
+      <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
+        {stateInfo.icon}
+        <h3 className="heading-4 mb-2">{stateInfo.title}</h3>
+        <p className="text-nexus-textMuted mb-6 max-w-xs">{stateInfo.description}</p>
+        {isRetryable && (
+          <button
+            onClick={startScan}
+            className="btn-primary touch-target-comfortable"
+          >
+            <BureauIcons.Camera className="bureau-icon w-4 h-4" />
+            <span>Retry Camera</span>
+          </button>
+        )}
+      </div>
+    )
+  }
 
   return (
     <div className="page">
       <div className="page-content max-w-2xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4">
-            <Link
+          <Link
             to={ROUTES.PLAYER_GAME}
             className="p-2 border border-nexus-borderSubtle text-nexus-textMuted hover:text-nexus-text touch-target-primary"
             aria-label="Back to game"
@@ -217,74 +368,8 @@ export function PlayerQR() {
         </div>
 
         {/* Scanner View */}
-         <div className="nexus-document-sm relative aspect-square min-h-[320px] overflow-hidden">
-          {permission === 'granted' && isScanning ? (
-            <>
-              {/* Camera Feed Placeholder */}
-              <video
-                ref={videoRef}
-                className="absolute inset-0 w-full h-full object-cover"
-                playsInline
-                muted
-              />
-              {/* Decoding surface. Kept out of layout: it is a pixel buffer,
-                  not something the player should see. */}
-              <canvas ref={canvasRef} className="hidden" aria-hidden="true" />
-              <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                <div className="text-center text-white/70">
-                  <BureauIcons.Camera className="bureau-icon w-12 h-12 mx-auto mb-2" />
-                  <p className="text-sm">{scanningText || 'Position QR code within frame'}</p>
-                </div>
-              </div>
-
-               {/* Scanner Overlay */}
-               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                 <div className="relative w-64 h-64">
-                   <div className="absolute inset-0 border-2 border-nexus-accent/50">
-                     <div className="absolute -top-2 -left-2 w-8 h-8 border-t-4 border-l-4 border-nexus-accent" />
-                     <div className="absolute -top-2 -right-2 w-8 h-8 border-t-4 border-r-4 border-nexus-accent" />
-                     <div className="absolute -bottom-2 -left-2 w-8 h-8 border-b-4 border-l-4 border-nexus-accent" />
-                     <div className="absolute -bottom-2 -right-2 w-8 h-8 border-b-4 border-r-4 border-nexus-accent" />
-                  </div>
-                  <div className="absolute left-4 right-4 h-1 bg-nexus-accent" />
-                </div>
-              </div>
-
-              {/* Status Bar */}
-              <div className="absolute bottom-4 left-4 right-4">
-                <div className="bg-nexus-bg/90 rounded border border-nexus-border px-4 py-3 text-center">
-                  <p className="text-sm text-nexus-textMuted">
-                    {scanningText || 'Scanning…'}
-                  </p>
-                </div>
-              </div>
-
-              {/* Cancel Button */}
-              <button
-                onClick={stopScan}
-                className="absolute top-4 right-4 p-2 bg-nexus-dangerBg border border-nexus-danger/30 text-nexus-danger hover:bg-nexus-danger/20 transition-colors touch-target-primary"
-                aria-label="Cancel scan"
-              >
-                <BureauIcons.Close className="bureau-icon w-5 h-5" />
-              </button>
-            </>
-          ) : permission === 'denied' ? (
-            <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
-              <BureauIcons.AlertTriangle className="bureau-icon w-16 h-16 text-nexus-warning mx-auto mb-4" />
-              <h3 className="heading-4 mb-2">Camera Access Denied</h3>
-              <p className="text-nexus-textMuted mb-6 max-w-xs">
-                Please enable camera permissions in your browser settings
-                to scan QR codes.
-              </p>
-              <button
-                onClick={startScan}
-                className="btn-primary touch-target-comfortable"
-              >
-                <BureauIcons.Camera className="bureau-icon w-4 h-4" />
-                <span>Retry Camera Access</span>
-              </button>
-            </div>
-          ) : (
+        <div className="nexus-document-sm relative aspect-square min-h-[320px] overflow-hidden">
+          {cameraState === 'IDLE' ? (
             <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
               <div className="w-24 h-24 rounded-2xl bg-nexus-accentBg flex items-center justify-center mb-6">
                 <BureauIcons.QrCode className="bureau-icon w-12 h-12 text-nexus-accent" />
@@ -297,6 +382,7 @@ export function PlayerQR() {
               <button
                 onClick={startScan}
                 className="btn-primary touch-target-comfortable w-full max-w-xs"
+                disabled={isOffline}
               >
                 <BureauIcons.ScanLine className="bureau-icon w-5 h-5" />
                 <span>Start Scanning</span>
@@ -314,8 +400,82 @@ export function PlayerQR() {
                 </p>
               )}
             </div>
+          ) : (
+            <>
+              <video
+                ref={videoRef}
+                className={cn(
+                  'absolute inset-0 w-full h-full object-cover',
+                  isScanning ? 'visible' : 'invisible',
+                )}
+                playsInline
+                muted
+              />
+              <canvas ref={canvasRef} className="hidden" aria-hidden="true" />
+
+              {(cameraState === 'REQUESTING_CAMERA' || cameraState === 'CAMERA_READY') && (
+                <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                  <div className="text-center text-white/70">
+                    <BureauIcons.Camera className="bureau-icon w-12 h-12 mx-auto mb-2 animate-pulse" />
+                    <p className="text-sm">
+                      {CAMERA_STATE_LABELS[cameraState].description}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {cameraState === 'SCANNING' && (
+                <>
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="relative w-64 h-64">
+                      <div className="absolute inset-0 border-2 border-nexus-accent/50">
+                        <div className="absolute -top-2 -left-2 w-8 h-8 border-t-4 border-l-4 border-nexus-accent" />
+                        <div className="absolute -top-2 -right-2 w-8 h-8 border-t-4 border-r-4 border-nexus-accent" />
+                        <div className="absolute -bottom-2 -left-2 w-8 h-8 border-b-4 border-l-4 border-nexus-accent" />
+                        <div className="absolute -bottom-2 -right-2 w-8 h-8 border-b-4 border-r-4 border-nexus-accent" />
+                      </div>
+                      <div className="absolute left-4 right-4 h-1 bg-nexus-accent" />
+                    </div>
+                  </div>
+
+                  <div className="absolute bottom-4 left-4 right-4">
+                    <div className="bg-nexus-bg/90 rounded border border-nexus-border px-4 py-3 text-center">
+                      <p className="text-sm text-nexus-textMuted">
+                        {isResolving ? 'Verifying marker…' : 'Scanning…'}
+                      </p>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {renderCameraError()}
+
+              {cameraState !== 'SCANNING' && (
+                <button
+                  onClick={stopScan}
+                  className="absolute top-4 right-4 p-2 bg-nexus-dangerBg border border-nexus-danger/30 text-nexus-danger hover:bg-nexus-danger/20 transition-colors touch-target-primary"
+                  aria-label="Cancel scan"
+                >
+                  <BureauIcons.Close className="bureau-icon w-5 h-5" />
+                </button>
+              )}
+            </>
           )}
         </div>
+
+        {/* Camera Controls (below scanner) */}
+        {cameraState === 'IDLE' && (
+          <div className="flex gap-2">
+            <button
+              onClick={startScan}
+              className="btn-primary flex-1 touch-target-comfortable"
+              disabled={isOffline}
+            >
+              <BureauIcons.ScanLine className="bureau-icon w-5 h-5" />
+              <span>Start Scanning</span>
+            </button>
+          </div>
+        )}
 
         {/* Last Scan Result */}
         {lastResult && (
@@ -397,9 +557,7 @@ export function PlayerQR() {
           </div>
         )}
 
-        {/* Manual entry fallback: a physical marker may be damaged, printed at
-            an angle, or read in poor light. Camera failure must not strand a
-            team, and the server still validates whatever code is entered. */}
+        {/* Manual entry fallback */}
         <div className="panel">
           <button
             type="button"
@@ -421,22 +579,22 @@ export function PlayerQR() {
             </span>
           </button>
 
-          {showManualEntry && (
-            <form
-              className="mt-4 flex gap-2"
-              onSubmit={(e) => {
-                e.preventDefault()
-                const code = manualCode.trim()
-                if (!code) return
-                void submitCode(code)
-                setManualCode('')
-              }}
-            >
+           {showManualEntry && (
+             <form
+               className="mt-4 flex gap-2"
+               onSubmit={async (e) => {
+                 e.preventDefault()
+                 const code = manualCode.trim()
+                 if (!code) return
+                 void submitCode(code)
+                 setManualCode('')
+               }}
+             >
               <input
                 type="text"
                 value={manualCode}
                 onChange={e => setManualCode(e.target.value)}
-                placeholder="QR-NODE-02"
+                placeholder="NX-Loc-001-XXXX-XX"
                 aria-label="Marker code"
                 autoCapitalize="characters"
                 autoComplete="off"
@@ -462,8 +620,9 @@ export function PlayerQR() {
               <h4 className="font-medium text-nexus-info mb-1">Scanner Guide</h4>
               <p className="text-sm text-nexus-textMuted">
                 NEXUS markers appear at physical locations throughout the campus.
-                Scanning too early will return an access denial — return after
-                solving the required prerequisite puzzles.
+                Enter a manual code if the camera cannot read the marker, or use
+                the test code <code className="font-mono">NX-TEST-ENTRY</code> if
+                you do not have access to physical markers.
               </p>
             </div>
           </div>
