@@ -187,6 +187,25 @@
 }
 
 @layer components {
+  /* Thin institutional icon marks. In the components layer (before
+     @tailwind utilities) so that explicit size classes like w-5 still
+     take effect via the utility cascade. */
+  .bureau-icon {
+    width: 1em;
+    height: 1em;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 1.5;
+    stroke-linecap: square;
+    stroke-linejoin: miter;
+    flex-shrink: 0;
+    pointer-events: none;
+  }
+  .bureau-icon[data-bureau-icon="true"] {
+    width: 1em;
+    height: 1em;
+  }
+
   /* ==================================================================
      1 — BORDER FAMILY
      A page has edges like a sheet of paper. Not every surface is a
@@ -1017,6 +1036,24 @@
     line-height: 1.5;
   }
 
+  .terminal-corner {
+    position: absolute;
+    width: 0.75rem;
+    height: 0.75rem;
+    border-color: var(--nx-border-strong);
+    pointer-events: none;
+  }
+  .terminal-corner.tl {
+    top: 0; left: 0;
+    border-top: 1px solid currentColor;
+    border-left: 1px solid currentColor;
+  }
+  .terminal-corner.tr {
+    top: 0; right: 0;
+    border-top: 1px solid currentColor;
+    border-right: 1px solid currentColor;
+  }
+
   .terminal-header {
     font-size: 0.625rem;
     letter-spacing: 0.125em;
@@ -1261,49 +1298,31 @@
     @apply absolute rounded-full border border-nexus-bg shadow-[0_0_0_2px_rgba(10,10,11,0.8)];
   }
 
-  @media print {
-    .no-print { display: none !important; }
-  }
-}
+   @media print {
+     .no-print { display: none !important; }
+   }
+ }
 
-@layer utilities {
-  .safe-area-top { padding-top: var(--safe-top); }
-  .safe-area-bottom { padding-bottom: var(--safe-bottom); }
-  .safe-area-x {
-    padding-left: var(--safe-left);
-    padding-right: var(--safe-right);
-  }
-  .safe-area-b { padding-bottom: var(--safe-bottom); }
+ @layer utilities {
+   .safe-area-top { padding-top: var(--safe-top); }
+   .safe-area-bottom { padding-bottom: var(--safe-bottom); }
+   .safe-area-x {
+     padding-left: var(--safe-left);
+     padding-right: var(--safe-right);
+   }
+   .safe-area-b { padding-bottom: var(--safe-bottom); }
 
-  .text-balance { text-wrap: balance; }
-  .text-pretty { text-wrap: pretty; }
+   .text-balance { text-wrap: balance; }
+   .text-pretty { text-wrap: pretty; }
 
-  .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-  .scrollbar-hide::-webkit-scrollbar { display: none; }
+   .scrollbar-hide {
+     -ms-overflow-style: none;
+     scrollbar-width: none;
+   }
+   .scrollbar-hide::-webkit-scrollbar { display: none; }
 
-  /* Thin rails for register columns on desktop. */
-  .rail {
-    scrollbar-width: thin;
+   /* Thin rails for register columns on desktop. */
+   .rail {
+     scrollbar-width: thin;
      scrollbar-color: var(--nx-border) transparent;
    }
-
-   /* Thin institutional icon marks. */
-   .bureau-icon {
-     width: 1em;
-     height: 1em;
-     stroke: currentColor;
-     fill: none;
-     stroke-width: 1.5;
-     stroke-linecap: square;
-     stroke-linejoin: miter;
-     flex-shrink: 0;
-     pointer-events: none;
-   }
-   .bureau-icon[data-bureau-icon="true"] {
-     width: 1em;
-     height: 1em;
-   }
-}

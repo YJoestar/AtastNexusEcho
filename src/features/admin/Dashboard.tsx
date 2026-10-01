@@ -287,9 +287,10 @@ function TeamStatusCard({
 }) {
   return (
     <TerminalFrame
-      title="Field unit status"
-      reference={title as string}
-      variant="register"
+      title={title}
+      reference={`${teams.length} teams`}
+      icon={<BureauIcons.Users className="bureau-icon w-4 h-4 text-nexus-textSubtle" />}
+      variant="system"
       className="h-full"
     >
       {teams.length === 0 ? (

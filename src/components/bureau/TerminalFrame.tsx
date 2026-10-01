@@ -58,16 +58,19 @@ export function TerminalFrame({
         aria-hidden="true"
       />
 
+      <span className="terminal-corner tl" aria-hidden="true" />
+      <span className="terminal-corner tr" aria-hidden="true" />
+
       {(title || reference) && (
         <header
           className={cn(
-            'terminal-header flex items-baseline justify-between gap-2 border-b border-nexus-border px-3 py-2',
+            'terminal-header flex items-center justify-between gap-2 border-b border-nexus-border px-3 py-2',
             'bg-nexus-surfaceElevated',
             headerClassName,
           )}
         >
           <div className="flex items-center gap-2 truncate">
-            {icon && <span className="shrink-0">{icon}</span>}
+            {icon && <span className="shrink-0 flex items-center">{icon}</span>}
             <span className="truncate text-xs uppercase tracking-[0.16em] text-nexus-textSubtle">
               {title}
             </span>
