@@ -19,7 +19,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { AlertTriangle, Check, Copy, Download, Loader2, Maximize2, Minimize2, X } from 'lucide-react'
+import { BureauIcons } from '@/components/bureau'
 import { cn } from '@/lib/utils'
 import { adminAPI } from '@/lib/admin'
 import type { RevealedPlayerCode, RevealedTeamCodes } from '@/lib/admin'
@@ -204,14 +204,14 @@ export function TeamCodesModal({
             className="p-2 rounded-lg text-nexus-textSubtle hover:text-nexus-text hover:bg-nexus-surfaceElevated transition-colors flex-shrink-0"
             aria-label="Close"
           >
-            <X className="w-6 h-6" />
+            <BureauIcons.Close className="bureau-icon w-6 h-6" />
           </button>
         </header>
 
         <div className="px-5 sm:px-8 py-5 sm:py-6 flex-1 min-h-0 overflow-y-auto">
           {isLoading && (
             <div className="flex items-center justify-center gap-3 py-16 text-nexus-textSubtle">
-              <Loader2 className="w-6 h-6 animate-spin" aria-hidden="true" />
+              <BureauIcons.Spinner className="bureau-icon w-6 h-6 animate-spin" aria-hidden="true" />
               <span className="text-lg">Reading codes…</span>
             </div>
           )}
@@ -221,7 +221,7 @@ export function TeamCodesModal({
               className="flex items-start gap-3 p-4 bg-nexus-dangerBg border border-nexus-danger/30 rounded-xl text-nexus-danger"
               role="alert"
             >
-              <AlertTriangle className="w-5 h-5 mt-0.5 flex-shrink-0" aria-hidden="true" />
+              <BureauIcons.AlertTriangle className="bureau-icon w-5 h-5 mt-0.5 flex-shrink-0" aria-hidden="true" />
               <p className="text-sm">{error}</p>
             </div>
           )}
@@ -277,19 +277,19 @@ export function TeamCodesModal({
             <SecondaryButton
               onClick={() => setIsFullscreen(value => !value)}
               label={isFullscreen ? 'EXIT FULLSCREEN' : 'FULLSCREEN'}
-              icon={isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+              icon={isFullscreen ? <BureauIcons.Minimize className="bureau-icon w-4 h-4" /> : <BureauIcons.Maximize className="bureau-icon w-4 h-4" />}
             />
             <SecondaryButton
               onClick={copyAll}
               disabled={readable.length === 0}
               label={copiedKey === 'all' ? 'Copied' : 'Copy all'}
-              icon={<Copy className="w-4 h-4" />}
+              icon={<BureauIcons.Copy className="bureau-icon w-4 h-4" />}
             />
             <SecondaryButton
               onClick={download}
               disabled={players.length === 0}
               label={copiedKey === 'download' ? 'Saved' : 'Export'}
-              icon={<Download className="w-4 h-4" />}
+              icon={<BureauIcons.Download className="bureau-icon w-4 h-4" />}
             />
           </div>
         </footer>
@@ -347,12 +347,12 @@ function CodeTile({
           >
             {copied ? (
               <>
-                <Check className="w-4 h-4 text-nexus-success" aria-hidden="true" />
+                <BureauIcons.Check className="bureau-icon w-4 h-4 text-nexus-success" aria-hidden="true" />
                 Copied
               </>
             ) : (
               <>
-                <Copy className="w-4 h-4" aria-hidden="true" />
+                <BureauIcons.Copy className="bureau-icon w-4 h-4" aria-hidden="true" />
                 Copy
               </>
             )}

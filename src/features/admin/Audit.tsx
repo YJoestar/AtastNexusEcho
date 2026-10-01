@@ -1,45 +1,45 @@
-/**
+﻿/**
  * NEXUS — Audit Log
  *
  * Real audit log from the server. All admin actions are logged.
  */
 
 import { useEffect, useMemo, useState } from 'react'
-import { Search, RefreshCw, AlertCircle, Shield, Users, Play, Pause, Lightbulb, Send, Clock, Trash2, MapPin } from 'lucide-react'
+import { BureauIcons } from '@/components/bureau'
 import { cn } from '@/lib/utils'
 import { formatDateTime } from '@/lib/time'
 import { useBureau } from '@/hooks/useBureau'
 import type { AuditLogEntryAdmin } from '@/lib/admin'
 
 const ACTION_ICONS: Record<string, JSX.Element> = {
-  TEAM_CREATE: <Shield className="w-4 h-4 text-nexus-info" />,
-  TEAM_START: <Play className="w-4 h-4 text-nexus-accent" />,
-  TEAM_PAUSE: <Pause className="w-4 h-4 text-nexus-warning" />,
-  TEAM_RESUME: <Play className="w-4 h-4 text-nexus-accent" />,
-  TEAM_COMPLETE: <Play className="w-4 h-4 text-nexus-accent" />,
-  TEAM_DISQUALIFY: <AlertCircle className="w-4 h-4 text-nexus-danger" />,
-  TEAM_DELETE: <Trash2 className="w-4 h-4 text-nexus-danger" />,
-  TEAM_UPDATE: <Shield className="w-4 h-4 text-nexus-info" />,
-  ROLE_ASSIGN: <Users className="w-4 h-4 text-nexus-info" />,
-  ROLE_REASSIGN: <Users className="w-4 h-4 text-nexus-info" />,
-  NODE_UNLOCK: <Shield className="w-4 h-4 text-nexus-warning" />,
-  NODE_LOCK: <Shield className="w-4 h-4 text-nexus-textMuted" />,
-  NODE_SKIP: <AlertCircle className="w-4 h-4 text-nexus-textMuted" />,
-  HINT_GRANT: <Lightbulb className="w-4 h-4 text-nexus-warning" />,
-  ANNOUNCEMENT_SEND: <Send className="w-4 h-4 text-nexus-info" />,
-  SCORE_ADJUST: <AlertCircle className="w-4 h-4 text-nexus-warning" />,
-  SUBMISSION_OVERRIDE: <AlertCircle className="w-4 h-4 text-nexus-info" />,
-  TIME_ADJUST: <Clock className="w-4 h-4 text-nexus-info" />,
-  GAME_START: <Play className="w-4 h-4 text-nexus-accent" />,
-  GAME_PAUSE: <Pause className="w-4 h-4 text-nexus-warning" />,
-  GAME_END: <AlertCircle className="w-4 h-4 text-nexus-danger" />,
-  CONFIG_UPDATE: <Shield className="w-4 h-4 text-nexus-info" />,
-  EVIDENCE_GRANT: <Shield className="w-4 h-4 text-cyan-400" />,
-  ITEM_GRANT: <Shield className="w-4 h-4 text-amber-400" />,
-  FRAGMENT_REVEAL: <Shield className="w-4 h-4 text-purple-400" />,
-  LOCATION_CREATE: <MapPin className="w-4 h-4 text-nexus-info" />,
-  LOCATION_UPDATE: <MapPin className="w-4 h-4 text-nexus-warning" />,
-  LOCATION_DELETE: <MapPin className="w-4 h-4 text-nexus-danger" />,
+  TEAM_CREATE: <BureauIcons.Shield className="bureau-icon w-4 h-4 text-nexus-info" />,
+  TEAM_START: <BureauIcons.Play className="bureau-icon w-4 h-4 text-nexus-accent" />,
+  TEAM_PAUSE: <BureauIcons.Pause className="bureau-icon w-4 h-4 text-nexus-warning" />,
+  TEAM_RESUME: <BureauIcons.Play className="bureau-icon w-4 h-4 text-nexus-accent" />,
+  TEAM_COMPLETE: <BureauIcons.Play className="bureau-icon w-4 h-4 text-nexus-accent" />,
+  TEAM_DISQUALIFY: <BureauIcons.Alert className="bureau-icon w-4 h-4 text-nexus-danger" />,
+  TEAM_DELETE: <BureauIcons.Trash className="bureau-icon w-4 h-4 text-nexus-danger" />,
+  TEAM_UPDATE: <BureauIcons.Shield className="bureau-icon w-4 h-4 text-nexus-info" />,
+  ROLE_ASSIGN: <BureauIcons.Users className="bureau-icon w-4 h-4 text-nexus-info" />,
+  ROLE_REASSIGN: <BureauIcons.Users className="bureau-icon w-4 h-4 text-nexus-info" />,
+  NODE_UNLOCK: <BureauIcons.Shield className="bureau-icon w-4 h-4 text-nexus-warning" />,
+  NODE_LOCK: <BureauIcons.Shield className="bureau-icon w-4 h-4 text-nexus-textMuted" />,
+  NODE_SKIP: <BureauIcons.Alert className="bureau-icon w-4 h-4 text-nexus-textMuted" />,
+  HINT_GRANT: <BureauIcons.Lightbulb className="bureau-icon w-4 h-4 text-nexus-warning" />,
+  ANNOUNCEMENT_SEND: <BureauIcons.Send className="bureau-icon w-4 h-4 text-nexus-info" />,
+  SCORE_ADJUST: <BureauIcons.Alert className="bureau-icon w-4 h-4 text-nexus-warning" />,
+  SUBMISSION_OVERRIDE: <BureauIcons.Alert className="bureau-icon w-4 h-4 text-nexus-info" />,
+  TIME_ADJUST: <BureauIcons.Clock className="bureau-icon w-4 h-4 text-nexus-info" />,
+  GAME_START: <BureauIcons.Play className="bureau-icon w-4 h-4 text-nexus-accent" />,
+  GAME_PAUSE: <BureauIcons.Pause className="bureau-icon w-4 h-4 text-nexus-warning" />,
+  GAME_END: <BureauIcons.Alert className="bureau-icon w-4 h-4 text-nexus-danger" />,
+  CONFIG_UPDATE: <BureauIcons.Shield className="bureau-icon w-4 h-4 text-nexus-info" />,
+  EVIDENCE_GRANT: <BureauIcons.Shield className="bureau-icon w-4 h-4 text-nexus-accent" />,
+  ITEM_GRANT: <BureauIcons.Shield className="bureau-icon w-4 h-4 text-nexus-warning" />,
+  FRAGMENT_REVEAL: <BureauIcons.Shield className="bureau-icon w-4 h-4 text-nexus-info" />,
+  LOCATION_CREATE: <BureauIcons.MapPin className="bureau-icon w-4 h-4 text-nexus-info" />,
+  LOCATION_UPDATE: <BureauIcons.MapPin className="bureau-icon w-4 h-4 text-nexus-warning" />,
+  LOCATION_DELETE: <BureauIcons.MapPin className="bureau-icon w-4 h-4 text-nexus-danger" />,
 }
 
 export function AdminAudit() {
@@ -76,7 +76,7 @@ export function AdminAudit() {
   }
 
   const getActionIcon = (action: string) => {
-    return ACTION_ICONS[action] ?? <Shield className="w-4 h-4 text-nexus-textSubtle" />
+    return ACTION_ICONS[action] ?? <BureauIcons.Shield className="bureau-icon w-4 h-4 text-nexus-textSubtle" />
   }
 
   return (
@@ -94,7 +94,7 @@ export function AdminAudit() {
           disabled={isLoading}
           className="btn-secondary text-xs py-1.5"
         >
-          <RefreshCw className={cn('w-4 h-4', isLoading && 'animate-spin')} />
+          <BureauIcons.Refresh className={cn('bureau-icon w- h-4', isLoading && 'animate-spin')} />
           <span>Refresh</span>
         </button>
       </div>
@@ -102,7 +102,7 @@ export function AdminAudit() {
       {/* Search & Filters */}
       <div className="flex gap-4">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-nexus-textSubtle" aria-hidden="true" />
+          <BureauIcons.Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-nexus-textSubtle" aria-hidden="true" />
           <input
             type="text"
             value={searchTerm}
@@ -149,7 +149,7 @@ export function AdminAudit() {
               {isLoading ? (
                 <tr>
                   <td colSpan={5} className="py-8 text-center text-nexus-textSubtle">
-                    <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2" />
+                    <BureauIcons.Refresh className="bureau-icon w-6 h-6 animate-spin mx-auto mb-2" />
                     Loading audit log…
                   </td>
                 </tr>
@@ -198,7 +198,7 @@ function AuditRow({
       </td>
       <td className="py-3 px-4">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-nexus-surfaceElevated flex items-center justify-center">
+          <div className="bureau-icon w-8 h-8 rounded-lg bg-nexus-surfaceElevated flex items-center justify-center">
             {getActionIcon(entry.action)}
           </div>
           <span className="font-mono text-xs text-nexus-text">
@@ -234,3 +234,8 @@ function formatPayload(payload: Record<string, unknown>): string | null {
     .map(([key, value]) => `${key}: ${String(value)}`)
     .join(', ')
 }
+
+
+
+
+

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * NEXUS — QA Simulator Hub
  *
  * Admin-only control panel for walking the full player experience end-to-end
@@ -13,27 +13,7 @@
  */
 
 import { useState, useEffect, useRef } from 'react'
-import {
-  Play,
-  RotateCcw,
-  SkipForward,
-  Target,
-  Flag,
-  Eye,
-  Brain,
-  Wrench,
-  Wifi,
-  WifiOff,
-  Lock,
-  Unlock,
-  Search,
-  BarChart3,
-  Maximize2,
-  Minimize2,
-  Smartphone,
-  Tablet,
-  Monitor,
-} from 'lucide-react'
+import { BureauIcons } from '@/components/bureau'
 import { ROLE_LABELS, ROLE_DESCRIPTIONS, ROLES } from '@/app/config'
 import { ALL_PUZZLES } from '@/content/puzzles'
 import { cn } from '@/lib/utils'
@@ -49,15 +29,15 @@ const SIMULATION_TYPES: { value: SimulationType; label: string; description: str
 ]
 
 const DEVICE_PRESETS = [
-  { key: 'desktop', label: 'Desktop', icon: Monitor, width: 'w-full max-w-5xl' },
-  { key: 'tablet', label: 'Tablet', icon: Tablet, width: 'w-full max-w-2xl' },
-  { key: 'mobile', label: 'Mobile', icon: Smartphone, width: 'w-full max-w-sm' },
+  { key: 'desktop', label: 'Desktop', icon: BureauIcons.Monitor, width: 'w-full max-w-5xl' },
+  { key: 'tablet', label: 'Tablet', icon: BureauIcons.Tablet, width: 'w-full max-w-2xl' },
+  { key: 'mobile', label: 'Mobile', icon: BureauIcons.Smartphone, width: 'w-full max-w-sm' },
 ]
 
 const ROLE_ICONS = {
-  OBSERVER: Eye,
-  ANALYST: Brain,
-  OPERATOR: Wrench,
+  OBSERVER: BureauIcons.Eye,
+  ANALYST: BureauIcons.Brain,
+  OPERATOR: BureauIcons.Wrench,
 }
 
 function QAHubInner() {
@@ -159,7 +139,7 @@ function QAHubInner() {
                                 : 'border-nexus-border hover:border-nexus-borderHover bg-nexus-surfaceElevated',
                             )}
                           >
-                            <Icon className="w-6 h-6" />
+                            <Icon className="bureau-icon w-6 h-6" />
                             <span className="font-medium">{ROLE_LABELS[r]}</span>
                             <span className="text-xs text-nexus-textSubtle text-center">
                               {ROLE_DESCRIPTIONS[r]}
@@ -198,7 +178,7 @@ function QAHubInner() {
                 onClick={handleStart}
                 className="btn-primary w-full py-4 text-lg gap-3"
               >
-                <Play className="w-5 h-5" />
+                <BureauIcons.Play className="bureau-icon w-5 h-5" />
                 Start Simulation
               </button>
             </div>
@@ -210,27 +190,27 @@ function QAHubInner() {
               </p>
               <ul className="space-y-2 text-sm">
                 <li className="flex items-start gap-2">
-                  <SkipForward className="w-4 h-4 text-nexus-accent mt-0.5" />
+                  <BureauIcons.SkipForward className="bureau-icon w-4 h-4 text-nexus-accent mt-0.5" />
                   <span><strong>Advance Progression</strong> — Solve the next sequential node</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <Flag className="w-4 h-4 text-nexus-accent mt-0.5" />
+                  <BureauIcons.Flag className="bureau-icon w-4 h-4 text-nexus-accent mt-0.5" />
                   <span><strong>Solve Current</strong> — Mark the active node as solved</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <Target className="w-4 h-4 text-nexus-accent mt-0.5" />
+                  <BureauIcons.Target className="bureau-icon w-4 h-4 text-nexus-accent mt-0.5" />
                   <span><strong>Jump to Node</strong> — Navigate to any node by code</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <RotateCcw className="w-4 h-4 text-nexus-accent mt-0.5" />
+                  <BureauIcons.RotateCcw className="bureau-icon w-4 h-4 text-nexus-accent mt-0.5" />
                   <span><strong>Reset Simulation</strong> — Clear all progress</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <WifiOff className="w-4 h-4 text-nexus-accent mt-0.5" />
+                  <BureauIcons.WifiOff className="bureau-icon w-4 h-4 text-nexus-accent mt-0.5" />
                   <span><strong>Toggle Offline</strong> — Simulate connection loss</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <Lock className="w-4 h-4 text-nexus-accent mt-0.5" />
+                  <BureauIcons.Lock className="bureau-icon w-4 h-4 text-nexus-accent mt-0.5" />
                   <span><strong>Toggle Lock</strong> — Simulate game lock state</span>
                 </li>
               </ul>
@@ -277,7 +257,7 @@ function QAHubInner() {
               className="btn-ghost touch-target-primary"
               aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
             >
-              {isFullscreen ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
+              {isFullscreen ? <BureauIcons.Minimize className="bureau-icon w-5 h-5" /> : <BureauIcons.Maximize className="bureau-icon w-5 h-5" />}
             </button>
             <button
               onClick={handleStop}
@@ -333,14 +313,14 @@ function QAHubInner() {
                   disabled={!qa.currentNodeId || qa.solvedNodes.has(qa.currentNodeId!)}
                   className="btn-primary"
                 >
-                  <Flag className="w-4 h-4" />
+                  <BureauIcons.Flag className="bureau-icon w-4 h-4" />
                   Solve Current
                 </button>
                 <button
                   onClick={qa.advanceProgression}
                   className="btn-secondary"
                 >
-                  <SkipForward className="w-4 h-4" />
+                  <BureauIcons.SkipForward className="bureau-icon w-4 h-4" />
                   Advance Progression
                 </button>
                 <button
@@ -350,7 +330,7 @@ function QAHubInner() {
                     qa.isOffline && 'text-nexus-danger hover:bg-nexus-dangerBg/30',
                   )}
                 >
-                  {qa.isOffline ? <WifiOff className="w-4 h-4" /> : <Wifi className="w-4 h-4" />}
+                  {qa.isOffline ? <BureauIcons.WifiOff className="bureau-icon w-4 h-4" /> : <BureauIcons.Wifi className="bureau-icon w-4 h-4" />}
                   {qa.isOffline ? 'Online' : 'Offline Mode'}
                 </button>
                 <button
@@ -360,7 +340,7 @@ function QAHubInner() {
                     qa.isLocked && 'text-nexus-warning hover:bg-nexus-warningBg/30',
                   )}
                 >
-                  {qa.isLocked ? <Unlock className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+                  {qa.isLocked ? <BureauIcons.Unlock className="bureau-icon w-4 h-4" /> : <BureauIcons.Lock className="bureau-icon w-4 h-4" />}
                   {qa.isLocked ? 'Unlock' : 'Lock Game'}
                 </button>
               </div>
@@ -386,7 +366,7 @@ function QAHubInner() {
                                 : 'border-nexus-border hover:border-nexus-borderHover',
                             )}
                           >
-                            <Icon className="w-4 h-4" />
+                            <Icon className="bureau-icon w-4 h-4" />
                             {ROLE_LABELS[r]}
                           </button>
                         )
@@ -413,7 +393,7 @@ function QAHubInner() {
                       disabled={!nodeJumpInput.trim()}
                       className="btn-secondary"
                     >
-                      <Search className="w-4 h-4" />
+                      <BureauIcons.Search className="bureau-icon w-4 h-4" />
                     </button>
                   </div>
 
@@ -421,7 +401,7 @@ function QAHubInner() {
                     onClick={qa.resetSimulation}
                     className="btn-ghost w-full text-nexus-danger hover:bg-nexus-dangerBg/30"
                   >
-                    <RotateCcw className="w-4 h-4" />
+                    <BureauIcons.RotateCcw className="bureau-icon w-4 h-4" />
                     Reset Simulation
                   </button>
                 </div>
@@ -545,11 +525,11 @@ function QAHubInner() {
         <div className="border border-nexus-border rounded-xl overflow-hidden">
           <div className="bg-nexus-surfaceElevated px-4 py-2 border-b border-nexus-border flex items-center justify-between">
             <div className="flex items-center gap-2 text-sm text-nexus-textMuted">
-              <Monitor className="w-4 h-4" />
+              <BureauIcons.Monitor className="bureau-icon w-4 h-4" />
               <span>Player View — {ROLE_LABELS[qa.role]} — {DEVICE_PRESETS.find(d => d.key === devicePreset)?.label ?? 'Desktop'}</span>
             </div>
             <div className="flex items-center gap-1 text-xs text-nexus-textSubtle">
-              <BarChart3 className="w-4 h-4" />
+              <BureauIcons.BarChart3 className="bureau-icon w-4 h-4" />
               <span>{solvedCount}/{totalNodes}</span>
             </div>
           </div>
@@ -598,3 +578,5 @@ export function QAHub() {
     </QASimulatorProvider>
   )
 }
+
+

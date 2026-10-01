@@ -11,6 +11,18 @@
  * Context propagation between the two roots uses useSyncExternalStore so the
  * root is created once and subsequent QA context updates flow through React's
  * own subscription mechanism — no repeated root.render() calls.
+ *
+ * Two things here are load-bearing under React StrictMode, which mounts, tears
+ * down and re-runs every effect:
+ *
+ *   1. `subscribe` must return an unsubscribe FUNCTION. React uses the return
+ *      value directly as the effect cleanup, so returning Set.delete's boolean
+ *      made StrictMode's teardown throw, which left this pane permanently
+ *      empty.
+ *   2. The second root must never be torn down with `unmount()`. React tears
+ *      effects down while it is still rendering, where a synchronous unmount
+ *      loses the race and takes the rendered tree with it. The root is created
+ *      once and cleared with `render(null)`, which is scheduled and safe.
  */
 
 import { useEffect, useRef, useContext, useSyncExternalStore } from 'react'
@@ -58,7 +70,9 @@ const qaContextStore: {
 
 function subscribe(callback: () => void): () => void {
   qaContextStore.listeners.add(callback)
-  return () => qaContextStore.listeners.delete(callback)
+  return () => {
+    qaContextStore.listeners.delete(callback)
+  }
 }
 
 function getSnapshot(): QAContextValue | null {
@@ -104,14 +118,26 @@ export function QAPlayerShell() {
     const container = containerRef.current
     if (!container) return
 
+    // Publish before the first render: the store-backed root reads this value
+    // during its initial render, and there is no notification to wait for on a
+    // value that was already set.
     qaContextStore.value = qaContext
+    qaContextStore.listeners.forEach(l => l())
 
-    rootRef.current = createRoot(container)
+    // Create the second root exactly once and keep it for the shell's life.
+    // StrictMode tears this effect down and runs it again immediately; calling
+    // unmount() in that window leaves the pane empty for the rest of the
+    // session, which is how a simulator ends up showing nothing at all.
+    if (!rootRef.current) {
+      rootRef.current = createRoot(container)
+    }
     rootRef.current.render(<QAPlayerShellInner />)
 
     return () => {
-      rootRef.current?.unmount()
-      rootRef.current = null
+      // Clear the tree rather than unmounting the root. render(null) is
+      // scheduled, so it is safe to issue while React is still rendering;
+      // unmount() is not.
+      rootRef.current?.render(null)
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 

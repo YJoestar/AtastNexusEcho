@@ -1,4 +1,4 @@
-/**
+﻿/**
  * NEXUS — Admin Location Management
  *
  * Runtime-configurable physical puzzle locations. Each puzzle node can have
@@ -8,7 +8,7 @@
  */
 
 import { useEffect, useMemo, useState } from 'react'
-import { MapPin, Search, RefreshCw, Edit, AlertCircle, Download, Loader2 } from 'lucide-react'
+import { BureauIcons } from '@/components/bureau'
 import { cn, getAvatarInitials } from '@/lib/utils'
 import { useBureau } from '@/hooks/useBureau'
 import { ALL_PUZZLES } from '@/content/puzzles'
@@ -103,12 +103,12 @@ export function AdminLocations() {
           >
             {isDownloading ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <BureauIcons.Spinner className="bureau-icon w-4 h-4 animate-spin" />
                 <span>Generating…</span>
               </>
             ) : (
               <>
-                <Download className="w-4 h-4" />
+                <BureauIcons.Download className="bureau-icon w-4 h-4" />
                 <span>⬇️ Download All QR Codes</span>
               </>
             )}
@@ -118,7 +118,7 @@ export function AdminLocations() {
             disabled={isLoading}
             className="btn-secondary text-xs py-1.5"
           >
-            <RefreshCw className={cn('w-4 h-4', isLoading && 'animate-spin')} />
+            <BureauIcons.Refresh className={cn('bureau-icon w- h-4', isLoading && 'animate-spin')} />
             <span>Refresh</span>
           </button>
         </div>
@@ -127,14 +127,14 @@ export function AdminLocations() {
       {/* Error */}
       {(error || downloadError) && (
         <div className="p-3 rounded-xl bg-nexus-dangerBg/20 border border-nexus-danger/30 text-nexus-danger text-sm flex items-start gap-2">
-          <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+          <BureauIcons.Alert className="bureau-icon w-4 h-4 mt-0.5 flex-shrink-0" />
           <span>{error || downloadError}</span>
         </div>
       )}
 
       {/* Search */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-nexus-textSubtle" />
+        <BureauIcons.Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-nexus-textSubtle" />
         <input
           type="text"
           value={searchTerm}
@@ -147,7 +147,7 @@ export function AdminLocations() {
       {/* Locations Table */}
       {isLoading ? (
         <div className="text-center py-12 text-nexus-textSubtle">
-          <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2" />
+          <BureauIcons.Refresh className="bureau-icon w-6 h-6 animate-spin mx-auto mb-2" />
           Loading locations…
         </div>
       ) : (
@@ -177,7 +177,7 @@ export function AdminLocations() {
                     >
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-nexus-surfaceElevated flex items-center justify-center">
+                          <div className="bureau-icon w-8 h-8 rounded-lg bg-nexus-surfaceElevated flex items-center justify-center">
                             <span className="font-display font-bold text-sm text-nexus-danger">
                               {getAvatarInitials(node.code)}
                             </span>
@@ -193,7 +193,7 @@ export function AdminLocations() {
                       </td>
                       <td className="py-3 px-4">
                         <div className="flex items-start gap-2">
-                          <MapPin className="w-4 h-4 text-nexus-textSubtle mt-0.5 flex-shrink-0" />
+                          <BureauIcons.MapPin className="bureau-icon w-4 h-4 text-nexus-textSubtle mt-0.5 flex-shrink-0" />
                           <span className={cn(
                             'text-sm',
                             hasOverride ? 'text-nexus-accent font-medium' : 'text-nexus-textSubtle',
@@ -221,7 +221,7 @@ export function AdminLocations() {
                           className="btn-icon btn-secondary"
                           title={hasOverride ? 'Edit location override' : 'Set location override'}
                         >
-                          <Edit className="w-4 h-4" />
+                          <BureauIcons.Edit className="bureau-icon w-4 h-4" />
                         </button>
                       </td>
                     </tr>
@@ -254,3 +254,7 @@ export function AdminLocations() {
     </div>
   )
 }
+
+
+
+

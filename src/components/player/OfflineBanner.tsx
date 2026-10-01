@@ -11,10 +11,11 @@
  * has gone through.
  */
 
-import { CloudOff, RefreshCw, Send, ServerCrash, Wifi, WifiOff, Check } from 'lucide-react'
 import type { ConnectionState, ConnectionStatus } from '@/hooks/useConnection'
 import type { QueuedSubmission } from '@/lib/offlineQueue'
 import { cn } from '@/lib/utils'
+import { BureauIcons } from '@/components/bureau'
+import type { ComponentType } from 'react'
 
 interface OfflineBannerProps {
   connection: ConnectionState
@@ -27,14 +28,14 @@ interface OfflineBannerProps {
 
 const COPY: Record<
   ConnectionStatus,
-  { text: string; detail: (queued: number) => string; container: string; accent: string; icon: typeof Wifi }
+  { text: string; detail: (queued: number) => string; container: string; accent: string; Icon: ComponentType<{ className?: string }> }
 > = {
   online: {
     text: 'CONNECTED',
     detail: () => 'Live sync with Bureau command.',
     container: 'border-nexus-accent/20 bg-nexus-accentBg/10',
     accent: 'text-nexus-accent',
-    icon: Wifi,
+    Icon: BureauIcons.Wifi,
   },
   reconnecting: {
     text: 'RECONNECTING',
@@ -44,7 +45,7 @@ const COPY: Record<
         : 'Restoring link to Bureau command.',
     container: 'border-nexus-warning/30 bg-nexus-warningBg/20',
     accent: 'text-nexus-warning',
-    icon: RefreshCw,
+    Icon: BureauIcons.Refresh,
   },
   degraded: {
     text: 'NO ROUTE TO SERVER',
@@ -54,7 +55,7 @@ const COPY: Record<
         : 'Device reports Wi-Fi but the server is unreachable. Actions will be retried automatically.',
     container: 'border-nexus-warning/30 bg-nexus-warningBg/20',
     accent: 'text-nexus-warning',
-    icon: CloudOff,
+    Icon: BureauIcons.CloudOff,
   },
   unavailable: {
     text: 'BUREAU COMMAND NOT RESPONDING',
@@ -64,7 +65,7 @@ const COPY: Record<
         : 'The server answered but rejected the request. Actions will be retried automatically.',
     container: 'border-nexus-warning/30 bg-nexus-warningBg/20',
     accent: 'text-nexus-warning',
-    icon: ServerCrash,
+    Icon: BureauIcons.Server,
   },
   offline: {
     text: 'OFFLINE',
@@ -74,7 +75,7 @@ const COPY: Record<
         : 'No signal. Answers you submit now are queued and sent on reconnect.',
     container: 'border-nexus-danger/30 bg-nexus-dangerBg/90',
     accent: 'text-nexus-danger',
-    icon: WifiOff,
+    Icon: BureauIcons.WifiOff,
   },
 }
 
@@ -86,11 +87,9 @@ export function OfflineBanner({
 }: OfflineBannerProps) {
   const { status, probe } = connection
   const copy = COPY[status]
-  const Icon = copy.icon
+  const Icon = copy.Icon
   const isProblem = status !== 'online'
 
-  // A healthy connection with nothing queued and nothing just replayed has
-  // nothing to say; keep the strip collapsed instead of shouting at players.
   const showFlushAck = status === 'online' && (lastFlush?.length ?? 0) > 0
   if (!isProblem && !showFlushAck) {
     return (
@@ -114,7 +113,7 @@ export function OfflineBanner({
     >
       <div className="flex items-start gap-2 px-4 py-2">
         <Icon
-          className={cn('w-4 h-4 flex-shrink-0 mt-0.5', copy.accent, isProblem && 'animate-pulse')}
+          className={cn('bureau-icon w-4 h-4 flex-shrink-0 mt-0.5', copy.accent, isProblem && 'animate-pulse')}
           aria-hidden="true"
         />
         <div className="flex-1 min-w-0">
@@ -139,13 +138,13 @@ export function OfflineBanner({
             className="btn-ghost shrink-0 px-2 py-1 min-h-0 min-w-0 text-xs"
             aria-label="Retry connection now"
           >
-            <RefreshCw className="w-3.5 h-3.5" aria-hidden="true" />
+            <BureauIcons.Refresh className="bureau-icon w-3.5 h-3.5" aria-hidden="true" />
             RETRY
           </button>
         )}
         {!isProblem && queuedCount > 0 && (
           <span className="flex items-center gap-1 text-xs text-nexus-accent shrink-0">
-            <Send className="w-3.5 h-3.5" aria-hidden="true" />
+            <BureauIcons.Send className="bureau-icon w-3.5 h-3.5" aria-hidden="true" />
             {queuedCount}
           </span>
         )}
@@ -156,7 +155,7 @@ export function OfflineBanner({
             className="btn-ghost shrink-0 px-2 py-1 min-h-0 min-w-0 text-xs"
             aria-label="Dismiss delivered submissions notice"
           >
-            <Check className="w-3.5 h-3.5" aria-hidden="true" />
+            <BureauIcons.Check className="bureau-icon w-3.5 h-3.5" aria-hidden="true" />
             OK
           </button>
         )}

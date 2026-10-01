@@ -11,22 +11,28 @@
  * detail screen.
  */
 
-import { Eye, Package, Brain, QrCode, Trophy } from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
+import { BureauIcons } from '@/components/bureau'
+import type { ComponentType, SVGProps } from 'react'
 import { ROUTES } from '@/app/config'
 
 export interface NavItem {
   path: string
   label: string
-  icon: LucideIcon
+  icon: ComponentType<SVGProps<SVGSVGElement>>
+}
+
+type IconName = keyof typeof BureauIcons
+
+function bureauIcon(name: IconName) {
+  return BureauIcons[name] as ComponentType<SVGProps<SVGSVGElement>>
 }
 
 export const NAV_ITEMS: NavItem[] = [
-  { path: ROUTES.PLAYER_GAME, label: 'Game', icon: Eye },
-  { path: ROUTES.PLAYER_EVIDENCE, label: 'Evidence', icon: Package },
-  { path: ROUTES.PLAYER_INVENTORY, label: 'Inventory', icon: Brain },
-  { path: ROUTES.PLAYER_QR, label: 'QR', icon: QrCode },
-  { path: ROUTES.PLAYER_LEADERBOARD, label: 'Ranking', icon: Trophy },
+  { path: ROUTES.PLAYER_GAME, label: 'Game', icon: bureauIcon('LayoutDashboard') },
+  { path: ROUTES.PLAYER_EVIDENCE, label: 'Evidence', icon: bureauIcon('Package') },
+  { path: ROUTES.PLAYER_INVENTORY, label: 'Inventory', icon: bureauIcon('Key') },
+  { path: ROUTES.PLAYER_QR, label: 'QR', icon: bureauIcon('QrCode') },
+  { path: ROUTES.PLAYER_LEADERBOARD, label: 'Ranking', icon: bureauIcon('Trophy') },
 ]
 
 const NAV_PATHS = NAV_ITEMS.map(item => item.path)

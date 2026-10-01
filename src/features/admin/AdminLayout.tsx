@@ -12,7 +12,7 @@
 
 import { useMemo, useState } from 'react'
 import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, Users, Trophy, Gamepad2, FileText, LogOut, ChevronLeft, Wifi, WifiOff, RefreshCw, MapPin, ShieldQuestion } from 'lucide-react'
+import { BureauIcons } from '@/components/bureau'
 import { cn } from '@/lib/utils'
 import { ROUTES } from '@/app/config'
 import { useAdmin } from '@/app/providers/AdminProvider'
@@ -22,14 +22,14 @@ import { levelFromCasePhase } from '@/lib/narrative'
 import { formatDateTime } from '@/lib/time'
 
 const ADMIN_NAV = [
-  { path: ROUTES.ADMIN_DASHBOARD, label: 'Dashboard', icon: LayoutDashboard },
-  { path: ROUTES.ADMIN_TEAMS, label: 'Teams', icon: Users },
-  { path: ROUTES.ADMIN_LEADERBOARD, label: 'Leaderboard', icon: Trophy },
-  { path: ROUTES.ADMIN_GAME_CONTROL, label: 'Game Control', icon: Gamepad2 },
-  { path: ROUTES.ADMIN_LOCATIONS, label: 'Locations', icon: MapPin },
-  { path: ROUTES.ADMIN_QA_VIEWER, label: 'QA Viewer', icon: ShieldQuestion },
-  { path: ROUTES.ADMIN_QA_HUB, label: 'Player Simulator', icon: Users },
-  { path: ROUTES.ADMIN_AUDIT, label: 'Audit Log', icon: FileText },
+  { path: ROUTES.ADMIN_DASHBOARD, label: 'Dashboard', icon: BureauIcons.LayoutDashboard },
+  { path: ROUTES.ADMIN_TEAMS, label: 'Teams', icon: BureauIcons.Users },
+  { path: ROUTES.ADMIN_LEADERBOARD, label: 'Leaderboard', icon: BureauIcons.Trophy },
+  { path: ROUTES.ADMIN_GAME_CONTROL, label: 'Game Control', icon: BureauIcons.Gamepad },
+  { path: ROUTES.ADMIN_LOCATIONS, label: 'Locations', icon: BureauIcons.MapPin },
+  { path: ROUTES.ADMIN_QA_VIEWER, label: 'QA Viewer', icon: BureauIcons.ShieldQuestion },
+  { path: ROUTES.ADMIN_QA_HUB, label: 'Player Simulator', icon: BureauIcons.Users },
+  { path: ROUTES.ADMIN_AUDIT, label: 'Audit Log', icon: BureauIcons.File },
 ] as const
 
 export function AdminLayout() {
@@ -54,20 +54,20 @@ export function AdminLayout() {
       {/* Case rail */}
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-40 bg-nexus-surface border-r border-nexus-border transition-all duration-normal flex flex-col',
+          'fixed inset-y-0 left-0 z-40 bg-nexus-surface border-r border-nexus-border transition-all duration-normal flex flex-col nexus-header-shell',
           isSidebarCollapsed ? 'w-16' : 'w-64',
         )}
       >
         {/* Masthead */}
         <div className="flex items-center justify-between h-16 px-4 border-b border-nexus-borderSubtle">
           <NavLink to={ROUTES.ADMIN_DASHBOARD} className="flex items-center gap-3">
-            <div className="w-10 h-10 border border-nexus-border bg-nexus-surfaceElevated flex items-center justify-center flex-shrink-0">
-              <span className="font-mono text-nexus-text text-sm font-bold tracking-widest">NX</span>
+            <div className="case-badge-mark w-9 h-9 flex-shrink-0">
+              <span className="text-[0.9rem]">N</span>
             </div>
             {!isSidebarCollapsed && (
               <span className="flex flex-col">
-                <span className="font-display font-bold text-sm text-nexus-text tracking-tight">BUREAU</span>
-                <span className="section-label">Operations</span>
+                <span className="font-display font-bold text-[0.7rem] uppercase tracking-[0.24em] text-nexus-text">Bureau</span>
+                <span className="section-label">Case room</span>
               </span>
             )}
           </NavLink>
@@ -76,7 +76,7 @@ export function AdminLayout() {
             className="p-2 text-nexus-textMuted hover:text-nexus-text hover:bg-nexus-surfaceElevated transition-colors flex-shrink-0"
             aria-label={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
-            <ChevronLeft className={cn('w-5 h-5 transition-transform', isSidebarCollapsed && 'rotate-180')} />
+            <BureauIcons.Back className={cn('bureau-icon w-5 h-5 transition-transform', isSidebarCollapsed && 'rotate-180')} />
           </button>
         </div>
 
@@ -95,7 +95,7 @@ export function AdminLayout() {
                   )}
                   title={isSidebarCollapsed ? item.label : undefined}
                 >
-                  <item.icon className="w-5 h-5 flex-shrink-0" aria-hidden="true" />
+                  <item.icon className="bureau-icon w-5 h-5 flex-shrink-0" aria-hidden="true" />
                   {!isSidebarCollapsed && <span className="truncate">{item.label}</span>}
                 </NavLink>
               </li>
@@ -130,7 +130,7 @@ export function AdminLayout() {
               isSidebarCollapsed && 'justify-center',
             )}
           >
-            <LogOut className="w-5 h-5 flex-shrink-0" aria-hidden="true" />
+            <BureauIcons.LogOut className="bureau-icon w-5 h-5 flex-shrink-0" aria-hidden="true" />
             {!isSidebarCollapsed && <span>Sign Out</span>}
           </button>
         </div>
@@ -148,9 +148,9 @@ export function AdminLayout() {
             <div className="mb-6 border-b border-nexus-borderSubtle pb-3 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 {isConnected ? (
-                  <Wifi className="w-4 h-4 text-nexus-accent" aria-hidden="true" />
+                   <BureauIcons.Wifi className="bureau-icon w-4 h-4 text-nexus-accent" aria-hidden="true" />
                 ) : (
-                  <WifiOff className="w-4 h-4 text-nexus-danger" aria-hidden="true" />
+                   <BureauIcons.WifiOff className="bureau-icon w-4 h-4 text-nexus-danger" aria-hidden="true" />
                 )}
                 <span className="section-label">
                   {isConnected ? 'Live — real-time connected' : 'Real-time connection lost'}
@@ -166,7 +166,7 @@ export function AdminLayout() {
                   onClick={() => window.location.reload()}
                   className="btn-secondary text-xs py-1.5"
                 >
-                  <RefreshCw className="w-4 h-4" />
+                  <BureauIcons.Refresh className="bureau-icon w-4 h-4" />
                   Reconnect
                 </button>
               )}

@@ -1,14 +1,11 @@
-/**
+﻿/**
  * NEXUS — Admin Dashboard
  * Bureau overview with live data, team status model, and activity feed
  */
 
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import {
-  Users, Target, AlertTriangle, TrendingUp, Clock, Play, Pause,
-  Lightbulb, Unlock, RefreshCw, Plus, Bell,
-} from 'lucide-react'
+import { BureauIcons } from '@/components/bureau'
 import { ROUTES } from '@/app/config'
 import { cn, formatNumber, formatPercent } from '@/lib/utils'
 import { formatDateTime, formatTimeRemaining } from '@/lib/time'
@@ -100,159 +97,137 @@ export function AdminDashboard() {
   }
 
   const getEventIcon = (type: string) => {
-    if (type.includes('STARTED')) return <Play className="w-4 h-4 text-nexus-accent" />
-    if (type.includes('PAUSED')) return <Pause className="w-4 h-4 text-nexus-warning" />
-    if (type.includes('COMPLETED')) return <Target className="w-4 h-4 text-nexus-accent" />
-    if (type.includes('DISQUALIFIED')) return <AlertTriangle className="w-4 h-4 text-nexus-danger" />
-    if (type.includes('NODE_UNLOCKED')) return <Unlock className="w-4 h-4 text-purple-400" />
-    if (type.includes('HINT')) return <Lightbulb className="w-4 h-4 text-nexus-info" />
-    return <TrendingUp className="w-4 h-4 text-nexus-textSubtle" />
+    if (type.includes('STARTED')) return <BureauIcons.Play className="bureau-icon w-4 h-4 text-nexus-accent" />
+    if (type.includes('PAUSED')) return <BureauIcons.Pause className="bureau-icon w-4 h-4 text-nexus-warning" />
+    if (type.includes('COMPLETED')) return <BureauIcons.Target className="bureau-icon w-4 h-4 text-nexus-accent" />
+    if (type.includes('DISQUALIFIED')) return <BureauIcons.AlertTriangle className="bureau-icon w-4 h-4 text-nexus-danger" />
+    if (type.includes('NODE_UNLOCKED')) return <BureauIcons.Unlock className="bureau-icon w-4 h-4 text-nexus-info" />
+    if (type.includes('HINT')) return <BureauIcons.Lightbulb className="bureau-icon w-4 h-4 text-nexus-info" />
+    return <BureauIcons.TrendingUp className="bureau-icon w-4 h-4 text-nexus-textSubtle" />
   }
 
   return (
     <>
       <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="heading-2">Bureau Dashboard</h1>
-          <p className="text-nexus-textMuted mt-1">
-            {gameState?.totalTeams ?? teams.length} teams • {stats.totalPlayers} players registered
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <ConnectionStatus compact />
-          <button
-            onClick={() => void refreshAll()}
-            disabled={isLoading}
-            className="btn-secondary text-xs py-1.5"
-          >
-            <RefreshCw className={cn('w-4 h-4', isLoading && 'animate-spin')} />
-            <span>Refresh</span>
-          </button>
-          <button
-            onClick={() => setIsWizardOpen(true)}
-            className="btn-primary"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Create Team</span>
-          </button>
-          <button
-            onClick={() => setIsNotificationsOpen(true)}
-            className="btn-secondary"
-          >
-            <Bell className="w-4 h-4" />
-            <span>Send Notification</span>
-          </button>
-        </div>
-      </div>
+        <div className="nexus-case-shell">
+          <div className="nexus-ops-header">
+            <div>
+              <span className="nexus-ops-label">Nexus Investigations Bureau</span>
+              <h1 className="heading-2 mt-2">Operations Room</h1>
+            </div>
+            <div className="case-identifier-block">
+              <span className="case-identifier-label">SHIFT</span>
+              <span className="case-identifier-value">NIGHT 07</span>
+            </div>
+          </div>
 
-      {/* Game Timer */}
-      {gameState && (
-        <GameTimer gameState={gameState} />
-      )}
-
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          title="Total Teams"
-          value={stats.totalTeams}
-          icon={Users}
-          color="text-nexus-info"
-          subtitle={`${stats.activeTeams} active • ${stats.completedTeams} done`}
-        />
-        <StatCard
-          title="Active Players"
-          value={stats.totalPlayers}
-          icon={Users}
-          color="text-nexus-accent"
-          subtitle={`${stats.waitingTeams} teams waiting`}
-        />
-        <StatCard
-          title="Avg Score"
-          value={formatNumber(stats.avgScore)}
-          icon={TrendingUp}
-          color="text-nexus-warning"
-          subtitle="Across all teams"
-        />
-        <StatCard
-          title="Completion"
-          value={formatPercent(stats.completionRate)}
-          icon={Target}
-          color="text-nexus-accent"
-          subtitle={`${stats.completedTeams} of ${stats.totalTeams} teams`}
-        />
-      </div>
-
-      {/* Team Status Model */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {teamsByGroup.map(({ group, teams: groupTeams }) => (
-          <TeamStatusCard
-            key={group}
-            title={group}
-            teams={groupTeams}
-            onTeamClick={handleTeamClick}
-          />
-        ))}
-      </div>
-
-      {/* Live Activity Feed */}
-      <div className="panel">
-        <div className="flex items-center justify-between p-4 border-b border-nexus-borderSubtle">
-          <h2 className="heading-3">Recent Activity</h2>
-          <Link
-            to={ROUTES.ADMIN_AUDIT}
-            className="text-sm text-nexus-accent hover:underline"
-          >
-            View audit log
-          </Link>
-        </div>
-        <div className="p-4 space-y-2">
-          {isLoading && recentActivity.length === 0 ? (
-            <div className="text-center py-8 text-nexus-textMuted">Loading activity…</div>
-          ) : recentActivity.length === 0 ? (
-            <div className="text-center py-8 text-nexus-textMuted">No recent activity</div>
-          ) : (
-            recentActivity.map(action => (
-              <div key={action.id} className="flex items-center justify-between p-3 bg-nexus-bg rounded-xl">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center">
-                    {getEventIcon(action.type)}
-                  </div>
-                  <div>
-                    <p className="font-medium text-nexus-text">{action.team}</p>
-                    <p className="text-xs text-nexus-textMuted">{action.type.replace(/_/g, ' ')}</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm text-nexus-textSubtle">{formatDateTime(action.timestamp)}</p>
-                </div>
+          <div className="nexus-case-body space-y-6">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <p className="section-label mb-2">Active case board</p>
+                <p className="text-nexus-textMuted">
+                  {gameState?.totalTeams ?? teams.length} field teams • {stats.totalPlayers} personnel identified
+                </p>
               </div>
-            ))
-          )}
+
+              <div className="flex flex-wrap items-center gap-3">
+                <ConnectionStatus compact />
+                <button
+                  onClick={() => void refreshAll()}
+                  disabled={isLoading}
+                  className="btn-secondary text-xs py-1.5"
+                >
+                  <BureauIcons.Refresh className={cn('bureau-icon w- h-4', isLoading && 'animate-spin')} />
+                  <span>Refresh</span>
+                </button>
+                <button
+                  onClick={() => setIsWizardOpen(true)}
+                  className="btn-primary"
+                >
+                  <BureauIcons.Add className="bureau-icon w-4 h-4" />
+                  <span>Create Team</span>
+                </button>
+                <button
+                  onClick={() => setIsNotificationsOpen(true)}
+                  className="btn-secondary"
+                >
+                  <BureauIcons.Bell className="bureau-icon w-4 h-4" />
+                  <span>Send Notification</span>
+                </button>
+              </div>
+            </div>
+
+            {gameState && <GameTimer gameState={gameState} />}
+
+            <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+              <StatCard title="Total Teams" value={stats.totalTeams} icon={BureauIcons.Users} color="text-nexus-info" subtitle={`${stats.activeTeams} active • ${stats.completedTeams} done`} />
+              <StatCard title="Active Players" value={stats.totalPlayers} icon={BureauIcons.Users} color="text-nexus-accent" subtitle={`${stats.waitingTeams} teams waiting`} />
+              <StatCard title="Avg Score" value={formatNumber(stats.avgScore)} icon={BureauIcons.TrendingUp} color="text-nexus-warning" subtitle="Across all field units" />
+              <StatCard title="Completion" value={formatPercent(stats.completionRate)} icon={BureauIcons.Target} color="text-nexus-accent" subtitle={`${stats.completedTeams} of ${stats.totalTeams} teams`} />
+            </div>
+
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+              {teamsByGroup.map(({ group, teams: groupTeams }) => (
+                <TeamStatusCard key={group} title={group} teams={groupTeams} onTeamClick={handleTeamClick} />
+              ))}
+            </div>
+
+            <div className="nexus-ops-panel">
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <div>
+                  <span className="nexus-ops-label">Incident log</span>
+                  <h2 className="heading-3 mt-2">Recent activity</h2>
+                </div>
+                <Link to={ROUTES.ADMIN_AUDIT} className="text-sm text-nexus-accent hover:underline">View audit log</Link>
+              </div>
+
+              <div className="space-y-2">
+                {isLoading && recentActivity.length === 0 ? (
+                  <div className="text-center py-8 text-nexus-textMuted">Loading activity…</div>
+                ) : recentActivity.length === 0 ? (
+                  <div className="text-center py-8 text-nexus-textMuted">No recent activity</div>
+                ) : (
+                  recentActivity.map(action => (
+                    <div key={action.id} className="flex items-center justify-between border border-nexus-border bg-nexus-bg px-3 py-2.5">
+                      <div className="flex items-center gap-3">
+                        <div className="bureau-icon w-8 h-8 flex items-center justify-center border border-nexus-border bg-nexus-surfaceElevated">
+                          {getEventIcon(action.type)}
+                        </div>
+                        <div>
+                          <p className="font-medium text-nexus-text">{action.team}</p>
+                          <p className="text-xs text-nexus-textMuted">{action.type.replace(/_/g, ' ')}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm text-nexus-textSubtle">{formatDateTime(action.timestamp)}</p>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
         </div>
+
+        <TeamCreationWizard
+          isOpen={isWizardOpen}
+          onClose={() => setIsWizardOpen(false)}
+          onSuccess={() => {
+            setIsWizardOpen(false)
+            void fetchTeams()
+          }}
+        />
       </div>
 
-      {/* Team Creation Wizard */}
-      <TeamCreationWizard
-        isOpen={isWizardOpen}
-        onClose={() => setIsWizardOpen(false)}
-        onSuccess={() => {
-          setIsWizardOpen(false)
+      <CustomNotificationModal
+        isOpen={isNotificationsOpen}
+        onClose={() => setIsNotificationsOpen(false)}
+        teams={teams}
+        onNotificationSent={() => {
           void fetchTeams()
+          setIsNotificationsOpen(false)
         }}
       />
-    </div>
-
-    <CustomNotificationModal
-      isOpen={isNotificationsOpen}
-      onClose={() => setIsNotificationsOpen(false)}
-      teams={teams}
-      onNotificationSent={() => {
-        void fetchTeams()
-        setIsNotificationsOpen(false)
-      }}
-    />
     </>
   )
 }
@@ -263,15 +238,15 @@ function GameTimer({ gameState }: { gameState: NonNullable<ReturnType<typeof use
 
   return (
     <div className={cn(
-      'panel border',
-      gameStatus === 'RUNNING' && 'bg-nexus-accentBg/10 border-nexus-accent/30',
-      gameStatus === 'PAUSED' && 'bg-nexus-warningBg/10 border-nexus-warning/30',
-      gameStatus === 'ENDED' && 'bg-nexus-borderSubtle/10 border-nexus-border',
-      gameStatus === 'NOT_STARTED' && 'bg-nexus-infoBg/10 border-nexus-info/30',
+      'nexus-ops-panel border-l-2',
+      gameStatus === 'RUNNING' && 'border-nexus-accent',
+      gameStatus === 'PAUSED' && 'border-nexus-warning',
+      gameStatus === 'ENDED' && 'border-nexus-border',
+      gameStatus === 'NOT_STARTED' && 'border-nexus-info',
     )}>
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <Clock className={cn('w-8 h-8',
+          <BureauIcons.Clock className={cn('bureau-icon w- h-8',
             gameStatus === 'RUNNING' && 'text-nexus-accent',
             gameStatus === 'PAUSED' && 'text-nexus-warning',
             gameStatus === 'ENDED' && 'text-nexus-textMuted',
@@ -291,8 +266,8 @@ function GameTimer({ gameState }: { gameState: NonNullable<ReturnType<typeof use
         </div>
         <div className="text-right">
           <p className="text-sm text-nexus-textMuted">Duration</p>
-            <p className="font-mono text-nexus-text">
-              {Number(config?.game_duration_minutes ?? 180)} minutes
+          <p className="font-mono text-nexus-text">
+            {Number(config?.game_duration_minutes ?? 180)} minutes
           </p>
           {deadline && gameStatus === 'RUNNING' && (
             <p className="text-sm text-nexus-warning mt-1">
@@ -321,8 +296,11 @@ function TeamStatusCard({
   }
 
   return (
-    <div className="panel">
-      <h3 className={cn('heading-4 mb-4', statusColors[title])}>{title}</h3>
+    <div className="nexus-ops-panel">
+      <div className="mb-4">
+        <span className="nexus-ops-label">Field unit status</span>
+        <h3 className={cn('heading-4 mt-2', statusColors[title])}>{title}</h3>
+      </div>
       {teams.length === 0 ? (
         <div className="text-center py-6 text-nexus-textSubtle text-sm">
           No teams in this status
@@ -333,7 +311,7 @@ function TeamStatusCard({
             <button
               key={team.id}
               onClick={() => onTeamClick(team.id)}
-              className="w-full flex items-center gap-3 p-3 text-left rounded-xl hover:bg-nexus-bg transition-colors border border-nexus-border hover:border-nexus-borderSubtle"
+              className="w-full flex items-center gap-3 p-3 text-left border border-nexus-border bg-nexus-bg hover:bg-nexus-surfaceElevated transition-colors"
             >
               <TeamStatusBadge status={team.status} showDot />
               <span className="font-medium flex-1 truncate">{team.name}</span>
@@ -360,13 +338,17 @@ function StatCard({
   subtitle: string
 }) {
   return (
-    <div className="panel panel-hover p-4">
-      <div className="flex items-center justify-between mb-2">
+    <div className="nexus-ops-panel">
+      <div className="flex items-center justify-between mb-3">
         <p className="text-sm text-nexus-textMuted">{title}</p>
-        <Icon className={cn('w-6 h-6 opacity-50', color)} />
+        <Icon className={cn('bureau-icon w- h-5 opacity-70', color)} />
       </div>
       <p className={cn('font-display font-bold text-2xl', color)}>{value}</p>
       <p className="text-xs text-nexus-textSubtle mt-1">{subtitle}</p>
     </div>
   )
 }
+
+
+
+

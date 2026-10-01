@@ -68,3 +68,5 @@ export {
   IncidentRow,
   type IncidentEntry,
 } from './IncidentLog'
+
+export { BureauIcons } from './BureauIcons'

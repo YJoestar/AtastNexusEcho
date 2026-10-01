@@ -1,4 +1,4 @@
-/**
+﻿/**
  * NEXUS — Admin QA Viewer
  *
  * Audits all puzzle nodes for content completeness:
@@ -11,7 +11,7 @@
  */
 
 import { useEffect, useMemo, useState } from 'react'
-import { Search, RefreshCw, AlertCircle, CheckCircle, XCircle, Music, FileText } from 'lucide-react'
+import { BureauIcons } from '@/components/bureau'
 import { cn } from '@/lib/utils'
 import { adminAPI } from '@/lib/admin'
 import type { PuzzleQAEntry } from '@/lib/admin'
@@ -36,10 +36,10 @@ function AudioPlayer({ url, label }: AudioPlayerProps) {
         Your browser does not support audio playback.
       </audio>
         {canPlay === false && (
-        <XCircle className="w-4 h-4 text-nexus-danger" />
+        <BureauIcons.Error className="bureau-icon w-4 h-4 text-nexus-danger" />
       )}
       {canPlay === true && (
-        <CheckCircle className="w-4 h-4 text-nexus-accent" />
+        <BureauIcons.Success className="bureau-icon w-4 h-4 text-nexus-accent" />
       )}
       <span className="text-xs text-nexus-textSubtle truncate max-w-[120px]" title={label}>
         {label}
@@ -49,9 +49,9 @@ function AudioPlayer({ url, label }: AudioPlayerProps) {
 }
 
 function AudioStatusIcon({ status }: { status: 'ok' | 'broken' | 'missing' }) {
-  if (status === 'ok') return <CheckCircle className="w-4 h-4 text-nexus-accent" />
-  if (status === 'broken') return <XCircle className="w-4 h-4 text-nexus-danger" />
-  return <XCircle className="w-4 h-4 text-nexus-textSubtle" />
+  if (status === 'ok') return <BureauIcons.Success className="bureau-icon w-4 h-4 text-nexus-accent" />
+  if (status === 'broken') return <BureauIcons.Error className="bureau-icon w-4 h-4 text-nexus-danger" />
+  return <BureauIcons.Error className="bureau-icon w-4 h-4 text-nexus-textSubtle" />
 }
 
 export function AdminQAViewer() {
@@ -111,7 +111,7 @@ export function AdminQAViewer() {
   if (error) {
     return (
       <div className="panel p-6 text-center">
-        <AlertCircle className="w-12 h-12 text-nexus-danger mx-auto mb-4" />
+        <BureauIcons.Alert className="w-12 h-12 text-nexus-danger mx-auto mb-4" />
         <h3 className="heading-4 mb-2">Error Loading QA Data</h3>
         <p className="text-nexus-textMuted">{error}</p>
         <button onClick={() => void fetchQA()} className="btn-primary mt-4">
@@ -139,7 +139,7 @@ export function AdminQAViewer() {
           disabled={isLoading}
           aria-label="Refresh"
         >
-          <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+          <BureauIcons.Refresh className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
         </button>
       </div>
 
@@ -147,7 +147,7 @@ export function AdminQAViewer() {
       <div className="panel">
         <div className="flex items-center gap-4 flex-wrap">
           <div className="relative flex-1 min-w-[200px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-nexus-textSubtle" />
+            <BureauIcons.Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-nexus-textSubtle" />
             <input
               type="search"
               value={searchTerm}
@@ -172,7 +172,7 @@ export function AdminQAViewer() {
       {brokenAudio > 0 && (
         <div className="panel border-l-4 border-nexus-danger">
           <div className="flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-nexus-danger mt-0.5 flex-shrink-0" />
+            <BureauIcons.Alert className="bureau-icon w-5 h-5 text-nexus-danger mt-0.5 flex-shrink-0" />
             <div>
               <p className="font-medium text-nexus-danger">
                 {brokenAudio} audio file{brokenAudio !== 1 ? 's' : ''} missing or broken
@@ -246,7 +246,7 @@ export function AdminQAViewer() {
                           <span className="text-xs text-nexus-textSubtle">None</span>
                         ) : (
                           puzzle.evidence.map(ev => {
-                            const Icon = ev.type === 'AUDIO' ? Music : FileText
+                            const Icon = ev.type === 'AUDIO' ? BureauIcons.Music : BureauIcons.File
                             return (
                               <div
                                 key={ev.id}
@@ -317,3 +317,6 @@ export function AdminQAViewer() {
     </div>
   )
 }
+
+
+

@@ -21,13 +21,11 @@ export function BottomNav() {
 
   if (!player) return null
 
-  // Not a listed destination (puzzle node, navigation, notifications, final,
-  // completion, login, waiting): render nothing rather than an inert bar.
   if (!shouldRenderBottomNav(pathname)) return null
 
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-nexus-borderSubtle bg-nexus-surface/95 backdrop-blur safe-area-bottom">
-      <div className="grid grid-cols-5 gap-1 py-2">
+      <div className="register grid-cols-5 gap-1 py-1">
         {NAV_ITEMS.map(item => (
           <NavLink
             key={item.path}
@@ -35,7 +33,7 @@ export function BottomNav() {
             end
             className={({ isActive }) =>
               cn(
-                'flex flex-col items-center gap-1 py-2 text-xs font-medium transition-all duration-fast',
+                'register-row flex-col gap-1 py-2 text-xs font-medium transition-all duration-fast',
                 isActive
                   ? 'text-nexus-accent'
                   : 'text-nexus-textSubtle hover:text-nexus-text',
@@ -44,28 +42,19 @@ export function BottomNav() {
           >
             {({ isActive }) => (
               <>
-                <div
+                <item.icon
                   className={cn(
-                    'p-2 rounded-xl transition-colors',
-                    isActive
-                      ? 'bg-nexus-accentBg/30'
-                      : 'hover:bg-nexus-surfaceElevated',
+                    'bureau-icon w-5 h-5',
+                    isActive ? 'text-nexus-accent' : 'text-nexus-textMuted',
                   )}
-                >
-                  <item.icon
-                    className={cn(
-                      'w-5 h-5',
-                      isActive ? 'text-nexus-accent' : 'text-nexus-textMuted',
-                    )}
-                    aria-hidden="true"
-                  />
-                </div>
+                  aria-hidden="true"
+                />
                 <span>{item.label}</span>
                 {connection.status !== 'online' && item.path === ROUTES.PLAYER_QR && (
-                  <span className="w-2 h-2 rounded-full bg-nexus-danger" />
+                  <span className="w-2 h-2 border border-nexus-danger bg-nexus-bg shrink-0" aria-label="Offline" />
                 )}
                 {queuedCount > 0 && item.path === ROUTES.PLAYER_GAME && (
-                  <span className="w-2 h-2 rounded-full bg-nexus-warning" />
+                  <span className="w-2 h-2 border border-nexus-warning bg-nexus-bg shrink-0" aria-label="Queued submissions" />
                 )}
               </>
             )}

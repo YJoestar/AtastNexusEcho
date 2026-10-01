@@ -1,20 +1,21 @@
-/**
+﻿/**
  * NEXUS — Discovery Toast
  * Short, non-blocking cinematic notification for important discoveries.
  * Shows messages like "NEW EVIDENCE" or "ARCHIVAL FRAGMENT RECOVERED".
  */
 
-import { X } from 'lucide-react'
+import { ReactNode } from 'react'
+import { BureauIcons } from '@/components/bureau'
 import { cn } from '@/lib/utils'
 import { DiscoveryType } from '@/hooks/useDiscoveryToast'
 
-const TYPE_CONFIG: Record<DiscoveryType, { icon: string; color: string }> = {
-  evidence: { icon: '📄', color: 'text-cyan-300' },
-  fragment: { icon: '🧩', color: 'text-amber-300' },
-  item: { icon: '📦', color: 'text-indigo-300' },
-  location: { icon: '📍', color: 'text-nexus-accent' },
-  voice: { icon: '🔊', color: 'text-emerald-300' },
-  general: { icon: '📡', color: 'text-nexus-warning' },
+const TYPE_CONFIG: Record<DiscoveryType, { icon: ReactNode; color: string }> = {
+  evidence: { icon: <BureauIcons.File className="bureau-icon w-5 h-5" />, color: 'text-nexus-accent' },
+  fragment: { icon: <BureauIcons.Box className="bureau-icon w-5 h-5" />, color: 'text-nexus-warning' },
+  item: { icon: <BureauIcons.Package className="bureau-icon w-5 h-5" />, color: 'text-nexus-accent' },
+  location: { icon: <BureauIcons.MapPin className="bureau-icon w-5 h-5" />, color: 'text-nexus-accent' },
+  voice: { icon: <BureauIcons.Microphone className="bureau-icon w-5 h-5" />, color: 'text-nexus-accent' },
+  general: { icon: <BureauIcons.Radio className="bureau-icon w-5 h-5" />, color: 'text-nexus-warning' },
 }
 
 interface DiscoveryToastProps {
@@ -51,7 +52,7 @@ export function DiscoveryToast({
           className="p-1 rounded-lg text-nexus-textSubtle hover:text-nexus-text hover:bg-nexus-surface transition-colors touch-target-primary"
           aria-label="Dismiss"
         >
-          <X className="w-4 h-4" />
+          <BureauIcons.Close className="bureau-icon w-4 h-4" />
         </button>
       </div>
     </div>
@@ -79,3 +80,4 @@ export function DiscoveryToastContainer({
     </>
   )
 }
+

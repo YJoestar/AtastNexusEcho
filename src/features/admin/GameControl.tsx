@@ -1,4 +1,4 @@
-/**
+﻿/**
  * NEXUS — Admin Game Control
  *
  * Real-time game state management. Controls game-wide
@@ -6,7 +6,7 @@
  */
 
 import { useEffect, useState } from 'react'
-import { Play, Pause, Square, RotateCcw, Clock, Users, Save, Loader2 } from 'lucide-react'
+import { BureauIcons } from '@/components/bureau'
 import { cn } from '@/lib/utils'
 import { formatDateTime, formatTimeRemaining } from '@/lib/time'
 import { useBureau } from '@/hooks/useBureau'
@@ -43,10 +43,10 @@ export function AdminGameControl() {
 
   const getGameStateConfig = (status: string) => {
     const configs: Record<string, { icon: JSX.Element; color: string; bg: string; label: string }> = {
-      NOT_STARTED: { icon: <Play className="w-6 h-6" />, color: 'text-nexus-info', bg: 'bg-nexus-infoBg/20', label: 'Not Started' },
-      RUNNING: { icon: <Pause className="w-6 h-6" />, color: 'text-nexus-accent', bg: 'bg-nexus-accentBg/20', label: 'Running' },
-      PAUSED: { icon: <Play className="w-6 h-6" />, color: 'text-nexus-warning', bg: 'bg-nexus-warningBg/20', label: 'Paused' },
-      ENDED: { icon: <Square className="w-6 h-6" />, color: 'text-nexus-danger', bg: 'bg-nexus-dangerBg/20', label: 'Ended' },
+      NOT_STARTED: { icon: <BureauIcons.Play className="bureau-icon w-6 h-6" />, color: 'text-nexus-info', bg: 'bg-nexus-infoBg/20', label: 'Not Started' },
+      RUNNING: { icon: <BureauIcons.Pause className="bureau-icon w-6 h-6" />, color: 'text-nexus-accent', bg: 'bg-nexus-accentBg/20', label: 'Running' },
+      PAUSED: { icon: <BureauIcons.Play className="bureau-icon w-6 h-6" />, color: 'text-nexus-warning', bg: 'bg-nexus-warningBg/20', label: 'Paused' },
+      ENDED: { icon: <BureauIcons.Square className="bureau-icon w-6 h-6" />, color: 'text-nexus-danger', bg: 'bg-nexus-dangerBg/20', label: 'Ended' },
     }
     return configs[status] ?? configs.NOT_STARTED
   }
@@ -151,7 +151,7 @@ export function AdminGameControl() {
           disabled={isLoading}
           className="btn-secondary text-xs py-1.5"
         >
-          <RotateCcw className={cn('w-4 h-4', isLoading && 'animate-spin')} />
+          <BureauIcons.RotateCcw className={cn('bureau-icon w- h-4', isLoading && 'animate-spin')} />
           <span>Refresh</span>
         </button>
       </div>
@@ -201,10 +201,10 @@ export function AdminGameControl() {
       <div className="panel">
         <h2 className="heading-3 mb-4">Game Timer</h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <TimerCard label="Started" value={startedAt ? formatDateTime(startedAt) : '—'} icon={<Clock className="w-5 h-5 text-nexus-info" />} color="text-nexus-info" />
-          <TimerCard label="Deadline" value={deadline ? formatDateTime(deadline) : '—'} icon={<Square className="w-5 h-5 text-nexus-danger" />} color="text-nexus-danger" />
-          <TimerCard label="Duration" value={`${gameDuration} min`} icon={<Clock className="w-5 h-5 text-nexus-info" />} color="text-nexus-info" />
-          <TimerCard label="Total Teams" value={String(teams.length)} icon={<Users className="w-5 h-5 text-nexus-accent" />} color="text-nexus-accent" />
+          <TimerCard label="Started" value={startedAt ? formatDateTime(startedAt) : '—'} icon={<BureauIcons.Clock className="bureau-icon w-5 h-5 text-nexus-info" />} color="text-nexus-info" />
+          <TimerCard label="Deadline" value={deadline ? formatDateTime(deadline) : '—'} icon={<BureauIcons.Square className="bureau-icon w-5 h-5 text-nexus-danger" />} color="text-nexus-danger" />
+          <TimerCard label="Duration" value={`${gameDuration} min`} icon={<BureauIcons.Clock className="bureau-icon w-5 h-5 text-nexus-info" />} color="text-nexus-info" />
+          <TimerCard label="Total Teams" value={String(teams.length)} icon={<BureauIcons.Users className="bureau-icon w-5 h-5 text-nexus-accent" />} color="text-nexus-accent" />
         </div>
       </div>
 
@@ -227,13 +227,13 @@ export function AdminGameControl() {
         <div className="flex items-center justify-between mb-4">
           <h2 className="heading-3">Game Configuration</h2>
           {isSaving ? (
-            <Loader2 className="w-5 h-5 animate-spin text-nexus-info" />
+            <BureauIcons.Spinner className="bureau-icon w-5 h-5 animate-spin text-nexus-info" />
           ) : (
             <button
               onClick={handleSaveConfig}
               className="btn-secondary text-xs py-1.5"
             >
-              <Save className="w-4 h-4" />
+              <BureauIcons.Save className="bureau-icon w-4 h-4" />
               <span>Save Config</span>
             </button>
           )}
@@ -258,7 +258,7 @@ export function AdminGameControl() {
               disabled={isActionLoading || preStartTeams === 0}
               className="btn-primary"
             >
-              <Play className="w-4 h-4" />
+              <BureauIcons.Play className="bureau-icon w-4 h-4" />
               Start Game
             </button>
           )}
@@ -269,7 +269,7 @@ export function AdminGameControl() {
                 disabled={isActionLoading || activeTeams === 0}
                 className="btn-warning"
               >
-                <Pause className="w-4 h-4" />
+                <BureauIcons.Pause className="bureau-icon w-4 h-4" />
                 Pause Game
               </button>
               {completedTeams === teams.length && (
@@ -278,7 +278,7 @@ export function AdminGameControl() {
                   disabled={isActionLoading}
                   className="btn-danger"
                 >
-                  <Square className="w-4 h-4" />
+                  <BureauIcons.Square className="bureau-icon w-4 h-4" />
                   End Game
                 </button>
               )}
@@ -290,7 +290,7 @@ export function AdminGameControl() {
               disabled={isActionLoading}
               className="btn-primary"
             >
-              <RotateCcw className="w-4 h-4" />
+              <BureauIcons.RotateCcw className="bureau-icon w-4 h-4" />
               <span>Reset Game</span>
             </button>
           )}
@@ -300,7 +300,7 @@ export function AdminGameControl() {
               disabled={isActionLoading}
               className="btn-secondary"
             >
-              <RotateCcw className="w-4 h-4" />
+              <BureauIcons.RotateCcw className="bureau-icon w-4 h-4" />
               Reset Game
             </button>
           )}
@@ -357,16 +357,16 @@ function StatusCountCard({ status, count }: {
   count: number
 }) {
   const statusColors: Record<string, { text: string; bg: string }> = {
-    REGISTERED: { text: 'text-neutral-300', bg: 'bg-neutral-900/40' },
-    FORMING: { text: 'text-blue-300', bg: 'bg-blue-900/40' },
-    READY: { text: 'text-cyan-300', bg: 'bg-cyan-900/40' },
-    WAITING: { text: 'text-yellow-300', bg: 'bg-yellow-900/40' },
-    ACTIVE: { text: 'text-emerald-300', bg: 'bg-emerald-900/40' },
-    PAUSED: { text: 'text-blue-300', bg: 'bg-blue-900/40' },
-    COMPLETED: { text: 'text-purple-300', bg: 'bg-purple-900/40' },
-    DISQUALIFIED: { text: 'text-red-300', bg: 'bg-red-900/40' },
-    ABANDONED: { text: 'text-gray-300', bg: 'bg-gray-900/40' },
-    RESET: { text: 'text-neutral-400', bg: 'bg-neutral-900/40' },
+    REGISTERED: { text: 'text-nexus-textSubtle', bg: 'bg-nexus-borderSubtle/20' },
+    FORMING: { text: 'text-nexus-accent', bg: 'bg-nexus-accentBg/20' },
+    READY: { text: 'text-nexus-accent', bg: 'bg-nexus-accentBg/20' },
+    WAITING: { text: 'text-nexus-warning', bg: 'bg-nexus-warningBg/20' },
+    ACTIVE: { text: 'text-nexus-accent', bg: 'bg-nexus-accentBg/20' },
+    PAUSED: { text: 'text-nexus-accent', bg: 'bg-nexus-accentBg/20' },
+    COMPLETED: { text: 'text-nexus-info', bg: 'bg-nexus-infoBg/20' },
+    DISQUALIFIED: { text: 'text-nexus-danger', bg: 'bg-nexus-dangerBg/20' },
+    ABANDONED: { text: 'text-nexus-textSubtle', bg: 'bg-nexus-borderSubtle/20' },
+    RESET: { text: 'text-nexus-textSubtle', bg: 'bg-nexus-borderSubtle/20' },
   }
 
   const style = statusColors[status] ?? { text: 'text-nexus-textMuted', bg: 'bg-nexus-borderSubtle/30' }
@@ -387,3 +387,7 @@ function ConfigItem({ label, value }: { label: string; value: string }) {
     </div>
   )
 }
+
+
+
+

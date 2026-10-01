@@ -13,7 +13,7 @@
  */
 
 import { useCallback, useRef, useState } from 'react'
-import { Check, Copy, Key } from 'lucide-react'
+import { BureauIcons } from '@/components/bureau'
 import { cn } from '@/lib/utils'
 import { isValidLoginCode, isValidTeamCode } from '@/lib/auth'
 import type { PlayerCredential } from '@/lib/admin'
@@ -198,7 +198,7 @@ export function PlayerCredentialsPanel({
         </div>
 
         <p className="text-xs text-nexus-textSubtle mt-3 flex items-start gap-1.5">
-          <Key className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+<BureauIcons.Key className="bureau-icon w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
           <span>
             Each Logic Code is single-use and is consumed the first time that player logs
             in. They are not shown again — copy or download them now, and re-issue from
@@ -232,7 +232,7 @@ function TextButton({
   iconOnly?: boolean
 }) {
   const accessibleName = copied ? `${describedAs ?? label} — copied` : (describedAs ?? label)
-  const Icon = copied ? Check : Copy
+  const Icon = copied ? BureauIcons.Check : BureauIcons.Copy
 
   if (iconOnly) {
     return (
@@ -240,10 +240,10 @@ function TextButton({
         onClick={onCopy}
         disabled={disabled}
         className="p-1 rounded text-nexus-textSubtle hover:text-nexus-text hover:bg-nexus-surfaceElevated transition-colors"
-        aria-label={accessibleName}
-        title={accessibleName}
-      >
-        <Icon className={cn('w-4 h-4', copied && 'text-nexus-accent')} />
+      aria-label={accessibleName}
+      title={accessibleName}
+    >
+      <Icon className={cn('bureau-icon w-4 h-4', copied && 'text-nexus-accent')} />
       </button>
     )
   }
@@ -255,7 +255,7 @@ function TextButton({
       className="btn-secondary text-xs py-1.5 flex items-center gap-1.5"
       aria-label={accessibleName}
     >
-      <Icon className={cn('w-4 h-4', copied && 'text-nexus-accent')} />
+      <Icon className={cn('bureau-icon w-4 h-4', copied && 'text-nexus-accent')} />
       {label}
     </button>
   )

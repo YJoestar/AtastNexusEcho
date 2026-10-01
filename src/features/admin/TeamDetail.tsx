@@ -1,4 +1,4 @@
-/**
+﻿/**
  * NEXUS — Team Detail
  *
  * Full team management interface with all admin actions:
@@ -8,11 +8,7 @@
 
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
-import {
-  Users, Target, Pause, Play, Check, AlertTriangle, RotateCcw,
-  Lightbulb, Send, Shield, Clock, Trophy, Copy,
-  Loader2, Key,
-} from 'lucide-react'
+import { BureauIcons } from '@/components/bureau'
 import { ROUTES } from '@/app/config'
 import { cn, formatNumber, getAvatarInitials } from '@/lib/utils'
 import { formatDateTime, formatDuration } from '@/lib/time'
@@ -75,7 +71,7 @@ export function AdminTeamDetail() {
   if (!teamDetail && isLoading) {
     return (
       <div className="py-12 text-center text-nexus-textSubtle">
-        <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-nexus-info" />
+        <BureauIcons.Spinner className="bureau-icon w-8 h-8 animate-spin mx-auto mb-4 text-nexus-info" />
         <p>Loading team data…</p>
       </div>
     )
@@ -84,7 +80,7 @@ export function AdminTeamDetail() {
   if (error && !teamDetail) {
     return (
       <div className="py-12 text-center">
-        <AlertTriangle className="w-8 h-8 mx-auto mb-4 text-nexus-danger" />
+        <BureauIcons.AlertTriangle className="bureau-icon w-8 h-8 mx-auto mb-4 text-nexus-danger" />
         <p className="text-nexus-danger">{error}</p>
         <button onClick={() => void fetchTeamDetail(teamId)} className="btn-primary mt-3">
           Retry
@@ -144,15 +140,15 @@ export function AdminTeamDetail() {
 
   const getStatusConfig = (status: TeamWithStats['status']) => {
     const configs: Record<string, { icon: JSX.Element; canStart: boolean; canPause: boolean; canResume: boolean; canComplete: boolean }> = {
-      REGISTERED: { icon: <Shield className="w-5 h-5 text-neutral-400" />, canStart: true, canPause: false, canResume: false, canComplete: false },
-      FORMING: { icon: <Users className="w-5 h-5 text-blue-400" />, canStart: true, canPause: false, canResume: false, canComplete: false },
-      READY: { icon: <Check className="w-5 h-5 text-cyan-400" />, canStart: true, canPause: false, canResume: false, canComplete: false },
-      WAITING: { icon: <Clock className="w-5 h-5 text-yellow-400" />, canStart: true, canPause: false, canResume: false, canComplete: false },
-      ACTIVE: { icon: <Play className="w-5 h-5 text-emerald-400" />, canStart: false, canPause: true, canResume: false, canComplete: true },
-      PAUSED: { icon: <Pause className="w-5 h-5 text-blue-400" />, canStart: false, canPause: false, canResume: true, canComplete: true },
-      COMPLETED: { icon: <Target className="w-5 h-5 text-purple-400" />, canStart: false, canPause: false, canResume: false, canComplete: false },
-      DISQUALIFIED: { icon: <AlertTriangle className="w-5 h-5 text-red-400" />, canStart: false, canPause: false, canResume: false, canComplete: false },
-      ABANDONED: { icon: <AlertTriangle className="w-5 h-5 text-gray-400" />, canStart: false, canPause: false, canResume: false, canComplete: false },
+      REGISTERED: { icon: <BureauIcons.Shield className="bureau-icon w-5 h-5 text-nexus-textSubtle" />, canStart: true, canPause: false, canResume: false, canComplete: false },
+      FORMING: { icon: <BureauIcons.Users className="bureau-icon w-5 h-5 text-nexus-accent" />, canStart: true, canPause: false, canResume: false, canComplete: false },
+      READY: { icon: <BureauIcons.Check className="bureau-icon w-5 h-5 text-nexus-accent" />, canStart: true, canPause: false, canResume: false, canComplete: false },
+      WAITING: { icon: <BureauIcons.Clock className="bureau-icon w-5 h-5 text-nexus-warning" />, canStart: true, canPause: false, canResume: false, canComplete: false },
+      ACTIVE: { icon: <BureauIcons.Play className="bureau-icon w-5 h-5 text-nexus-accent" />, canStart: false, canPause: true, canResume: false, canComplete: true },
+      PAUSED: { icon: <BureauIcons.Pause className="bureau-icon w-5 h-5 text-nexus-accent" />, canStart: false, canPause: false, canResume: true, canComplete: true },
+      COMPLETED: { icon: <BureauIcons.Target className="bureau-icon w-5 h-5 text-nexus-info" />, canStart: false, canPause: false, canResume: false, canComplete: false },
+      DISQUALIFIED: { icon: <BureauIcons.AlertTriangle className="bureau-icon w-5 h-5 text-nexus-danger" />, canStart: false, canPause: false, canResume: false, canComplete: false },
+      ABANDONED: { icon: <BureauIcons.AlertTriangle className="bureau-icon w-5 h-5 text-nexus-textSubtle" />, canStart: false, canPause: false, canResume: false, canComplete: false },
     }
     return configs[status] ?? configs.REGISTERED
   }
@@ -212,7 +208,7 @@ export function AdminTeamDetail() {
               })}
               className="btn-primary"
             >
-              <Play className="w-4 h-4" />
+              <BureauIcons.Play className="bureau-icon w-4 h-4" />
               Start Team
             </button>
           )}
@@ -226,7 +222,7 @@ export function AdminTeamDetail() {
               })}
               className="btn-warning"
             >
-              <Pause className="w-4 h-4" />
+              <BureauIcons.Pause className="bureau-icon w-4 h-4" />
               Pause Team
             </button>
           )}
@@ -240,7 +236,7 @@ export function AdminTeamDetail() {
               })}
               className="btn-primary"
             >
-              <Play className="w-4 h-4" />
+              <BureauIcons.Play className="bureau-icon w-4 h-4" />
               Resume Team
             </button>
           )}
@@ -254,7 +250,7 @@ export function AdminTeamDetail() {
               })}
               className="btn-secondary"
             >
-              <Check className="w-4 h-4" />
+              <BureauIcons.Check className="bureau-icon w-4 h-4" />
               Mark Complete
             </button>
           )}
@@ -263,7 +259,7 @@ export function AdminTeamDetail() {
               onClick={() => setShowNotifyDialog(true)}
               className="btn-secondary"
             >
-              <Send className="w-4 h-4" />
+              <BureauIcons.Send className="bureau-icon w-4 h-4" />
               Send Notification
             </button>
           )}
@@ -276,7 +272,7 @@ export function AdminTeamDetail() {
             })}
             className="btn-secondary"
           >
-            <AlertTriangle className="w-4 h-4" />
+            <BureauIcons.AlertTriangle className="bureau-icon w-4 h-4" />
             Disqualify
           </button>
           {(team.status === 'COMPLETED' || team.status === 'DISQUALIFIED') && (
@@ -289,7 +285,7 @@ export function AdminTeamDetail() {
               })}
               className="btn-secondary"
             >
-              <RotateCcw className="w-4 h-4" />
+              <BureauIcons.RotateCcw className="bureau-icon w-4 h-4" />
               Reset Team
             </button>
           )}
@@ -351,7 +347,7 @@ export function AdminTeamDetail() {
             disabled={isReissuing || players.length === 0}
             className="btn-secondary"
           >
-            {isReissuing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Key className="w-4 h-4" />}
+            {isReissuing ? <BureauIcons.Spinner className="bureau-icon w-4 h-4 animate-spin" /> : <BureauIcons.Key className="bureau-icon w-4 h-4" />}
             {isReissuing ? 'ISSUING…' : 'RE-ISSUE CODES'}
           </button>
         </div>
@@ -425,7 +421,7 @@ export function AdminTeamDetail() {
                         className="btn-secondary text-xs py-1.5"
                         aria-label={`Re-issue Logic Code for ${p.displayName}`}
                       >
-                        {isReissuing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Key className="w-4 h-4" />}
+                        {isReissuing ? <BureauIcons.Spinner className="bureau-icon w-4 h-4 animate-spin" /> : <BureauIcons.Key className="bureau-icon w-4 h-4" />}
                         RE-ISSUE
                       </button>
                     </div>
@@ -458,10 +454,10 @@ export function AdminTeamDetail() {
         <div className="panel">
           <h2 className="heading-3 mb-4">Game Progress</h2>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <ProgressDetail label="Time Elapsed" value={formatDuration((progress.timeElapsedMinutes ?? 0) * 60000)} icon={<Clock />} />
-            <ProgressDetail label="Time Remaining" value={formatDuration((progress.timeRemainingMinutes ?? 0) * 60000)} icon={<Clock />} />
-            <ProgressDetail label="Hints Used" value={String(progress.hintsUsed ?? 0)} icon={<Lightbulb />} />
-            <ProgressDetail label="Score" value={formatNumber(progress.score ?? 0)} icon={<Trophy />} />
+            <ProgressDetail label="Time Elapsed" value={formatDuration((progress.timeElapsedMinutes ?? 0) * 60000)} icon={<BureauIcons.Clock />} />
+            <ProgressDetail label="Time Remaining" value={formatDuration((progress.timeRemainingMinutes ?? 0) * 60000)} icon={<BureauIcons.Clock />} />
+            <ProgressDetail label="Hints Used" value={String(progress.hintsUsed ?? 0)} icon={<BureauIcons.Lightbulb />} />
+            <ProgressDetail label="Score" value={formatNumber(progress.score ?? 0)} icon={<BureauIcons.Trophy />} />
           </div>
           {progress.evidenceOwned.length > 0 && (
             <div className="mt-4">
@@ -591,7 +587,7 @@ function PlayerRow({
   return (
     <div className="flex items-center justify-between p-3 bg-nexus-bg rounded-xl border border-nexus-border">
       <div className="flex items-center gap-3">
-        <div className="w-8 h-8 rounded-lg bg-nexus-surfaceElevated flex items-center justify-center">
+        <div className="bureau-icon w-8 h-8 rounded-lg bg-nexus-surfaceElevated flex items-center justify-center">
           <span className="font-display font-bold text-sm">
             {getAvatarInitials(player.displayName)}
           </span>
@@ -619,7 +615,7 @@ function PlayerRow({
           title={`Re-issue login code for ${player.displayName}`}
           aria-label={`Re-issue login code for ${player.displayName}`}
         >
-          <Key className="w-4 h-4" />
+          <BureauIcons.Key className="bureau-icon w-4 h-4" />
         </button>
         <RoleAssignmentSelect
           currentRole={player.role}
@@ -713,9 +709,13 @@ function TeamCodeBadge({ code, onCopy }: { code: string; onCopy: () => void }) {
         className="p-0.5 rounded text-nexus-textSubtle hover:text-nexus-text hover:bg-nexus-surfaceElevated transition-colors"
         title="Copy team code"
       >
-        <Copy className="w-4 h-4" />
+        <BureauIcons.Copy className="bureau-icon w-4 h-4" />
       </button>
     </div>
   )
 }
+
+
+
+
 

@@ -6,7 +6,7 @@
  */
 
 import { ReactNode } from 'react'
-import { X, AlertTriangle, Shield } from 'lucide-react'
+import { BureauIcons } from '@/components/bureau'
 import { cn } from '@/lib/utils'
 
 export type ConfirmVariant = 'danger' | 'warning' | 'primary'
@@ -55,9 +55,9 @@ export function ConfirmationDialog({
   }
 
   const IconMap = {
-    danger: AlertTriangle,
-    warning: AlertTriangle,
-    primary: Shield,
+    danger: BureauIcons.AlertTriangle,
+    warning: BureauIcons.AlertTriangle,
+    primary: BureauIcons.Shield,
   }
 
   const Icon = IconMap[confirmAction.variant ?? (danger ? 'danger' : 'primary')]
@@ -83,7 +83,7 @@ export function ConfirmationDialog({
                 ? 'bg-nexus-warningBg text-nexus-warning'
                 : 'bg-nexus-infoBg text-nexus-info',
             )}>
-              <Icon className="w-6 h-6" aria-hidden="true" />
+              <Icon className="bureau-icon w-6 h-6" aria-hidden="true" />
             </div>
             <div className="flex-1">
               <h2 className={cn(
@@ -101,7 +101,7 @@ export function ConfirmationDialog({
               className="p-1 rounded-lg text-nexus-textSubtle hover:text-nexus-text hover:bg-nexus-surfaceElevated transition-colors flex-shrink-0"
               aria-label="Close"
             >
-              <X className="w-5 h-5" />
+              <BureauIcons.Close className="bureau-icon w-5 h-5" />
             </button>
           </div>
         </div>

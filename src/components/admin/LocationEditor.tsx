@@ -7,7 +7,7 @@
  */
 
 import { useState } from 'react'
-import { X, Save, Trash2, AlertCircle, MapPin } from 'lucide-react'
+import { BureauIcons } from '@/components/bureau'
 import { cn } from '@/lib/utils'
 import type { LocationEntry } from '@/lib/admin'
 import type { NodeIndexEntry } from '@/content/puzzles'
@@ -100,7 +100,7 @@ export function LocationEditor({
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-nexus-borderSubtle">
           <div className="flex items-center gap-3">
-            <MapPin className="w-5 h-5 text-nexus-info" />
+             <BureauIcons.MapPin className="bureau-icon w-5 h-5 text-nexus-info" />
             <div>
               <h2 className="heading-3">
                 {isEditing ? 'Edit Location' : 'Set Location'}
@@ -115,7 +115,7 @@ export function LocationEditor({
             disabled={isSaving || isDeleting}
             className="p-2 rounded-lg text-nexus-textMuted hover:text-nexus-text hover:bg-nexus-surfaceElevated transition-colors"
           >
-            <X className="w-5 h-5" />
+            <BureauIcons.Close className="bureau-icon w-5 h-5" />
           </button>
         </div>
 
@@ -123,8 +123,8 @@ export function LocationEditor({
         <div className="p-6 space-y-4">
           {error && (
             <div className="p-3 rounded-xl bg-nexus-dangerBg/20 border border-nexus-danger/30 text-nexus-danger text-sm flex items-start gap-2">
-              <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-              <span>{error}</span>
+               <BureauIcons.Alert className="bureau-icon w-4 h-4 mt-0.5 flex-shrink-0" />
+               <span>{error}</span>
             </div>
           )}
 
@@ -198,9 +198,9 @@ export function LocationEditor({
           {/* Warning for INACTIVE */}
           {status === 'INACTIVE' && (
             <div className="p-3 rounded-xl bg-nexus-warningBg/20 border border-nexus-warning/30 text-nexus-warning text-sm flex items-start gap-2">
-              <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-              <span>
-                Setting this location to INACTIVE means the node will fall back to its default location
+               <BureauIcons.Alert className="bureau-icon w-4 h-4 mt-0.5 flex-shrink-0" />
+               <span>
+                 Setting this location to INACTIVE means the node will fall back to its default location
                 ({node.location || 'no default'}).
               </span>
             </div>
@@ -222,7 +222,7 @@ export function LocationEditor({
                 </>
               ) : (
                 <>
-                  <Trash2 className="w-4 h-4 mr-2" />
+                  <BureauIcons.Trash className="bureau-icon w-4 h-4 mr-2" />
                   Remove Override
                 </>
               )}
@@ -248,7 +248,7 @@ export function LocationEditor({
                 </>
               ) : (
                 <>
-                  <Save className="w-4 h-4 mr-2" />
+                  <BureauIcons.Save className="bureau-icon w-4 h-4 mr-2" />
                   {isEditing ? 'UPDATE' : 'CREATE'}
                 </>
               )}

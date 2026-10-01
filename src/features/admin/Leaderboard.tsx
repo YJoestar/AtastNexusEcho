@@ -1,11 +1,11 @@
-/**
+﻿/**
  * NEXUS — Leaderboard
  *
  * Live server-authoritative leaderboard.
  */
 
 import { useEffect, useMemo } from 'react'
-import { RefreshCw } from 'lucide-react'
+import { BureauIcons } from '@/components/bureau'
 import { cn, formatNumber, getAvatarInitials } from '@/lib/utils'
 import { formatDuration } from '@/lib/time'
 import { useBureau } from '@/hooks/useBureau'
@@ -35,17 +35,17 @@ export function AdminLeaderboard() {
     })
   }, [leaderboard])
 
-  const getRankIcon = (rank: number) => {
-    if (rank === 1) return '🥇'
-    if (rank === 2) return '🥈'
-    if (rank === 3) return '🥉'
+  const getRankIcon = (rank: number): React.ReactNode => {
+    if (rank === 1) return <BureauIcons.Trophy className="bureau-icon w-5 h-5 text-nexus-accent" />
+    if (rank === 2) return <BureauIcons.Trophy className="bureau-icon w-5 h-5 text-nexus-textSubtle" />
+    if (rank === 3) return <BureauIcons.Trophy className="bureau-icon w-5 h-5 text-nexus-textSubtle" />
     return null
   }
 
   const getRankColor = (rank: number) => {
-    if (rank === 1) return 'text-yellow-400'
-    if (rank === 2) return 'text-neutral-400'
-    if (rank === 3) return 'text-orange-400'
+    if (rank === 1) return 'text-nexus-accent'
+    if (rank === 2) return 'text-nexus-textSubtle'
+    if (rank === 3) return 'text-nexus-textSubtle'
     return 'text-nexus-textSubtle'
   }
 
@@ -64,7 +64,7 @@ export function AdminLeaderboard() {
           disabled={isLoading}
           className="btn-secondary text-xs py-1.5"
         >
-          <RefreshCw className={cn('w-4 h-4', isLoading && 'animate-spin')} />
+          <BureauIcons.Refresh className={cn('bureau-icon w-4 h-4', isLoading && 'animate-spin')} />
           <span>Refresh</span>
         </button>
       </div>
@@ -95,7 +95,7 @@ export function AdminLeaderboard() {
               {isLoading ? (
                 <tr>
                   <td colSpan={7} className="py-8 text-center text-nexus-textSubtle">
-                    <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2" />
+                    <BureauIcons.Refresh className="bureau-icon w-6 h-6 animate-spin mx-auto mb-2" />
                     Loading leaderboard…
                   </td>
                 </tr>
@@ -122,7 +122,7 @@ export function AdminLeaderboard() {
                       </td>
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-nexus-surfaceElevated flex items-center justify-center">
+                          <div className="bureau-icon w-8 h-8 rounded-lg bg-nexus-surfaceElevated flex items-center justify-center">
                             <span className="font-display font-bold text-sm text-nexus-danger">
                               {getAvatarInitials(entry.teamName)}
                             </span>
@@ -165,3 +165,6 @@ export function AdminLeaderboard() {
     </div>
   )
 }
+
+
+

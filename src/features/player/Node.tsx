@@ -9,7 +9,6 @@
  */
 
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { ArrowLeft, HelpCircle, Flag, Loader2, Send, AlertCircle } from 'lucide-react'
 import { useApp } from '@/app/providers'
 import { ROUTES, ROLE_LABELS, ROLE_THEMES } from '@/app/config'
 import { cn } from '@/lib/utils'
@@ -20,6 +19,15 @@ import { PuzzleVisual } from '@/components/player/puzzle/PuzzleVisual'
 import { HINT_PENALTIES } from '@/content/constants'
 import { useEffect, useState, useRef } from 'react'
 import type { PlayerNodeView } from '@/hooks/useGameEngine'
+import { BureauIcons } from '@/components/bureau'
+import {
+  DocumentShell,
+  EvidenceFrame,
+  RegisterColumn,
+  StateMarker,
+  Stamp,
+  type StatusTone,
+} from '@/components/bureau'
 
 export function PlayerNode() {
   const { nodeId } = useParams<{ nodeId: string }>()
@@ -83,8 +91,6 @@ export function PlayerNode() {
       }])
 
       if (result.queued) {
-        // Nothing has been validated yet - the answer is held on the device and
-        // replayed by the game engine the moment the connection returns.
         showToast('No signal — answer queued and will be sent on reconnect', 'general')
       } else if (result.isCorrect) {
         setJustSolved(true)
@@ -136,9 +142,9 @@ export function PlayerNode() {
   if (!nodeId) {
     return (
       <div className="page-content max-w-md mx-auto text-center py-12">
-        <ArrowLeft className="w-12 h-12 text-nexus-textMuted mx-auto mb-4" />
+        <BureauIcons.Back className="bureau-icon w-12 h-12 text-nexus-textMuted mx-auto mb-4" aria-hidden="true" />
         <h1 className="heading-3 mb-2">Invalid Node</h1>
-        <Link to={ROUTES.PLAYER_GAME} className="btn-secondary w-full">
+        <Link to={ROUTES.PLAYER_GAME} className="nexus-btn nexus-btn-secondary w-full touch-target-comfortable">
           Back to Game
         </Link>
       </div>
@@ -149,7 +155,7 @@ export function PlayerNode() {
     return (
       <div className="page">
         <div className="page-content max-w-md mx-auto text-center py-12">
-          <Loader2 className="w-8 h-8 animate-spin text-nexus-accent mx-auto mb-4" />
+          <BureauIcons.Spinner className="bureau-icon w-8 h-8 text-nexus-accent animate-spin mx-auto mb-4" aria-hidden="true" />
           <p className="text-nexus-textMuted">Loading investigation node…</p>
         </div>
       </div>
@@ -160,10 +166,10 @@ export function PlayerNode() {
     return (
       <div className="page">
         <div className="page-content max-w-md mx-auto text-center py-12">
-          <Flag className="w-8 h-8 text-nexus-warning mx-auto mb-4" />
+          <BureauIcons.Flag className="bureau-icon w-8 h-8 text-nexus-warning mx-auto mb-4" aria-hidden="true" />
           <h3 className="heading-4 mb-2">Error</h3>
           <p className="text-nexus-textMuted mb-4">{error}</p>
-          <Link to={ROUTES.PLAYER_GAME} className="btn-secondary w-full">
+          <Link to={ROUTES.PLAYER_GAME} className="nexus-btn nexus-btn-secondary w-full touch-target-comfortable">
             Back to Game
           </Link>
         </div>
@@ -176,7 +182,10 @@ export function PlayerNode() {
   const isLocked = !node.unlocked && !node.isSolved
   const hintLevel = hintIndexRef.current
   const hintPenaltyMap = { 0: HINT_PENALTIES.hint1, 1: HINT_PENALTIES.hint2, 2: HINT_PENALTIES.hint3 }
-  const nextHintCost = hintLevel < 3 ? Math.floor(hintPenaltyMap[hintLevel as 0|1|2] / 60) : 0
+  const nextHintCost = hintLevel < 3 ? Math.floor(hintPenaltyMap[hintLevel as 0 | 1 | 2] / 60) : 0
+
+  const nodeStatusTone: StatusTone =
+    node.status === 'SOLVED' ? 'active' : node.unlocked ? 'warning' : 'inactive'
 
   return (
     <div className="page">
@@ -185,19 +194,14 @@ export function PlayerNode() {
         <div className="flex items-center gap-4">
           <Link
             to={ROUTES.PLAYER_GAME}
-            className="p-2 rounded-xl text-nexus-textMuted hover:text-nexus-text hover:bg-nexus-surfaceElevated transition-colors touch-target-primary"
+            className="p-2 border border-nexus-borderSubtle text-nexus-textMuted hover:text-nexus-text touch-target-primary"
+            aria-label="Back to game"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <BureauIcons.Back className="bureau-icon w-5 h-5" />
           </Link>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <span className={cn(
-                'badge',
-                node.status === 'SOLVED' ? 'badge-accent' :
-                node.unlocked ? 'badge-warning' : 'badge-neutral',
-              )}>
-                {node.status}
-              </span>
+              <StateMarker glyph="◦" tone={nodeStatusTone} label={node.status} />
               <span className="text-sm text-nexus-textMuted font-mono">Node: {node.code}</span>
             </div>
             <h1 className="heading-3 truncate">{node.title}</h1>
@@ -205,8 +209,8 @@ export function PlayerNode() {
         </div>
 
         {/* Role Indicator + Coordination Info */}
-        <div className={cn('panel flex items-center gap-4', roleTheme?.bg)}>
-          <div className={cn('w-12 h-12 rounded-xl flex items-center justify-center', roleTheme?.bg)}>
+        <div className={cn('nexus-ops-panel flex items-center gap-4', roleTheme?.bg)}>
+          <div className={cn('w-12 h-12 flex items-center justify-center border border-nexus-borderSubtle', roleTheme?.bg)}>
             <span className={cn('font-display font-bold text-2xl', roleTheme?.text)}>
               {role?.[0]}
             </span>
@@ -218,43 +222,50 @@ export function PlayerNode() {
               {roleTheme?.subtitle}
             </p>
           </div>
-          {node.isSolved && <Flag className="w-6 h-6 text-nexus-accent ml-auto" />}
+          {node.isSolved && <BureauIcons.Flag className="bureau-icon w-6 h-6 text-nexus-accent ml-auto" />}
         </div>
 
         {/* Locked State */}
         {isLocked && (
-          <div className="panel text-center py-8">
-            <Flag className="w-8 h-8 text-nexus-textSubtle mx-auto mb-3" />
-            <h3 className="heading-4 mb-2">Node Locked</h3>
-            <p className="text-nexus-textMuted">
-              Solve prerequisite puzzles or scan the correct QR code to unlock this node.
-            </p>
-          </div>
+          <DocumentShell
+            reference={`Node ${node.code}`}
+            title="Node Locked"
+            stock="paper"
+            footer={<Stamp variant="incomplete">Sealed</Stamp>}
+          >
+            <div className="text-center py-6">
+              <p className="text-nexus-textMuted">
+                Solve prerequisite puzzles or scan the correct QR code to unlock this node.
+              </p>
+            </div>
+          </DocumentShell>
         )}
 
         {/* Role-Specific Content — only when unlocked and not solved */}
         {node.unlocked && node.roleContent && !isSolved && (
-          <div className="panel space-y-4">
+          <div className="nexus-document space-y-6">
             <h3 className="heading-4 flex items-center gap-2">
               <span className={roleTheme?.text}>●</span>
               <span>{node.roleContent.screenTitle}</span>
             </h3>
 
-            {/* Type-specific visual: each visualType draws its own data payload */}
-            <div className="p-4 bg-nexus-bg rounded-xl border border-nexus-borderSubtle">
-              <p className="text-xs text-nexus-textSubtle uppercase tracking-wider mb-2">
-                {node.roleContent.visualType ?? 'Data Feed'}
-              </p>
-              <PuzzleVisual
-                type={node.roleContent.visualType}
-                dataPayload={node.roleContent.dataPayload}
-                interactiveData={node.roleContent.interactiveData}
-              />
-            </div>
+            {/* Type-specific visual */}
+            <EvidenceFrame seed={`node:${node.code}:visual`} title={node.roleContent.visualType ?? 'Data Feed'}>
+              <div className="space-y-4">
+                <p className="text-xs uppercase tracking-wider text-nexus-textSubtle">
+                  Visual readout
+                </p>
+                <PuzzleVisual
+                  type={node.roleContent.visualType}
+                  dataPayload={node.roleContent.dataPayload}
+                  interactiveData={node.roleContent.interactiveData}
+                />
+              </div>
+            </EvidenceFrame>
 
             {/* Mission Brief */}
-            <div className="p-4 bg-nexus-surfaceElevated rounded-xl border border-nexus-borderSubtle">
-              <p className="text-sm text-nexus-textMuted mb-2">
+            <div className="nexus-panel space-y-3">
+              <p className="text-sm text-nexus-textMuted">
                 <strong className="text-nexus-text">Mission Brief:</strong> {node.roleContent.whatTheySee}
               </p>
               <p className="text-sm text-nexus-textMuted">
@@ -262,41 +273,38 @@ export function PlayerNode() {
               </p>
             </div>
 
-            {/* Coordination Chain — visible to all roles */}
+            {/* Coordination Chain */}
             {node.coordinationChain && (
-              <div className="space-y-2">
-                <h4 className="text-xs font-semibold text-nexus-textSubtle uppercase tracking-wider">
-                  Team Coordination
-                </h4>
-                <div className="p-3 bg-nexus-bg/50 rounded-xl border border-nexus-borderSubtle text-sm">
+              <RegisterColumn heading="Team Coordination">
+                <div className="nexus-panel p-3 space-y-2 text-sm">
                   <p className="text-nexus-textMuted">
                     <strong>Observer produces:</strong> {node.coordinationChain.observerProduces}
                   </p>
-                  <p className="text-nexus-textMuted mt-1">
+                  <p className="text-nexus-textMuted">
                     <strong>Analyst transforms:</strong> {node.coordinationChain.analystTransforms}
                   </p>
-                  <p className="text-nexus-textMuted mt-1">
+                  <p className="text-nexus-textMuted">
                     <strong>Operator executes:</strong> {node.coordinationChain.operatorExecutes}
                   </p>
                 </div>
-              </div>
+              </RegisterColumn>
             )}
 
-            {/* Operator Investigation — what to ask teammates */}
+            {/* Operator Investigation */}
             {isOperator && node.operatorInvestigation && (
-              <div className={cn('p-4 rounded-xl border', roleTheme?.bg)}>
-                <h4 className="text-xs font-semibold text-nexus-textSubtle uppercase tracking-wider mb-2">
+              <div className={cn('nexus-panel p-4 space-y-2', roleTheme?.bg)}>
+                <h4 className="text-xs uppercase tracking-wider text-nexus-textSubtle">
                   Investigation Protocol
                 </h4>
-                <div className="space-y-2 text-sm">
+                <div className="space-y-1 text-sm">
                   <p className="text-nexus-textMuted">
                     <strong>Your Evidence:</strong> {node.operatorInvestigation.operatorOwnEvidence}
                   </p>
                   <p className="text-nexus-textMuted">
                     <strong>Task:</strong> {node.operatorInvestigation.operatorTaskDescription}
                   </p>
-                  <div className="p-3 bg-nexus-bg/70 rounded-lg border border-nexus-borderSubtle mt-2">
-                    <p className="text-xs font-semibold text-nexus-textSubtle mb-1.5">
+                  <div className="nexus-panel p-3 mt-2 bg-nexus-bg/70 border-nexus-borderSubtle">
+                    <p className="text-xs uppercase tracking-wider text-nexus-textSubtle mb-1.5">
                       Required Discoveries
                     </p>
                     <p className="text-nexus-textMuted">
@@ -312,8 +320,8 @@ export function PlayerNode() {
 
             {/* Failure Propagation */}
             {node.failurePropagation && (
-              <div className="p-3 bg-nexus-dangerBg/20 rounded-xl border border-nexus-danger/20">
-                <p className="text-xs text-nexus-textSubtle uppercase tracking-wider mb-1">
+              <div className="nexus-panel p-3 border-nexus-warning/30">
+                <p className="text-xs uppercase tracking-wider text-nexus-textSubtle mb-1">
                   Recovery Note
                 </p>
                 <p className="text-xs text-nexus-textMuted">
@@ -324,55 +332,70 @@ export function PlayerNode() {
 
             {/* Hints Panel */}
             {hints.length > 0 && (
-              <div className="space-y-2">
-                <h4 className="text-xs font-semibold text-nexus-textSubtle uppercase tracking-wider">
-                  Acquired Hints
-                </h4>
-                {hints.map(h => (
-                  <div
-                    key={h.level}
-                    className="p-3 bg-nexus-warningBg/30 border border-nexus-warning/30 rounded-xl"
-                  >
-                    <p className="text-sm text-nexus-warning">
-                      <strong>Hint {h.level}:</strong> {h.text}
-                    </p>
-                    {h.penalty > 0 && (
-                      <p className="text-xs text-nexus-textSubtle mt-1">
-                        Penalty: -{Math.floor(h.penalty / 60)} minutes
+              <RegisterColumn heading="Acquired Hints">
+                <div className="space-y-2">
+                  {hints.map(h => (
+                    <div
+                      key={h.level}
+                      className="nexus-panel p-3 border-nexus-warning/30 bg-nexus-warningBg/20"
+                    >
+                      <p className="text-sm text-nexus-warning">
+                        <strong>Hint {h.level}:</strong> {h.text}
                       </p>
-                    )}
-                  </div>
-                ))}
-              </div>
+                      {h.penalty > 0 && (
+                        <p className="text-xs text-nexus-textSubtle mt-1">
+                          Penalty: -{Math.floor(h.penalty / 60)} minutes
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </RegisterColumn>
             )}
           </div>
         )}
 
         {/* Solved State */}
         {isSolved && (
-          <div className="panel bg-nexus-accentBg/20 border-nexus-accent/30 text-center animate-slide-up">
-            <Flag className="w-12 h-12 text-nexus-accent mx-auto mb-4" />
-            <h2 className="heading-2 text-nexus-accent mb-2">Node Complete</h2>
-            <p className="text-nexus-textMuted mb-4">
-              {node.storyReveal || 'This investigation node has been completed.'}
-            </p>
-            <div className="flex justify-center">
-              <Link
-                to={ROUTES.PLAYER_GAME}
-                className="btn-primary touch-target-comfortable"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                <span>Back to Game Hub</span>
-              </Link>
+          <DocumentShell
+            reference={`Node ${node.code}`}
+            title="Node Complete"
+            stock="carbon"
+            classification="RESTRICTED"
+            footer={<Stamp variant="verified" impressed>Solved</Stamp>}
+          >
+            <div className="text-center py-6">
+              <div className="w-16 h-16 border-2 border-nexus-accent/30 bg-nexus-accentBg flex items-center justify-center mx-auto mb-4">
+                <span className="font-display text-3xl text-nexus-accent" aria-hidden="true">✓</span>
+              </div>
+              <p className="text-nexus-textMuted mb-4">
+                {node.storyReveal || 'This investigation node has been completed.'}
+              </p>
+              <div className="flex justify-center">
+                <Link
+                  to={ROUTES.PLAYER_GAME}
+                  className="nexus-btn nexus-btn-primary touch-target-comfortable"
+                >
+                  <BureauIcons.Back className="bureau-icon w-4 h-4" />
+                  <span>Back to Game Hub</span>
+                </Link>
+              </div>
             </div>
-          </div>
+          </DocumentShell>
         )}
 
         {/* Submission Area */}
         {!isSolved && node.unlocked && (
-          <div className="panel space-y-4">
-            <h3 className="heading-4">Submit Answer</h3>
-
+          <DocumentShell
+            reference={`Node ${node.code}`}
+            title="Submit Answer"
+            stock="paper"
+            footer={
+              <Stamp variant={isOffline ? 'anomalous' : 'verified'}>
+                {isOffline ? 'QUEUED' : 'LIVE'}
+              </Stamp>
+            }
+          >
             <form onSubmit={handleSubmit} className="space-y-3">
               <div>
                 <label htmlFor="answer" className="label">Answer</label>
@@ -390,7 +413,7 @@ export function PlayerNode() {
                 />
                 {isOffline && (
                   <p className="mt-1.5 text-sm text-nexus-warning flex items-center gap-1.5">
-                    <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                    <BureauIcons.Alert className="bureau-icon w-3.5 h-3.5 flex-shrink-0" aria-hidden="true" />
                     <span>No signal — your answer will be queued and sent on reconnect</span>
                   </p>
                 )}
@@ -399,73 +422,68 @@ export function PlayerNode() {
               <button
                 type="submit"
                 disabled={isSubmitting || !answer.trim()}
-                className="btn-primary w-full touch-target-comfortable"
+                className="nexus-btn nexus-btn-primary w-full touch-target-comfortable"
               >
                 {isSubmitting ? (
                   <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <BureauIcons.Spinner className="bureau-icon w-5 h-5 animate-spin" />
                     <span>Submitting…</span>
                   </>
                 ) : (
                   <>
-                    <Send className="w-5 h-5" />
+                    <BureauIcons.Send className="bureau-icon w-5 h-5" />
                     <span>{isOffline ? 'Queue Answer' : 'Submit'}</span>
                   </>
                 )}
               </button>
             </form>
 
-            {/* Submit Status */}
+            {/* Submission Status */}
             {submissions.length > 0 && (
-              <div className="space-y-2">
-                <h4 className="text-sm font-medium text-nexus-textMuted">
-                  Recent Attempts ({submissions.length})
-                </h4>
+              <RegisterColumn heading={`Recent Attempts (${submissions.length})`}>
                 <div className="space-y-1 max-h-40 overflow-y-auto">
                   {submissions.slice(-5).map((sub, i) => (
                     <div
                       key={i}
-                      className="flex items-center justify-between p-2 bg-nexus-bg rounded-lg text-sm"
+                      className="flex items-center justify-between p-2 border-b border-nexus-borderSubtle text-sm"
                     >
                       <code className="font-mono text-nexus-text truncate">
                         {sub.answer}
                       </code>
-                      <span
-                        className={cn(
-                          'badge text-xs',
-                          sub.queued
-                            ? 'badge-warning'
-                            : sub.isCorrect
-                              ? 'badge-accent'
-                              : 'badge-neutral',
-                        )}
-                      >
+                      <Stamp variant={
+                        sub.queued
+                          ? 'anomalous'
+                          : sub.isCorrect
+                            ? 'verified'
+                            : 'contradicted'
+                      } impressed>
                         {sub.queued ? 'QUEUED' : sub.isCorrect ? 'CORRECT' : 'INCORRECT'}
-                      </span>
+                      </Stamp>
                     </div>
                   ))}
                 </div>
-              </div>
+              </RegisterColumn>
             )}
 
             {/* Hint Section */}
             {!isSolved && hintLevel < 3 && (
-              <div className="pt-2 border-t border-nexus-borderSubtle">
+              <div className="border-t border-nexus-borderSubtle pt-2">
                 <button
                   onClick={() => setShowHintPanel(true)}
-                  className="btn-ghost w-full touch-target-primary"
+                  className="nexus-btn nexus-btn-ghost w-full touch-target-primary"
+                  type="button"
                 >
-                  <HelpCircle className="w-4 h-4" />
+                  <BureauIcons.Help className="bureau-icon w-4 h-4" />
                   <span>Request Hint {hintLevel + 1} of 3</span>
                   <span className="ml-auto text-xs text-nexus-textSubtle">
                     -{nextHintCost}min
                   </span>
                 </button>
                 {showHintPanel && (
-                  <div className="mt-3 p-4 bg-nexus-warningBg/30 border border-nexus-warning/30 rounded-xl animate-slide-down">
+                  <div className="mt-3 p-4 border-nexus-warning/30 bg-nexus-warningBg/20">
                     <p className="text-sm text-nexus-textMuted mb-3">
                       Request Hint {hintLevel + 1}? This will subtract{' '}
-                      {Math.floor(hintPenaltyMap[hintLevel as 0|1|2] / 60)} minutes from your
+                      {Math.floor(hintPenaltyMap[hintLevel as 0 | 1 | 2] / 60)} minutes from your
                       final score.
                     </p>
                     <div className="flex gap-2">
@@ -474,13 +492,15 @@ export function PlayerNode() {
                           setShowHintPanel(false)
                           await handleHint()
                         }}
-                        className="btn-warning flex-1 touch-target-primary"
+                        className="nexus-btn nexus-btn-warning flex-1 touch-target-primary"
+                        type="button"
                       >
                         Request
                       </button>
                       <button
                         onClick={() => setShowHintPanel(false)}
-                        className="btn-secondary flex-1 touch-target-primary"
+                        className="nexus-btn nexus-btn-secondary flex-1 touch-target-primary"
+                        type="button"
                       >
                         Cancel
                       </button>
@@ -489,7 +509,7 @@ export function PlayerNode() {
                 )}
               </div>
             )}
-          </div>
+          </DocumentShell>
         )}
       </div>
       <DiscoveryToastContainer toasts={toasts} onRemove={removeToast} />

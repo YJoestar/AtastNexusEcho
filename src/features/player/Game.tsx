@@ -11,7 +11,7 @@
 
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { Package, MapPin, QrCode, Trophy, ChevronRight, Clock, Target, Brain, Users } from 'lucide-react'
+import { BureauIcons } from '@/components/bureau'
 import { useGameEngine } from '@/hooks/useGameEngine'
 import { useGameTimer } from '@/hooks/useGameTimer'
 import { useNarrative } from '@/hooks/useNarrative'
@@ -84,20 +84,20 @@ export function PlayerGame() {
     {
       path: currentNodeId ? ROUTES.PLAYER_NODE.replace(':nodeId', currentNodeId) : ROUTES.PLAYER_GAME,
       label: 'Current Puzzle',
-      icon: Target,
+      icon: BureauIcons.Target,
       count: undefined,
       disabled: !currentNodeId,
     },
     {
       path: ROUTES.PLAYER_EVIDENCE,
       label: 'Evidence',
-      icon: Package,
+      icon: BureauIcons.Package,
       count: teamProgress?.evidenceOwned.length ?? 0,
     },
-    { path: ROUTES.PLAYER_INVENTORY, label: 'Inventory', icon: Brain, count: inventoryCount },
-    { path: ROUTES.PLAYER_NAVIGATION, label: 'Navigation', icon: MapPin, count: undefined },
-    { path: ROUTES.PLAYER_QR, label: 'QR Scanner', icon: QrCode, count: undefined },
-    { path: ROUTES.PLAYER_LEADERBOARD, label: 'Ranking', icon: Trophy, count: undefined },
+    { path: ROUTES.PLAYER_INVENTORY, label: 'Inventory', icon: BureauIcons.Key, count: inventoryCount },
+    { path: ROUTES.PLAYER_NAVIGATION, label: 'Navigation', icon: BureauIcons.MapPin, count: undefined },
+    { path: ROUTES.PLAYER_QR, label: 'QR Scanner', icon: BureauIcons.QrCode, count: undefined },
+    { path: ROUTES.PLAYER_LEADERBOARD, label: 'Ranking', icon: BureauIcons.Trophy, count: undefined },
   ]
 
   const caseTone: StatusTone =
@@ -141,9 +141,9 @@ export function PlayerGame() {
             aria-label={`${timer.formatted} remaining`}
           >
             <span className="flex items-center gap-2">
-              <Clock
+              <BureauIcons.Clock
                 className={cn(
-                  'w-4 h-4',
+                  'bureau-icon w-4 h-4',
                   timer.urgency === 'normal'
                     ? 'text-nexus-textMuted'
                     : timer.urgency === 'low'
@@ -226,7 +226,7 @@ export function PlayerGame() {
               <p className="section-label">Open this item to continue</p>
               <span className="mt-3 inline-flex items-center gap-1 text-sm text-nexus-textMuted">
                 <span>Proceed</span>
-                <ChevronRight className="w-4 h-4" aria-hidden="true" />
+                <BureauIcons.Forward className="bureau-icon w-4 h-4" aria-hidden="true" />
               </span>
             </DocumentShell>
           </Link>
@@ -243,12 +243,12 @@ export function PlayerGame() {
                   to={ROUTES.PLAYER_NODE.replace(':nodeId', node.code)}
                   className="block focus-visible:outline-none"
                 >
-                  <RegisterRow
-                    id={node.code}
-                    label={node.title}
-                    meta={node.location}
-                    trailing={<ChevronRight className="w-4 h-4 text-nexus-textSubtle" aria-hidden="true" />}
-                  />
+               <RegisterRow
+                     id={node.code}
+                     label={node.title}
+                     meta={node.location}
+                     trailing={<BureauIcons.Forward className="bureau-icon w-4 h-4 text-nexus-textSubtle" aria-hidden="true" />}
+                   />
                 </Link>
               ))}
             </RegisterList>
@@ -269,7 +269,7 @@ export function PlayerGame() {
                   action.disabled && 'pointer-events-none opacity-50'
                 )}
               >
-                <action.icon className="w-4 h-4 shrink-0 text-nexus-textSubtle" aria-hidden="true" />
+                <action.icon className="bureau-icon w-4 h-4 shrink-0 text-nexus-textSubtle" aria-hidden="true" />
                 <span className="register-main">
                   <span className="register-label block">{action.label}</span>
                 </span>
@@ -286,7 +286,7 @@ export function PlayerGame() {
         {/* Team record */}
         <section className="panel">
           <div className="mb-3 flex items-center gap-2">
-            <Users className="w-4 h-4 text-nexus-textMuted" aria-hidden="true" />
+            <BureauIcons.Users className="bureau-icon w-4 h-4 text-nexus-textMuted" aria-hidden="true" />
             <h2 className="heading-4">Team Record</h2>
           </div>
           {teamProgress ? (

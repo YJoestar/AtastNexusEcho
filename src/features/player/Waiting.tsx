@@ -6,10 +6,10 @@
 
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Clock, Users, Shield, Loader2, CheckCircle, User } from 'lucide-react'
 import { useApp } from '@/app/providers'
 import { ROUTES, ROLE_LABELS, ROLE_SUBTITLES, ROLE_THEMES } from '@/app/config'
 import { cn } from '@/lib/utils'
+import { BureauIcons } from '@/components/bureau'
 
 export function PlayerWaiting() {
   const navigate = useNavigate()
@@ -47,7 +47,7 @@ export function PlayerWaiting() {
   if (!player || !team) {
     return (
       <div className="page flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-nexus-accent animate-spin" />
+        <BureauIcons.Spinner className="bureau-icon w-8 h-8 text-nexus-accent animate-spin" />
       </div>
     )
   }
@@ -62,103 +62,111 @@ export function PlayerWaiting() {
   const isStarted = gameState?.status === 'RUNNING'
 
   return (
-    <div className="page flex flex-col items-center justify-center p-4">
-      {/* Status Header */}
-      <div className="w-full max-w-md text-center mb-8">
-        <div className={cn(
-          'inline-flex items-center gap-2 px-4 py-2 text-sm font-medium mb-4 border',
-          isStarted
-            ? 'border-nexus-accent/30 bg-nexus-accentBg/20 text-nexus-accent'
-            : 'border-nexus-warning/30 bg-nexus-warningBg/20 text-nexus-warning',
-        )}>
-          {isStarted ? (
-            <>
-              <CheckCircle className="w-4 h-4" />
-              <span>Game in Progress</span>
-            </>
-          ) : (
-            <>
-              <Clock className="w-4 h-4" />
-              <span>Waiting for Start</span>
-            </>
-          )}
+    <div className="page flex items-center justify-center p-4 md:p-8">
+      <div className="nexus-case-shell w-full max-w-lg">
+        <div className="nexus-case-header">
+          <span className="section-label">Field Operations</span>
+          <span className="case-number-tag">CASE 037</span>
         </div>
 
-        <h1 className="heading-2 mb-2">{team.name}</h1>
-        <p className="text-nexus-textMuted">
-          Team Code: <span className="font-mono text-nexus-text">{team.code}</span>
-        </p>
-      </div>
+        <div className="nexus-case-body space-y-6">
+          <div className="flex items-center justify-between gap-4 border-b border-nexus-border pb-4">
+            <div className="flex items-center gap-4">
+              <div className="nexus-case-mark">N</div>
+              <div>
+                <p className="section-label mb-1">Team assignment</p>
+                <h1 className="heading-2">{team.name}</h1>
+              </div>
+            </div>
+            <div className="case-identifier-block">
+              <span className="case-identifier-label">CODE</span>
+              <span className="case-identifier-value">{team.code}</span>
+            </div>
+          </div>
 
-      {/* Countdown or Game Start */}
-      <div className="w-full max-w-md nexus-document text-center animate-slide-up">
-        {!isStarted ? (
-          <>
-            <div className="mb-6">
-              <Loader2 className="w-12 h-12 text-nexus-accent animate-spin mx-auto mb-4" />
-              <h2 className="heading-3 mb-2">Session Initializing</h2>
-              <p className="text-nexus-textMuted max-w-sm mx-auto">
-                The Bureau will begin the session shortly. Keep this screen active
-                and stay ready with your teammates.
-              </p>
+          <div className={cn(
+            'nexus-ops-panel border-l-2',
+            isStarted ? 'border-nexus-accent' : 'border-nexus-warning',
+          )}>
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <span className="nexus-ops-label">Status</span>
+                <p className="mt-2 text-sm text-nexus-textMuted">
+                  {isStarted ? 'Game in progress' : 'Awaiting launch'}
+                </p>
+              </div>
+              <div className={cn(
+                'inline-flex items-center gap-2 px-2 py-1 text-[0.6rem] uppercase tracking-[0.22em] border',
+                isStarted ? 'border-nexus-accent/40 bg-nexus-accentBg/20 text-nexus-accent' : 'border-nexus-warning/40 bg-nexus-warningBg/20 text-nexus-warning'
+              )}>
+                {isStarted ? <BureauIcons.Check className="bureau-icon w-3.5 h-3.5" /> : <BureauIcons.Clock className="bureau-icon w-3.5 h-3.5" />}
+                {isStarted ? 'Live' : 'Standby'}
+              </div>
             </div>
 
-            {countdown > 0 && (
-              <div className="nexus-panel p-6 mb-6 text-center">
-                <div className="text-5xl md:text-7xl font-mono font-bold text-nexus-accent tabular-nums">
-                  {formatTime(countdown)}
+            {!isStarted ? (
+              <>
+                <div className="mt-5 mb-4">
+                  <BureauIcons.Spinner className="bureau-icon mr-3 inline-block w-5 h-5 text-nexus-accent animate-spin" />
+                  <span className="text-nexus-textMuted">Session initialising</span>
                 </div>
-                <p className="text-nexus-textMuted mt-2 text-sm">until game start</p>
+
+                {countdown > 0 && (
+                  <div className="border border-nexus-border bg-nexus-bg p-4 text-center mb-4">
+                    <div className="text-4xl md:text-5xl font-mono font-bold text-nexus-accent tabular-nums">
+                      {formatTime(countdown)}
+                    </div>
+                    <p className="mt-2 text-xs uppercase tracking-[0.22em] text-nexus-textSubtle">until deployment</p>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="mt-5">
+                <button
+                  onClick={() => navigate(ROUTES.PLAYER_GAME)}
+                  className="nexus-btn nexus-btn-primary w-full touch-target-comfortable"
+                >
+                  <BureauIcons.Check className="bureau-icon w-5 h-5" />
+                  <span>Enter Game</span>
+                </button>
               </div>
             )}
-
-            <div className="grid grid-cols-3 gap-4 text-center">
-              <div className="nexus-panel p-3 text-center">
-                <Users className="w-6 h-6 text-nexus-accent mx-auto mb-2" />
-                <p className="text-sm text-nexus-textMuted">Team Size</p>
-                <p className="font-mono text-lg text-nexus-text">3</p>
-              </div>
-              <div className="nexus-panel p-3 text-center">
-                <Clock className="w-6 h-6 text-nexus-warning mx-auto mb-2" />
-                <p className="text-sm text-nexus-textMuted">Duration</p>
-                <p className="font-mono text-lg text-nexus-text">3h</p>
-              </div>
-              <div className="nexus-panel p-3 text-center">
-                <Shield className="w-6 h-6 text-nexus-info mx-auto mb-2" />
-                <p className="text-sm text-nexus-textMuted">Your Role</p>
-                <p className="font-medium text-nexus-text">{ROLE_LABELS[player.role]}</p>
-              </div>
-            </div>
-          </>
-        ) : (
-          <button
-            onClick={() => navigate(ROUTES.PLAYER_GAME)}
-            className="nexus-btn nexus-btn-primary w-full touch-target-comfortable"
-          >
-            <CheckCircle className="w-5 h-5" />
-            <span>Enter Game</span>
-          </button>
-        )}
-      </div>
-
-      {/* Role Reminder */}
-      <div className={cn(
-        'w-full max-w-md mt-6 nexus-document',
-        roleTheme?.bg,
-      )}>
-        <h3 className="heading-4 mb-4 flex items-center gap-2">
-          <div className={cn('w-8 h-8 flex items-center justify-center border border-nexus-border', roleTheme?.bg)}>
-            <User className={cn('w-5 h-5', roleTheme?.text)} />
           </div>
-          <span className={roleTheme?.text}>Your Role: {ROLE_LABELS[player.role]}</span>
-        </h3>
-        <p className="text-nexus-textMuted text-sm mb-2">
-          <strong>{ROLE_SUBTITLES[player.role]}</strong>
-        </p>
-        <p className="text-nexus-textMuted text-sm">
-          Communicate with your teammates verbally — the app does not provide chat.
-          Each role holds a piece of the puzzle. Share your findings.
-        </p>
+
+          <div className="grid grid-cols-3 gap-3 text-center">
+            <div className="nexus-ops-panel p-3">
+              <BureauIcons.Users className="bureau-icon w-5 h-5 text-nexus-accent mx-auto mb-2" />
+              <p className="text-[0.56rem] uppercase tracking-[0.2em] text-nexus-textSubtle">Team</p>
+              <p className="font-mono text-lg text-nexus-text">{team.code}</p>
+            </div>
+            <div className="nexus-ops-panel p-3">
+              <BureauIcons.Clock className="bureau-icon w-5 h-5 text-nexus-warning mx-auto mb-2" />
+              <p className="text-[0.56rem] uppercase tracking-[0.2em] text-nexus-textSubtle">Slot</p>
+              <p className="font-mono text-lg text-nexus-text">3h</p>
+            </div>
+            <div className="nexus-ops-panel p-3">
+              <BureauIcons.Shield className="bureau-icon w-5 h-5 text-nexus-info mx-auto mb-2" />
+              <p className="text-[0.56rem] uppercase tracking-[0.2em] text-nexus-textSubtle">Role</p>
+              <p className="text-base font-medium text-nexus-text">{ROLE_LABELS[player.role]}</p>
+            </div>
+          </div>
+
+          <div className={cn('nexus-ops-panel', roleTheme?.bg)}>
+            <span className="nexus-ops-label">Assigned role</span>
+            <h3 className="heading-4 mt-3 flex items-center gap-2">
+              <div className={cn('w-8 h-8 flex items-center justify-center border border-nexus-border', roleTheme?.bg)}>
+                <BureauIcons.User className={cn('bureau-icon w-4 h-4', roleTheme?.text)} />
+              </div>
+              <span className={roleTheme?.text}>{ROLE_LABELS[player.role]}</span>
+            </h3>
+            <p className="mt-2 text-sm text-nexus-textMuted">
+              <strong className="text-nexus-text">{ROLE_SUBTITLES[player.role]}</strong>
+            </p>
+            <p className="mt-2 text-sm text-nexus-textMuted">
+              Keep this device active and coordinate with your team. Each role carries a fragment of the case.
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   )

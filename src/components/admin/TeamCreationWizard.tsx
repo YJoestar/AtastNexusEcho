@@ -11,7 +11,7 @@
  */
 
 import { useState, useCallback, useRef } from 'react'
-import { X, Plus, Check, Trash2 } from 'lucide-react'
+import { BureauIcons } from '@/components/bureau'
 import { cn, generateId } from '@/lib/utils'
 import { adminAPI } from '@/lib/admin'
 import { TEAM_COLORS, MAX_PLAYERS_PER_TEAM, PLAYER_ROLES } from '@/app/config'
@@ -232,7 +232,7 @@ export function TeamCreationWizard({ isOpen, onClose, onSuccess }: TeamCreationW
             className="p-2 rounded-lg text-nexus-textSubtle hover:text-nexus-text hover:bg-nexus-surfaceElevated transition-colors"
             aria-label="Close"
           >
-            <X className="w-5 h-5" />
+            <BureauIcons.Close className="bureau-icon w-5 h-5" />
           </button>
         </div>
 
@@ -260,7 +260,7 @@ export function TeamCreationWizard({ isOpen, onClose, onSuccess }: TeamCreationW
         <div className="flex-1 overflow-y-auto px-6 py-6">
           {error && (
             <div className="mb-4 p-3 rounded-xl bg-nexus-dangerBg border border-nexus-danger/30 flex items-start gap-2 animate-slide-down">
-              <X className="w-5 h-5 text-nexus-danger mt-0.5 flex-shrink-0" />
+               <BureauIcons.Close className="bureau-icon w-5 h-5 text-nexus-danger mt-0.5 flex-shrink-0" />
               <p className="text-sm text-nexus-danger">{error}</p>
             </div>
           )}
@@ -325,7 +325,7 @@ export function TeamCreationWizard({ isOpen, onClose, onSuccess }: TeamCreationW
                   disabled={players.length >= TEAM_CREATION_MAX_PLAYERS}
                   className="btn-secondary text-xs py-1.5"
                 >
-                  <Plus className="w-4 h-4" />
+                  <BureauIcons.Add className="bureau-icon w-4 h-4" />
                   Add Player
                 </button>
               </div>
@@ -348,7 +348,7 @@ export function TeamCreationWizard({ isOpen, onClose, onSuccess }: TeamCreationW
                         className="pb-2 text-nexus-danger hover:text-nexus-danger/80 transition-colors"
                         aria-label="Remove player"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <BureauIcons.Trash className="bureau-icon w-4 h-4" />
                       </button>
                     )}
                   </div>
@@ -446,7 +446,7 @@ export function TeamCreationWizard({ isOpen, onClose, onSuccess }: TeamCreationW
           {step === 4 && generatedCodes && (
             <div className="text-center space-y-6">
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-nexus-accentBg">
-                <Check className="w-8 h-8 text-nexus-accent" />
+                <BureauIcons.Check className="bureau-icon w-8 h-8 text-nexus-accent" />
               </div>
               <div>
                 <h3 className="heading-3">TEAM READY</h3>

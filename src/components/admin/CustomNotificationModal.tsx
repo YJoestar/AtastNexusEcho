@@ -6,7 +6,7 @@
  */
 
 import { useState } from 'react'
-import { X, Send, Users, User, Bell, AlertCircle } from 'lucide-react'
+import { BureauIcons } from '@/components/bureau'
 import { cn } from '@/lib/utils'
 import { adminAPI } from '@/lib/admin'
 import { NOTIFICATION_TYPE_OPTIONS, NOTIFICATION_PRIORITY_OPTIONS } from '@/app/config'
@@ -98,7 +98,7 @@ export function CustomNotificationModal({
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-nexus-borderSubtle">
           <div className="flex items-center gap-3">
-            <Bell className="w-5 h-5 text-nexus-info" />
+               <BureauIcons.Bell className="bureau-icon w-5 h-5 text-nexus-info" />
             <h2 className="heading-3">Send Notification</h2>
           </div>
           <button
@@ -106,7 +106,7 @@ export function CustomNotificationModal({
             disabled={isSending}
             className="p-2 rounded-lg text-nexus-textMuted hover:text-nexus-text hover:bg-nexus-surfaceElevated transition-colors"
           >
-            <X className="w-5 h-5" />
+            <BureauIcons.Close className="bureau-icon w-5 h-5" />
           </button>
         </div>
 
@@ -114,14 +114,14 @@ export function CustomNotificationModal({
         <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
           {error && (
             <div className="p-3 rounded-xl bg-nexus-dangerBg/20 border border-nexus-danger/30 text-nexus-danger text-sm flex items-start gap-2">
-              <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <BureauIcons.Alert className="bureau-icon w-4 h-4 mt-0.5 flex-shrink-0" />
               <span>{error}</span>
             </div>
           )}
 
           {success && (
             <div className="p-3 rounded-xl bg-nexus-accentBg/20 border border-nexus-accent/30 text-nexus-accent text-sm flex items-start gap-2">
-              <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <BureauIcons.Alert className="bureau-icon w-4 h-4 mt-0.5 flex-shrink-0" />
               <span>{success}</span>
             </div>
           )}
@@ -142,7 +142,7 @@ export function CustomNotificationModal({
                     : 'border-nexus-border text-nexus-textMuted hover:bg-nexus-bg',
                 )}
               >
-                <Users className="w-4 h-4" />
+                <BureauIcons.Users className="bureau-icon w-4 h-4" />
                 All Active Teams
               </button>
               <button
@@ -155,7 +155,7 @@ export function CustomNotificationModal({
                     : 'border-nexus-border text-nexus-textMuted hover:bg-nexus-bg',
                 )}
               >
-                <User className="w-4 h-4" />
+                <BureauIcons.User className="bureau-icon w-4 h-4" />
                 Single Team
               </button>
             </div>
@@ -291,7 +291,7 @@ export function CustomNotificationModal({
               </>
             ) : (
               <>
-                <Send className="w-4 h-4 mr-2" />
+                <BureauIcons.Send className="bureau-icon w-4 h-4 mr-2" />
                 SEND
               </>
             )}

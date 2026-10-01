@@ -19,7 +19,7 @@
  */
 
 import { useMemo, useState } from 'react'
-import { AlertTriangle, Eraser, Radio } from 'lucide-react'
+import { BureauIcons } from '@/components/bureau'
 import { cn } from '@/lib/utils'
 import {
   extractFrequencies,
@@ -232,7 +232,7 @@ const AudioVisual: Renderer = ({ dataPayload, interactiveData }) => {
           </div>
         )}
         <p className="text-xs text-nexus-textSubtle flex items-center gap-1.5">
-          <Radio className="w-3.5 h-3.5" aria-hidden={true} />
+          <BureauIcons.Radio className="bureau-icon w-3.5 h-3.5" aria-hidden={true} />
           Report the peaks exactly as shown - precision matters more than rounding.
         </p>
       </div>
@@ -385,7 +385,7 @@ const PuzzleBoardVisual: Renderer = ({ dataPayload, interactiveData }) => {
               : `Placing into slot ${activeSlot + 1}.`}
           </p>
           <button type="button" onClick={clear} className="btn-ghost text-xs">
-            <Eraser className="w-3.5 h-3.5" aria-hidden="true" />
+            <BureauIcons.Eraser className="bureau-icon w-3.5 h-3.5" aria-hidden="true" />
             CLEAR
           </button>
         </div>
@@ -424,7 +424,7 @@ const DependencyVisual: Renderer = ({ dataPayload, interactiveData }) => {
         )}
         {convergence && (
           <p className="text-sm text-nexus-accent flex items-start gap-2">
-            <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" aria-hidden="true" />
+            <BureauIcons.AlertTriangle className="bureau-icon w-4 h-4 flex-shrink-0 mt-0.5" aria-hidden="true" />
             <span>{convergence}</span>
           </p>
         )}

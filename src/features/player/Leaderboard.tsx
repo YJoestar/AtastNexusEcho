@@ -2,14 +2,31 @@
  * NEXUS — Player Leaderboard
  * Real-time team rankings with only safe, public information.
  * Never reveals solution details, team compositions, or private data.
+ * Bureau primitives: DocumentShell, RegisterColumn, RegisterList, RegisterRow,
+ * StateMarker, Stamp, StatusMark. Bureau glyphs instead of emoji/lucide.
  */
 
 import { Link } from 'react-router-dom'
-import { ArrowLeft, Trophy, TrendingUp, Circle, CheckCircle } from 'lucide-react'
 import { useGameEngine } from '@/hooks/useGameEngine'
 import { ROUTES } from '@/app/config'
 import { cn } from '@/lib/utils'
 import { useState, useEffect } from 'react'
+import { BureauIcons } from '@/components/bureau'
+import {
+  DocumentShell,
+  FieldGrid,
+  RegisterColumn,
+  RegisterRow,
+  StateMarker,
+  Stamp,
+  StatusMark,
+} from '@/components/bureau'
+
+const RANK_MARK: Record<number, string> = {
+  1: '★',
+  2: '●',
+  3: '■',
+}
 
 export function PlayerLeaderboard() {
   const { team, leaderboard, teamProgress, fetchLeaderboard, solvedCount, totalNodes } = useGameEngine()
@@ -41,9 +58,10 @@ export function PlayerLeaderboard() {
         <div className="flex items-center gap-4">
           <Link
             to={ROUTES.PLAYER_GAME}
-            className="p-2 rounded-xl text-nexus-textMuted hover:text-nexus-text hover:bg-nexus-surfaceElevated transition-colors touch-target-primary"
+            className="p-2 border border-nexus-borderSubtle text-nexus-textMuted hover:text-nexus-text hover:bg-nexus-surfaceElevated touch-target-primary"
+            aria-label="Back to game"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <BureauIcons.Back className="bureau-icon w-5 h-5" />
           </Link>
           <div className="flex-1 min-w-0">
             <h1 className="heading-3">Leaderboard</h1>
@@ -55,38 +73,45 @@ export function PlayerLeaderboard() {
 
         {/* Current Team Highlight */}
         {team && (
-          <div className="panel bg-nexus-accentBg/30 border-nexus-accent/30 animate-slide-up">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-nexus-accentBg flex items-center justify-center">
-                  <Trophy className="w-6 h-6 text-nexus-accent" />
-                </div>
-                <div>
-                  <p className="font-medium text-nexus-text">Your Team: {team.name}</p>
-                  <p className="text-sm text-nexus-textMuted">
-                    {safeRank ? `Rank: #${safeRank}` : 'Not yet ranked'} · Code: {team.code}
-                  </p>
-                </div>
+          <DocumentShell
+            reference="Your Team"
+            title={team.name}
+            subtitle={`Code: ${team.code}`}
+            stock="carbon"
+            footer={
+              <>
+                <Stamp variant="verified">Your Team</Stamp>
+                <span className="font-mono text-sm tabular-nums text-nexus-accent">
+                  {teamProgress?.score?.toLocaleString() ?? 0} pts
+                </span>
+              </>
+            }
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 border border-nexus-borderSubtle flex items-center justify-center">
+                <BureauIcons.Trophy className="bureau-icon w-6 h-6 text-nexus-accent" />
               </div>
-              <div className="text-right">
-                <p className="text-2xl font-mono font-bold text-nexus-accent">
-                  {teamProgress?.score?.toLocaleString() ?? 0}
+              <div>
+                <p className="font-medium text-nexus-text">
+                  {safeRank ? `Rank: #${safeRank}` : 'Not yet ranked'}
                 </p>
-                <p className="text-xs text-nexus-textMuted">points</p>
+                <StatusMark tone="active">
+                  {teamProgress ? 'Active' : 'Standing by'}
+                </StatusMark>
               </div>
             </div>
-          </div>
+          </DocumentShell>
         )}
 
         {/* Leaderboard Table */}
         {leaderboard && leaderboard.length > 0 ? (
-          <div className="panel overflow-hidden">
+          <RegisterColumn heading="Team Standings">
             <div className="overflow-x-auto">
-              <table className="w-full text-left">
+              <table className="nexus-register w-full text-left">
                 <thead>
                   <tr className="border-b border-nexus-borderSubtle">
                     <th className="p-3 text-xs font-semibold text-nexus-textSubtle uppercase tracking-wider w-12">
-                      Rank
+                      #
                     </th>
                     <th className="p-3 text-xs font-semibold text-nexus-textSubtle uppercase tracking-wider">
                       Team
@@ -106,51 +131,42 @@ export function PlayerLeaderboard() {
                   {leaderboard.map(entry => {
                     const isCurrentTeam = entry.teamCode === team?.code
                     const isCompleted = entry.status === 'COMPLETED'
+                    const rankMark = RANK_MARK[entry.rank] ?? entry.rank
                     return (
                       <tr
                         key={entry.teamCode}
                         className={cn(
                           'border-b border-nexus-borderSubtle/50 last:border-0',
-                          isCurrentTeam && 'bg-nexus-accentBg/30',
+                          isCurrentTeam && 'bg-nexus-accentBg/20',
                         )}
                       >
                         <td className="p-3">
                           {entry.rank <= 3 ? (
-                            <span
-                              className={cn(
-                                'font-bold',
-                                entry.rank === 1 && 'text-yellow-400',
-                                entry.rank === 2 && 'text-neutral-400',
-                                entry.rank === 3 && 'text-orange-400',
-                              )}
-                            >
-                              #{entry.rank}
+                            <span className={cn(
+                              'font-display text-lg',
+                              entry.rank === 1 ? 'text-nexus-warning' :
+                              entry.rank === 2 ? 'text-nexus-textMuted' :
+                              'text-nexus-textSubtle',
+                            )}>
+                              {rankMark}
                             </span>
                           ) : (
-                            <span className="text-nexus-textMuted">#{entry.rank}</span>
+                            <span className="text-nexus-textMuted font-mono">#{entry.rank}</span>
                           )}
                         </td>
                         <td className="p-3">
-                          <div className="flex items-center gap-2">
-                            <span
-                              className={cn(
-                                'badge',
-                                isCompleted
-                                  ? 'badge-accent'
-                                  : 'bg-nexus-warningBg text-nexus-warning',
-                              )}
-                            >
-                              <Circle className="w-1.5 h-1.5" />
-                            </span>
-                            <p
-                              className={cn(
-                                'font-medium truncate max-w-[140px]',
-                                isCurrentTeam && 'text-nexus-accent',
-                              )}
-                            >
-                              {entry.teamName}
-                            </p>
-                          </div>
+                          <RegisterRow
+                            id={entry.teamCode}
+                            label={entry.teamName}
+                            meta={isCompleted ? 'Complete' : 'Active'}
+                            trailing={
+                              <StateMarker
+                                glyph={isCompleted ? '✓' : '◦'}
+                                tone={isCompleted ? 'active' : 'neutral'}
+                                label={isCompleted ? 'Complete' : 'Active'}
+                              />
+                            }
+                          />
                         </td>
                         <td className="p-3 text-right font-mono font-medium text-nexus-text">
                           {entry.score.toLocaleString()}
@@ -169,42 +185,51 @@ export function PlayerLeaderboard() {
                 </tbody>
               </table>
             </div>
-          </div>
+          </RegisterColumn>
         ) : (
-          <div className="panel text-center py-12">
-            <Trophy className="w-12 h-12 text-nexus-textSubtle mx-auto mb-4" />
-            <h3 className="heading-4 mb-2">No Rankings Available</h3>
-            <p className="text-nexus-textMuted">
-              Rankings update as teams begin the investigation.
-            </p>
-          </div>
+          <DocumentShell
+            reference="Leaderboard"
+            title="No rankings available"
+            stock="paper"
+            footer={<Stamp variant="incomplete">Pending</Stamp>}
+          >
+            <div className="text-center py-8">
+              <BureauIcons.Trophy className="bureau-icon w-12 h-12 text-nexus-textSubtle mx-auto mb-4" aria-hidden="true" />
+              <h3 className="heading-4 mb-2">No Rankings Available</h3>
+              <p className="text-nexus-textMuted">
+                Rankings update as teams begin the investigation.
+              </p>
+            </div>
+          </DocumentShell>
         )}
 
-        {/* Stats Summary */}
+        {/* Stats Summary — filed as a 3-column register */}
         {leaderboard && (
-          <div className="panel grid grid-cols-3 gap-3 text-center">
-            <div className="p-3 bg-nexus-bg rounded-xl">
-              <Trophy className="w-6 h-6 text-nexus-accent mx-auto mb-1" />
-              <p className="text-2xl font-mono font-bold text-nexus-accent">
-                {leaderboard.length}
-              </p>
-              <p className="text-xs text-nexus-textMuted">Teams Ranked</p>
-            </div>
-            <div className="p-3 bg-nexus-bg rounded-xl">
-              <CheckCircle className="w-6 h-6 text-green-400 mx-auto mb-1" />
-              <p className="text-2xl font-mono font-bold text-green-400">
-                {leaderboard.filter(t => t.status === 'COMPLETED').length}
-              </p>
-              <p className="text-xs text-nexus-textMuted">Completed</p>
-            </div>
-            <div className="p-3 bg-nexus-bg rounded-xl">
-              <TrendingUp className="w-6 h-6 text-nexus-info mx-auto mb-1" />
-              <p className="text-2xl font-mono font-bold text-nexus-info">
-                {teamProgress ? Math.round((solvedCount / totalNodes) * 100) : 0}%
-              </p>
-              <p className="text-xs text-nexus-textMuted">Your Progress</p>
-            </div>
-          </div>
+          <RegisterColumn heading="Investigation Summary">
+            <FieldGrid columns={3}>
+              <div className="text-center">
+                <BureauIcons.Trophy className="bureau-icon w-5 h-5 text-nexus-accent mx-auto mb-1" />
+                <p className="text-2xl font-mono font-bold text-nexus-accent">
+                  {leaderboard.length}
+                </p>
+                <p className="text-xs text-nexus-textMuted">Teams Ranked</p>
+              </div>
+              <div className="text-center">
+                <BureauIcons.Check className="bureau-icon w-5 h-5 text-nexus-success mx-auto mb-1" />
+                <p className="text-2xl font-mono font-bold text-nexus-success">
+                  {leaderboard.filter(t => t.status === 'COMPLETED').length}
+                </p>
+                <p className="text-xs text-nexus-textMuted">Completed</p>
+              </div>
+              <div className="text-center">
+                <BureauIcons.TrendingUp className="bureau-icon w-5 h-5 text-nexus-info mx-auto mb-1" />
+                <p className="text-2xl font-mono font-bold text-nexus-info">
+                  {teamProgress ? Math.round((solvedCount / totalNodes) * 100) : 0}%
+                </p>
+                <p className="text-xs text-nexus-textMuted">Your Progress</p>
+              </div>
+            </FieldGrid>
+          </RegisterColumn>
         )}
       </div>
     </div>

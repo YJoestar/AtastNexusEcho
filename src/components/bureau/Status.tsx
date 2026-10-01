@@ -45,23 +45,26 @@ export function Stamp({
   variant,
   children,
   impressed = false,
+  size = 'md',
   className,
 }: {
   variant: StampVariant
   children: ReactNode
   /** Laid onto paper at a slight angle, like a rubber stamp. */
   impressed?: boolean
+  size?: 'xs' | 'md'
   className?: string
 }) {
+  const sizeClass = size === 'xs' ? 'stamp-xs' : ''
   if (impressed) {
     return (
-      <span className={cn('stamp-impressed', STAMP_CLASS[variant], className)} aria-hidden="true">
+      <span className={cn('stamp-impressed', STAMP_CLASS[variant], sizeClass, className)} aria-hidden="true">
         {children}
       </span>
     )
   }
   return (
-    <span className={cn(STAMP_CLASS[variant], className)}>
+    <span className={cn(STAMP_CLASS[variant], sizeClass, className)}>
       <span aria-hidden="true">{STAMP_GLYPH[variant]}</span>
       {children}
     </span>

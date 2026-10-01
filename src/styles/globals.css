@@ -109,14 +109,30 @@
     @apply bg-nexus-bg text-nexus-text font-sans antialiased;
     min-height: 100vh;
     min-height: 100dvh;
-    /* Faintest possible institutional grain. Present so the black is never a
-       flat digital void, low enough that it reads as paper, not as a filter. */
     background-image:
-      radial-gradient(120% 80% at var(--pool-x) var(--pool-y),
-        rgba(216, 214, 208, calc(0.028 * var(--pool-strength) * 2)) 0%,
-        rgba(10, 10, 11, 0) 62%),
-      url("data:image/svg+xml,%3Csvg width='140' height='140' viewBox='0 0 140 140' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
-    background-attachment: fixed, scroll;
+      radial-gradient(150% 100% at 20% 0%, rgba(118, 163, 169, 0.16), rgba(10, 10, 11, 0) 38%),
+      radial-gradient(90% 60% at 78% 12%, rgba(120, 58, 49, 0.12), rgba(10, 10, 11, 0) 46%),
+      linear-gradient(180deg, rgba(15, 15, 17, 0.96) 0%, rgba(10, 10, 11, 1) 100%),
+      url("data:image/svg+xml,%3Csvg width='180' height='180' viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+    background-attachment: fixed, fixed, scroll, scroll;
+    letter-spacing: 0.01em;
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background:
+      linear-gradient(90deg, rgba(255,255,255,0.012), transparent 20%, transparent 80%, rgba(255,255,255,0.012)),
+      repeating-linear-gradient(
+        180deg,
+        transparent 0,
+        transparent 18px,
+        rgba(216,214,208,0.014) 18px,
+        rgba(216,214,208,0.014) 19px
+      );
+    opacity: 0.75;
   }
 
   /* Mobile-first: prevent horizontal scroll */
@@ -360,11 +376,12 @@
      most, never one per row.
      ================================================================== */
 
-  .stamp {
-    @apply inline-flex items-center gap-1 px-1.5 py-0.5 font-mono text-[0.625rem] uppercase tracking-[0.18em];
-    border: 1px solid currentColor;
-  }
-  .stamp-verified { @apply stamp text-nexus-accent; }
+   .stamp {
+     @apply inline-flex items-center gap-1 px-1.5 py-0.5 font-mono text-[0.625rem] uppercase tracking-[0.18em];
+     border: 1px solid currentColor;
+   }
+   .stamp-xs { @apply stamp px-1 py-0.5 font-mono text-[0.5rem] uppercase tracking-[0.14em]; border: 1px solid currentColor; }
+   .stamp-verified { @apply stamp text-nexus-accent; }
   .stamp-restricted { @apply stamp text-nexus-restricted; }
   .stamp-anomalous { @apply stamp text-nexus-warning; }
   .stamp-archived { @apply stamp text-nexus-textSubtle; }
@@ -607,10 +624,241 @@
     @apply shadow-lit;
   }
 
-  .nexus-panel { @apply bg-nexus-surfaceElevated border border-nexus-border p-4; }
-  .nexus-panel-sm { @apply bg-nexus-surfaceElevated border border-nexus-border p-3; }
-  .nexus-document { @apply bg-nexus-paper border-l-2 border-t-2 border-nexus-border p-4; }
+  .nexus-panel {
+    @apply bg-nexus-surfaceElevated border border-nexus-border p-4;
+    border-radius: 0; box-shadow: none;
+  }
+  .nexus-panel-sm {
+    @apply bg-nexus-surfaceElevated border border-nexus-border p-3;
+    border-radius: 0; box-shadow: none;
+  }
+  .nexus-document {
+    @apply bg-nexus-paper border-l-2 border-t-2 border-nexus-border p-4;
+    border-radius: 0; box-shadow: none;
+  }
   .nexus-flat { @apply bg-nexus-surface; }
+
+  .nexus-shell,
+  .nexus-panel,
+  .nexus-panel-sm,
+  .card,
+  .panel,
+  .surface-overlay,
+  .archive-surface,
+  .case-surface,
+  .evidence-surface,
+  .control-surface,
+  .nexus-document,
+  .nexus-case-shell,
+  .nexus-btn,
+  .btn,
+  .input,
+  .form-select,
+  .scanner-frame,
+  .qr-scanner-frame,
+  .rounded-xl,
+  .rounded-2xl,
+  .rounded-lg,
+  .rounded-md,
+  .rounded,
+  [class*='rounded-xl'],
+  [class*='rounded-2xl'],
+  [class*='rounded-lg'],
+  [class*='rounded-md'],
+  [class*='rounded'] {
+    border-radius: 0 !important;
+  }
+
+  .shadow-panel,
+  .shadow-panel-elevated,
+  .shadow-lit,
+  .shadow-xl,
+  .shadow-2xl,
+  [class*='shadow-'] {
+    box-shadow: none !important;
+  }
+
+  .nexus-shell {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .nexus-archive-shell {
+    position: relative;
+    isolation: isolate;
+    background:
+      linear-gradient(180deg, rgba(13, 13, 15, 0.9), rgba(10, 10, 11, 0.98)),
+      rgba(10, 10, 11, 1);
+    border-left: 1px solid rgba(216, 214, 208, 0.14);
+    border-right: 1px solid rgba(216, 214, 208, 0.14);
+    box-shadow: inset 0 0 0 1px rgba(216, 214, 208, 0.04);
+  }
+
+  .nexus-shell::before,
+  .nexus-archive-shell::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      linear-gradient(90deg, rgba(255,255,255,0.02), transparent 18%, transparent 82%, rgba(255,255,255,0.02)),
+      repeating-linear-gradient(
+        180deg,
+        transparent 0,
+        transparent 14px,
+        rgba(216, 214, 208, 0.012) 14px,
+        rgba(216, 214, 208, 0.012) 16px
+      );
+    opacity: 0.8;
+  }
+
+  .nexus-case-shell {
+    position: relative;
+    border: 1px solid rgba(216, 214, 208, 0.22);
+    background: rgba(17, 18, 20, 0.96);
+    box-shadow: 0 28px 50px rgba(0, 0, 0, 0.32), inset 0 0 0 1px rgba(216, 214, 208, 0.04);
+    overflow: hidden;
+  }
+
+  .nexus-ops-panel {
+    position: relative;
+    background: rgba(14, 15, 17, 0.96);
+    border: 1px solid rgba(216, 214, 208, 0.14);
+    box-shadow: inset 0 0 0 1px rgba(216, 214, 208, 0.03);
+    padding: 1rem;
+  }
+
+  .nexus-ops-panel::before {
+    content: '';
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 2px;
+    background: rgba(111, 179, 196, 0.9);
+  }
+
+  .nexus-ops-label {
+    display: inline-block;
+    font-size: 0.58rem;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: rgba(216, 214, 208, 0.65);
+  }
+
+  .nexus-ops-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.8rem 1.1rem;
+    border-bottom: 1px solid rgba(216, 214, 208, 0.14);
+    background: rgba(12, 12, 13, 0.96);
+  }
+
+  .nexus-case-shell::before {
+    content: '';
+    position: absolute;
+    inset: 12px;
+    border: 1px solid rgba(216, 214, 208, 0.08);
+    pointer-events: none;
+  }
+
+  .nexus-case-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.9rem 1.2rem;
+    border-bottom: 1px solid rgba(216, 214, 208, 0.16);
+    background: rgba(12, 12, 13, 0.96);
+  }
+
+  .nexus-case-body {
+    position: relative;
+    padding: 1.35rem 1.35rem 1.1rem;
+    background:
+      linear-gradient(180deg, rgba(20, 20, 22, 0.96) 0%, rgba(13, 13, 15, 0.96) 100%);
+  }
+
+  .nexus-case-mark {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 3.2rem;
+    height: 3.2rem;
+    background: linear-gradient(180deg, rgba(109, 156, 160, 0.18), rgba(15, 16, 17, 0.9));
+    border: 1px solid rgba(109, 156, 160, 0.45);
+    color: #d8d6d0;
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-weight: 700;
+    font-size: 1.5rem;
+    letter-spacing: 0.08em;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+  }
+
+  .case-number-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.35rem 0.7rem;
+    border: 1px solid rgba(216, 214, 208, 0.18);
+    background: rgba(10, 10, 11, 0.8);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.64rem;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: #d8d6d0;
+  }
+
+  .case-identifier-block {
+    border: 1px solid rgba(216, 214, 208, 0.18);
+    background: rgba(9, 10, 11, 0.86);
+    padding: 0.5rem 0.75rem;
+    min-width: 7.5rem;
+    text-align: right;
+  }
+
+  .case-identifier-label {
+    display: block;
+    font-size: 0.52rem;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: rgba(216, 214, 208, 0.66);
+  }
+
+  .case-identifier-value {
+    display: block;
+    margin-top: 0.2rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    color: #d8d6d0;
+  }
+
+  .nexus-header-shell {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    background: rgba(9, 10, 11, 0.92);
+    border-bottom: 1px solid rgba(216, 214, 208, 0.16);
+    backdrop-filter: blur(10px);
+  }
+
+  .case-badge-mark {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.1rem;
+    height: 2.1rem;
+    border: 1px solid rgba(216, 214, 208, 0.28);
+    background: linear-gradient(180deg, rgba(109, 156, 160, 0.12), rgba(10, 10, 11, 0.76));
+    color: #d8d6d0;
+    font-size: 1rem;
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-weight: 700;
+  }
+
+  .archive-strip {
+    background: linear-gradient(90deg, rgba(16, 17, 18, 0.96), rgba(12, 13, 14, 0.96));
+  }
 
   /* Buttons — institutional controls. A press should feel like a switch. */
   .nexus-btn {
@@ -865,6 +1113,23 @@
   /* Thin rails for register columns on desktop. */
   .rail {
     scrollbar-width: thin;
-    scrollbar-color: var(--nx-border) transparent;
-  }
+     scrollbar-color: var(--nx-border) transparent;
+   }
+
+   /* Thin institutional icon marks. */
+   .bureau-icon {
+     width: 1em;
+     height: 1em;
+     stroke: currentColor;
+     fill: none;
+     stroke-width: 1.5;
+     stroke-linecap: square;
+     stroke-linejoin: miter;
+     flex-shrink: 0;
+     pointer-events: none;
+   }
+   .bureau-icon[data-bureau-icon="true"] {
+     width: 1em;
+     height: 1em;
+   }
 }

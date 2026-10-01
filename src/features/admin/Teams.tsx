@@ -1,4 +1,4 @@
-/**
+﻿/**
  * NEXUS — Teams Management
  *
  * Real-time team list with status management.
@@ -7,9 +7,7 @@
 
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import {
-  Users, Search, Play, Pause, Loader2, Copy, Send, Key,
-} from 'lucide-react'
+import { BureauIcons } from '@/components/bureau'
 import { ROUTES } from '@/app/config'
 import { cn, formatNumber, getAvatarInitials } from '@/lib/utils'
 import { useBureau } from '@/hooks/useBureau'
@@ -157,7 +155,7 @@ export function AdminTeams() {
           onClick={() => setIsWizardOpen(true)}
           className="btn-primary"
         >
-          <Users className="w-4 h-4" />
+          <BureauIcons.Users className="bureau-icon w-4 h-4" />
           <span>Create Team</span>
         </button>
       </div>
@@ -165,7 +163,7 @@ export function AdminTeams() {
       {/* Filters */}
       <div className="flex items-center gap-4">
         <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-nexus-textSubtle" aria-hidden="true" />
+          <BureauIcons.Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-nexus-textSubtle" aria-hidden="true" />
           <input
             type="text"
             value={searchTerm}
@@ -210,7 +208,7 @@ export function AdminTeams() {
               {isLoading ? (
                 <tr>
                   <td colSpan={6} className="py-8 text-center text-nexus-textSubtle">
-                    <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
+                    <BureauIcons.Spinner className="bureau-icon w-6 h-6 animate-spin mx-auto mb-2" />
                     Loading teams…
                   </td>
                 </tr>
@@ -303,27 +301,27 @@ function TeamRow({
   const statusActionMap: Record<string, JSX.Element> = {
     ACTIVE: (
       <button onClick={onPause} className="btn-icon btn-secondary" title="Pause team">
-        <Pause className="w-4 h-4" />
+        <BureauIcons.Pause className="bureau-icon w-4 h-4" />
       </button>
     ),
     PAUSED: (
       <button onClick={onResume} className="btn-icon btn-primary" title="Resume team">
-        <Play className="w-4 h-4" />
+        <BureauIcons.Play className="bureau-icon w-4 h-4" />
       </button>
     ),
     READY: (
       <button onClick={onStart} className="btn-icon btn-primary" title="Start team">
-        <Play className="w-4 h-4" />
+        <BureauIcons.Play className="bureau-icon w-4 h-4" />
       </button>
     ),
     WAITING: (
       <button onClick={onStart} className="btn-icon btn-primary" title="Start team">
-        <Play className="w-4 h-4" />
+        <BureauIcons.Play className="bureau-icon w-4 h-4" />
       </button>
     ),
     REGISTERED: (
       <button onClick={onStart} className="btn-icon btn-primary" title="Start team">
-        <Play className="w-4 h-4" />
+        <BureauIcons.Play className="bureau-icon w-4 h-4" />
       </button>
     ),
     COMPLETED: <span className="text-xs text-nexus-accent">Done</span>,
@@ -335,7 +333,7 @@ function TeamRow({
     <tr className="border-b border-nexus-borderSubtle/50 hover:bg-nexus-bg/50">
       <td className="py-3 px-4">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-nexus-surfaceElevated flex items-center justify-center">
+          <div className="bureau-icon w-8 h-8 rounded-lg bg-nexus-surfaceElevated flex items-center justify-center">
             <span className="font-display font-bold text-sm text-nexus-danger">
               {getAvatarInitials(team.name)}
             </span>
@@ -354,7 +352,7 @@ function TeamRow({
                 className="p-0.5 rounded hover:text-nexus-text hover:bg-nexus-surfaceElevated transition-colors"
                 title="Copy code"
               >
-                <Copy className="w-3 h-3" />
+                <BureauIcons.Copy className="bureau-icon w-3 h-3" />
               </button>
             </div>
           </div>
@@ -378,7 +376,7 @@ function TeamRow({
         <div className="flex items-center justify-center gap-1">
           {statusActionMap[team.status] ?? (
             <button onClick={onStart} className="btn-icon btn-primary" title="Start team">
-              <Play className="w-4 h-4" />
+              <BureauIcons.Play className="bureau-icon w-4 h-4" />
             </button>
           )}
           <button
@@ -387,17 +385,19 @@ function TeamRow({
             title="Show team codes"
             aria-label={`Show login codes for ${team.name}`}
           >
-            <Key className="w-4 h-4" />
+            <BureauIcons.Key className="bureau-icon w-4 h-4" />
           </button>
           <button
             onClick={onNotify}
             className="btn-icon btn-secondary"
             title="Send notification"
           >
-            <Send className="w-4 h-4" />
+            <BureauIcons.Send className="bureau-icon w-4 h-4" />
           </button>
         </div>
       </td>
     </tr>
   )
 }
+
+
