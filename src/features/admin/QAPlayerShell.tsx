@@ -35,7 +35,6 @@ export function QAPlayerShell() {
           <Route path="notifications" element={<PlayerNotifications />} />
           <Route path="final" element={<PlayerFinal />} />
           <Route path="complete" element={<PlayerComplete />} />
-          <Route index element={<Navigate to="/player/game" replace />} />
         </Route>
         <Route path="*" element={<Navigate to="/player/game" replace />} />
       </Routes>

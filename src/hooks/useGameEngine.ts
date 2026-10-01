@@ -485,7 +485,7 @@ export function useGameEngine() {
   // transparently delegates to the simulator instead of gameAPI.
   if (qaContext?.isActive) {
     const isSolved = (nodeId: string) =>
-      !!nodeProgress.some(p => p.nodeId === nodeId || p.nodeCode === nodeId)
+      !!qaContext.nodeProgress.some(p => p.nodeId === nodeId || p.nodeCode === nodeId)
     return {
       player: qaContext.player,
       team: qaContext.team,
