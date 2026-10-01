@@ -1037,6 +1037,18 @@
     background-color: var(--nx-surfaceSubtle);
   }
 
+  /* Monospace data grid inside a terminal panel. */
+  .terminal-grid {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 1.5rem;
+    align-items: center;
+  }
+  .terminal-data {
+    font-family: var(--font-mono);
+    text-align: right;
+  }
+
   /* ==================================================================
      CASE TRANSITION
      "OPENING CASE FILE" — honest timing, never an invented delay.

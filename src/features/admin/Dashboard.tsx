@@ -161,10 +161,10 @@ export function AdminDashboard() {
             {gameState && <GameTimer gameState={gameState} />}
 
             <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
-              <StatCard title="Total Teams" value={stats.totalTeams} icon={BureauIcons.Users} color="text-nexus-info" subtitle={`${stats.activeTeams} active • ${stats.completedTeams} done`} />
-              <StatCard title="Active Players" value={stats.totalPlayers} icon={BureauIcons.Users} color="text-nexus-accent" subtitle={`${stats.waitingTeams} teams waiting`} />
-              <StatCard title="Avg Score" value={formatNumber(stats.avgScore)} icon={BureauIcons.TrendingUp} color="text-nexus-warning" subtitle="Across all field units" />
-              <StatCard title="Completion" value={formatPercent(stats.completionRate)} icon={BureauIcons.Target} color="text-nexus-accent" subtitle={`${stats.completedTeams} of ${stats.totalTeams} teams`} />
+              <StatCard title="Total Teams" value={stats.totalTeams} icon={BureauIcons.Users} variant="system" subtitle={`${stats.activeTeams} active • ${stats.completedTeams} done`} />
+              <StatCard title="Active Players" value={stats.totalPlayers} icon={BureauIcons.Users} variant="system" subtitle={`${stats.waitingTeams} teams waiting`} />
+              <StatCard title="Avg Score" value={formatNumber(stats.avgScore)} icon={BureauIcons.TrendingUp} variant="system" subtitle="Across all field units" />
+              <StatCard title="Completion" value={formatPercent(stats.completionRate)} icon={BureauIcons.Target} variant="system" subtitle={`${stats.completedTeams} of ${stats.totalTeams} teams`} />
             </div>
 
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
@@ -173,15 +173,16 @@ export function AdminDashboard() {
               ))}
             </div>
 
-            <div className="nexus-ops-panel">
-              <div className="mb-4 flex items-center justify-between gap-3">
-                <div>
-                  <span className="nexus-ops-label">Incident log</span>
-                  <h2 className="heading-3 mt-2">Recent activity</h2>
-                </div>
-                <Link to={ROUTES.ADMIN_AUDIT} className="text-sm text-nexus-accent hover:underline">View audit log</Link>
-              </div>
-
+            <TerminalFrame
+              title="Incident log"
+              reference="Recent activity"
+              variant="system"
+              footer={
+                <Link to={ROUTES.ADMIN_AUDIT} className="text-xs text-nexus-accent hover:underline">
+                  View audit log →
+                </Link>
+              }
+            >
               <div className="space-y-2">
                 {isLoading && recentActivity.length === 0 ? (
                   <div className="text-center py-8 text-nexus-textMuted">Loading activity…</div>
@@ -206,7 +207,7 @@ export function AdminDashboard() {
                   ))
                 )}
               </div>
-            </div>
+            </TerminalFrame>
           </div>
         </div>
 
@@ -237,47 +238,41 @@ function GameTimer({ gameState }: { gameState: NonNullable<ReturnType<typeof use
   const { gameStatus, config } = gameState
   const deadline = gameState.config?.game_deadline as string | null
 
+  const statusColor = useMemo(() => {
+    if (gameStatus === 'RUNNING') return 'text-nexus-accent'
+    if (gameStatus === 'PAUSED') return 'text-nexus-warning'
+    if (gameStatus === 'ENDED') return 'text-nexus-textMuted'
+    return 'text-nexus-info'
+  }, [gameStatus])
+
   return (
-    <div className={cn(
-      'nexus-ops-panel border-l-2',
-      gameStatus === 'RUNNING' && 'border-nexus-accent',
-      gameStatus === 'PAUSED' && 'border-nexus-warning',
-      gameStatus === 'ENDED' && 'border-nexus-border',
-      gameStatus === 'NOT_STARTED' && 'border-nexus-info',
-    )}>
-      <div className="flex items-center justify-between gap-4">
+    <TerminalFrame
+      title={gameStatus}
+      icon={<BureauIcons.Clock className={cn('bureau-icon w-6 h-6', statusColor)} />}
+      variant={gameStatus === 'RUNNING' ? 'monitor' : 'register'}
+    >
+      <div className="terminal-grid flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <BureauIcons.Clock className={cn('bureau-icon w- h-8',
-            gameStatus === 'RUNNING' && 'text-nexus-accent',
-            gameStatus === 'PAUSED' && 'text-nexus-warning',
-            gameStatus === 'ENDED' && 'text-nexus-textMuted',
-            gameStatus === 'NOT_STARTED' && 'text-nexus-info',
-          )} />
           <div>
-            <p className="text-sm text-nexus-textMuted">Game Status</p>
-            <p className={cn('font-display font-bold text-xl',
-              gameStatus === 'RUNNING' && 'text-nexus-accent',
-              gameStatus === 'PAUSED' && 'text-nexus-warning',
-              gameStatus === 'ENDED' && 'text-nexus-textMuted',
-              gameStatus === 'NOT_STARTED' && 'text-nexus-info',
-            )}>
+            <p className="text-xs text-nexus-textSubtle">Game Status</p>
+            <p className={cn('font-display font-bold text-xl', statusColor)}>
               {gameStatus}
             </p>
           </div>
         </div>
-        <div className="text-right">
-          <p className="text-sm text-nexus-textMuted">Duration</p>
-          <p className="font-mono text-nexus-text">
+        <div className="text-right terminal-data">
+          <p className="text-xs text-nexus-textSubtle">Shift duration</p>
+          <p className="font-mono text-sm text-nexus-text">
             {Number(config?.game_duration_minutes ?? 180)} minutes
           </p>
           {deadline && gameStatus === 'RUNNING' && (
-            <p className="text-sm text-nexus-warning mt-1">
+            <p className="text-xs text-nexus-warning mt-1">
               Ends: {formatTimeRemaining(deadline)}
             </p>
           )}
         </div>
       </div>
-    </div>
+    </TerminalFrame>
   )
 }
 
@@ -324,24 +319,27 @@ function StatCard({
   title,
   value,
   icon: Icon,
-  color,
+  variant = 'system',
   subtitle,
 }: {
   title: string
   value: number | string
   icon: React.ComponentType<{ className?: string }>
-  color: string
+  variant?: 'system' | 'monitor' | 'register'
   subtitle: string
 }) {
   return (
     <TerminalFrame
       title={title}
-      reference={String(value)}
-      icon={<Icon className={cn('bureau-icon w-4 h-4', color)} />}
-      variant="register"
+      icon={<Icon className="bureau-icon w-5 h-5 text-nexus-text" />}
+      variant={variant}
     >
-      <p className="font-display font-bold text-xl text-nexus-text">{value}</p>
-      <p className="text-xs text-nexus-textSubtle mt-1">{subtitle}</p>
+      <div className="text-center py-2">
+        <p className="font-display font-bold text-3xl text-nexus-text leading-tight">
+          {value}
+        </p>
+        <p className="text-xs text-nexus-textSubtle mt-1.5">{subtitle}</p>
+      </div>
     </TerminalFrame>
   )
 }
