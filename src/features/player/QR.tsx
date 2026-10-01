@@ -5,11 +5,12 @@
  * "ACCESS DENIED" message instead of revealing spoilers.
  */
 
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback, useContext } from 'react'
 import { Link } from 'react-router-dom'
 import { BureauIcons } from '@/components/bureau'
 import { useGameEngine, type QRScanResult } from '@/hooks/useGameEngine'
 import { useConnection } from '@/hooks/useConnection'
+import { QASimulatorContext } from '@/contexts/QASimulatorContext'
 import { ROUTES } from '@/app/config'
 import { cn } from '@/lib/utils'
 
@@ -42,6 +43,8 @@ export function PlayerQR() {
   const { scanQR } = useGameEngine()
   const connection = useConnection()
   const isOffline = connection.isOffline
+  const qaContext = useContext(QASimulatorContext)
+  const isQASimulation = !!qaContext?.isActive
   const [isScanning, setIsScanning] = useState(false)
   const [permission, setPermission] = useState<'prompt' | 'granted' | 'denied'>('prompt')
   const [lastResult, setLastResult] = useState<ScanResult | null>(null)
@@ -140,6 +143,14 @@ export function PlayerQR() {
     setPermission('prompt')
     setLastResult(null)
     lastScannedRef.current = null
+
+    if (isQASimulation) {
+      setPermission('granted')
+      setIsScanning(true)
+      setScanningText('Simulation mode — no camera required')
+      return
+    }
+
     try {
       setScanningText('Requesting camera access…')
       // Warm the decoder while the permission prompt and first frames resolve,
@@ -290,6 +301,12 @@ export function PlayerQR() {
                 <BureauIcons.ScanLine className="bureau-icon w-5 h-5" />
                 <span>Start Scanning</span>
               </button>
+              {isQASimulation && (
+                <p className="mt-4 text-xs text-nexus-textSubtle">
+                  Simulation mode: camera is bypassed. Use manual entry below or
+                  the QA simulator controls to trigger scans.
+                </p>
+              )}
               {isOffline && (
                 <p className="mt-3 text-sm text-nexus-danger flex items-center justify-center gap-1.5">
                   <BureauIcons.AlertTriangle className="bureau-icon w-4 h-4" />
