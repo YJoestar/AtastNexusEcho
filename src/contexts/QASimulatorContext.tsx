@@ -385,35 +385,41 @@ export function QASimulatorProvider({ children }: { children: ReactNode }) {
   const isAuthenticated = true
   const isInitializing = false
 
-  const player: Player = {
-    id: 'qa-player',
-    teamId: 'qa-team',
-    role,
-    displayName: `QA ${role}`,
-    joinedAt: new Date().toISOString(),
-    isConnected: true,
-    lastSeenAt: new Date().toISOString(),
-    deviceInfo: undefined,
-    status: 'ACTIVE',
-    createdAt: new Date().toISOString(),
-    loginCodeHash: null,
-    authUserId: null,
-    deviceSessionToken: null,
-    deviceFingerprintHash: null,
-  }
+  const player: Player = useMemo(
+    () => ({
+      id: 'qa-player',
+      teamId: 'qa-team',
+      role,
+      displayName: `QA ${role}`,
+      joinedAt: new Date().toISOString(),
+      isConnected: true,
+      lastSeenAt: new Date().toISOString(),
+      deviceInfo: undefined,
+      status: 'ACTIVE',
+      createdAt: new Date().toISOString(),
+      loginCodeHash: null,
+      authUserId: null,
+      deviceSessionToken: null,
+      deviceFingerprintHash: null,
+    }),
+    [role],
+  )
 
-  const team: Team = {
-    id: 'qa-team',
-    name: 'QA Simulation Team',
-    code: 'QA001',
-    status: 'ACTIVE',
-    createdAt: new Date().toISOString(),
-    startedAt: new Date().toISOString(),
-    completedAt: null,
-    currentNodeId,
-    score,
-    metadata: { registeredBy: 'ADMIN', assignedRoles: true },
-  }
+  const team: Team = useMemo(
+    () => ({
+      id: 'qa-team',
+      name: 'QA Simulation Team',
+      code: 'QA001',
+      status: 'ACTIVE',
+      createdAt: new Date().toISOString(),
+      startedAt: new Date().toISOString(),
+      completedAt: null,
+      currentNodeId,
+      score,
+      metadata: { registeredBy: 'ADMIN', assignedRoles: true },
+    }),
+    [currentNodeId, score],
+  )
 
   const availableNodeIds = useMemo(
     () => computeAvailableNodes(solvedNodes, currentNodeId, simulationType),
@@ -666,7 +672,7 @@ export function QASimulatorProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const resetSimulation = useCallback(() => {
-    setSolvedNodes(new Set())
+    setSolvedNodes(prev => (prev.size === 0 ? prev : new Set()))
     setCurrentNodeId(null)
     setHintsUsed(0)
     setScore(0)
