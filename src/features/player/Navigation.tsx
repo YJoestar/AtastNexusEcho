@@ -1,12 +1,19 @@
 /**
- * NEXUS — Player Navigation
- * Campus map showing discovered locations and available nodes.
- * Mobile-first layout using bureau primitives: DocumentShell, EvidenceFrame,
- * RegisterColumn, RegisterList, RegisterRow, StateMarker, Stamp, StatusMark.
+ * NEXUS ECHO — Player Navigation
+ *
+ * The field investigator's site map. A canvas-based campus overview showing
+ * building footprints, POI markers encoded by KnowledgeState and RealityState,
+ * and fog-of-war over unexplored locations. Clicking a marker opens the node.
+ *
+ * The right margin holds the investigation register — a filing-index list of
+ * current, available, and locked sites, rendered as ruled rows rather than cards.
  */
 
 import { Link } from 'react-router-dom'
+import { useMemo } from 'react'
 import { useGameEngine } from '@/hooks/useGameEngine'
+import { useNarrative } from '@/hooks/useNarrative'
+import { useCampusMapState, useTeamMemberPositions } from '@/hooks/useCampusMap'
 import { ROUTES } from '@/app/config'
 import { BureauIcons } from '@/components/bureau'
 import {
@@ -17,49 +24,245 @@ import {
   StateMarker,
   Stamp,
 } from '@/components/bureau'
+import { CampusMap, DynamicMinimap } from '@/components/player/map'
 
 export function PlayerNavigation() {
-  const { allNodesForMap, solvedCount } = useGameEngine()
+  const { allNodesForMap, solvedCount, totalNodes, teamProgress, gameState } = useGameEngine()
+
+  const solvedSet = useMemo(() => {
+    const set = new Set<string>()
+    for (const n of allNodesForMap) {
+      if (n.solved) set.add(n.code)
+    }
+    return set
+  }, [allNodesForMap])
+
+  const narrative = useNarrative({
+    solvedCount,
+    totalNodes,
+    currentStage: gameState?.currentPhase ? 0 : Math.max(...allNodesForMap.map(n => n.stage)),
+    totalStages: 5,
+    hintsUsed: teamProgress?.hintsUsed ?? 0,
+  })
+
+  const mapNodes = useCampusMapState({
+    solvedCodes: solvedSet,
+    currentNodeId: teamProgress?.currentNodeId ?? null,
+    availableNodeIds: teamProgress?.availableNodeIds ?? [],
+    narrativeLevel: narrative.level,
+  })
+
+  const teamMembers = useTeamMemberPositions(
+    teamProgress?.currentNodeId ?? null,
+    teamProgress?.availableNodeIds ?? [],
+    solvedSet,
+  )
+
+  const currentPlayerPos = useMemo((): [number, number] => {
+    const currentNode = allNodesForMap.find(n => n.isCurrent)
+    if (!currentNode) return [500, 550]
+    const mapNode = mapNodes.find(n => n.code === currentNode.code)
+    return mapNode ? mapNode.position : [500, 550]
+  }, [allNodesForMap, mapNodes])
 
   const currentNodes = allNodesForMap.filter(n => n.isCurrent)
   const availableNodes = allNodesForMap.filter(n => n.available && !n.solved && !n.isCurrent)
-  const lockedNodes = allNodesForMap.filter(n => n.locked)
+
+  const handleNodeSelect = (code: string) => {
+    window.location.href = ROUTES.PLAYER_NODE.replace(':nodeId', code)
+  }
+
+  const handleNodeHover = (_code: string | null) => {
+    // Could be used for tooltip previews
+  }
 
   return (
-    <div className="page">
-      <div className="page-content max-w-2xl mx-auto space-y-6">
+    <div className="page" data-horror={narrative.level}>
+      <div className="page-content max-w-6xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-4">
-          <Link
-            to={ROUTES.PLAYER_GAME}
-            className="p-2 border border-nexus-borderSubtle text-nexus-textMuted hover:text-nexus-text touch-target-primary"
-            aria-label="Back to game"
-          >
-            <BureauIcons.Back className="bureau-icon w-5 h-5" />
-          </Link>
-          <div>
-            <h1 className="heading-3">Navigation</h1>
-            <p className="text-nexus-textMuted text-sm">Campus locations and puzzle sites</p>
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <Link
+              to={ROUTES.PLAYER_GAME}
+              className="p-2 border border-nexus-borderSubtle text-nexus-textMuted hover:text-nexus-text touch-target-primary"
+              aria-label="Back to game"
+            >
+              <BureauIcons.Back className="bureau-icon w-5 h-5" />
+            </Link>
+            <div>
+              <h1 className="heading-3">Site Map</h1>
+              <p className="text-nexus-textMuted text-sm">
+                {narrative.observation}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-sm tabular-nums text-nexus-textMuted">
+              {solvedCount} / {totalNodes}
+            </span>
+            <Stamp variant="archived">Case 037</Stamp>
           </div>
         </div>
 
-        {/* Location Overview */}
-        <RegisterColumn heading="Investigation Map">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <BureauIcons.Compass className="bureau-icon w-5 h-5 text-nexus-textSubtle" />
-              <span className="text-sm text-nexus-textMuted">
-                {solvedCount} / {allNodesForMap.length} sites explored
-              </span>
-            </div>
+        {/* Campus Map + Minimap */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Full Campus Map */}
+          <div className="lg:col-span-2">
+            <DocumentShell
+              reference="Investigation Map"
+              title="Campus Overview"
+              subtitle={`Knowledge: ${mapNodes.filter(n => n.knowledge !== 'UNKNOWN').length} / ${mapNodes.length} sites charted`}
+              stock="digital"
+              footer={
+                <div className="flex items-center gap-3">
+                  <Stamp variant="incomplete" impressed>
+                    {solvedCount} solved
+                  </Stamp>
+                  <span className="meta">Stage {Math.max(...mapNodes.map(n => n.stage))}</span>
+                </div>
+              }
+            >
+              <div className="h-[480px] relative">
+                <CampusMap
+                  nodes={mapNodes}
+                  zoom={1}
+                  showFog={true}
+                  onNodeSelect={handleNodeSelect}
+                  onNodeHover={handleNodeHover}
+                />
+              </div>
+            </DocumentShell>
           </div>
 
-          {/* Current Location */}
-          {currentNodes.length > 0 && (
-            <div className="space-y-2">
-              <h3 className="text-xs font-semibold text-nexus-textSubtle uppercase tracking-wider">
-                Current Location
-              </h3>
+          {/* Dynamic Minimap + Legend */}
+          <div className="space-y-4">
+            {/* Minimap */}
+            <div className="flex justify-center">
+              <DynamicMinimap
+                playerPosition={currentPlayerPos}
+                teamMembers={teamMembers}
+                nodes={mapNodes}
+                orientation="north"
+                playerCentered={true}
+                viewRadius={260}
+                size={200}
+                onNodeSelect={handleNodeSelect}
+                className="border border-nexus-borderSubtle"
+              />
+            </div>
+
+            {/* Legend */}
+            <DocumentShell
+              reference="Map Legend"
+              title="Site Status"
+              stock="paper"
+              footer={<Stamp variant="archived">Reference</Stamp>}
+            >
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex items-center gap-2">
+                  <StateMarker glyph="●" tone="active" label="Discovered" />
+                  <span className="text-sm text-nexus-accent">Visited / Available</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <StateMarker glyph="■" tone="active" label="In Progress" />
+                  <span className="text-sm text-nexus-textMuted">Assigned</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <StateMarker glyph="✓" tone="active" label="Verified" />
+                  <span className="text-sm text-nexus-textMuted">Solved</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <StateMarker glyph="◦" tone="inactive" label="Locked" />
+                  <span className="text-sm text-nexus-textSubtle">Unexplored</span>
+                </div>
+              </div>
+
+              <div className="mt-3 space-y-2">
+                <h4 className="text-xs font-semibold text-nexus-textSubtle uppercase tracking-wider">
+                  Reality Status
+                </h4>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 bg-nexus-inactive border border-nexus-border" aria-hidden="true" />
+                    <span className="text-sm text-nexus-textSubtle">Normal</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 bg-nexus-warning border border-nexus-border" aria-hidden="true" />
+                    <span className="text-sm text-nexus-warning">Suspicious</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 bg-nexus-danger border border-nexus-border" aria-hidden="true" />
+                    <span className="text-sm text-nexus-danger">Anomalous</span>
+                  </div>
+                </div>
+              </div>
+            </DocumentShell>
+
+            {/* Team Radar Legend */}
+            <DocumentShell
+              reference="Team Radar"
+              title="Contact Protocol"
+              stock="digital"
+              footer={<Stamp variant="incomplete">Live</Stamp>}
+            >
+              <div className="space-y-2">
+                <RegisterRow
+                  id="self"
+                  label="Investigator (You)"
+                  meta="White dot with facing vector"
+                />
+                <RegisterRow
+                  id="observer"
+                  label="Observer"
+                  meta="Cyan contact"
+                />
+                <RegisterRow
+                  id="analyst"
+                  label="Analyst"
+                  meta="Amber contact"
+                />
+                <RegisterRow
+                  id="operator"
+                  label="Operator"
+                  meta="Blue contact"
+                />
+              </div>
+            </DocumentShell>
+          </div>
+        </div>
+
+        {/* Register: Available Nodes */}
+        {availableNodes.length > 0 && (
+          <RegisterColumn heading="Available Sites">
+            <RegisterList>
+              {availableNodes.slice(0, 8).map(n => (
+                <Link
+                  key={n.code}
+                  to={ROUTES.PLAYER_NODE.replace(':nodeId', n.code)}
+                  className="register-row focus-visible:outline-none"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 border border-nexus-accent/30 bg-nexus-accentBg flex items-center justify-center">
+                      <BureauIcons.MapPin className="bureau-icon w-4 h-4 text-nexus-accent" />
+                    </div>
+                    <div>
+                      <p className="register-label">{n.title}</p>
+                      <p className="register-meta">{n.location}</p>
+                    </div>
+                  </div>
+                  <Stamp variant="incomplete" size="xs">
+                    Available
+                  </Stamp>
+                </Link>
+              ))}
+            </RegisterList>
+          </RegisterColumn>
+        )}
+
+        {/* Register: Current Location */}
+        {currentNodes.length > 0 && (
+          <RegisterColumn heading="Current Location">
+            <RegisterList>
               {currentNodes.map(n => (
                 <Link
                   key={n.code}
@@ -67,103 +270,26 @@ export function PlayerNavigation() {
                   className="register-row register-row-selected focus-visible:outline-none"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 border border-nexus-accent/30 bg-nexus-accentBg flex items-center justify-center">
-                      <BureauIcons.Target className="bureau-icon w-5 h-5 text-nexus-accent" />
+                    <div className="w-8 h-8 border border-nexus-accent/30 bg-nexus-accentBg flex items-center justify-center">
+                      <BureauIcons.Target className="bureau-icon w-4 h-4 text-nexus-accent" />
                     </div>
                     <div>
-                      <p className="font-medium text-nexus-accent">{n.title}</p>
-                      <p className="text-xs text-nexus-textMuted">
+                      <p className="register-label">{n.title}</p>
+                      <p className="register-meta">
                         {n.location} • Node: {n.code}
                       </p>
                     </div>
                   </div>
-                  <span className="shrink-0">
-                    <BureauIcons.Forward className="bureau-icon w-5 h-5 text-nexus-accent" />
-                  </span>
+                  <Stamp variant="verified" size="xs">
+                    Assigned
+                  </Stamp>
                 </Link>
               ))}
-            </div>
-          )}
+            </RegisterList>
+          </RegisterColumn>
+        )}
 
-          {/* Available Nodes */}
-          {availableNodes.length > 0 && (
-            <div className="space-y-2">
-              <h3 className="text-xs font-semibold text-nexus-textSubtle uppercase tracking-wider">
-                Available Sites
-              </h3>
-              {availableNodes.slice(0, 8).map(n => (
-                <Link
-                  key={n.code}
-                  to={ROUTES.PLAYER_NODE.replace(':nodeId', n.code)}
-                  className="register-row focus-visible:outline-none"
-                >
-                  <div className="w-10 h-10 border border-nexus-borderSubtle flex items-center justify-center flex-shrink-0">
-                    <BureauIcons.MapPin className="bureau-icon w-5 h-5 text-nexus-textMuted" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate">{n.title}</p>
-                    <p className="text-xs text-nexus-textMuted">
-                      {n.location} • Stage {n.stage}
-                    </p>
-                  </div>
-                  <span className="shrink-0">
-                    <Stamp variant="incomplete" impressed>
-                      Available
-                    </Stamp>
-                  </span>
-                </Link>
-              ))}
-            </div>
-          )}
-
-          {/* Locked Nodes */}
-          {lockedNodes.length > 0 && (
-            <div className="space-y-2">
-              <h3 className="text-xs font-semibold text-nexus-textSubtle uppercase tracking-wider">
-                Locked Sites
-              </h3>
-              <RegisterList>
-                {lockedNodes.slice(0, 5).map(n => (
-                  <RegisterRow
-                    key={n.code}
-                    id={n.code}
-                    label={n.title}
-                    meta={`${n.location} • Node: ${n.code}`}
-                  />
-                ))}
-              </RegisterList>
-            </div>
-          )}
-        </RegisterColumn>
-
-        {/* Legend */}
-        <DocumentShell
-          reference="Map Legend"
-          title="Site Status"
-          stock="paper"
-          footer={<Stamp variant="archived">Reference</Stamp>}
-        >
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex items-center gap-2">
-              <StateMarker glyph="●" tone="active" label="Current Location" />
-              <span className="text-sm text-nexus-text">Current Location</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <StateMarker glyph="◦" tone="active" label="Available" />
-              <span className="text-sm text-nexus-textMuted">Available</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <StateMarker glyph="●" tone="active" label="Solved" />
-              <span className="text-sm text-nexus-textMuted">Solved</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <StateMarker glyph="◦" tone="inactive" label="Locked" />
-              <span className="text-sm text-nexus-textSubtle">Locked</span>
-            </div>
-          </div>
-        </DocumentShell>
-
-        {/* Quick Scan */}
+        {/* Quick Access */}
         <RegisterColumn heading="Quick Access">
           <div className="grid grid-cols-2 gap-3">
             <Link

@@ -1087,6 +1087,114 @@
   .qr-scanner-frame { @apply relative w-64 h-64 md:w-80 md:h-80 border border-nexus-accent/40 overflow-hidden; }
   .qr-scanner-line { @apply absolute left-0 right-0 h-px bg-nexus-accent; }
 
+  /* ==================================================================
+      CAMPUS MAP SYSTEM
+      ================================================================== */
+
+  .campus-map-container {
+    @apply relative border border-nexus-borderSubtle bg-nexus-bg overflow-hidden;
+  }
+ .campus-map-canvas {
+    @apply block w-full h-full;
+  }
+  .campus-map-label {
+    @apply absolute font-mono text-[0.625rem] uppercase tracking-[0.14em];
+  }
+
+  /* POI marker — a measured dot with a ring, never a soft blob */
+  .map-poi {
+    @apply relative flex items-center justify-center;
+  }
+  .map-poi-dot {
+    @apply w-3 h-3 border;
+  }
+  .map-poi-dot-verified { @apply border-nexus-text bg-nexus-text; }
+  .map-poi-dot-investigated { @apply border-nexus-warning bg-nexus-warning/70; }
+  .map-poi-dot-observed { @apply border-nexus-accent bg-nexus-accent/70; }
+  .map-poi-dot-visited { @apply border-nexus-accent bg-nexus-accent/70; }
+  .map-poi-dot-discovered { @apply border-nexus-textSubtle bg-nexus-textMuted/60; }
+  .map-poi-dot-unknown { @apply border-nexus-border bg-nexus-textSubtle/30; }
+  .map-poi-ring {
+    @apply absolute rounded-full border-2 border-nexus-accent/60;
+    animation: pulse-ring 2s ease-in-out infinite;
+  }
+  @keyframes pulse-ring {
+    0% { opacity: 0.6; transform: scale(1.2); }
+    50% { opacity: 0.3; transform: scale(1.5); }
+    100% { opacity: 0.6; transform: scale(1.2); }
+  }
+
+  /* Building polygon — orthogonal, institutional */
+  .map-building {
+    @apply fill-nexus-surface stroke-nexus-border;
+  }
+  .map-building-label {
+    @apply font-mono text-[0.625rem] uppercase tracking-[0.12em] text-nexus-textSubtle;
+  }
+
+  /* Fog of war — a hatch texture over unexplored areas */
+  .map-fog {
+    background-image:
+      repeating-linear-gradient(
+        45deg,
+        rgba(10, 10, 11, 0.85) 0px,
+        rgba(10, 10, 11, 0.85) 2px,
+        rgba(26, 25, 23, 0.85) 2px,
+        rgba(26, 25, 23, 0.85) 4px
+      );
+  }
+
+  /* Reality state overlays */
+  .map-reality-normal { @apply border-nexus-border; }
+  .map-reality-suspicious { @apply border-nexus-warning/40; }
+  .map-reality-anomalous { @apply border-nexus-danger/40; }
+  .map-reality-confirmed { @apply border-nexus-danger/80; }
+
+  /* Knowledge state indicator */
+  .map-knowledge-unknown { opacity: 0.3; }
+  .map-knowledge-discovered { opacity: 0.5; }
+  .map-knowledge-visited { opacity: 0.7; }
+  .map-knowledge-observed { opacity: 0.8; }
+  .map-knowledge-investigated { opacity: 0.9; }
+  .map-knowledge-verified { opacity: 1; }
+
+  /* ==================================================================
+      DYNAMIC MINIMAP
+      ================================================================== */
+
+  .minimap-container {
+    @apply relative border border-nexus-borderSubtle bg-nexus-bg overflow-hidden;
+  }
+  .minimap-canvas {
+    @apply block w-full h-full;
+  }
+  .minimap-compass {
+    @apply absolute top-1 left-1/2 -translate-x-1/2 w-[28%] h-[28%] opacity-60;
+  }
+
+  /* Radar contact — solid dot, no arrows, no labels */
+  .radar-contact {
+    @apply absolute rounded-full border border-nexus-bg;
+  }
+  .radar-self {
+    @apply w-3.5 h-3.5 bg-nexus-text border-2 border-nexus-accent;
+  }
+  .radar-observer { @apply w-2.5 h-2.5 bg-nexus-accent; }
+  .radar-analyst { @apply w-2.5 h-2.5 bg-nexus-warning; }
+  .radar-operator { @apply w-2.5 h-2.5 bg-nexus-blue; }
+
+  /* Compass rose */
+  .compass-rose {
+    @apply w-full h-full;
+  }
+  .compass-needle { @apply stroke-nexus-text fill-nexus-text; }
+  .compass-tick { @apply stroke-nexus-textSubtle; }
+
+  /* Edge contact indicator — a faded dot at the viewport edge */
+  .radar-edge-contact {
+    @apply absolute rounded-full border border-nexus-bg shadow-[0_0_0_2px_rgba(10,10,11,0.8)];
+  }
+
   @media print {
     .no-print { display: none !important; }
   }

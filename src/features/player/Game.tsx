@@ -15,6 +15,7 @@ import { BureauIcons } from '@/components/bureau'
 import { useGameEngine } from '@/hooks/useGameEngine'
 import { useGameTimer } from '@/hooks/useGameTimer'
 import { useNarrative } from '@/hooks/useNarrative'
+import { useCampusMapState, useTeamMemberPositions } from '@/hooks/useCampusMap'
 import { ROUTES, ROLE_LABELS, ROLE_THEMES } from '@/app/config'
 import { cn } from '@/lib/utils'
 import {
@@ -29,6 +30,7 @@ import {
   StatusMark,
   type StatusTone,
 } from '@/components/bureau'
+import { DynamicMinimap } from '@/components/player/map'
 
 export function PlayerGame() {
   const {
@@ -46,19 +48,48 @@ export function PlayerGame() {
   const timer = useGameTimer(gameState?.endsAt)
 
   const hintsUsed = teamProgress?.hintsUsed ?? 0
+
+  const currentNodeId = teamProgress?.currentNodeId
+  const currentNode = currentNodeId
+    ? allNodesForMap.find(n => n.code === currentNodeId)
+    : null
+
   const narrative = useNarrative({
     solvedCount,
     totalNodes,
+    currentStage: currentNode?.stage ?? 0,
+    totalStages: 5,
     hintsUsed,
     isOffline,
     queuedCount,
     unreadCount,
   })
 
-  const currentNodeId = teamProgress?.currentNodeId
-  const currentNode = currentNodeId
-    ? allNodesForMap.find(n => n.code === currentNodeId)
-    : null
+  const solvedSet = useMemo(() => {
+    const set = new Set<string>()
+    for (const n of allNodesForMap) {
+      if (n.solved) set.add(n.code)
+    }
+    return set
+  }, [allNodesForMap])
+
+  const mapNodes = useCampusMapState({
+    solvedCodes: solvedSet,
+    currentNodeId: teamProgress?.currentNodeId ?? null,
+    availableNodeIds: teamProgress?.availableNodeIds ?? [],
+    narrativeLevel: narrative.level,
+  })
+
+  const teamMembers = useTeamMemberPositions(
+    teamProgress?.currentNodeId ?? null,
+    teamProgress?.availableNodeIds ?? [],
+    solvedSet,
+  )
+
+  const currentPlayerPos = useMemo(() => {
+    const mapNode = mapNodes.find(n => n.isCurrent)
+    return mapNode ? mapNode.position : [500, 550] as [number, number]
+  }, [mapNodes])
 
   const availableNodes = useMemo(
     () => allNodesForMap.filter(n => n.available && !n.solved && n.code !== currentNodeId),
@@ -203,6 +234,38 @@ export function PlayerGame() {
             </p>
           )}
         </section>
+
+        {/* Field position — a live minimap showing where the team stands */}
+        {currentPlayerPos && (
+          <section className="panel">
+            <div className="mb-3 flex items-baseline justify-between gap-3">
+              <h2 className="heading-4 flex items-center gap-2">
+                <BureauIcons.Compass className="bureau-icon w-4 h-4 text-nexus-textMuted" aria-hidden="true" />
+                Field Position
+              </h2>
+              <span className="font-mono text-sm tabular-nums text-nexus-textMuted">
+                {teamMembers.filter(m => m.isConnected).length} / {teamMembers.length + 1} active
+              </span>
+            </div>
+            <div className="flex items-center justify-center">
+              <DynamicMinimap
+                playerPosition={currentPlayerPos}
+                teamMembers={teamMembers}
+                nodes={mapNodes}
+                orientation="north"
+                playerCentered={true}
+                viewRadius={300}
+                size={180}
+                onNodeSelect={code => {
+                  window.location.href = ROUTES.PLAYER_NODE.replace(':nodeId', code)
+                }}
+              />
+            </div>
+            <p className="meta mt-3">
+              {teamMembers.filter(m => m.isConnected).length} team contacts on scope
+            </p>
+          </section>
+        )}
 
         {/* Assigned item */}
         {currentNode && (

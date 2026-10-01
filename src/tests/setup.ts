@@ -27,6 +27,52 @@ Object.defineProperty(window, 'matchMedia', {
   })),
 })
 
+// Mock canvas context for jsdom (used by map/minimap components)
+const mockCanvasContext = {
+  clearRect: vi.fn(),
+  fillRect: vi.fn(),
+  fillText: vi.fn(),
+  strokeText: vi.fn(),
+  beginPath: vi.fn(),
+  closePath: vi.fn(),
+  moveTo: vi.fn(),
+  lineTo: vi.fn(),
+  arc: vi.fn(),
+  fill: vi.fn(),
+  stroke: vi.fn(),
+  rect: vi.fn(),
+  setLineDash: vi.fn(),
+  scale: vi.fn(),
+  translate: vi.fn(),
+  rotate: vi.fn(),
+  save: vi.fn(),
+  restore: vi.fn(),
+  createLinearGradient: vi.fn(() => ({ addColorStop: vi.fn() })),
+  createRadialGradient: vi.fn(() => ({ addColorStop: vi.fn() })),
+  measureText: vi.fn(() => ({ width: 0 })),
+  canvas: { width: 0, height: 0 },
+  font: '',
+  fillStyle: '',
+  strokeStyle: '',
+  lineWidth: 1,
+  textAlign: 'left',
+  textBaseline: 'alphabetic',
+  globalAlpha: 1,
+}
+
+HTMLCanvasElement.prototype.getContext = vi.fn(() => mockCanvasContext as any)
+HTMLCanvasElement.prototype.getBoundingClientRect = vi.fn(() => ({
+  left: 0,
+  top: 0,
+  right: 0,
+  bottom: 0,
+  width: 0,
+  height: 0,
+  x: 0,
+  y: 0,
+  toJSON: () => ({}),
+}))
+
 // Mock ResizeObserver
 globalThis.ResizeObserver = vi.fn().mockImplementation(() => ({
   observe: vi.fn(),
