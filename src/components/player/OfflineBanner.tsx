@@ -11,7 +11,7 @@
  * has gone through.
  */
 
-import { CloudOff, RefreshCw, Send, Wifi, WifiOff, Check } from 'lucide-react'
+import { CloudOff, RefreshCw, Send, ServerCrash, Wifi, WifiOff, Check } from 'lucide-react'
 import type { ConnectionState, ConnectionStatus } from '@/hooks/useConnection'
 import type { QueuedSubmission } from '@/lib/offlineQueue'
 import { cn } from '@/lib/utils'
@@ -55,6 +55,16 @@ const COPY: Record<
     container: 'border-nexus-warning/30 bg-nexus-warningBg/20',
     accent: 'text-nexus-warning',
     icon: CloudOff,
+  },
+  unavailable: {
+    text: 'BUREAU COMMAND NOT RESPONDING',
+    detail: queued =>
+      queued > 0
+        ? `The server answered but rejected the request. ${queued} submission${queued === 1 ? '' : 's'} held locally.`
+        : 'The server answered but rejected the request. Actions will be retried automatically.',
+    container: 'border-nexus-warning/30 bg-nexus-warningBg/20',
+    accent: 'text-nexus-warning',
+    icon: ServerCrash,
   },
   offline: {
     text: 'OFFLINE',

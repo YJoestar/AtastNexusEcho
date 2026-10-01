@@ -79,8 +79,33 @@ describe('useConnection', () => {
     fetchStub.mockResolvedValue({ ok: false, status: 503 })
     const { result } = renderHook(() => useConnection())
 
-    await waitFor(() => expect(result.current.status).toBe('degraded'))
+    await waitFor(() => expect(result.current.status).toBe('unavailable'))
     expect(result.current.lastProbedAt).not.toBeNull()
+  })
+
+  it('does not call a gated 401 "no route to server"', async () => {
+    // The regression this protects: the health endpoint answers 401 when the
+    // probe omits the project apikey. A 401 proves there IS a route.
+    fetchStub.mockResolvedValue({ ok: false, status: 401 })
+    const { result } = renderHook(() => useConnection())
+
+    await waitFor(() => expect(result.current.status).toBe('unavailable'))
+    expect(result.current.isBrowserOnline).toBe(true)
+    expect(result.current.isServerReachable).toBe(true)
+    expect(result.current.isServerHealthy).toBe(false)
+    expect(result.current.lastProbeStatus).toBe(401)
+    expect(result.current.isOffline).toBe(true)
+  })
+
+  it('sends the project apikey so the health endpoint does not reject the probe', async () => {
+    renderHook(() => useConnection())
+
+    await waitFor(() => expect(fetchStub).toHaveBeenCalled())
+    const init = fetchStub.mock.calls[0][1] as RequestInit | undefined
+    const headers = (init?.headers ?? {}) as Record<string, string>
+    if (import.meta.env.VITE_SUPABASE_ANON_KEY) {
+      expect(headers.apikey).toBe(import.meta.env.VITE_SUPABASE_ANON_KEY)
+    }
   })
 })
 
@@ -89,6 +114,8 @@ describe('OfflineBanner copy', () => {
     status: 'offline',
     isBrowserOnline: false,
     isServerReachable: false,
+    isServerHealthy: false,
+    lastProbeStatus: null,
     isOffline: true,
     lastProbedAt: null,
     probe: async () => {},
@@ -106,6 +133,16 @@ describe('OfflineBanner copy', () => {
     )
     expect(container.textContent).toContain('NO ROUTE TO SERVER')
     expect(container.textContent).toContain('1 submission held locally')
+  })
+
+  it('does not blame the network when the server answered and refused', () => {
+    const { container } = render(
+      <OfflineBanner
+        connection={{ ...baseConnection, status: 'unavailable', isBrowserOnline: true, isServerReachable: true }}
+      />,
+    )
+    expect(container.textContent).toContain('BUREAU COMMAND NOT RESPONDING')
+    expect(container.textContent).not.toContain('NO ROUTE TO SERVER')
   })
 
   it('says nothing on screen when the connection is healthy and nothing is queued', () => {

@@ -5,7 +5,7 @@
  */
 
 import { Link } from 'react-router-dom'
-import { Clock, Wifi, WifiOff, Bell, CloudOff, RefreshCw } from 'lucide-react'
+import { Clock, Wifi, WifiOff, Bell, CloudOff, RefreshCw, ServerCrash } from 'lucide-react'
 import { useApp } from '@/app/providers'
 import { useConnection, type ConnectionStatus } from '@/hooks/useConnection'
 import { useSubmissionQueue } from '@/hooks/useSubmissionQueue'
@@ -32,6 +32,7 @@ const CONNECTION_INDICATOR: Record<
   online: { Icon: Wifi, className: 'text-nexus-accent', label: 'Connected to Bureau command' },
   reconnecting: { Icon: RefreshCw, className: 'text-nexus-warning', label: 'Reconnecting to Bureau command' },
   degraded: { Icon: CloudOff, className: 'text-nexus-warning', label: 'No route to server' },
+  unavailable: { Icon: ServerCrash, className: 'text-nexus-warning', label: 'Bureau command not responding' },
   offline: { Icon: WifiOff, className: 'text-nexus-danger', label: 'Offline' },
 }
 
