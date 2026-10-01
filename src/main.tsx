@@ -24,5 +24,5 @@ root.render(
         <RouterProvider router={router} />
       </AdminProvider>
     </AppProvider>
-  </StrictMode>
+  </StrictMode>,
 )

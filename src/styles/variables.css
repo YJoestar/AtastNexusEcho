@@ -1,48 +1,74 @@
 /**
- * NEXUS — CSS Variables (Legacy Support)
- * Mirrored from Tailwind theme for runtime access.
- * Kept for components that reference CSS variables directly.
+ * NEXUS ECHO — CSS Variables (legacy mirror)
+ *
+ * NOT IMPORTED. The active stylesheet is `@/styles/globals.css`, which is
+ * imported in `src/main.tsx` and which owns the authoritative `--nx-*`
+ * runtime variables in its `:root` block.
+ *
+ * This file mirrors the Tailwind `nexus` theme for the older `--color-*`
+ * naming scheme, kept only so nothing that reaches for the historical names
+ * resolves to a stale palette. If you change a color, change it in all three
+ * places: `tailwind.config.ts`, `globals.css` `:root`, and here.
  */
 
 :root {
   /* Background hierarchy */
-  --color-bg: #080810;
-  --color-surface: #0d1017;
-  --color-surface-elevated: #161821;
-  --color-surface-subtle: #0f1219;
+  --color-bg: #0a0a0b;
+  --color-surface: #101012;
+  --color-surface-elevated: #16161a;
+  --color-surface-subtle: #0d0d0f;
+
+  /* Recovered bureau stock — documents and folders, not screens */
+  --color-paper: #1a1917;
+  --color-paper-deep: #141312;
 
   /* Borders */
-  --color-border: #2a2e3a;
-  --color-border-subtle: #222632;
-  --color-border-strong: #3a3f4d;
+  --color-border: #2b2b2e;
+  --color-border-subtle: #1f1f22;
+  --color-border-hover: #4a4a50;
+  --color-border-strong: #3d3d42;
 
-  /* Text */
-  --color-text: #e6e7ea;
-  --color-text-muted: #9a9ba3;
-  --color-text-subtle: #6a6b72;
+  /* Text — aged white, soft gray */
+  --color-text: #d8d6d0;
+  --color-text-muted: #918f89;
+  --color-text-subtle: #6a6963;
 
-  /* NEXUS institutional accent — faded cyan */
-  --color-accent: #5fd0c0;
-  --color-accent-dim: #4bb59d;
-  --color-accent-bg: #003333;
+  /* Live evidence — cold cyan, used sparingly and with meaning */
+  --color-accent: #6fb3c4;
+  --color-accent-dim: #5b9aab;
+  --color-accent-bg: #0d2226;
 
-  /* Warning — controlled amber */
-  --color-warning: #e6a326;
-  --color-warning-bg: #2e2200;
+  /* Warning — aged amber */
+  --color-warning: #b8863f;
+  --color-warning-bg: #241a0d;
 
-  /* Critical — muted red */
-  --color-danger: #d94e48;
-  --color-danger-bg: #2e1212;
+  /* Critical — deep muted red. Rare. When it appears it matters. */
+  --color-danger: #9e3b34;
+  --color-danger-bg: #230f0e;
 
-  /* Institutional blue */
-  --color-blue: #5a6fa0;
-  --color-blue-bg: #1a1e2a;
+  /* Restricted — dark burgundy / black-red */
+  --color-restricted: #7c2f33;
+  --color-restricted-bg: #1e0d0e;
+
+  /* Institutional blue — the resting state */
+  --color-blue: #5a6b86;
+  --color-blue-bg: #141a22;
 
   /* System states */
-  --color-info: #5fd0c0;
-  --color-info-bg: #003333;
-  --color-success: #5fd0c0;
-  --color-success-bg: #003333;
-  --color-inactive: #4a4a56;
-  --color-inactive-bg: #1a1a22;
+  --color-info: #5a6b86;
+  --color-info-bg: #141a22;
+  --color-success: #6fb3c4;
+  --color-success-bg: #0d2226;
+  --color-inactive: #4a4a4c;
+  --color-inactive-bg: #17171a;
+
+  /* Narrative state — driven by [data-horror="0..6"] on a shell ancestor. */
+  --horror-level: 0;
+  --pool-x: 50%;
+  --pool-y: 0%;
+  --pool-strength: 0.5;
+
+  /* Anomaly geometry. Non-zero only on material that is narratively wrong. */
+  --anomaly-offset: 0px;
+  --anomaly-opacity: 0;
 }

@@ -3,6 +3,7 @@
  * Central export point for all context providers
  */
 
-export { AppProvider, useApp } from './AppProvider'
+export { AppProvider, useApp, AppContext } from './AppProvider'
+export type { AppContextValue } from './AppProvider'
 export { AdminProvider, useAdmin } from './AdminProvider'
-export { QASimulatorProvider, useQA, useQASimulator } from '@/contexts/QASimulatorContext'
+export { QASimulatorProvider, useQA, useQASimulator, QASimulatorContext } from '@/contexts/QASimulatorContext'

@@ -25,7 +25,7 @@ function readFunctionErrorMessage(error: unknown): string | null {
   return typeof message === 'string' && message.length > 0 ? message : null
 }
 
-interface AppContextValue {
+export interface AppContextValue {
   player: Player | null
   team: Team | null
   role: Role | null
@@ -44,7 +44,8 @@ interface AppContextValue {
   markAllNotificationsRead: () => Promise<void>
 }
 
-const AppContext = createContext<AppContextValue | null>(null)
+// eslint-disable-next-line react-refresh/only-export-components
+export const AppContext = createContext<AppContextValue | null>(null)
 
 const PLAYER_LOGIN_FUNCTION = 'player-login'
 

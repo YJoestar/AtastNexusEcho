@@ -1,15 +1,34 @@
 /**
- * NEXUS — Player Game Hub
- * Main dashboard: progress overview, current node, quick actions.
- * Mobile-first layout with bottom-safe padding for BottomNav.
+ * NEXUS ECHO — Player Case Hub
+ *
+ * The player's home screen is the front of their case file, not a dashboard.
+ * Everything on it is something a dossier would carry: who you are, what you
+ * have done, what is assigned to you now, and what else is waiting.
+ *
+ * Behaviour is unchanged — this reads the same engine state as before and links
+ * to the same destinations.
  */
 
+import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { Package, MapPin, QrCode, Trophy, ChevronRight, Clock, Target, Brain, Users, Zap } from 'lucide-react'
+import { Package, MapPin, QrCode, Trophy, ChevronRight, Clock, Target, Brain, Users } from 'lucide-react'
 import { useGameEngine } from '@/hooks/useGameEngine'
 import { useGameTimer } from '@/hooks/useGameTimer'
+import { useNarrative } from '@/hooks/useNarrative'
 import { ROUTES, ROLE_LABELS, ROLE_THEMES } from '@/app/config'
 import { cn } from '@/lib/utils'
+import {
+  AnomalyArtifact,
+  DocumentShell,
+  Field,
+  FieldGrid,
+  RegisterColumn,
+  RegisterList,
+  RegisterRow,
+  Stamp,
+  StatusMark,
+  type StatusTone,
+} from '@/components/bureau'
 
 export function PlayerGame() {
   const {
@@ -20,264 +39,296 @@ export function PlayerGame() {
     solvedCount,
     totalNodes,
     allNodesForMap,
+    isOffline,
+    queuedCount,
+    unreadCount,
   } = useGameEngine()
   const timer = useGameTimer(gameState?.endsAt)
+
+  const hintsUsed = teamProgress?.hintsUsed ?? 0
+  const narrative = useNarrative({
+    solvedCount,
+    totalNodes,
+    hintsUsed,
+    isOffline,
+    queuedCount,
+    unreadCount,
+  })
+
+  const currentNodeId = teamProgress?.currentNodeId
+  const currentNode = currentNodeId
+    ? allNodesForMap.find(n => n.code === currentNodeId)
+    : null
+
+  const availableNodes = useMemo(
+    () => allNodesForMap.filter(n => n.available && !n.solved && n.code !== currentNodeId),
+    [allNodesForMap, currentNodeId]
+  )
+
+  // One cell per item in the case. When the engine has published per-node state
+  // the cells are the real nodes; before that they stand for the count.
+  const ledger = useMemo(() => {
+    if (totalNodes <= 0) return []
+    if (allNodesForMap.length === totalNodes) return allNodesForMap.map(n => n.solved)
+    return Array.from({ length: totalNodes }, (_, index) => index < solvedCount)
+  }, [allNodesForMap, totalNodes, solvedCount])
 
   if (!player || !team) {
     return null
   }
 
   const roleTheme = player.role && ROLE_THEMES[player.role]
-  const progressPercent = totalNodes > 0 ? (solvedCount / totalNodes) * 100 : 0
-  const currentNodeId = teamProgress?.currentNodeId
-  const currentNode = currentNodeId
-    ? allNodesForMap.find(n => n.code === currentNodeId)
-    : null
+  const inventoryCount = Object.values(teamProgress?.inventoryOwned ?? {}).reduce((a, b) => a + b, 0)
 
   const quickActions = [
-    { path: currentNodeId ? ROUTES.PLAYER_NODE.replace(':nodeId', currentNodeId) : ROUTES.PLAYER_GAME, label: 'Current Puzzle', icon: Target, primary: true, disabled: !currentNodeId },
-    { path: ROUTES.PLAYER_EVIDENCE, label: 'Evidence', icon: Package, count: teamProgress?.evidenceOwned.length ?? 0 },
-    { path: ROUTES.PLAYER_INVENTORY, label: 'Inventory', icon: Brain, count: Object.values(teamProgress?.inventoryOwned ?? {}).reduce((a, b) => a + b, 0) },
-    { path: ROUTES.PLAYER_NAVIGATION, label: 'Navigation', icon: MapPin },
-    { path: ROUTES.PLAYER_QR, label: 'QR Scanner', icon: QrCode },
-    { path: ROUTES.PLAYER_LEADERBOARD, label: 'Ranking', icon: Trophy },
+    {
+      path: currentNodeId ? ROUTES.PLAYER_NODE.replace(':nodeId', currentNodeId) : ROUTES.PLAYER_GAME,
+      label: 'Current Puzzle',
+      icon: Target,
+      count: undefined,
+      disabled: !currentNodeId,
+    },
+    {
+      path: ROUTES.PLAYER_EVIDENCE,
+      label: 'Evidence',
+      icon: Package,
+      count: teamProgress?.evidenceOwned.length ?? 0,
+    },
+    { path: ROUTES.PLAYER_INVENTORY, label: 'Inventory', icon: Brain, count: inventoryCount },
+    { path: ROUTES.PLAYER_NAVIGATION, label: 'Navigation', icon: MapPin, count: undefined },
+    { path: ROUTES.PLAYER_QR, label: 'QR Scanner', icon: QrCode, count: undefined },
+    { path: ROUTES.PLAYER_LEADERBOARD, label: 'Ranking', icon: Trophy, count: undefined },
   ]
+
+  const caseTone: StatusTone =
+    gameState?.status === 'RUNNING' ? 'active' : gameState?.status === 'PAUSED' ? 'warning' : 'neutral'
 
   return (
     <div className="page">
-      <div className="page-content max-w-2xl mx-auto space-y-6">
-        {/* Team Status Bar */}
-        <div className="panel flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 border border-nexus-accent/30 bg-nexus-accentBg flex items-center justify-center">
-                <span className="text-nexus-accent font-display font-bold text-xl">N</span>
-              </div>
-            <div>
-              <p className="font-semibold text-nexus-text text-lg">{team.name}</p>
-              <p className="text-xs text-nexus-textMuted font-mono">{team.code}</p>
-            </div>
-          </div>
-          <span className={cn('badge', roleTheme?.badge)}>
-            {ROLE_LABELS[player.role]}
-          </span>
-        </div>
+      <div className="page-content mx-auto max-w-2xl space-y-6">
+        {/* Case identity */}
+        <AnomalyArtifact seed={`case:${team.code}`} level={narrative.level}>
+          <DocumentShell
+            reference={`Case ${team.code}`}
+            title={team.name}
+            subtitle={
+              gameState?.startedAt
+                ? `Opened ${formatElapsedTime(gameState.startedAt)} ago`
+                : 'Not yet opened'
+            }
+            classification="RESTRICTED"
+            stock="digital"
+            footer={
+              <>
+                <StatusMark tone={caseTone}>{caseToneLabel(gameState?.status)}</StatusMark>
+                <span className={cn('badge', roleTheme?.badge)}>{ROLE_LABELS[player.role]}</span>
+              </>
+            }
+          >
+            <p className="body-sm text-nexus-textMuted">{narrative.observation}</p>
+          </DocumentShell>
+        </AnomalyArtifact>
 
-        {/* Time Remaining Banner — derived from the server deadline, ticks live */}
+        {/* Deadline — a filed directive, not an alarm banner */}
         {timer.isArmed && (
           <div
             className={cn(
-              'panel border',
-              timer.urgency === 'normal' && 'bg-nexus-warningBg/20 border-nexus-warning/30',
-              timer.urgency === 'low' && 'bg-nexus-warningBg/40 border-nexus-warning/50',
-              timer.urgency === 'critical' && 'bg-nexus-dangerBg/40 border-nexus-danger/50',
-              timer.urgency === 'expired' && 'bg-nexus-dangerBg/60 border-nexus-danger',
+              'bureau-document-sm flex items-center justify-between gap-3 px-4 py-3',
+              timer.urgency === 'critical' && !timer.isExpired && 'border-l-2 border-l-nexus-danger',
+              timer.urgency === 'low' && 'border-l-2 border-l-nexus-warning'
             )}
             role="timer"
             aria-label={`${timer.formatted} remaining`}
           >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Clock
-                  className={cn(
-                    'w-5 h-5',
-                    timer.urgency === 'normal' ? 'text-nexus-warning' : 'text-nexus-danger',
-                  )}
-                />
-                <span
-                  className={cn(
-                    'font-medium',
-                    timer.urgency === 'normal' ? 'text-nexus-warning' : 'text-nexus-danger',
-                  )}
-                >
-                  {timer.isExpired ? 'Time Expired' : 'Time Remaining'}
-                </span>
-              </div>
-              <span
+            <span className="flex items-center gap-2">
+              <Clock
                 className={cn(
-                  'font-mono text-lg font-semibold',
-                  timer.urgency === 'normal' ? 'text-nexus-warning' : 'text-nexus-danger',
+                  'w-4 h-4',
+                  timer.urgency === 'normal'
+                    ? 'text-nexus-textMuted'
+                    : timer.urgency === 'low'
+                      ? 'text-nexus-warning'
+                      : 'text-nexus-danger'
                 )}
-              >
-                {timer.formatted}
+                aria-hidden="true"
+              />
+              <span className="section-label">
+                {timer.isExpired ? 'Time expired' : 'Time remaining'}
               </span>
-            </div>
-            {timer.urgency === 'critical' && !timer.isExpired && (
-              <p className="text-xs text-nexus-danger mt-2">
-                Under 10 minutes remaining. Finish the current investigation.
-              </p>
-            )}
+            </span>
+            <span
+              className={cn(
+                'font-mono text-base font-semibold tabular-nums',
+                timer.urgency === 'normal'
+                  ? 'text-nexus-text'
+                  : timer.urgency === 'low'
+                    ? 'text-nexus-warning'
+                    : 'text-nexus-danger'
+              )}
+            >
+              {timer.formatted}
+            </span>
           </div>
         )}
 
-        {/* Progress Overview */}
-        <div className="panel space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="heading-4 flex items-center gap-2">
-              <Zap className="w-5 h-5 text-nexus-accent" />
-              <span>Investigation Progress</span>
-            </h2>
-            <span className="text-lg font-mono font-bold text-nexus-accent">
+        {/* Investigation progress — a docket of the case, one cell per item */}
+        <section className="panel">
+          <div className="mb-3 flex items-baseline justify-between gap-3">
+            <h2 className="heading-4">Investigation Progress</h2>
+            <span className="font-mono text-sm tabular-nums text-nexus-textMuted">
               {solvedCount} / {totalNodes}
             </span>
           </div>
 
-          <div className="h-3 bg-nexus-bg overflow-hidden">
-            <div
-              className="h-full bg-nexus-accent transition-all duration-500"
-              style={{ width: `${progressPercent}%` }}
-            />
+          <div
+            className="flex flex-wrap gap-1"
+            role="img"
+            aria-label={`Investigation Progress: ${solvedCount} of ${totalNodes} items closed`}
+          >
+            {ledger.map((closed, index) => (
+              <span
+                key={index}
+                aria-hidden="true"
+                className={cn(
+                  'h-3 w-3 border',
+                  closed ? 'border-nexus-accent/60 bg-nexus-accent/60' : 'border-nexus-borderSubtle'
+                )}
+              />
+            ))}
           </div>
 
-          <div className="flex items-center justify-between text-sm text-nexus-textMuted">
-            <span>{Math.round(progressPercent)}% complete</span>
-            {gameState?.startedAt && (
-              <span>
-                Elapsed: {formatElapsedTime(gameState.startedAt)}
-              </span>
-            )}
-          </div>
-        </div>
+          {gameState?.startedAt && (
+            <p className="meta mt-3">
+              Case opened {formatElapsedTime(gameState.startedAt)} ago
+            </p>
+          )}
+        </section>
 
-        {/* Current Node */}
+        {/* Assigned item */}
         {currentNode && (
           <Link
             to={ROUTES.PLAYER_NODE.replace(':nodeId', currentNode.code)}
-            className="panel panel-hover group"
+            className="block focus-visible:outline-none"
           >
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="badge-accent">ACTIVE</span>
-                  <Target className="w-4 h-4 text-nexus-accent" />
-                </div>
-                <h3 className="heading-4 truncate">{currentNode.title}</h3>
-                <p className="text-nexus-textMuted text-sm mt-1">
-                  {currentNode.location}
-                </p>
-                <p className="text-xs text-nexus-textSubtle mt-1 font-mono">
-                  Node: {currentNode.code} • Stage {currentNode.stage}
-                </p>
-              </div>
-              <ChevronRight className="w-5 h-5 text-nexus-textSubtle group-hover:text-nexus-accent transition-colors flex-shrink-0" />
-            </div>
+            <DocumentShell
+              reference={`Node ${currentNode.code}`}
+              title={currentNode.title}
+              subtitle={currentNode.location}
+              stock="paper"
+              lit
+              footer={
+                <>
+                  <Stamp variant="verified">Assigned</Stamp>
+                  <span className="meta">Stage {currentNode.stage}</span>
+                </>
+              }
+            >
+              <p className="section-label">Open this item to continue</p>
+              <span className="mt-3 inline-flex items-center gap-1 text-sm text-nexus-textMuted">
+                <span>Proceed</span>
+                <ChevronRight className="w-4 h-4" aria-hidden="true" />
+              </span>
+            </DocumentShell>
           </Link>
         )}
 
-        {/* Available Nodes Quick Preview */}
-        {allNodesForMap.filter(n => n.available && !n.solved && n.code !== currentNodeId).length > 0 && (
-          <div className="panel space-y-3">
-            <h3 className="heading-4 text-sm">Available Investigations</h3>
-            <div className="space-y-2 max-h-64 overflow-y-auto">
-              {allNodesForMap
-                .filter(n => n.available && !n.solved && n.code !== currentNodeId)
-                .slice(0, 5)
-                .map(node => (
-                  <Link
-                    key={node.code}
-                    to={ROUTES.PLAYER_NODE.replace(':nodeId', node.code)}
-                    className="panel panel-hover flex items-center gap-3 p-3 group"
-                  >
-                    <div className="w-10 h-10 bg-nexus-bg flex items-center justify-center flex-shrink-0 border border-nexus-border">
-                      <Target className="w-5 h-5 text-nexus-textSubtle group-hover:text-nexus-accent transition-colors" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">{node.title}</p>
-                      <p className="text-xs text-nexus-textMuted">{node.location}</p>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-nexus-textSubtle" />
-                  </Link>
-                ))}
-            </div>
-          </div>
+        {/* Open items */}
+        {availableNodes.length > 0 && (
+          <section className="panel">
+            <h3 className="heading-4 mb-3">Available Investigations</h3>
+            <RegisterList>
+              {availableNodes.slice(0, 5).map(node => (
+                <Link
+                  key={node.code}
+                  to={ROUTES.PLAYER_NODE.replace(':nodeId', node.code)}
+                  className="block focus-visible:outline-none"
+                >
+                  <RegisterRow
+                    id={node.code}
+                    label={node.title}
+                    meta={node.location}
+                    trailing={<ChevronRight className="w-4 h-4 text-nexus-textSubtle" aria-hidden="true" />}
+                  />
+                </Link>
+              ))}
+            </RegisterList>
+          </section>
         )}
 
-        {/* Quick Access Grid */}
-        <div>
-          <h2 className="heading-4 mb-4">Quick Access</h2>
-          <div className="grid grid-cols-2 gap-3">
+        {/* Standing instructions */}
+        <section>
+          <h2 className="heading-4 mb-3">Standing Instructions</h2>
+          <RegisterList>
             {quickActions.map(action => (
               <Link
                 key={action.path}
                 to={action.path}
+                aria-disabled={action.disabled || undefined}
                 className={cn(
-                  'panel panel-hover p-4 flex flex-col items-center gap-2 text-center',
-                  action.disabled && 'opacity-50 cursor-not-allowed pointer-events-none',
-                  action.primary && 'col-span-2 flex-row justify-between text-left',
+                  'register-row focus-visible:outline-none',
+                  action.disabled && 'pointer-events-none opacity-50'
                 )}
               >
-                <action.icon
-                  className={cn(
-                    'w-6 h-6',
-                    action.primary ? 'text-nexus-accent' : 'text-nexus-textMuted',
-                  )}
-                />
-                <div className={cn('flex-1', action.primary && 'flex flex-col items-start')}>
-                  <span className={cn('font-medium', action.primary ? 'text-lg' : 'text-sm')}>
-                    {action.label}
+                <action.icon className="w-4 h-4 shrink-0 text-nexus-textSubtle" aria-hidden="true" />
+                <span className="register-main">
+                  <span className="register-label block">{action.label}</span>
+                </span>
+                {action.count !== undefined && (
+                  <span className="font-mono text-[0.6875rem] tabular-nums text-nexus-textSubtle">
+                    {action.count === 0 ? 'None' : action.count}
                   </span>
-                  {action.primary && currentNode && (
-                    <span className="text-xs text-nexus-textSubtle mt-0.5">
-                      {currentNode.location}
-                    </span>
-                  )}
-                </div>
-                {action.count !== undefined && !action.primary && action.count > 0 && (
-                  <span className="badge-accent text-xs">{action.count}</span>
-                )}
-                {!action.primary && action.count === 0 && (
-                  <span className="text-xs text-nexus-textSubtle">Empty</span>
                 )}
               </Link>
             ))}
-          </div>
-        </div>
+          </RegisterList>
+        </section>
 
-        {/* Team Status */}
-        <div className="panel bg-nexus-bg/50">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Users className="w-5 h-5 text-nexus-accent" />
-              <span className="font-medium text-nexus-text">Team Status</span>
-            </div>
-            <div className="flex items-center gap-2">
-              {gameState?.status === 'RUNNING' ? (
-                <>
-                  <span className="w-2 h-2 rounded-full bg-nexus-accent" />
-                  <span className="text-sm text-nexus-text">Active</span>
-                </>
-              ) : (
-                <span className="text-sm text-nexus-textMuted">
-                  {gameState?.status ?? 'Unknown'}
-                </span>
-              )}
-            </div>
+        {/* Team record */}
+        <section className="panel">
+          <div className="mb-3 flex items-center gap-2">
+            <Users className="w-4 h-4 text-nexus-textMuted" aria-hidden="true" />
+            <h2 className="heading-4">Team Record</h2>
           </div>
-          {teamProgress && (
-            <div className="grid grid-cols-3 gap-4 mt-4">
-              <div className="text-center">
-                <p className="text-xl font-mono font-bold text-nexus-accent">
-                  {teamProgress.score.toLocaleString()}
-                </p>
-                <p className="text-xs text-nexus-textMuted">Score</p>
-              </div>
-              <div className="text-center">
-                <p className="text-xl font-mono font-bold text-nexus-warning">
-                  {teamProgress.hintsUsed}
-                </p>
-                <p className="text-xs text-nexus-textMuted">Hints Used</p>
-              </div>
-              <div className="text-center">
-                <p className="text-xl font-mono font-bold text-nexus-info">
-                  {teamProgress.evidenceOwned.length}
-                </p>
-                <p className="text-xs text-nexus-textMuted">Evidence</p>
-              </div>
-            </div>
+          {teamProgress ? (
+            <FieldGrid columns={3}>
+              <Field label="Score" value={<span className="font-mono tabular-nums">{teamProgress.score.toLocaleString()}</span>} />
+              <Field label="Hints drawn" value={<span className="font-mono tabular-nums">{teamProgress.hintsUsed}</span>} />
+              <Field label="Evidence held" value={<span className="font-mono tabular-nums">{teamProgress.evidenceOwned.length}</span>} />
+            </FieldGrid>
+          ) : (
+            <p className="body-sm text-nexus-textMuted">
+              No record has been issued to your team yet.
+            </p>
           )}
-        </div>
+        </section>
+
+        {/* Where the case stands */}
+        <RegisterColumn heading="Case status">
+          <FieldGrid columns={2}>
+            <Field label="Game" value={<span className="font-mono">{caseToneLabel(gameState?.status)}</span>} />
+            <Field label="Phase" value={<span className="font-mono">{gameState?.currentPhase ?? '—'}</span>} />
+            <Field label="Your role" value={<span className="font-mono">{ROLE_LABELS[player.role]}</span>} />
+            <Field label="Unread directives" value={<span className="font-mono tabular-nums">{unreadCount}</span>} />
+          </FieldGrid>
+        </RegisterColumn>
       </div>
     </div>
   )
+}
+
+function caseToneLabel(status: string | undefined): string {
+  switch (status) {
+    case 'RUNNING':
+      return 'Open'
+    case 'PAUSED':
+      return 'Suspended'
+    case 'ENDED':
+      return 'Closed'
+    case 'NOT_STARTED':
+      return 'Not started'
+    default:
+      return 'Unknown'
+  }
 }
 
 function formatElapsedTime(startedAt: string): string {

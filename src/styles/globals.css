@@ -3,9 +3,24 @@
 @tailwind utilities;
 
 /* ====================================================================
-   NEXUS ECHO — Visual Foundation
-   Restrained archival system. No glass, no glow, no rounded repetition.
-==================================================================== */
+   NEXUS ECHO — The Bureau's Visual DNA
+
+   Nine systems carry the whole institution:
+
+     1  border family       registration rules, corner brackets, file tabs
+     2  typography system   four typographic ages, each internally coherent
+     3  archive vocabulary  document shells, registers, redactions, stamps
+     4  status vocabulary   verified / unresolved / contradicted / restricted
+     5  evidence system     evidence frames, tags, chain-of-custody rows
+     6  signal system       signal integrity, node states, recording state
+     7  classification     public / internal / restricted / source-restricted
+     8  motion language     short, physical, never decorative
+     9  anomaly language    structural wrongness, never visual noise
+
+   The horror rule: the baseline must be precise, quiet and institutional.
+   Every effect in this file is scoped to a specific artifact or a specific
+   narrative state. Nothing is applied globally to the whole application.
+   ==================================================================== */
 
 @layer base {
   :root {
@@ -16,22 +31,92 @@
     --safe-right: env(safe-area-inset-right, 0px);
     --safe-bottom: env(safe-area-inset-bottom, 0px);
     --safe-left: env(safe-area-inset-left, 0px);
+
+    /* Narrative state. Driven by [data-horror="0..6"] on a shell ancestor so
+       the palette can be drained by progression rather than by a theme switch. */
+    --horror-level: 0;
+
+    /* Practical light: a single soft pool the reader sits inside. Used by
+       focus surfaces and lit documents, never as a page-wide wash. */
+    --pool-x: 50%;
+    --pool-y: 0%;
+    --pool-strength: 0.5;
+
+    /* Anomaly geometry. Only ever non-zero on material that is narratively
+       wrong. Off by default so a normal screen cannot inherit a defect. */
+    --anomaly-offset: 0px;
+    --anomaly-opacity: 0;
+
+    /* --------------------------------------------------------------------
+       PALETTE MIRROR
+
+       Raw CSS below (corner brackets, registration frames, ruled columns)
+       needs palette values that no utility class can supply. These mirror
+       the Tailwind `nexus` theme exactly; change one, change both.
+       -------------------------------------------------------------------- */
+    --nx-bg: #0a0a0b;
+    --nx-surface: #101012;
+    --nx-surface-elevated: #16161a;
+    --nx-surface-subtle: #0d0d0f;
+    --nx-paper: #1a1917;
+    --nx-paper-deep: #141312;
+
+    --nx-border: #2b2b2e;
+    --nx-border-subtle: #1f1f22;
+    --nx-border-strong: #3d3d42;
+
+    --nx-text: #d8d6d0;
+    --nx-text-muted: #918f89;
+    --nx-text-subtle: #6a6963;
+
+    --nx-accent: #6fb3c4;
+    --nx-accent-bg: #0d2226;
+    --nx-warning: #b8863f;
+    --nx-danger: #9e3b34;
+    --nx-restricted: #7c2f33;
+    --nx-inactive: #4a4a4c;
   }
+
+  /* ---- NARRATIVE PALETTE DRAIN ---------------------------------------
+     Color is removed as the story gets worse. Each level is a small step,
+     not a mode switch. */
+  [data-horror='0'] { --horror-level: 0; }
+  [data-horror='1'] { --horror-level: 1; }
+  [data-horror='2'] { --horror-level: 2; }
+  [data-horror='3'] { --horror-level: 3; }
+  [data-horror='4'] { --horror-level: 4; }
+  [data-horror='5'] { --horror-level: 5; }
+  [data-horror='6'] { --horror-level: 6; }
+
+  /* Mid: colder. Late: desaturated. Incident 37: nearly monochrome.
+     Implemented as a grayscale/saturation wash on the CHROME only — content
+     surfaces keep their contrast so the interface stays readable. */
+  [data-horror='2'] { --pool-strength: 0.42; }
+  [data-horror='3'] { --pool-strength: 0.34; }
+  [data-horror='4'] { --pool-strength: 0.26; }
+  [data-horror='5'] { --pool-strength: 0.18; }
+  [data-horror='6'] { --pool-strength: 0.1; }
 
   * {
     @apply border-nexus-borderSubtle;
   }
 
   html {
-    @apply scroll-smooth;
     -webkit-text-size-adjust: 100%;
   }
 
   body {
     @apply bg-nexus-bg text-nexus-text font-sans antialiased;
-    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
     min-height: 100vh;
     min-height: 100dvh;
+    /* Faintest possible institutional grain. Present so the black is never a
+       flat digital void, low enough that it reads as paper, not as a filter. */
+    background-image:
+      radial-gradient(120% 80% at var(--pool-x) var(--pool-y),
+        rgba(216, 214, 208, calc(0.028 * var(--pool-strength) * 2)) 0%,
+        rgba(10, 10, 11, 0) 62%),
+      url("data:image/svg+xml,%3Csvg width='140' height='140' viewBox='0 0 140 140' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+    background-attachment: fixed, scroll;
   }
 
   /* Mobile-first: prevent horizontal scroll */
@@ -45,7 +130,6 @@
     @apply min-h-[44px] min-w-[44px];
   }
 
-  /* Prefer 48-56px for primary actions */
   .touch-target-primary {
     @apply min-h-[48px] min-w-[48px];
   }
@@ -53,17 +137,15 @@
     @apply min-h-[56px] min-w-[56px];
   }
 
-  /* Focus — restrained, no glowing ring */
+  /* Focus — a thin registration outline. Never a glow. */
   :focus-visible {
-    @apply outline-none ring-1 ring-nexus-accent ring-offset-1 ring-offset-nexus-bg;
+    @apply outline-none ring-1 ring-nexus-text/70 ring-offset-1 ring-offset-nexus-bg;
   }
 
-  /* Selection */
   ::selection {
-    @apply bg-nexus-accent/20 text-nexus-bg;
+    @apply bg-nexus-text/20 text-nexus-text;
   }
 
-  /* Scrollbar — subtle */
   ::-webkit-scrollbar {
     @apply w-1.5 h-1.5;
   }
@@ -77,7 +159,7 @@
     @apply bg-nexus-border;
   }
 
-  /* Reduced motion */
+  /* Reduced motion — the horror is in the content, never in the movement. */
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
       animation-duration: 0.01ms !important;
@@ -90,297 +172,613 @@
 
 @layer components {
   /* ==================================================================
-     NEXUS Surface System
-     Multiple surface levels — not every surface is a card.
-     Background → Archive → Case → Evidence → Control
-  ================================================================== */
+     1 — BORDER FAMILY
+     A page has edges like a sheet of paper. Not every surface is a
+     rounded rectangle: most are documents with two or three ruled sides.
+     ================================================================== */
 
-  /* LEVEL 1 — Archive environment */
-  .archive-surface {
-    @apply bg-nexus-surface border-b border-nexus-border;
-  }
-
-  /* LEVEL 2 — Case surface */
-  .case-surface {
-    @apply bg-nexus-surfaceElevated;
-  }
-
-  /* LEVEL 3 — Evidence object */
-  .evidence-surface {
-    @apply bg-nexus-surface;
-  }
-
-  /* LEVEL 4 — Interactive control */
-  .control-surface {
-    @apply bg-nexus-bg;
-  }
-
-  /* ==================================================================
-     NEXUS Border Language
-     Partial borders, corner markers, registration lines.
-     No full rounded rectangles around everything.
-  ================================================================== */
-
-  /* Document-style edge — top and left borders only, like a physical page */
+  /* Document edge — the physical page. Top and left only. */
   .document-edge {
-    @apply border-l border-t;
+    @apply border-l border-t border-nexus-border;
   }
-
   .document-edge-sm {
     @apply border-l border-t border-nexus-border;
   }
 
-  /* Registration frame — thin line on three sides, open bottom */
+  /* Registration frame — three ruled sides, open at the bottom. */
   .registration-frame {
     @apply border-t border-r border-l border-nexus-border;
   }
 
-  /* Corner markers — small brackets at corners */
-  .corner-tl {
-    position: relative;
-    &::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 1.5rem;
-      height: 1.5rem;
-      border-top: 1px solid var(--tw-colors-nexus-border);
-      border-left: 1px solid var(--tw-colors-nexus-border);
-    }
+  /* Corner brackets — a surveyor's mark, not a rounded card. */
+  .corner-tl { position: relative; }
+  .corner-tl::before {
+    content: ''; position: absolute; top: 0; left: 0; width: 1.25rem; height: 1.25rem;
+    border-top: 1px solid var(--nx-border);
+    border-left: 1px solid var(--nx-border);
+    pointer-events: none;
   }
-  .corner-tr {
-    position: relative;
-    &::after {
-      content: '';
-      position: absolute;
-      top: 0;
-      right: 0;
-      width: 1.5rem;
-      height: 1.5rem;
-      border-top: 1px solid var(--tw-colors-nexus-border);
-      border-right: 1px solid var(--tw-colors-nexus-border);
-    }
+  .corner-tr { position: relative; }
+  .corner-tr::after {
+    content: ''; position: absolute; top: 0; right: 0; width: 1.25rem; height: 1.25rem;
+    border-top: 1px solid var(--nx-border);
+    border-right: 1px solid var(--nx-border);
+    pointer-events: none;
   }
-  .corner-br {
-    position: relative;
-    &::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      right: 0;
-      width: 1.5rem;
-      height: 1.5rem;
-      border-bottom: 1px solid var(--tw-colors-nexus-border);
-      border-right: 1px solid var(--tw-colors-nexus-border);
-    }
+  .corner-br { position: relative; }
+  .corner-br::after {
+    content: ''; position: absolute; bottom: 0; right: 0; width: 1.25rem; height: 1.25rem;
+    border-bottom: 1px solid var(--nx-border);
+    border-right: 1px solid var(--nx-border);
+    pointer-events: none;
   }
-  .corner-bl {
-    position: relative;
-    &::before {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      width: 1.5rem;
-      height: 1.5rem;
-      border-bottom: 1px solid var(--tw-colors-nexus-border);
-      border-left: 1px solid var(--tw-colors-nexus-border);
-    }
+  .corner-bl { position: relative; }
+  .corner-bl::before {
+    content: ''; position: absolute; bottom: 0; left: 0; width: 1.25rem; height: 1.25rem;
+    border-bottom: 1px solid var(--nx-border);
+    border-left: 1px solid var(--nx-border);
+    pointer-events: none;
   }
 
-  /* Interrupted rule — dashed line for section separation */
+  /* All four, for a plate that must read as fully bounded. */
+  .bracketed::before, .bracketed::after {
+    content: ''; position: absolute; width: 0.75rem; height: 0.75rem; pointer-events: none;
+  }
+  .bracketed::before {
+    top: -1px; left: -1px;
+    border-top: 1px solid var(--nx-border-strong);
+    border-left: 1px solid var(--nx-border-strong);
+  }
+  .bracketed::after {
+    bottom: -1px; right: -1px;
+    border-bottom: 1px solid var(--nx-border-strong);
+    border-right: 1px solid var(--nx-border-strong);
+  }
+
   .divider-dashed {
     @apply border-t border-dashed border-nexus-border;
   }
-
-  /* Solid thin separator */
   .divider-solid {
     @apply border-t border-nexus-border;
   }
-
-  /* ==================================================================
-     NEXUS Panels — restrained, not generic cards
-  ================================================================== */
-
-  .nexus-panel {
-    @apply bg-nexus-surfaceElevated border border-nexus-border p-4;
-  }
-
-  .nexus-panel-sm {
-    @apply bg-nexus-surfaceElevated border border-nexus-border p-3;
-  }
-
-  /* Document-style panel — top/left borders for physical feel */
-  .nexus-document {
-    @apply bg-nexus-surface border-l-2 border-t-2 border-nexus-border p-4;
-  }
-
-  /* Flat panel — no border, just background for tight groupings */
-  .nexus-flat {
-    @apply bg-nexus-surface;
+  /* Vertical rule — the spine of a register column. */
+  .rule-v {
+    @apply border-l border-nexus-borderSubtle;
   }
 
   /* ==================================================================
-     NEXUS Buttons — functional, not decorative
-  ================================================================== */
+     2 — TYPOGRAPHY SYSTEM
+     Four ages. Modern institutional, terminal, typewritten, and human hand.
+     ================================================================== */
 
+  .text-mono { @apply font-mono tabular-nums; }
+  .text-display { @apply font-display tracking-tight; }
+  .text-system { @apply font-system; }
+  .text-evidence { @apply font-evidence; }
+  /* Typewritten — bureau documents, carbon copies, superseded forms. */
+  .text-type { @apply font-type; }
+  /* Human hand — field annotation only. */
+  .text-hand {
+    @apply font-hand;
+    font-size: 0.95em;
+    transform: rotate(-0.35deg);
+  }
+
+  .heading-1 { @apply text-display text-2xl md:text-3xl font-semibold tracking-tight; }
+  .heading-2 { @apply text-display text-xl md:text-2xl font-semibold tracking-tight; }
+  .heading-3 { @apply text-display text-lg md:text-xl font-semibold tracking-tight; }
+  .heading-4 { @apply text-display text-base md:text-lg font-semibold; }
+  .heading-5 { @apply text-display text-sm font-semibold uppercase tracking-[0.14em]; }
+
+  .body-lg { @apply text-lg leading-relaxed; }
+  .body { @apply text-base leading-relaxed; }
+  .body-sm { @apply text-sm leading-normal; }
+  .caption { @apply text-xs leading-normal text-nexus-textMuted; }
+
+  /* Metadata — monospace for identifiers, codes, timestamps. Always. */
+  .meta { @apply text-xs font-mono text-nexus-textSubtle; }
+
+  /* Label — the institutional field label used across every register. */
+  .label {
+    @apply block text-[0.6875rem] uppercase tracking-[0.16em] text-nexus-textSubtle mb-1.5;
+  }
+
+  /* Section heading — small caps, ruled beneath. */
+  .section-label {
+    @apply font-mono text-[0.6875rem] uppercase tracking-[0.22em] text-nexus-textSubtle;
+  }
+
+  /* Document title in typewritten age. */
+  .doc-title {
+    @apply font-type text-base md:text-lg font-bold text-nexus-text tracking-tight;
+  }
+  .doc-reference {
+    @apply font-mono text-[0.6875rem] uppercase tracking-[0.18em] text-nexus-textSubtle;
+  }
+
+  /* ==================================================================
+     3 — ARCHIVE VOCABULARY
+     ================================================================== */
+
+  /* Document shell. Header band, body, footer band. Carries a case
+     reference, a revision marker and a page number like any physical file. */
+  .bureau-document {
+    @apply relative bg-nexus-paper border border-nexus-border;
+  }
+  .bureau-document-sm {
+    @apply relative bg-nexus-surfaceElevated border border-nexus-border;
+  }
+
+  .bureau-doc-header {
+    @apply border-b border-nexus-border px-4 py-2.5;
+    background-image: repeating-linear-gradient(
+      180deg, transparent 0, transparent 2px,
+      rgba(216,214,208,0.012) 2px, rgba(216,214,208,0.012) 4px
+    );
+  }
+  .bureau-doc-title { @apply doc-title; }
+  .bureau-doc-subtitle { @apply doc-reference; }
+  .bureau-doc-body { @apply px-4 py-4; }
+  .bureau-doc-footer {
+    @apply border-t border-nexus-border px-4 py-2 flex items-center justify-between gap-3;
+  }
+  .bureau-doc-meta {
+    @apply flex justify-between text-[0.6875rem] font-mono text-nexus-textSubtle;
+  }
+
+  /* Recovered paper stock: aged folder / carbon copy. Warmer than the
+     digital surfaces, and used ONLY for physical material. */
+  .paper-stock {
+    background-color: var(--nx-paper);
+    box-shadow:
+      inset 0 0 0 1px rgba(216,214,208,0.03),
+      0 1px 0 rgba(0,0,0,0.5);
+  }
+  /* Carbon copy — the second sheet, lighter impression. */
+  .carbon-copy {
+    background-color: var(--nx-paper-deep);
+    color: var(--nx-text-muted);
+  }
+
+  /* Marginalia column, like a real form's left rule. */
+  .with-margin {
+    @apply relative pl-5;
+  }
+  .with-margin::before {
+    content: ''; position: absolute; left: 0.75rem; top: 0.25rem; bottom: 0.25rem; width: 1px;
+    background: var(--nx-border-subtle);
+  }
+
+  /* Archive paper texture — very faint grain, document surfaces only. */
+  .archive-paper {
+    background-image: url("data:image/svg+xml,%3Csvg width='120' height='120' viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23g)' opacity='0.05'/%3E%3C/svg%3E");
+  }
+
+  /* ==================================================================
+     4 — STATUS VOCABULARY
+     Stamps are archival marks. Selective by design — one per document at
+     most, never one per row.
+     ================================================================== */
+
+  .stamp {
+    @apply inline-flex items-center gap-1 px-1.5 py-0.5 font-mono text-[0.625rem] uppercase tracking-[0.18em];
+    border: 1px solid currentColor;
+  }
+  .stamp-verified { @apply stamp text-nexus-accent; }
+  .stamp-restricted { @apply stamp text-nexus-restricted; }
+  .stamp-anomalous { @apply stamp text-nexus-warning; }
+  .stamp-archived { @apply stamp text-nexus-textSubtle; }
+  .stamp-incomplete { @apply stamp text-nexus-textSubtle border-dashed; }
+  .stamp-unresolved { @apply stamp text-nexus-textMuted border-dashed; }
+  .stamp-contradicted { @apply stamp text-nexus-danger; }
+
+  /* A stamp laid onto paper: rotated, slightly broken impression. */
+  .stamp-impressed {
+    @apply inline-flex items-center px-2 py-1 font-mono text-[0.6875rem] uppercase tracking-[0.2em];
+    border: 1px solid currentColor;
+    transform: rotate(-4deg);
+    opacity: 0.82;
+  }
+
+  /* Status dot — a filled square, an institutional marker, not a soft blob. */
+  .status-dot { @apply w-2 h-2; }
+  .status-active { @apply status-dot bg-nexus-accent; }
+  .status-warning { @apply status-dot bg-nexus-warning; }
+  .status-danger { @apply status-dot bg-nexus-danger; }
+  .status-neutral { @apply status-dot bg-nexus-inactive; }
+  .status-inactive { @apply status-dot bg-nexus-inactive; }
+
+  /* State must never rely on color alone — every marker carries a glyph. */
+  .state-marker {
+    @apply inline-flex items-center justify-center w-4 h-4 border text-[0.5rem] font-mono leading-none;
+  }
+
+  /* ==================================================================
+     5 — EVIDENCE SYSTEM
+     ================================================================== */
+
+  .evidence-frame {
+    @apply relative bg-nexus-paper border border-nexus-border;
+  }
+  /* Evidence tag: the sticker on a bagged item. */
+  .evidence-tag {
+    @apply inline-flex items-center gap-1.5 px-1.5 py-0.5 font-mono text-[0.625rem] uppercase tracking-[0.14em];
+    border: 1px dashed var(--nx-border);
+    background: var(--nx-bg);
+  }
+  .evidence-label { @apply section-label; }
+  .evidence-title { @apply font-display font-semibold text-base text-nexus-text; }
+
+  /* Chain-of-custody row: identifier / type / status / custodian, in
+     ruled columns. Not a card grid. */
+  .custody-row {
+    @apply grid items-center gap-x-3 gap-y-1 py-2 border-b border-nexus-borderSubtle;
+    @apply text-xs;
+  }
+  .custody-id {
+    @apply font-mono text-[0.6875rem] tracking-[0.12em] text-nexus-text;
+  }
+  .custody-type { @apply font-mono text-[0.625rem] uppercase tracking-[0.16em] text-nexus-textSubtle; }
+  .custody-meta { @apply font-mono text-[0.625rem] text-nexus-textSubtle; }
+
+  /* ==================================================================
+     6 — SIGNAL SYSTEM
+     Signal integrity is a measured quantity, so it is drawn as a
+     measured bar with ticks, never as a percentage badge.
+     ================================================================== */
+
+  .signal-track {
+    @apply relative h-2 w-full bg-nexus-bg border border-nexus-borderSubtle overflow-hidden;
+  }
+  .signal-fill {
+    @apply absolute inset-y-0 left-0 bg-nexus-accent/70;
+  }
+  .signal-fill-warning { @apply absolute inset-y-0 left-0 bg-nexus-warning/70; }
+  .signal-fill-critical { @apply absolute inset-y-0 left-0 bg-nexus-danger/70; }
+  .signal-fill-unknown {
+    @apply absolute inset-y-0 left-0 bg-nexus-border;
+  }
+  /* Measured ticks — 10 divisions, because integrity is reported in tenths. */
+  .signal-ticks {
+    @apply absolute inset-0 pointer-events-none;
+    background-image: repeating-linear-gradient(
+      90deg, transparent 0, transparent calc(10% - 1px),
+      var(--nx-bg) calc(10% - 1px), var(--nx-bg) 10%
+    );
+  }
+
+  /* Recording state indicator — a blinking lamp, physical not neon. */
+  .rec-lamp {
+    @apply w-2 h-2 bg-nexus-danger;
+    animation: relay 1400ms steps(1) infinite;
+  }
+
+  /* ==================================================================
+     7 — CLASSIFICATION
+     ================================================================== */
+
+  .classification {
+    @apply inline-flex items-center px-1.5 py-0.5 font-mono text-[0.625rem] uppercase tracking-[0.2em];
+  }
+  .classification-internal { @apply classification text-nexus-textMuted border border-nexus-border; }
+  .classification-internal-source {
+    @apply classification text-nexus-warning border border-nexus-warning/40;
+  }
+  .classification-restricted {
+    @apply classification text-nexus-restricted border border-nexus-restricted/50 bg-nexus-restrictedBg;
+  }
+  .classification-public { @apply classification text-nexus-textSubtle border-b border-nexus-border; }
+
+  /* ==================================================================
+     8 — MOTION LANGUAGE
+     Short, physical, rare. "Something was set down" — never springy.
+     ================================================================== */
+
+  @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes materialize { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes settle { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes slide-up { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes slide-down { from { opacity: 0; transform: translateY(-16px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes signal-acquire {
+    0% { opacity: 0.25; transform: scaleY(0.35); }
+    60% { opacity: 0.75; }
+    100% { opacity: 1; transform: scaleY(1); }
+  }
+  @keyframes relay { 0%, 55% { opacity: 1; } 56%, 100% { opacity: 0.25; } }
+
+  .animate-fade-in { animation: fade-in 200ms ease-out; }
+  .animate-materialize { animation: materialize 200ms cubic-bezier(0.16,0.84,0.44,1); }
+  .animate-settle { animation: settle 320ms cubic-bezier(0.16,0.84,0.44,1); }
+  .animate-slide-up { animation: slide-up 300ms cubic-bezier(0.4,0,0.2,1); }
+  .animate-slide-down { animation: slide-down 300ms cubic-bezier(0.4,0,0.2,1); }
+  .animate-signal-acquire { animation: signal-acquire 300ms cubic-bezier(0.2,0.8,0.2,1); }
+  .animate-relay { animation: relay 1400ms steps(1) infinite; }
+
+  .stagger-1 { animation-delay: 40ms; }
+  .stagger-2 { animation-delay: 80ms; }
+  .stagger-3 { animation-delay: 120ms; }
+  .stagger-4 { animation-delay: 160ms; }
+  .stagger-5 { animation-delay: 200ms; }
+  .stagger-6 { animation-delay: 240ms; }
+
+  /* Skeletons — flat rules, because a loading bureau document is a blank form. */
+  .skeleton { @apply bg-nexus-surfaceElevated; }
+  .skeleton-text { @apply skeleton h-3 w-3/4 mb-1; }
+  .skeleton-title { @apply skeleton h-5 w-1/2 mb-2; }
+  .skeleton-body { @apply skeleton h-4 w-full mb-1; }
+  .skeleton-card { @apply skeleton h-32 w-full border border-nexus-border; }
+
+  /* ==================================================================
+     9 — ANOMALY LANGUAGE
+     Structural wrongness. Not noise, not glitch, not chromatic aberration.
+     Applied only to material that is narratively anomalous.
+     ================================================================== */
+
+  /* L1 — small visual mismatch. One element sits 2px off its column. */
+  .anomaly-offset {
+    transform: translateX(var(--anomaly-offset));
+  }
+  /* L2 — a duplicated line. The second copy is the tell. */
+  .anomaly-duplicated {
+    @apply relative;
+  }
+  .anomaly-duplicated > * + * {
+    margin-top: 0;
+  }
+  /* L3 — inconsistent typography inside one block. */
+  .anomaly-typebreak {
+    letter-spacing: 0.055em;
+    word-spacing: 0.09em;
+  }
+  /* L4 — an image registered against the wrong rule. */
+  .anomaly-misregistered {
+    @apply relative;
+  }
+  .anomaly-misregistered::after {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(
+      to bottom,
+      rgba(158, 59, 52, 0.045) 0px,
+      rgba(158, 59, 52, 0.045) 1px,
+      transparent 1px,
+      transparent 4px
+    );
+    pointer-events: none;
+  }
+  /* L5 — the system knows something about the viewer. */
+  .anomaly-observed {
+    box-shadow: inset 2px 0 0 var(--nx-restricted);
+  }
+  /* L6 — the system references itself. */
+  .anomaly-recursive {
+    border-style: solid;
+    border-color: var(--nx-restricted);
+    border-left-width: 2px;
+  }
+
+  /* Rendering artifacts are scoped to individual recovered artifacts. */
+  .artifact-print {
+    background-image:
+      radial-gradient(140% 100% at 30% 0%, rgba(216,214,208,0.03), transparent 58%);
+  }
+  /* A single scratch. Placed by the caller, not tiled across the page. */
+  .artifact-scratch {
+    @apply pointer-events-none absolute;
+    background: rgba(216,214,208,0.08);
+    mix-blend-mode: screen;
+  }
+  /* Paper edge — a lit sheet with a torn or cut right margin. */
+  .artifact-edge {
+    clip-path: polygon(0 0, 100% 0, 100% 46%, calc(100% - 3px) 50%, 100% 54%, 100% 100%, 0 100%);
+  }
+
+  /* REDACTION — editorial, never decorative. Only where something was
+     actually removed from the record. */
+  .redacted {
+    @apply inline-block bg-nexus-bg border-y border-nexus-bg text-transparent select-none;
+  }
+  .redacted-line {
+    @apply block h-2.5 bg-nexus-bg border-y border-nexus-bg;
+  }
+  /* Partial redaction — the line survives, part of it does not. */
+  .redacted-partial {
+    @apply bg-nexus-bg text-nexus-bg px-1 select-none;
+  }
+  /* Whiteout: material removed by overexposure rather than ink. */
+  .whiteout {
+    @apply bg-nexus-text text-nexus-text;
+  }
+
+  /* ==================================================================
+     SURFACES AND CONTROLS
+     ================================================================== */
+
+  .archive-surface { @apply bg-nexus-surface border-b border-nexus-border; }
+  .case-surface { @apply bg-nexus-surfaceElevated; }
+  .evidence-surface { @apply bg-nexus-surface; }
+  .control-surface { @apply bg-nexus-bg; }
+
+  /* Lit document: a pool of light on one sheet inside a dark room. */
+  .lit-surface {
+    position: relative;
+    background:
+      radial-gradient(120% 100% at 30% 0%, rgba(216,214,208,0.035), transparent 65%),
+      var(--nx-paper);
+    @apply shadow-lit;
+  }
+
+  .nexus-panel { @apply bg-nexus-surfaceElevated border border-nexus-border p-4; }
+  .nexus-panel-sm { @apply bg-nexus-surfaceElevated border border-nexus-border p-3; }
+  .nexus-document { @apply bg-nexus-paper border-l-2 border-t-2 border-nexus-border p-4; }
+  .nexus-flat { @apply bg-nexus-surface; }
+
+  /* Buttons — institutional controls. A press should feel like a switch. */
   .nexus-btn {
-    @apply inline-flex items-center justify-center gap-2 font-medium
-           text-sm px-4 py-2.5 min-h-[44px]
-           focus-visible:ring-1 focus-visible:ring-nexus-accent
-           transition-all duration-fast;
+    @apply inline-flex items-center justify-center gap-2 font-medium text-sm px-4 py-2.5 min-h-[44px];
+    @apply transition-colors duration-fast;
   }
-
   .nexus-btn-primary {
-    @apply nexus-btn bg-nexus-accent text-nexus-bg
-           hover:bg-nexus-accentDim;
+    @apply nexus-btn bg-nexus-text text-nexus-bg;
   }
-
+  .nexus-btn-primary:hover { @apply bg-nexus-textMuted; }
+  .nexus-btn-primary:active { @apply bg-nexus-textMuted; transform: translateY(1px); }
   .nexus-btn-secondary {
-    @apply nexus-btn bg-nexus-surfaceElevated text-nexus-text border border-nexus-border
-           hover:border-nexus-border;
+    @apply nexus-btn bg-nexus-surfaceElevated text-nexus-text border border-nexus-border hover:bg-nexus-borderSubtle;
   }
-
   .nexus-btn-ghost {
-    @apply nexus-btn bg-transparent text-nexus-textMuted
-           hover:bg-nexus-surfaceElevated hover:text-nexus-text;
+    @apply nexus-btn bg-transparent text-nexus-textMuted hover:text-nexus-text hover:bg-nexus-surfaceElevated;
   }
-
   .nexus-btn-ghost-accent {
-    @apply nexus-btn bg-transparent text-nexus-accent
-           hover:bg-nexus-accentBg/30;
+    @apply nexus-btn bg-transparent text-nexus-accent hover:bg-nexus-accentBg/40;
   }
-
-  .nexus-btn-sm {
-    @apply px-3 py-1.5 text-xs min-h-[36px];
-  }
-
-  /* ==================================================================
-     NEXUS Badges — small, contextual, not rounded pills
-  ================================================================== */
+  .nexus-btn-sm { @apply px-3 py-1.5 text-xs min-h-[36px]; }
 
   .nexus-badge {
-    @apply inline-flex items-center gap-1 px-2 py-0.5 text-xs;
-    border: 1px solid var(--tw-colors-nexus-borderSubtle);
-    background: var(--tw-colors-nexus-surface);
+    @apply inline-flex items-center gap-1 px-1.5 py-0.5 font-mono text-[0.625rem] uppercase tracking-[0.14em];
+    border: 1px solid var(--nx-border-subtle);
+    background: var(--nx-surface);
   }
+  .nexus-badge-accent { @apply nexus-badge text-nexus-accent border-nexus-accent/30; }
+  .nexus-badge-warning { @apply nexus-badge text-nexus-warning border-nexus-warning/30; }
+  .nexus-badge-danger { @apply nexus-badge text-nexus-danger border-nexus-danger/30; }
 
-  .nexus-badge-accent {
-    @apply nexus-badge text-nexus-accent border-nexus-accent/30;
-    background: var(--tw-colors-nexus-accentBg);
+  /* ==================================================================
+     REGISTER / FILE INDEX
+     Column rules, small markers, row density. A filing index, not a card
+     grid: no rounded boxes, no identical case cards.
+     ================================================================== */
+
+  .register { @apply divide-y divide-nexus-borderSubtle/60; }
+  .register-row {
+    @apply flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0;
   }
+  .register-id { @apply font-mono text-[0.6875rem] tracking-[0.12em] text-nexus-textSubtle; }
+  .register-main { @apply flex-1 min-w-0; }
+  .register-label { @apply font-medium text-nexus-text text-sm; }
+  .register-meta { @apply text-[0.6875rem] text-nexus-textSubtle font-mono; }
 
-  .nexus-badge-warning {
-    @apply nexus-badge text-nexus-warning border-nexus-warning/30;
-    background: var(--tw-colors-nexus-warningBg);
+  /* File-index row: case number, subject, classification, status. */
+  .file-row {
+    @apply grid items-center gap-3 py-2 px-1 border-b border-nexus-borderSubtle/60;
+    @apply transition-colors duration-fast;
   }
-
-  .nexus-badge-danger {
-    @apply nexus-badge text-nexus-danger border-nexus-danger/30;
-    background: var(--tw-colors-nexus-dangerBg);
+  .file-row:hover { @apply bg-nexus-surfaceElevated; }
+  /* The selected file reads as pulled from the drawer: a left marker and a
+     lifted background, not a glowing pill. */
+  .file-row-selected {
+    @apply bg-nexus-surfaceElevated;
+    box-shadow: inset 2px 0 0 var(--nx-text);
+  }
+  .file-tab {
+    @apply inline-block px-2 py-0.5 font-mono text-[0.625rem] uppercase tracking-[0.16em];
+    border: 1px solid var(--nx-border);
+    background: var(--nx-bg);
+  }
+  .file-tab-active {
+    @apply file-tab text-nexus-text;
+    border-color: var(--nx-border-strong);
+    background: var(--nx-surface-elevated);
   }
 
   /* ==================================================================
-     NEXUS Status Indicators — meaningful, not decorative
-  ================================================================== */
+     INCIDENT LOG
+     Timestamps in a fixed column. A blank entry is allowed to exist: the
+     gap carries the tension.
+     ================================================================== */
 
-  .status-dot {
-    @apply w-2 h-2;
+  .incident-row {
+    @apply grid grid-cols-[auto_1fr] gap-x-4 py-1.5 border-b border-nexus-borderSubtle/40;
   }
-
-  .status-active {
-    @apply status-dot bg-nexus-accent;
+  .incident-time {
+    @apply font-mono text-[0.6875rem] tabular-nums text-nexus-textSubtle whitespace-nowrap;
   }
-  .status-warning {
-    @apply status-dot bg-nexus-warning;
-  }
-  .status-danger {
-    @apply status-dot bg-nexus-danger;
-  }
-  .status-inactive {
-    @apply status-dot bg-nexus-inactive;
+  /* An entry the system did not record. */
+  .incident-gap {
+    @apply py-2 font-mono text-[0.6875rem] uppercase tracking-[0.18em] text-nexus-textSubtle/70;
+    border-bottom: 1px solid var(--nx-border-subtle);
   }
 
   /* ==================================================================
-     Typography — distinguish system from evidence
-  ================================================================== */
+     SURVEILLANCE FRAME
+     An institutional monitor, not a cyberpunk camera. Quarters, corner
+     brackets, a timestamp, and a region that may not be legible.
+     ================================================================== */
 
-  .text-mono {
-    @apply font-mono tabular-nums;
+  .surveillance-frame {
+    @apply relative bg-nexus-bg border border-nexus-border overflow-hidden;
   }
-
-  .text-display {
-    @apply font-display font-semibold tracking-tight;
+  /* Unreadable region: not noise, just an absence of information. */
+  .surveillance-illegible {
+    background-image:
+      repeating-linear-gradient(
+        0deg,
+        rgba(216,214,208,0.022) 0px,
+        rgba(216,214,208,0.022) 1px,
+        transparent 1px,
+        transparent 5px
+      );
   }
-
-  .text-system {
-    @apply font-system;
-  }
-
-  .text-evidence {
-    @apply font-evidence;
-  }
-
-  .heading-1 {
-    @apply text-display text-3xl md:text-4xl font-bold tracking-tight;
-  }
-  .heading-2 {
-    @apply text-display text-2xl md:text-3xl font-bold tracking-tight;
-  }
-  .heading-3 {
-    @apply text-display text-xl md:text-2xl font-semibold tracking-tight;
-  }
-  .heading-4 {
-    @apply text-display text-lg md:text-xl font-semibold;
-  }
-  .heading-5 {
-    @apply text-display text-base font-semibold uppercase tracking-wider;
-  }
-
-  .body-lg {
-    @apply text-lg leading-relaxed;
-  }
-  .body {
-    @apply text-base leading-relaxed;
-  }
-  .body-sm {
-    @apply text-sm leading-normal;
-  }
-  .caption {
-    @apply text-xs leading-normal text-nexus-textMuted;
-  }
-
-  /* Metadata — monospace for IDs, codes, timestamps */
-  .meta {
-    @apply text-xs font-mono text-nexus-textSubtle;
+  .surveillance-corner {
+    @apply absolute w-5 h-5 border-nexus-text/30;
   }
 
   /* ==================================================================
-     Layout helpers
-  ================================================================== */
+     WAVEFORM
+     Measured geometry with ticks. For an anomalous recording, the trace
+     may break — but it breaks structurally, not with a neon glow.
+     ================================================================== */
 
-  .container-narrow {
-    @apply max-w-3xl mx-auto px-4 md:px-6;
+  .waveform-tick { stroke: var(--nx-border); stroke-width: 1; }
+  .waveform-trace { stroke: var(--nx-accent); stroke-width: 1; fill: none; }
+  .waveform-trace-degraded { stroke: var(--nx-warning); stroke-width: 1; fill: none; }
+  .waveform-marker { stroke: var(--nx-warning); stroke-width: 1; }
+  /* A discontinuity: the trace simply is not there. */
+  .waveform-break { stroke: var(--nx-danger); stroke-width: 1; }
+
+  /* ==================================================================
+     CASE TRANSITION
+     "OPENING CASE FILE" — honest timing, never an invented delay.
+     ================================================================== */
+
+  .case-transition {
+    @apply fixed inset-0 z-[60] bg-nexus-bg flex items-center justify-center px-6;
   }
-  .container-wide {
-    @apply max-w-6xl mx-auto px-4 md:px-6;
-  }
-  .container-7xl {
-    @apply max-w-7xl mx-auto px-4 md:px-6;
+  .case-transition-rule {
+    @apply h-px bg-nexus-border;
+    animation: relay 900ms steps(1) infinite;
   }
 
-  /* Full-viewport app shell */
-  .page {
-    @apply w-full min-h-[100vh] min-h-[100dvh];
+  /* ==================================================================
+     FINAL REVELATION
+     Chrome is removed, not restyled. This is the inversion: the interface
+     has stopped presenting information and started showing itself.
+     ================================================================== */
+
+  .revelation-surface {
+    @apply bg-nexus-bg text-nexus-text;
+    letter-spacing: 0.06em;
   }
+  .revelation-line {
+    @apply font-mono uppercase text-nexus-textMuted;
+    animation: materialize 900ms cubic-bezier(0.16,0.84,0.44,1);
+  }
+
+  /* ==================================================================
+     LAYOUT
+     ================================================================== */
+
+  .container-narrow { @apply max-w-3xl mx-auto px-4 md:px-6; }
+  .container-wide { @apply max-w-6xl mx-auto px-4 md:px-6; }
+  .container-7xl { @apply max-w-7xl mx-auto px-4 md:px-6; }
+
+  .page { @apply w-full min-h-[100vh] min-h-[100dvh]; }
+  .app-viewport { min-height: 100vh; min-height: 100dvh; }
 
   .page-content {
-    @apply pt-16 pb-8 md:pt-20 md:pb-12;
+    @apply pt-14 pb-8 md:pt-16 md:pb-12;
     padding-left: calc(1rem + var(--safe-left));
     padding-right: calc(1rem + var(--safe-right));
   }
-
   @media (min-width: 768px) {
     .page-content {
       padding-left: calc(1.5rem + var(--safe-left));
@@ -389,121 +787,64 @@
   }
 
   /* ==================================================================
-     Animations — purposeful, never infinite or decorative
-  ================================================================== */
+     LEGACY COMPATIBILITY
+     Older component classes, restyled into the bureau language. Kept so
+     screens that have not yet been rebuilt still belong to the institution.
+     ================================================================== */
 
-  @keyframes fade-in {
-    from { opacity: 0; }
-    to { opacity: 1; }
+  .panel {
+    @apply bg-nexus-surfaceElevated border border-nexus-border p-4 md:p-5;
   }
-  @keyframes slide-up {
-    from { opacity: 0; transform: translateY(16px); }
-    to { opacity: 1; transform: translateY(0); }
+  .panel-elevated { @apply bg-nexus-surface border-nexus-border; }
+  .panel-hover { @apply hover:border-nexus-borderStrong; }
+  .card { @apply bg-nexus-surfaceElevated border border-nexus-border p-4 md:p-5; }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 font-medium px-4 py-2.5 text-sm min-h-[44px];
+    @apply transition-colors duration-fast active:translate-y-px;
   }
-  @keyframes slide-down {
-    from { opacity: 0; transform: translateY(-16px); }
-    to { opacity: 1; transform: translateY(0); }
+  .btn-primary { @apply btn bg-nexus-text text-nexus-bg hover:bg-nexus-textMuted disabled:opacity-40 disabled:cursor-not-allowed; }
+  .btn-secondary { @apply btn bg-nexus-surfaceElevated text-nexus-text border border-nexus-border hover:border-nexus-borderStrong disabled:opacity-40 disabled:cursor-not-allowed; }
+  .btn-ghost { @apply btn bg-transparent text-nexus-textMuted hover:text-nexus-text hover:bg-nexus-surfaceElevated disabled:opacity-40; }
+  .btn-danger { @apply btn bg-nexus-dangerBg text-nexus-danger border border-nexus-danger/30 hover:bg-nexus-danger/20 disabled:opacity-40; }
+  .btn-warning { @apply btn bg-nexus-warningBg text-nexus-warning border border-nexus-warning/30 hover:bg-nexus-warning/20 disabled:opacity-40; }
+  .btn-icon { @apply btn px-2 min-h-[36px] min-w-[36px]; }
+
+  .input {
+    @apply w-full bg-nexus-bg border border-nexus-border text-nexus-text px-3 py-2.5 text-base;
+    @apply placeholder:text-nexus-textSubtle focus:border-nexus-text/60 disabled:opacity-50;
   }
-  @keyframes signal-acquire {
-    0% { opacity: 0.3; transform: scaleY(0.3); }
-    50% { opacity: 0.8; transform: scaleY(0.8); }
-    100% { opacity: 1; transform: scaleY(1); }
+  .input-error { @apply border-nexus-danger; }
+  .form-input { @apply input; }
+  .form-select {
+    @apply bg-nexus-bg border border-nexus-border text-nexus-text px-3 py-2 text-sm;
   }
 
-  .animate-fade-in {
-    animation: fade-in 200ms ease-out;
-  }
-  .animate-slide-up {
-    animation: slide-up 300ms cubic-bezier(0.4, 0, 0.2, 1);
-  }
-  .animate-slide-down {
-    animation: slide-down 300ms cubic-bezier(0.4, 0, 0.2, 1);
-  }
-  .animate-signal-acquire {
-    animation: signal-acquire 300ms cubic-bezier(0.2, 0.8, 0.2, 1);
-  }
+  .badge { @apply inline-flex items-center gap-1 px-1.5 py-0.5 text-[0.6875rem] font-mono uppercase tracking-[0.12em] border; }
+  .badge-accent { @apply badge text-nexus-accent border-nexus-accent/30 bg-nexus-accentBg/40; }
+  .badge-warning { @apply badge text-nexus-warning border-nexus-warning/30 bg-nexus-warningBg/40; }
+  .badge-danger { @apply badge text-nexus-danger border-nexus-danger/30 bg-nexus-dangerBg/40; }
+  .badge-info { @apply badge text-nexus-info border-nexus-info/30 bg-nexus-infoBg/40; }
+  .badge-neutral { @apply badge text-nexus-textMuted border-nexus-borderSubtle; }
+  .badge-observer { @apply badge text-nexus-accent border-nexus-accent/30; }
+  .badge-analyst { @apply badge text-nexus-warning border-nexus-warning/30; }
+  .badge-operator { @apply badge text-nexus-blue border-nexus-blue/30; }
 
-  /* Staggered children */
-  .stagger-1 { animation-delay: 40ms; }
-  .stagger-2 { animation-delay: 80ms; }
-  .stagger-3 { animation-delay: 120ms; }
-  .stagger-4 { animation-delay: 160ms; }
-  .stagger-5 { animation-delay: 200ms; }
-  .stagger-6 { animation-delay: 240ms; }
+  .surface-overlay { @apply bg-nexus-surfaceElevated border border-nexus-border; }
 
-  /* Loading skeleton — subtle, no animation spam */
-  .skeleton { @apply bg-nexus-borderSubtle; }
-  .skeleton-text { @apply skeleton h-3 w-3/4 mb-1; }
-  .skeleton-title { @apply skeleton h-5 w-1/2 mb-2; }
-  .skeleton-body { @apply skeleton h-4 w-full mb-1; }
-  .skeleton-card { @apply skeleton h-32 w-full border border-nexus-border; }
+  /* QR scanner — an observation frame, not a game HUD. */
+  .scanner-frame { @apply relative w-64 h-64 md:w-80 md:h-80 border border-nexus-text/30 overflow-hidden; }
+  .scanner-line { @apply absolute left-0 right-0 h-px bg-nexus-accent/70; }
+  .qr-scanner-overlay { @apply absolute inset-0 bg-nexus-bg/80 flex items-center justify-center; }
+  .qr-scanner-frame { @apply relative w-64 h-64 md:w-80 md:h-80 border border-nexus-accent/40 overflow-hidden; }
+  .qr-scanner-line { @apply absolute left-0 right-0 h-px bg-nexus-accent; }
 
-  /* QR Scanner */
-  .scanner-frame { @apply relative w-64 h-64 md:w-80 md:h-80 border-2 border-nexus-accent/30 overflow-hidden; }
-  .scanner-line { @apply absolute left-0 right-0 h-px bg-nexus-accent; }
-  .qr-scanner-overlay { @apply absolute inset-0 bg-black/70 flex items-center justify-center; }
-  .qr-scanner-frame { @apply relative w-64 h-64 md:w-80 md:h-80 border-4 border-nexus-accent/30 overflow-hidden; }
-  .qr-scanner-line { @apply absolute left-0 right-0 h-1 bg-nexus-accent; }
-
-  /* Print styles */
   @media print {
     .no-print { display: none !important; }
   }
-
-  /* ==================================================================
-     Backward-compatible utility classes
-     Styled with NEXUS design language
-  ================================================================== */
-
-  /* Panels */
-  .panel {
-    @apply bg-nexus-surfaceElevated border border-nexus-border hover:shadow-panel-elevated transition-all duration-normal p-4 md:p-6;
-  }
-  .panel-elevated { @apply bg-nexus-surface border-nexus-border; }
-  .panel-hover { @apply hover:shadow-panel-elevated; }
-  .card { @apply bg-nexus-surfaceElevated border border-nexus-border hover:shadow-panel-elevated p-4 md:p-6 transition-all duration-normal; }
-
-  /* Buttons */
-  .btn {
-    @apply inline-flex items-center justify-center gap-2 font-medium px-4 py-2.5 text-sm min-h-[44px] transition-all duration-fast focus-visible:ring-2 focus-visible:ring-nexus-accent focus-visible:ring-offset-2 focus-visible:ring-offset-nexus-bg;
-  }
-  .btn-primary { @apply btn bg-nexus-accent text-nexus-bg hover:bg-nexus-accentDim active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed; }
-  .btn-secondary { @apply btn bg-nexus-surfaceElevated text-nexus-text border border-nexus-border hover:bg-nexus-border hover:border-nexus-textSubtle active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed; }
-  .btn-ghost { @apply btn bg-transparent text-nexus-textMuted hover:bg-nexus-surfaceElevated hover:text-nexus-text active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed; }
-  .btn-danger { @apply btn bg-nexus-dangerBg text-nexus-danger border border-nexus-danger/30 hover:bg-nexus-danger/20 hover:border-nexus-danger active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed; }
-  .btn-warning { @apply btn bg-nexus-warningBg text-nexus-warning border border-nexus-warning/30 hover:bg-nexus-warning/20 hover:border-nexus-warning active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed; }
-
-  /* Inputs */
-  .input {
-    @apply w-full bg-nexus-bg border border-nexus-border text-nexus-text px-4 py-3 text-base placeholder:text-nexus-textSubtle focus:border-nexus-accent focus:ring-2 focus:ring-nexus-accent/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-fast;
-  }
-  .input-error { @apply border-nexus-danger focus:border-nexus-danger focus:ring-nexus-danger/20; }
-  .label { @apply block text-sm font-medium text-nexus-textMuted mb-1.5; }
-
-  /* Badges */
-  .badge { @apply inline-flex items-center gap-1.5 px-2.5 py-1 text-xs border; }
-  .badge-accent { @apply badge text-nexus-accent border-nexus-accent/30 bg-nexus-accentBg/20; }
-  .badge-warning { @apply badge text-nexus-warning border-nexus-warning/30 bg-nexus-warningBg/20; }
-  .badge-danger { @apply badge text-nexus-danger border-nexus-danger/30 bg-nexus-dangerBg/20; }
-  .badge-info { @apply badge text-nexus-info border-nexus-info/30 bg-nexus-infoBg/20; }
-  .badge-neutral { @apply badge text-nexus-textMuted border-nexus-borderSubtle bg-nexus-borderSubtle/20; }
-  .badge-observer { @apply badge text-nexus-accent border-nexus-accent/30 bg-nexus-accentBg/20; }
-  .badge-analyst { @apply badge text-nexus-warning border-nexus-warning/30 bg-nexus-warningBg/20; }
-  .badge-operator { @apply badge text-nexus-blue border-nexus-blue/30 bg-nexus-blueBg/20; }
-
-  /* Status indicators */
-  .status-dot { @apply w-2.5 h-2.5 rounded-full; }
-  .status-active { @apply status-dot bg-nexus-accent; }
-  .status-warning { @apply status-dot bg-nexus-warning; }
-  .status-danger { @apply status-dot bg-nexus-danger; }
-  .status-neutral { @apply status-dot bg-nexus-textSubtle; }
-
-  /* Subtle overlay — not glassmorphism */
-  .surface-overlay { @apply bg-nexus-surfaceElevated/80 border border-nexus-border; }
 }
 
 @layer utilities {
-  /* Safe-area helpers */
   .safe-area-top { padding-top: var(--safe-top); }
   .safe-area-bottom { padding-bottom: var(--safe-bottom); }
   .safe-area-x {
@@ -511,12 +852,6 @@
     padding-right: var(--safe-right);
   }
   .safe-area-b { padding-bottom: var(--safe-bottom); }
-
-  /* Full-viewport app shell */
-  .app-viewport {
-    min-height: 100vh;
-    min-height: 100dvh;
-  }
 
   .text-balance { text-wrap: balance; }
   .text-pretty { text-wrap: pretty; }
@@ -527,8 +862,9 @@
   }
   .scrollbar-hide::-webkit-scrollbar { display: none; }
 
-  /* Subtle texture overlay — archival grain, not wallpaper */
-  .archive-texture {
-    background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%230d1017' fill-opacity='0.3'%3E%3Ccircle cx='50' cy='50' r='0.5'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  /* Thin rails for register columns on desktop. */
+  .rail {
+    scrollbar-width: thin;
+    scrollbar-color: var(--nx-border) transparent;
   }
 }

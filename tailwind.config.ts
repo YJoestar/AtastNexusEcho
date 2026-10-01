@@ -1,9 +1,21 @@
 /**
  * NEXUS ECHO — Design Token Configuration
  *
- * A restrained, archival visual system. Colors communicate meaning through
- * scarcity. Borders create structure without rounded-rectangle repetition.
- * Typography distinguishes NEXUS SYSTEM material from HUMAN EVIDENCE.
+ * The bureau's visual DNA. Nine systems carry the whole institution:
+ *
+ *   1 border family      registration rules, corner brackets, file tabs
+ *   2 typography system  four typographic "ages" (see fontFamily below)
+ *   3 archive vocabulary document shells, registers, redactions, stamps
+ *   4 status vocabulary  verified / unresolved / restricted / contradicted
+ *   5 evidence system    evidence frames, tags, chain-of-custody rows
+ *   6 signal system      signal integrity, node states, recording state
+ *   7 classification    public / internal / restricted / restricted-source
+ *   8 motion language    short, physical, never decorative
+ *   9 anomaly language   structural wrongness, never visual noise
+ *
+ * Color is scarce on purpose. The institutional blue is the resting state,
+ * cold cyan marks live evidence, amber is a warning, and red is reserved for
+ * the handful of moments where it must mean something.
  */
 
 import type { Config } from 'tailwindcss'
@@ -17,61 +29,75 @@ const config: Config = {
     extend: {
       colors: {
         nexus: {
-          // Deep archival environment
-          bg: '#080810',
-          surface: '#0d1017',
-          surfaceElevated: '#161821',
-          surfaceSubtle: '#0f1219',
+          // BASE — near-black, slightly warm so it never reads as "screen blue"
+          bg: '#0a0a0b',
+          // SURFACES — warm black / graphite / dark paper
+          surface: '#101012',
+          surfaceElevated: '#16161a',
+          surfaceSubtle: '#0d0d0f',
+          // Dark paper: recovered bureau stock, for documents and folders
+          paper: '#1a1917',
+          paperDeep: '#141312',
 
-          // Border system — structured, not decorative
-          border: '#2a2e3a',
-          borderSubtle: '#222632',
-          borderStrong: '#3a3f4d',
+          // BORDER FAMILY
+          border: '#2b2b2e',
+          borderSubtle: '#1f1f22',
+          // Interactive affordance: a border that acknowledges the pointer.
+          borderHover: '#4a4a50',
+          borderStrong: '#3d3d42',
 
-          // Typography
-          text: '#e6e7ea',
-          textMuted: '#9a9ba3',
-          textSubtle: '#6a6b72',
+          // TEXT — aged white, soft gray
+          text: '#d8d6d0',
+          textMuted: '#918f89',
+          textSubtle: '#6a6963',
 
-          // NEXUS institutional accent — faded cyan, scarce and meaningful
-          accent: '#5fd0c0',
-          accentDim: '#4bb59d',
-          accentBg: '#003333',
+          // ACTIVE EVIDENCE — cold cyan, used sparingly and with meaning
+          accent: '#6fb3c4',
+          accentDim: '#5b9aab',
+          accentBg: '#0d2226',
 
-          // Warning — controlled amber
-          warning: '#e6a326',
-          warningBg: '#2e2200',
+          // WARNING — aged amber
+          warning: '#b8863f',
+          warningBg: '#241a0d',
 
-          // Critical — muted red
-          danger: '#d94e48',
-          dangerBg: '#2e1212',
+          // CRITICAL — deep muted red. Rare. When it appears it matters.
+          danger: '#9e3b34',
+          dangerBg: '#230f0e',
 
-          // Institutional blue — NEXUS infrastructure
-          blue: '#5a6fa0',
-          blueBg: '#1a1e2a',
+          // RESTRICTED — dark burgundy / black-red
+          restricted: '#7c2f33',
+          restrictedBg: '#1e0d0e',
 
-          // System states
-          info: '#5fd0c0',
-          infoBg: '#003333',
-          success: '#5fd0c0',
-          successBg: '#003333',
-          inactive: '#4a4a56',
-          inactiveBg: '#1a1a22',
+          // SYSTEM — desaturated institutional blue
+          blue: '#5a6b86',
+          blueBg: '#141a22',
+
+          info: '#5a6b86',
+          infoBg: '#141a22',
+          success: '#6fb3c4',
+          successBg: '#0d2226',
+          inactive: '#4a4a4c',
+          inactiveBg: '#17171a',
         },
       },
       fontFamily: {
-        mono: ['JetBrains Mono', 'Fira Code', 'Consolas', 'monospace'],
+        // Modern institutional type. Labels, headers, system chrome.
         sans: ['Inter', 'system-ui', 'sans-serif'],
         display: ['Space Grotesk', 'Inter', 'system-ui', 'sans-serif'],
-        // NEXUS SYSTEM — precise institutional type
         system: ['Space Grotesk', 'Inter', 'system-ui', 'sans-serif'],
-        // HUMAN EVIDENCE — readable, evidence-focused
-        evidence: ['Inter', 'system-ui', 'serif'],
+        // Terminal / archival mono. Identifiers, timestamps, log lines.
+        mono: ['JetBrains Mono', 'IBM Plex Mono', 'Consolas', 'monospace'],
+        // Typewritten. 1970s-90s bureau documents and carbon copies.
+        type: ['Courier Prime', 'Courier New', 'Courier', 'monospace'],
+        // Human hand. Field annotations only — never machine material.
+        hand: ['Segoe Script', 'Bradley Hand', 'Snell Roundhand', 'cursive'],
+        // Evidence reading face.
+        evidence: ['Inter', 'system-ui', 'sans-serif'],
       },
       fontSize: {
-        'xs': ['0.7rem', { lineHeight: '1.4', letterSpacing: '0.03em' }],
-        'sm': ['0.8125rem', { lineHeight: '1.5', letterSpacing: '0.01em' }],
-        'base': ['0.9375rem', { lineHeight: '1.6', letterSpacing: '0' }],
+        'xs': ['0.7rem', { lineHeight: '1.45', letterSpacing: '0.04em' }],
+        'sm': ['0.8125rem', { lineHeight: '1.55', letterSpacing: '0.01em' }],
+        'base': ['0.9375rem', { lineHeight: '1.65', letterSpacing: '0' }],
         'lg': ['1.0625rem', { lineHeight: '1.5' }],
         'xl': ['1.25rem', { lineHeight: '1.4' }],
         '2xl': ['1.5rem', { lineHeight: '1.3' }],
@@ -95,16 +121,48 @@ const config: Config = {
         'none': '0',
       },
       boxShadow: {
-        'panel': '0 1px 3px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.02)',
-        'panel-elevated': '0 2px 8px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.03)',
+        // Shadows mean occlusion, not decoration: a lit document over a dark room.
+        'panel': '0 1px 2px rgba(0,0,0,0.5)',
+        'panel-elevated': '0 6px 18px rgba(0,0,0,0.55)',
+        'lit': '0 0 0 1px rgba(216,214,208,0.04), 0 10px 30px rgba(0,0,0,0.6)',
+        'pool': 'inset 0 1px 0 rgba(216,214,208,0.03)',
       },
       transitionDuration: {
         'fast': '120ms',
         'normal': '200ms',
-        'slow': '300ms',
+        'slow': '320ms',
+        'settle': '520ms',
       },
       transitionTimingFunction: {
-        'smooth': 'cubic-bezier(0.4, 0, 0.2, 1)',
+        smooth: 'cubic-bezier(0.4, 0, 0.2, 1)',
+        // Physical: something being set down, not something springing into place.
+        'physical': 'cubic-bezier(0.16, 0.84, 0.44, 1)',
+      },
+      keyframes: {
+        'materialize': {
+          from: { opacity: '0', transform: 'translateY(3px)' },
+          to: { opacity: '1', transform: 'translateY(0)' },
+        },
+        'settle': {
+          from: { opacity: '0', transform: 'translateY(6px)' },
+          to: { opacity: '1', transform: 'translateY(0)' },
+        },
+        'signal-acquire': {
+          '0%': { opacity: '0.25', transform: 'scaleY(0.35)' },
+          '60%': { opacity: '0.75' },
+          '100%': { opacity: '1', transform: 'scaleY(1)' },
+        },
+        'relay': {
+          '0%': { opacity: '0.4' },
+          '40%': { opacity: '1' },
+          '100%': { opacity: '0.4' },
+        },
+      },
+      animation: {
+        'materialize': 'materialize 200ms cubic-bezier(0.16, 0.84, 0.44, 1)',
+        'settle': 'settle 320ms cubic-bezier(0.16, 0.84, 0.44, 1)',
+        'signal-acquire': 'signal-acquire 300ms cubic-bezier(0.2, 0.8, 0.2, 1)',
+        'relay': 'relay 900ms steps(1) infinite',
       },
     },
   },
