@@ -102,7 +102,8 @@ export function AdminLocations() {
   }, [qrCodes, duplicateManualCodes, duplicateMarkerIds, selectedBatchName])
 
   const filteredQRCodes = useMemo(() => {
-    return qrCodes.filter(q => q.deploymentBatch === selectedBatchName)
+    const batchCodes = qrCodes.filter(q => q.deploymentBatch === selectedBatchName)
+    return batchCodes.length > 0 ? batchCodes : qrCodes
   }, [qrCodes, selectedBatchName])
 
   const locationMap = useMemo(() => {
