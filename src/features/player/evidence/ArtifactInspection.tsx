@@ -47,6 +47,9 @@ export function ArtifactInspection({
   const [scale, setScale] = useState(1)
   const [offset, setOffset] = useState({ x: 0, y: 0 })
   const [rotation, setRotation] = useState(0)
+  const [brightness, setBrightness] = useState(100)
+  const [contrast, setContrast] = useState(100)
+  const [sharpen, setSharpen] = useState(false)
   const [markMode, setMarkMode] = useState(false)
   const [noteKind, setNoteKind] = useState<AnnotationKind>('NOTE')
   const [noteDraft, setNoteDraft] = useState('')
@@ -82,6 +85,8 @@ export function ArtifactInspection({
   const isVideo = artifact.type.toUpperCase().includes('VIDEO') || artifact.type.toUpperCase().includes('SURVEILLANCE') || !!videoUrl
   const isImage = ['IMAGE', 'PHOTO', 'PHOTOGRAPH'].some(type => artifact.type.toUpperCase().includes(type)) || !!imageUrl
   const fields = visibleArtifactFields(artifact.content)
+
+  const enhanced = brightness !== 100 || contrast !== 100 || sharpen
 
   const resetView = () => {
     setScale(1)
@@ -194,6 +199,35 @@ export function ArtifactInspection({
         </div>
       </div>
 
+      {imageUrl && isImage && !isAudio && (
+        <details className="border border-nexus-borderSubtle bg-nexus-surfaceSubtle px-3 py-2">
+          <summary className="min-h-8 cursor-pointer font-mono text-[0.55rem] uppercase tracking-[0.12em] text-nexus-textMuted">
+            ENHANCE{enhanced ? ' / ADJUSTED' : ''} — BRIGHTNESS / CONTRAST / SHARPEN (VIEW ONLY, THE RECORD IS NOT CHANGED)
+          </summary>
+          <div className="mt-2 grid gap-2 sm:grid-cols-2">
+            <label className="flex items-center gap-2 font-mono text-[0.52rem] uppercase text-nexus-textSubtle">
+              BRIGHTNESS
+              <input type="range" min={40} max={220} value={brightness} onChange={event => setBrightness(Number(event.target.value))} aria-label="Brightness" className="flex-1 accent-nexus-accent" />
+              <span className="w-10 text-right tabular-nums">{brightness}%</span>
+            </label>
+            <label className="flex items-center gap-2 font-mono text-[0.52rem] uppercase text-nexus-textSubtle">
+              CONTRAST
+              <input type="range" min={40} max={260} value={contrast} onChange={event => setContrast(Number(event.target.value))} aria-label="Contrast" className="flex-1 accent-nexus-accent" />
+              <span className="w-10 text-right tabular-nums">{contrast}%</span>
+            </label>
+          </div>
+          <div className="mt-2 flex items-center gap-4 font-mono text-[0.52rem] uppercase text-nexus-textSubtle">
+            <label className="flex min-h-8 items-center gap-2">
+              <input type="checkbox" checked={sharpen} onChange={event => setSharpen(event.target.checked)} /> SHARPEN
+            </label>
+            <button type="button" onClick={() => { setBrightness(100); setContrast(100); setSharpen(false) }} className="min-h-8 border border-nexus-border px-2">RESET ADJUSTMENTS</button>
+          </div>
+          <svg width="0" height="0" aria-hidden="true" className="absolute">
+            <filter id="nx-sharpen"><feConvolveMatrix order="3" kernelMatrix="0 -1 0 -1 5 -1 0 -1 0" preserveAlpha="true" /></filter>
+          </svg>
+        </details>
+      )}
+
       <div
         ref={stageRef}
         className={cn(
@@ -242,7 +276,10 @@ export function ArtifactInspection({
                 draggable={false}
                 decoding="async"
                 className="absolute inset-0 h-full w-full bg-black bg-contain bg-center bg-no-repeat object-contain"
-                style={thumbUrl && thumbUrl !== imageUrl ? { backgroundImage: `url(${thumbUrl})` } : undefined}
+                style={{
+                  ...(thumbUrl && thumbUrl !== imageUrl ? { backgroundImage: `url(${thumbUrl})` } : null),
+                  filter: enhanced ? `brightness(${brightness}%) contrast(${contrast}%)${sharpen ? ' url(#nx-sharpen)' : ''}` : undefined,
+                }}
               />
             ) : (
               <div className="absolute inset-0 flex flex-col items-center justify-center border border-nexus-border bg-nexus-surfaceElevated p-6 text-center">

@@ -12,6 +12,7 @@ import {
 } from '@/lib/investigationWorkspace'
 import { ArtifactInspection } from './ArtifactInspection'
 import { InvestigationTable } from './InvestigationTable'
+import { CompareStation } from './CompareStation'
 import { contentString, artifactType, artifactCondition, artifactState, artifactThumbUrl, type CaseArtifact } from './types'
 import { showcaseCatalog, showcaseEnabled } from '@/lib/evidence/showcaseCatalog'
 import { cn } from '@/lib/utils'
@@ -510,9 +511,13 @@ export function PlayerEvidenceArchive() {
               <button type="button" onClick={() => setMode('ARCHIVE')} className="min-h-10 border border-nexus-border px-2 font-mono text-[0.52rem] uppercase text-nexus-textSubtle">RETURN TO INDEX</button>
             </div>
             {comparedArtifacts.length === 2 ? (
-              <div className="grid gap-5 xl:grid-cols-2">
-                {comparedArtifacts.map(artifact => (
-                  <section key={artifact.id} className="min-w-0 border-t border-nexus-borderSubtle pt-2">
+              <CompareStation
+                artifacts={artifacts}
+                pair={[comparedArtifacts[0], comparedArtifacts[1]]}
+                workspace={workspace}
+                onUpdate={updateWorkspace}
+                renderRecord={artifact => (
+                  <>
                     <button type="button" onClick={() => openArtifact(artifact.id, artifact)} className="mb-2 text-left font-mono text-[0.58rem] uppercase text-nexus-accent">OPEN FULL RECORD / {artifact.code} →</button>
                     <ArtifactInspection
                       compact
@@ -526,9 +531,9 @@ export function PlayerEvidenceArchive() {
                       seenFields={workspace.revelations[artifact.id]?.seenFields}
                       newKeys={workspace.revelations[artifact.id]?.hasNewInfo ? getNewFieldKeys(artifact, workspace.revelations[artifact.id]?.seenFields) : undefined}
                     />
-                  </section>
-                ))}
-              </div>
+                  </>
+                )}
+              />
             ) : (
               <div className="border-y border-nexus-borderSubtle py-4 font-mono text-xs uppercase text-nexus-textMuted">SELECT TWO RECORDS IN THE ARCHIVE INDEX TO COMPARE</div>
             )}

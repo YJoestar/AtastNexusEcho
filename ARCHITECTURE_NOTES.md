@@ -52,6 +52,23 @@ Removing an object from the table never deletes its links: they go *dormant* and
 - `package.json` had duplicate `evidence:*` script keys.
 - 5 `useConnection` tests failed without a local `.env`; the test config now supplies Supabase env.
 
+## Clue layers and cross-referencing
+
+`src/lib/evidence/clues.ts` derives clues from the relationships the case data **already declares** (`artifact.relationships`). It invents nothing: a clue's text is the relationship's own note. Kind → category / difficulty: SOURCE, SPATIAL → easy; PERSONNEL, REFERENCE → medium; TEMPORAL → hard (found by lining timestamps up); CONTRADICTION → expert.
+
+The player never sees the clue list. In **Compare** (`CompareStation.tsx`) they choose how to examine two records:
+- *Side by side* and *Overlay* turn up cross-references.
+- *Timeline* parses both timestamps, shows the gap, and turns up timestamp relationships. It refuses (and finds nothing) when a record has no readable time.
+
+Findings persist in the workspace (`discoveries`, device-local like the rest) and are announced once, in restrained language ("LOCATION MATCH", "TIMESTAMP RELATIONSHIP RECORDED"). Status is the player's own reasoning: discovered, or corroborated / contradicted if they filed and confirmed a link of their own. Filing a link on the board does **not** reveal anything.
+
+Limits, stated plainly:
+- Relationships exist only in the generated NX-037 catalog (dev showcase). Server-delivered evidence in production carries none, so production would show no clues until the server supplies relationships.
+- There are no pixel-region clues (something small inside a photograph found by zooming). Adding one means changing the picture's content, which this pass was forbidden to do. The model is ready for it (`DiscoveryMethod` can grow a `ZOOM` entry with a region).
+- Frame stepping needs video; the case has stills only. Inspection gained view-only brightness / contrast / sharpen instead.
+
+`EVIDENCE_ASSET_REGISTRY.md` + `docs/evidence/asset-registry.json` (generated; kept out of `public/` because it lists the clues) record each asset, its renderer treatment, a content-lock hash of its canonical facts, and its clues. `npm run evidence:lock` fails if any canonical fact drifts.
+
 ## Evidence render fix (presentation only)
 
 The procedural renderer (`scripts/evidence-gen/lib/render3d.mjs`) had two bugs that made every photograph and CCTV frame read as abstract triangles:

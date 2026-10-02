@@ -218,3 +218,28 @@ describe('player evidence inspection', () => {
     expect(image.getAttribute('src')).toContain('/evidence/photographs/photo_nx037_b_01.jpg')
   })
 })
+
+describe('forensic enhancement', () => {
+  it('adjusts only the view of an image, and can be reset', () => {
+    const artifact = { ...ARTIFACTS[0], imageUrl: '/evidence/photographs/photo_nx037_b_01.jpg', content: {} }
+    render(
+      <ArtifactInspection
+        artifact={artifact}
+        mark="UNMARKED"
+        annotations={[]}
+        onMarkChange={() => {}}
+        onAddAnnotation={() => {}}
+        onPlaceOnTable={() => {}}
+        isOnTable={false}
+      />,
+    )
+    const image = screen.getByAltText('PHOTO A') as HTMLImageElement
+    expect(image.style.filter).toBe('')
+    fireEvent.change(screen.getByLabelText('Brightness'), { target: { value: '160' } })
+    fireEvent.click(screen.getByLabelText('SHARPEN'))
+    expect(image.style.filter).toContain('brightness(160%)')
+    expect(image.style.filter).toContain('#nx-sharpen')
+    fireEvent.click(screen.getByRole('button', { name: 'RESET ADJUSTMENTS' }))
+    expect(image.style.filter).toBe('')
+  })
+})

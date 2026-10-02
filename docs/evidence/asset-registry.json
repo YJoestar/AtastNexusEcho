@@ -1,0 +1,2962 @@
+{
+  "case": "NX-037",
+  "generated": "deterministic",
+  "entries": [
+    {
+      "id": "NX-037-B-01",
+      "type": "PHOTOGRAPH",
+      "asset": "/evidence/photographs/photo_nx037_b_01.jpg",
+      "thumb": "/evidence/thumb/photo_nx037_b_01.jpg",
+      "bytes": 137192,
+      "condition": "NORMAL",
+      "treatment": "Software-rendered room → lens, flash, sensor noise, grain → print border, caption strip, evidence label",
+      "contentLock": "80a1ee2fac44195e",
+      "canonical": {
+        "title": "East Corridor, North Approach",
+        "location": "LOC-C214 / EAST CORRIDOR",
+        "capturedAt": "14 OCT 94 03:12:44",
+        "device": "FIELD-CAM-02",
+        "source": "OBS-02 FIELD RECOVERY",
+        "description": "Handheld frame taken from the archive doorway. The corridor is empty. The second fixture is out."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-B-01~NX-CAM-07:TEMPORAL",
+          "category": "TIMELINE",
+          "method": "TIMELINE_COMPARISON",
+          "difficulty": "HARD",
+          "with": "NX-CAM-07",
+          "meaning": "CAM-07 covers the same segment two minutes later."
+        },
+        {
+          "id": "clue:NX-037-B-01~NX-037-D-01:SPATIAL",
+          "category": "LOCATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "EASY",
+          "with": "NX-037-D-01",
+          "meaning": "Incident record names LOC-C214."
+        },
+        {
+          "id": "clue:NX-037-B-01~NX-037-B-07:REFERENCE",
+          "category": "CONFIRMATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-B-07",
+          "meaning": "Same corridor, same camera body."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Build QA clean; seen on a contact sheet."
+    },
+    {
+      "id": "NX-037-B-02",
+      "type": "PHOTOGRAPH",
+      "asset": "/evidence/photographs/photo_nx037_b_02.jpg",
+      "thumb": "/evidence/thumb/photo_nx037_b_02.jpg",
+      "bytes": 161979,
+      "condition": "NORMAL",
+      "treatment": "Software-rendered room → lens, flash, sensor noise, grain → print border, caption strip, evidence label",
+      "contentLock": "6f73b9c956d49658",
+      "canonical": {
+        "title": "East Corridor, Disputed Segment",
+        "location": "LOC-C214 / EAST CORRIDOR (NORTH)",
+        "capturedAt": "14 OCT 94 03:17:11",
+        "device": "FIELD-CAM-02",
+        "source": "OBS-02 FIELD RECOVERY",
+        "description": "Second frame. A figure stands at the corridor mouth. Development is uneven; the body is not resolvable."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-B-02~NX-CAM-07:TEMPORAL",
+          "category": "TIMELINE",
+          "method": "TIMELINE_COMPARISON",
+          "difficulty": "HARD",
+          "with": "NX-CAM-07",
+          "meaning": "Clock reads the same second as the CAM-07 frame."
+        },
+        {
+          "id": "clue:NX-037-B-02~NX-037-P-01:PERSONNEL",
+          "category": "IDENTITY",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-P-01",
+          "meaning": "Build matches L.V.-0029; cannot be confirmed."
+        },
+        {
+          "id": "clue:NX-037-B-02~NX-037-B-12:CONTRADICTION",
+          "category": "CONTRADICTION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "EXPERT",
+          "with": "NX-037-B-12",
+          "meaning": "Both claim LOC-C214 at the same minute."
+        },
+        {
+          "id": "clue:NX-037-B-02~NX-CAM-07:CONTRADICTION",
+          "category": "CONTRADICTION",
+          "method": "TIMELINE_COMPARISON",
+          "difficulty": "EXPERT",
+          "with": "NX-CAM-07",
+          "meaning": "Same second. The frame shows no one."
+        },
+        {
+          "id": "clue:NX-037-B-02~NX-037-D-01:REFERENCE",
+          "category": "CONFIRMATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-D-01",
+          "meaning": "Item A is the disputed corridor frame."
+        },
+        {
+          "id": "clue:NX-037-B-02~NX-037-D-03:TEMPORAL",
+          "category": "TIMELINE",
+          "method": "TIMELINE_COMPARISON",
+          "difficulty": "HARD",
+          "with": "NX-037-D-03",
+          "meaning": "The unassigned reads at the photograph's timestamp."
+        },
+        {
+          "id": "clue:NX-037-B-02~NX-037-D-06:REFERENCE",
+          "category": "CONFIRMATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-D-06",
+          "meaning": "This is the custody record for the disputed frame."
+        },
+        {
+          "id": "clue:NX-037-B-02~NX-037-D-09:CONTRADICTION",
+          "category": "CONTRADICTION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "EXPERT",
+          "with": "NX-037-D-09",
+          "meaning": "The log says this frame was reshot."
+        },
+        {
+          "id": "clue:NX-037-B-02~NX-037-N-02:TEMPORAL",
+          "category": "TIMELINE",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "HARD",
+          "with": "NX-037-N-02",
+          "meaning": "The frame is taken at the line where the note stops."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Build QA clean; seen on a contact sheet."
+    },
+    {
+      "id": "NX-037-B-03",
+      "type": "PHOTOGRAPH",
+      "asset": "/evidence/photographs/photo_nx037_b_03.jpg",
+      "thumb": "/evidence/thumb/photo_nx037_b_03.jpg",
+      "bytes": 136097,
+      "condition": "NORMAL",
+      "treatment": "Software-rendered room → lens, flash, sensor noise, grain → print border, caption strip, evidence label",
+      "contentLock": "dd9247f3a73fec06",
+      "canonical": {
+        "title": "Central Archive, Aisle 2",
+        "location": "LOC-C101 / CENTRAL ARCHIVE",
+        "capturedAt": "14 OCT 94 02:41:09",
+        "device": "FIELD-CAM-02",
+        "source": "OBS-02 FIELD RECOVERY",
+        "description": "Records room after hours. A run of boxes has been pulled and not replaced."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-B-03~NX-037-P-05:PERSONNEL",
+          "category": "IDENTITY",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-P-05",
+          "meaning": "M.S.-0388 works this room."
+        },
+        {
+          "id": "clue:NX-037-B-03~NX-037-F-07:REFERENCE",
+          "category": "CONFIRMATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-F-07",
+          "meaning": "Torn shelf label recovered from the same aisle."
+        },
+        {
+          "id": "clue:NX-037-B-03~NX-CAM-02:TEMPORAL",
+          "category": "TIMELINE",
+          "method": "TIMELINE_COMPARISON",
+          "difficulty": "HARD",
+          "with": "NX-CAM-02",
+          "meaning": "Field camera eleven seconds later."
+        },
+        {
+          "id": "clue:NX-037-B-03~NX-037-F-07:SPATIAL",
+          "category": "LOCATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "EASY",
+          "with": "NX-037-F-07",
+          "meaning": "Taken from the aisle in this frame."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Build QA clean; seen on a contact sheet."
+    },
+    {
+      "id": "NX-037-B-04",
+      "type": "PHOTOGRAPH",
+      "asset": "/evidence/photographs/photo_nx037_b_04.jpg",
+      "thumb": "/evidence/thumb/photo_nx037_b_04.jpg",
+      "bytes": 151095,
+      "condition": "NORMAL",
+      "treatment": "Software-rendered room → lens, flash, sensor noise, grain → print border, caption strip, evidence label",
+      "contentLock": "4d218e02688b83f8",
+      "canonical": {
+        "title": "Stairwell 1, Half Landing",
+        "location": "LOC-C118 / STAIRWELL 1",
+        "capturedAt": "14 OCT 94 02:58:30",
+        "device": "FIELD-CAM-02",
+        "source": "OBS-02 FIELD RECOVERY",
+        "description": "The handrail has been wiped. The damp on the wall is newer than the paint."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-B-04~NX-CAM-03:SPATIAL",
+          "category": "LOCATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "EASY",
+          "with": "NX-CAM-03",
+          "meaning": "CAM-03 covers this landing."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Build QA clean; seen on a contact sheet."
+    },
+    {
+      "id": "NX-037-B-05",
+      "type": "PHOTOGRAPH",
+      "asset": "/evidence/photographs/photo_nx037_b_05.jpg",
+      "thumb": "/evidence/thumb/photo_nx037_b_05.jpg",
+      "bytes": 124277,
+      "condition": "NORMAL",
+      "treatment": "Software-rendered room → lens, flash, sensor noise, grain → print border, caption strip, evidence label",
+      "contentLock": "50def9e4810b9598",
+      "canonical": {
+        "title": "Science Wing, Lab 04",
+        "location": "LOC-C202 / SCIENCE WING LAB",
+        "capturedAt": "14 OCT 94 02:20:15",
+        "device": "FIELD-CAM-02",
+        "source": "OBS-02 FIELD RECOVERY",
+        "description": "The bench has been cleared. The whiteboard still carries the previous night's arithmetic."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-B-05~NX-037-P-01:PERSONNEL",
+          "category": "IDENTITY",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-P-01",
+          "meaning": "Lab 04 is L.V.-0029's assigned bench."
+        },
+        {
+          "id": "clue:NX-037-B-05~NX-CAM-05:SPATIAL",
+          "category": "LOCATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "EASY",
+          "with": "NX-CAM-05",
+          "meaning": "Field photograph of the same bench."
+        },
+        {
+          "id": "clue:NX-037-A-01~NX-037-B-05:TEMPORAL",
+          "category": "TIMELINE",
+          "method": "TIMELINE_COMPARISON",
+          "difficulty": "HARD",
+          "with": "NX-037-A-01",
+          "meaning": "Recorded during the bench inspection."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Bright lab, slightly high key. Accepted."
+    },
+    {
+      "id": "NX-037-B-06",
+      "type": "PHOTOGRAPH",
+      "asset": "/evidence/photographs/photo_nx037_b_06.jpg",
+      "thumb": "/evidence/thumb/photo_nx037_b_06.jpg",
+      "bytes": 143979,
+      "condition": "NORMAL",
+      "treatment": "Software-rendered room → lens, flash, sensor noise, grain → print border, caption strip, evidence label",
+      "contentLock": "8892723f3da4e17f",
+      "canonical": {
+        "title": "Main Entrance, Night Approach",
+        "location": "LOC-C001 / MAIN ENTRANCE",
+        "capturedAt": "14 OCT 94 01:52:03",
+        "device": "FIELD-CAM-01",
+        "source": "OBS-02 FIELD RECOVERY",
+        "description": "Sodium light over the canopy. The doors were chained from the inside at 22:00."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-B-06~NX-CAM-01:SPATIAL",
+          "category": "LOCATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "EASY",
+          "with": "NX-CAM-01",
+          "meaning": "CAM-01 covers the entrance bay."
+        },
+        {
+          "id": "clue:NX-037-B-06~NX-CAM-01:TEMPORAL",
+          "category": "TIMELINE",
+          "method": "TIMELINE_COMPARISON",
+          "difficulty": "HARD",
+          "with": "NX-CAM-01",
+          "meaning": "Field camera at the same minute."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Build QA clean; seen on a contact sheet."
+    },
+    {
+      "id": "NX-037-B-07",
+      "type": "PHOTOGRAPH",
+      "asset": "/evidence/photographs/photo_nx037_b_07.jpg",
+      "thumb": "/evidence/thumb/photo_nx037_b_07.jpg",
+      "bytes": 150819,
+      "condition": "DAMAGED",
+      "treatment": "Software-rendered room → lens, flash, sensor noise, grain → print border, caption strip, evidence label",
+      "contentLock": "3c5bc6faa780e8f1",
+      "canonical": {
+        "title": "East Corridor, Underside",
+        "location": "LOC-C214 / EAST CORRIDOR",
+        "capturedAt": "14 OCT 94 03:0_:__",
+        "device": "FIELD-CAM-01",
+        "source": "OBS-02 FIELD RECOVERY",
+        "description": "Flash was fired toward the ceiling. The print is unusable for detail, but the fixture spacing is legible."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-B-01~NX-037-B-07:REFERENCE",
+          "category": "CONFIRMATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-B-01",
+          "meaning": "Same corridor, same camera body."
+        },
+        {
+          "id": "clue:NX-037-B-07~NX-037-D-09:REFERENCE",
+          "category": "CONFIRMATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-D-09",
+          "meaning": "The rejected frame."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Blown out by design: the case calls it the rejected frame."
+    },
+    {
+      "id": "NX-037-B-08",
+      "type": "PHOTOGRAPH",
+      "asset": "/evidence/photographs/photo_nx037_b_08.jpg",
+      "thumb": "/evidence/thumb/photo_nx037_b_08.jpg",
+      "bytes": 163072,
+      "condition": "NORMAL",
+      "treatment": "Software-rendered room → lens, flash, sensor noise, grain → print border, caption strip, evidence label",
+      "contentLock": "7f31eaa25996e4c8",
+      "canonical": {
+        "title": "Sub-Basement Plant Room, Valve Tree",
+        "location": "LOC-S01 / SUB-BASEMENT PLANT",
+        "capturedAt": "14 OCT 94 01:31:47",
+        "device": "FIELD-CAM-02",
+        "source": "OBS-02 FIELD RECOVERY",
+        "description": "Water on the floor. One valve has been closed and re-marked in grease pencil."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-B-08~NX-037-F-04:REFERENCE",
+          "category": "CONFIRMATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-F-04",
+          "meaning": "Torn maintenance label names the same valve tree."
+        },
+        {
+          "id": "clue:NX-037-B-08~NX-CAM-06:SPATIAL",
+          "category": "LOCATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "EASY",
+          "with": "NX-CAM-06",
+          "meaning": "Field photograph of the same room."
+        },
+        {
+          "id": "clue:NX-037-B-08~NX-037-D-07:SPATIAL",
+          "category": "LOCATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "EASY",
+          "with": "NX-037-D-07",
+          "meaning": "The same valve tree, photographed."
+        },
+        {
+          "id": "clue:NX-037-B-08~NX-037-F-05:SPATIAL",
+          "category": "LOCATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "EASY",
+          "with": "NX-037-F-05",
+          "meaning": "Found beside the valve tree."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Build QA clean; seen on a contact sheet."
+    },
+    {
+      "id": "NX-037-B-09",
+      "type": "PHOTOGRAPH",
+      "asset": "/evidence/photographs/photo_nx037_b_09.jpg",
+      "thumb": "/evidence/thumb/photo_nx037_b_09.jpg",
+      "bytes": 157467,
+      "condition": "NORMAL",
+      "treatment": "Software-rendered room → lens, flash, sensor noise, grain → print border, caption strip, evidence label",
+      "contentLock": "ec0d45cebbf9e498",
+      "canonical": {
+        "title": "Equipment Room 305, Crates",
+        "location": "LOC-C305 / EQUIPMENT ROOM",
+        "capturedAt": "14 OCT 94 02:05:52",
+        "device": "FIELD-CAM-02",
+        "source": "OBS-02 FIELD RECOVERY",
+        "description": "Storage was used as storage. Several crates are stencilled with a department that closed in 1991."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-B-09~NX-037-D-05:REFERENCE",
+          "category": "CONFIRMATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-D-05",
+          "meaning": "Custody form lists crate 14 from this room."
+        },
+        {
+          "id": "clue:NX-037-B-09~NX-CAM-08:SPATIAL",
+          "category": "LOCATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "EASY",
+          "with": "NX-CAM-08",
+          "meaning": "Field photograph of the same room."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Build QA clean; seen on a contact sheet."
+    },
+    {
+      "id": "NX-037-B-10",
+      "type": "PHOTOGRAPH",
+      "asset": "/evidence/photographs/photo_nx037_b_10.jpg",
+      "thumb": "/evidence/thumb/photo_nx037_b_10.jpg",
+      "bytes": 134950,
+      "condition": "NORMAL",
+      "treatment": "Software-rendered room → lens, flash, sensor noise, grain → print border, caption strip, evidence label",
+      "contentLock": "fd2c0ba8846b4204",
+      "canonical": {
+        "title": "Archive Office, Desk 04",
+        "location": "LOC-C101A / ARCHIVE OFFICE",
+        "capturedAt": "14 OCT 94 02:48:20",
+        "device": "FIELD-CAM-02",
+        "source": "OBS-02 FIELD RECOVERY",
+        "description": "A terminal left running. The screen holds a directory listing that does not match the building."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-B-10~NX-037-P-05:PERSONNEL",
+          "category": "IDENTITY",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-P-05",
+          "meaning": "Desk 04 is assigned to M.S.-0388."
+        },
+        {
+          "id": "clue:NX-037-B-10~NX-CAM-04:TEMPORAL",
+          "category": "TIMELINE",
+          "method": "TIMELINE_COMPARISON",
+          "difficulty": "HARD",
+          "with": "NX-CAM-04",
+          "meaning": "Field camera at the same second."
+        },
+        {
+          "id": "clue:NX-037-B-10~NX-037-P-04:SPATIAL",
+          "category": "LOCATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "EASY",
+          "with": "NX-037-P-04",
+          "meaning": "Desk 04 in the archive office."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Build QA clean; seen on a contact sheet."
+    },
+    {
+      "id": "NX-037-B-11",
+      "type": "PHOTOGRAPH",
+      "asset": "/evidence/photographs/photo_nx037_b_11.jpg",
+      "thumb": "/evidence/thumb/photo_nx037_b_11.jpg",
+      "bytes": 137125,
+      "condition": "NORMAL",
+      "treatment": "Software-rendered room → lens, flash, sensor noise, grain → print border, caption strip, evidence label",
+      "contentLock": "fe5c2413f682a90a",
+      "canonical": {
+        "title": "Lecture Room 214, Empty",
+        "location": "LOC-C214H / LECTURE ROOM",
+        "capturedAt": "14 OCT 94 02:33:58",
+        "device": "FIELD-CAM-02",
+        "source": "OBS-02 FIELD RECOVERY",
+        "description": "Seating plan unchanged since 1993. Row B seat 7 carries a name written in pencil."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-B-11~NX-037-P-01:PERSONNEL",
+          "category": "IDENTITY",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-P-01",
+          "meaning": "L.V.-0029 taught this room."
+        },
+        {
+          "id": "clue:NX-037-B-11~NX-CAM-09:SPATIAL",
+          "category": "LOCATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "EASY",
+          "with": "NX-CAM-09",
+          "meaning": "Field photograph of the same room."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Build QA clean; seen on a contact sheet."
+    },
+    {
+      "id": "NX-037-B-12",
+      "type": "PHOTOGRAPH",
+      "asset": "/evidence/photographs/photo_nx037_b_12.jpg",
+      "thumb": "/evidence/thumb/photo_nx037_b_12.jpg",
+      "bytes": 167733,
+      "condition": "DAMAGED",
+      "treatment": "Software-rendered room → lens, flash, sensor noise, grain → print border, caption strip, evidence label",
+      "contentLock": "2d980fbd29cc2421",
+      "canonical": {
+        "title": "East Corridor, Water Damage",
+        "location": "LOC-C214 / EAST CORRIDOR",
+        "capturedAt": "14 OCT 94 __:17:__",
+        "device": "FIELD-CAM-02",
+        "source": "OBS-02 FIELD RECOVERY",
+        "description": "A frame taken after the incident. The print has been wet and dried. The timestamp is gone."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-B-02~NX-037-B-12:CONTRADICTION",
+          "category": "CONTRADICTION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "EXPERT",
+          "with": "NX-037-B-02",
+          "meaning": "Both claim LOC-C214 at the same minute."
+        },
+        {
+          "id": "clue:NX-037-B-12~NX-CAM-07:TEMPORAL",
+          "category": "TIMELINE",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "HARD",
+          "with": "NX-CAM-07",
+          "meaning": "Only surviving seconds in this run."
+        },
+        {
+          "id": "clue:NX-037-B-12~NX-037-F-03:REFERENCE",
+          "category": "CONFIRMATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-F-03",
+          "meaning": "Same emulsion batch."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Build QA clean; seen on a contact sheet."
+    },
+    {
+      "id": "NX-CAM-07",
+      "type": "SURVEILLANCE",
+      "asset": "/evidence/surveillance/surv_cam07_031711.jpg",
+      "thumb": "/evidence/thumb/surv_cam07_031711.jpg",
+      "bytes": 84336,
+      "condition": "PARTIAL",
+      "treatment": "Software-rendered room → low-res CCD treatment, compression blocks, interlace, tracking tear → on-screen display (camera, REC, date/time, frame counter)",
+      "contentLock": "c3e3a9dbfc2c225f",
+      "canonical": {
+        "title": "CAM-07 / East Corridor, 03:17:11",
+        "location": "LOC-C214 / EAST CORRIDOR",
+        "capturedAt": "14 OCT 94 03:17:11",
+        "device": "CAM-07 / DVR NODE B-04",
+        "source": "DVR NODE B-04 / TAPE 7",
+        "description": "Recorder frame. The corridor is empty. CAM-07 covers the same segment the field camera photographed at the same second."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-B-01~NX-CAM-07:TEMPORAL",
+          "category": "TIMELINE",
+          "method": "TIMELINE_COMPARISON",
+          "difficulty": "HARD",
+          "with": "NX-037-B-01",
+          "meaning": "CAM-07 covers the same segment two minutes later."
+        },
+        {
+          "id": "clue:NX-037-B-02~NX-CAM-07:TEMPORAL",
+          "category": "TIMELINE",
+          "method": "TIMELINE_COMPARISON",
+          "difficulty": "HARD",
+          "with": "NX-037-B-02",
+          "meaning": "Clock reads the same second as the CAM-07 frame."
+        },
+        {
+          "id": "clue:NX-037-B-12~NX-CAM-07:TEMPORAL",
+          "category": "TIMELINE",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "HARD",
+          "with": "NX-037-B-12",
+          "meaning": "Only surviving seconds in this run."
+        },
+        {
+          "id": "clue:NX-037-B-02~NX-CAM-07:CONTRADICTION",
+          "category": "CONTRADICTION",
+          "method": "TIMELINE_COMPARISON",
+          "difficulty": "EXPERT",
+          "with": "NX-037-B-02",
+          "meaning": "Same second. The frame shows no one."
+        },
+        {
+          "id": "clue:NX-037-F-03~NX-CAM-07:REFERENCE",
+          "category": "CONFIRMATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-F-03",
+          "meaning": "Torn label assigns CAM-07 to this corridor."
+        },
+        {
+          "id": "clue:NX-037-D-02~NX-CAM-07:SOURCE",
+          "category": "RELATIONSHIP",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "EASY",
+          "with": "NX-037-D-02",
+          "meaning": "The ledger is the only record of the relocation."
+        },
+        {
+          "id": "clue:NX-037-D-04~NX-CAM-07:SOURCE",
+          "category": "RELATIONSHIP",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "EASY",
+          "with": "NX-037-D-04",
+          "meaning": "Names the re-aim directly."
+        },
+        {
+          "id": "clue:NX-037-D-06~NX-CAM-07:CONTRADICTION",
+          "category": "CONTRADICTION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "EXPERT",
+          "with": "NX-037-D-06",
+          "meaning": "Registry and recorder disagree."
+        },
+        {
+          "id": "clue:NX-037-D-08~NX-CAM-07:TEMPORAL",
+          "category": "TIMELINE",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "HARD",
+          "with": "NX-037-D-08",
+          "meaning": "The manual stop falls inside the dropout window."
+        },
+        {
+          "id": "clue:NX-037-F-02~NX-CAM-07:REFERENCE",
+          "category": "CONFIRMATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-F-02",
+          "meaning": "Names the camera the incident record omits."
+        },
+        {
+          "id": "clue:NX-037-F-09~NX-CAM-07:SPATIAL",
+          "category": "LOCATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "EASY",
+          "with": "NX-037-F-09",
+          "meaning": "The marked room contains the CAM-07 mount point."
+        },
+        {
+          "id": "clue:NX-037-M-01~NX-CAM-07:SPATIAL",
+          "category": "LOCATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "EASY",
+          "with": "NX-037-M-01",
+          "meaning": "CAM-07 shown at the north end of C214."
+        },
+        {
+          "id": "clue:NX-037-N-07~NX-CAM-07:SOURCE",
+          "category": "RELATIONSHIP",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "EASY",
+          "with": "NX-037-N-07",
+          "meaning": "Explains the missing interval on tape 7."
+        },
+        {
+          "id": "clue:NX-037-A-04~NX-CAM-07:TEMPORAL",
+          "category": "TIMELINE",
+          "method": "TIMELINE_COMPARISON",
+          "difficulty": "HARD",
+          "with": "NX-037-A-04",
+          "meaning": "Eight minutes before the dropout."
+        },
+        {
+          "id": "clue:NX-037-A-06~NX-CAM-07:TEMPORAL",
+          "category": "TIMELINE",
+          "method": "TIMELINE_COMPARISON",
+          "difficulty": "HARD",
+          "with": "NX-037-A-06",
+          "meaning": "Seventeen minutes after the dropout."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Build QA clean; seen on a contact sheet."
+    },
+    {
+      "id": "NX-CAM-01",
+      "type": "SURVEILLANCE",
+      "asset": "/evidence/surveillance/surv_cam01_015203.jpg",
+      "thumb": "/evidence/thumb/surv_cam01_015203.jpg",
+      "bytes": 78931,
+      "condition": "NORMAL",
+      "treatment": "Software-rendered room → low-res CCD treatment, compression blocks, interlace, tracking tear → on-screen display (camera, REC, date/time, frame counter)",
+      "contentLock": "03ec47d5f1412b33",
+      "canonical": {
+        "title": "CAM-01 / Main Entrance, 01:52:03",
+        "location": "LOC-C001 / MAIN ENTRANCE",
+        "capturedAt": "14 OCT 94 01:52:03",
+        "device": "CAM-01 / DVR NODE B-04",
+        "source": "DVR NODE B-04 / TAPE 1",
+        "description": "Entrance bay. The doors are chained. No movement for the length of the tape."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-B-06~NX-CAM-01:SPATIAL",
+          "category": "LOCATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "EASY",
+          "with": "NX-037-B-06",
+          "meaning": "CAM-01 covers the entrance bay."
+        },
+        {
+          "id": "clue:NX-037-B-06~NX-CAM-01:TEMPORAL",
+          "category": "TIMELINE",
+          "method": "TIMELINE_COMPARISON",
+          "difficulty": "HARD",
+          "with": "NX-037-B-06",
+          "meaning": "Field camera at the same minute."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Build QA clean; seen on a contact sheet."
+    },
+    {
+      "id": "NX-CAM-03",
+      "type": "SURVEILLANCE",
+      "asset": "/evidence/surveillance/surv_cam03_025830.jpg",
+      "thumb": "/evidence/thumb/surv_cam03_025830.jpg",
+      "bytes": 151568,
+      "condition": "NORMAL",
+      "treatment": "Software-rendered room → low-res CCD treatment, compression blocks, interlace, tracking tear → on-screen display (camera, REC, date/time, frame counter)",
+      "contentLock": "0e01d5309951ef08",
+      "canonical": {
+        "title": "CAM-03 / Stairwell 1, 02:58:30",
+        "location": "LOC-C118 / STAIRWELL 1",
+        "capturedAt": "14 OCT 94 02:58:30",
+        "device": "CAM-03 / DVR NODE B-04",
+        "source": "DVR NODE B-04 / TAPE 3",
+        "description": "Landing. Low light. The camera has not been serviced since the wing closed."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-B-04~NX-CAM-03:SPATIAL",
+          "category": "LOCATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "EASY",
+          "with": "NX-037-B-04",
+          "meaning": "CAM-03 covers this landing."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Build QA clean; seen on a contact sheet."
+    },
+    {
+      "id": "NX-CAM-02",
+      "type": "SURVEILLANCE",
+      "asset": "/evidence/surveillance/surv_cam02_024120.jpg",
+      "thumb": "/evidence/thumb/surv_cam02_024120.jpg",
+      "bytes": 92195,
+      "condition": "NORMAL",
+      "treatment": "Software-rendered room → low-res CCD treatment, compression blocks, interlace, tracking tear → on-screen display (camera, REC, date/time, frame counter)",
+      "contentLock": "61a7f6514086fe1c",
+      "canonical": {
+        "title": "CAM-02 / Central Archive, 02:41:20",
+        "location": "LOC-C101 / CENTRAL ARCHIVE",
+        "capturedAt": "14 OCT 94 02:41:20",
+        "device": "CAM-02 / DVR NODE B-04",
+        "source": "DVR NODE B-04 / TAPE 2",
+        "description": "Records room. The aisle light cycles. A person is at the far shelving, back to camera."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-B-03~NX-CAM-02:TEMPORAL",
+          "category": "TIMELINE",
+          "method": "TIMELINE_COMPARISON",
+          "difficulty": "HARD",
+          "with": "NX-037-B-03",
+          "meaning": "Field camera eleven seconds later."
+        },
+        {
+          "id": "clue:NX-037-A-02~NX-CAM-02:TEMPORAL",
+          "category": "TIMELINE",
+          "method": "TIMELINE_COMPARISON",
+          "difficulty": "HARD",
+          "with": "NX-037-A-02",
+          "meaning": "Recorded three minutes after the archive frame."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Build QA clean; seen on a contact sheet."
+    },
+    {
+      "id": "NX-CAM-05",
+      "type": "SURVEILLANCE",
+      "asset": "/evidence/surveillance/surv_cam05_022015.jpg",
+      "thumb": "/evidence/thumb/surv_cam05_022015.jpg",
+      "bytes": 85648,
+      "condition": "NORMAL",
+      "treatment": "Software-rendered room → low-res CCD treatment, compression blocks, interlace, tracking tear → on-screen display (camera, REC, date/time, frame counter)",
+      "contentLock": "338c21e181cc8dce",
+      "canonical": {
+        "title": "CAM-05 / Lab 04, 02:20:15",
+        "location": "LOC-C202 / SCIENCE WING LAB",
+        "capturedAt": "14 OCT 94 02:20:15",
+        "device": "CAM-05 / DVR NODE B-04",
+        "source": "DVR NODE B-04 / TAPE 5",
+        "description": "Laboratory. Benches cleared. The whiteboard is legible in frame and was not legible in the field print."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-B-05~NX-CAM-05:SPATIAL",
+          "category": "LOCATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "EASY",
+          "with": "NX-037-B-05",
+          "meaning": "Field photograph of the same bench."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Build QA clean; seen on a contact sheet."
+    },
+    {
+      "id": "NX-CAM-04",
+      "type": "SURVEILLANCE",
+      "asset": "/evidence/surveillance/surv_cam04_024820.jpg",
+      "thumb": "/evidence/thumb/surv_cam04_024820.jpg",
+      "bytes": 81561,
+      "condition": "NORMAL",
+      "treatment": "Software-rendered room → low-res CCD treatment, compression blocks, interlace, tracking tear → on-screen display (camera, REC, date/time, frame counter)",
+      "contentLock": "0120672d0d3890f2",
+      "canonical": {
+        "title": "CAM-04 / Archive Office, 02:48:20",
+        "location": "LOC-C101A / ARCHIVE OFFICE",
+        "capturedAt": "14 OCT 94 02:48:20",
+        "device": "CAM-04 / DVR NODE B-04",
+        "source": "DVR NODE B-04 / TAPE 4",
+        "description": "Terminal running. Directory listing on screen. No one at the desk for the length of the tape."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-B-10~NX-CAM-04:TEMPORAL",
+          "category": "TIMELINE",
+          "method": "TIMELINE_COMPARISON",
+          "difficulty": "HARD",
+          "with": "NX-037-B-10",
+          "meaning": "Field camera at the same second."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Build QA clean; seen on a contact sheet."
+    },
+    {
+      "id": "NX-CAM-06",
+      "type": "SURVEILLANCE",
+      "asset": "/evidence/surveillance/surv_cam06_0316_offline.jpg",
+      "thumb": "/evidence/thumb/surv_cam06_0316_offline.jpg",
+      "bytes": 121976,
+      "condition": "INCOMPLETE",
+      "treatment": "Software-rendered room → low-res CCD treatment, compression blocks, interlace, tracking tear → on-screen display (camera, REC, date/time, frame counter)",
+      "contentLock": "aa85553c36974640",
+      "canonical": {
+        "title": "CAM-06 / Sub-Basement, 03:16:00",
+        "location": "LOC-S01 / SUB-BASEMENT PLANT",
+        "capturedAt": "14 OCT 94 03:16:00",
+        "device": "CAM-06 / DVR NODE B-04",
+        "source": "DVR NODE B-04 / TAPE 6",
+        "description": "The camera is not transmitting. The recorder kept the last frame it ever received and kept trying."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-B-08~NX-CAM-06:SPATIAL",
+          "category": "LOCATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "EASY",
+          "with": "NX-037-B-08",
+          "meaning": "Field photograph of the same room."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Near-black by design: the camera was not transmitting."
+    },
+    {
+      "id": "NX-CAM-08",
+      "type": "SURVEILLANCE",
+      "asset": "/evidence/surveillance/surv_cam08_0305_partial.jpg",
+      "thumb": "/evidence/thumb/surv_cam08_0305_partial.jpg",
+      "bytes": 88109,
+      "condition": "DAMAGED",
+      "treatment": "Software-rendered room → low-res CCD treatment, compression blocks, interlace, tracking tear → on-screen display (camera, REC, date/time, frame counter)",
+      "contentLock": "6cb3ee7ec31937ce",
+      "canonical": {
+        "title": "CAM-08 / Equipment Room, 03:05:41",
+        "location": "LOC-C305 / EQUIPMENT ROOM",
+        "capturedAt": "14 OCT 94 03:05:41",
+        "device": "CAM-08 / DVR NODE B-04",
+        "source": "DVR NODE B-04 / TAPE 8",
+        "description": "Storage. A recording interval is missing between 03:04:12 and 03:07:30. The recorder does not log why."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-B-09~NX-CAM-08:SPATIAL",
+          "category": "LOCATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "EASY",
+          "with": "NX-037-B-09",
+          "meaning": "Field photograph of the same room."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Build QA clean; seen on a contact sheet."
+    },
+    {
+      "id": "NX-CAM-09",
+      "type": "SURVEILLANCE",
+      "asset": "/evidence/surveillance/surv_cam09_0225_lecture.jpg",
+      "thumb": "/evidence/thumb/surv_cam09_0225_lecture.jpg",
+      "bytes": 85307,
+      "condition": "NORMAL",
+      "treatment": "Software-rendered room → low-res CCD treatment, compression blocks, interlace, tracking tear → on-screen display (camera, REC, date/time, frame counter)",
+      "contentLock": "0a96038420f44314",
+      "canonical": {
+        "title": "CAM-09 / Lecture Room 214, 02:25:07",
+        "location": "LOC-C214H / LECTURE ROOM",
+        "capturedAt": "14 OCT 94 02:25:07",
+        "device": "CAM-09 / DVR NODE B-04",
+        "source": "DVR NODE B-04 / TAPE 9",
+        "description": "Lecture room. A single seat is occupied. The tape holds eleven minutes of nothing else happening."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-B-11~NX-CAM-09:SPATIAL",
+          "category": "LOCATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "EASY",
+          "with": "NX-037-B-11",
+          "meaning": "Field photograph of the same room."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Build QA clean; seen on a contact sheet."
+    },
+    {
+      "id": "NX-037-D-01",
+      "type": "DOCUMENT",
+      "asset": "/evidence/documents/doc_nx037_incident_rev03.jpg",
+      "thumb": "/evidence/thumb/doc_nx037_incident_rev03.jpg",
+      "bytes": 102129,
+      "condition": "NORMAL",
+      "treatment": "Typeset form on paper stock → ink variation, photocopy/carbon artefacts, stamps and redaction",
+      "contentLock": "adfe9d990e412d77",
+      "canonical": {
+        "title": "Incident Record 037, Section 4 — East Wing",
+        "location": "BUREAU OF CONTINUITY RECORDS",
+        "capturedAt": "19 OCT 94",
+        "device": "TYPEWRITER / REMINGTON 42",
+        "source": "CASE FILE NX-037",
+        "description": "The typed record that opened the case. Section 2 lists four recovered items; only three arrived intact."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-B-01~NX-037-D-01:SPATIAL",
+          "category": "LOCATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "EASY",
+          "with": "NX-037-B-01",
+          "meaning": "Incident record names LOC-C214."
+        },
+        {
+          "id": "clue:NX-037-B-02~NX-037-D-01:REFERENCE",
+          "category": "CONFIRMATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-B-02",
+          "meaning": "Item A is the disputed corridor frame."
+        },
+        {
+          "id": "clue:NX-037-D-01~NX-037-F-02:REFERENCE",
+          "category": "CONFIRMATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-F-02",
+          "meaning": "Item C is the wet torn label."
+        },
+        {
+          "id": "clue:NX-037-D-01~NX-037-D-08:REFERENCE",
+          "category": "CONFIRMATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-D-08",
+          "meaning": "Incident record cites this log as item D."
+        },
+        {
+          "id": "clue:NX-037-D-01~NX-037-F-01:REFERENCE",
+          "category": "CONFIRMATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-F-01",
+          "meaning": "A page of the incident record."
+        },
+        {
+          "id": "clue:NX-037-D-01~NX-037-P-03:PERSONNEL",
+          "category": "IDENTITY",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-P-03",
+          "meaning": "She signed the incident record."
+        },
+        {
+          "id": "clue:NX-037-D-01~NX-037-P-05:TEMPORAL",
+          "category": "TIMELINE",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "HARD",
+          "with": "NX-037-P-05",
+          "meaning": "17 APR 98 is the case's other impossible date."
+        },
+        {
+          "id": "clue:NX-037-D-01~NX-037-N-06:REFERENCE",
+          "category": "CONFIRMATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-N-06",
+          "meaning": "Written on the incident record."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Build QA clean; seen on a contact sheet."
+    },
+    {
+      "id": "NX-037-D-02",
+      "type": "DOCUMENT",
+      "asset": "/evidence/documents/doc_nx037_ledger_sectorc.jpg",
+      "thumb": "/evidence/thumb/doc_nx037_ledger_sectorc.jpg",
+      "bytes": 80751,
+      "condition": "NORMAL",
+      "treatment": "Typeset form on paper stock → ink variation, photocopy/carbon artefacts, stamps and redaction",
+      "contentLock": "9aa1123da2357387",
+      "canonical": {
+        "title": "Maintenance Ledger, Sector C, Vol. 3",
+        "location": "FACILITIES ENGINEERING",
+        "capturedAt": "1994",
+        "device": "BOUND LEDGER",
+        "source": "FACILITIES ENGINEERING / VOL 3",
+        "description": "Bound repair log. The 12 October entry describes a camera relocation that no other record mentions."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-D-02~NX-CAM-07:SOURCE",
+          "category": "RELATIONSHIP",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "EASY",
+          "with": "NX-CAM-07",
+          "meaning": "The ledger is the only record of the relocation."
+        },
+        {
+          "id": "clue:NX-037-D-02~NX-037-F-04:REFERENCE",
+          "category": "CONFIRMATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-F-04",
+          "meaning": "Torn label continues this ledger."
+        },
+        {
+          "id": "clue:NX-037-D-02~NX-037-D-04:REFERENCE",
+          "category": "CONFIRMATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-D-04",
+          "meaning": "The ledger entry that follows this memo."
+        },
+        {
+          "id": "clue:NX-037-D-02~NX-037-P-06:REFERENCE",
+          "category": "CONFIRMATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-P-06",
+          "meaning": "Signed the sector C ledger by order."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Build QA clean; seen on a contact sheet."
+    },
+    {
+      "id": "NX-037-D-03",
+      "type": "DOCUMENT",
+      "asset": "/evidence/documents/doc_nx037_access_export.jpg",
+      "thumb": "/evidence/thumb/doc_nx037_access_export.jpg",
+      "bytes": 86429,
+      "condition": "NORMAL",
+      "treatment": "Typeset form on paper stock → ink variation, photocopy/carbon artefacts, stamps and redaction",
+      "contentLock": "c878e93638307226",
+      "canonical": {
+        "title": "Access Control Export, 14 October",
+        "location": "NEXUS NODE B-04 / TERMINAL 07",
+        "capturedAt": "14 OCT 94 04:40",
+        "device": "REGISTRY PRINTER / DOT MATRIX",
+        "source": "NODE B-04",
+        "description": "Continuous-form printout from the registry. One credential reads at 03:17:11 and does not exist."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-B-02~NX-037-D-03:TEMPORAL",
+          "category": "TIMELINE",
+          "method": "TIMELINE_COMPARISON",
+          "difficulty": "HARD",
+          "with": "NX-037-B-02",
+          "meaning": "The unassigned reads at the photograph's timestamp."
+        },
+        {
+          "id": "clue:NX-037-D-03~NX-037-P-01:PERSONNEL",
+          "category": "IDENTITY",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-P-01",
+          "meaning": "L.V.-0029 is the nearest real holder."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Build QA clean; seen on a contact sheet."
+    },
+    {
+      "id": "NX-037-D-04",
+      "type": "DOCUMENT",
+      "asset": "/evidence/documents/doc_nx037_memo_operations.jpg",
+      "thumb": "/evidence/thumb/doc_nx037_memo_operations.jpg",
+      "bytes": 70783,
+      "condition": "PARTIAL",
+      "treatment": "Typeset form on paper stock → ink variation, photocopy/carbon artefacts, stamps and redaction",
+      "contentLock": "ed0413f2a1bfd875",
+      "canonical": {
+        "title": "Memorandum — East Wing Operations",
+        "location": "INTERNAL OPERATIONS",
+        "capturedAt": "04 OCT 94",
+        "device": "CARBON SET / DUPLICATED",
+        "source": "OPERATIONS FILE",
+        "description": "Internal memo on continuing the east wing after the archive move. The carbon copy is the only one that survived."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-D-02~NX-037-D-04:REFERENCE",
+          "category": "CONFIRMATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-D-02",
+          "meaning": "The ledger entry that follows this memo."
+        },
+        {
+          "id": "clue:NX-037-D-04~NX-CAM-07:SOURCE",
+          "category": "RELATIONSHIP",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "EASY",
+          "with": "NX-CAM-07",
+          "meaning": "Names the re-aim directly."
+        },
+        {
+          "id": "clue:NX-037-D-04~NX-037-M-04:REFERENCE",
+          "category": "CONFIRMATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-M-04",
+          "meaning": "The memo puts the tape route through here."
+        },
+        {
+          "id": "clue:NX-037-D-04~NX-037-P-02:PERSONNEL",
+          "category": "IDENTITY",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-P-02",
+          "meaning": "He signed the east wing memo."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Build QA clean; seen on a contact sheet."
+    },
+    {
+      "id": "NX-037-D-05",
+      "type": "DOCUMENT",
+      "asset": "/evidence/documents/doc_nx037_accesscard_ley.jpg",
+      "thumb": "/evidence/thumb/doc_nx037_accesscard_ley.jpg",
+      "bytes": 38451,
+      "condition": "NORMAL",
+      "treatment": "Typeset form on paper stock → ink variation, photocopy/carbon artefacts, stamps and redaction",
+      "contentLock": "f173f0526bc9e1ec",
+      "canonical": {
+        "title": "Access Card, Level 3 — L.V.-0029",
+        "location": "RECOVERED — LOC-C214",
+        "capturedAt": "14 OCT 94 04:10",
+        "device": "LIGHT TABLE / FIELD-CAM-02",
+        "source": "OBS-02 FIELD RECOVERY",
+        "description": "The card itself, photographed on a light table. The laminate is lifted at one corner."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-B-09~NX-037-D-05:REFERENCE",
+          "category": "CONFIRMATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-B-09",
+          "meaning": "Custody form lists crate 14 from this room."
+        },
+        {
+          "id": "clue:NX-037-D-05~NX-037-P-01:PERSONNEL",
+          "category": "IDENTITY",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-P-01",
+          "meaning": "Confirms the holder is L.V.-0029."
+        },
+        {
+          "id": "clue:NX-037-D-05~NX-037-F-06:REFERENCE",
+          "category": "CONFIRMATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-F-06",
+          "meaning": "Same card number prefix."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Build QA clean; seen on a contact sheet."
+    },
+    {
+      "id": "NX-037-D-06",
+      "type": "DOCUMENT",
+      "asset": "/evidence/documents/doc_nx037_custody_sheet.jpg",
+      "thumb": "/evidence/thumb/doc_nx037_custody_sheet.jpg",
+      "bytes": 77722,
+      "condition": "DAMAGED",
+      "treatment": "Typeset form on paper stock → ink variation, photocopy/carbon artefacts, stamps and redaction",
+      "contentLock": "61f2141ba644afa5",
+      "canonical": {
+        "title": "Chain of Custody, Item NX-037-B-02",
+        "location": "BUREAU OF CONTINUITY RECORDS",
+        "capturedAt": "14 OCT 94",
+        "device": "FILED FORM 2-A",
+        "source": "CASE FILE NX-037",
+        "description": "Custody transfers for the disputed frame. The last transfer has no receiving signature."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-B-02~NX-037-D-06:REFERENCE",
+          "category": "CONFIRMATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-B-02",
+          "meaning": "This is the custody record for the disputed frame."
+        },
+        {
+          "id": "clue:NX-037-D-06~NX-CAM-07:CONTRADICTION",
+          "category": "CONTRADICTION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "EXPERT",
+          "with": "NX-CAM-07",
+          "meaning": "Registry and recorder disagree."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Build QA clean; seen on a contact sheet."
+    },
+    {
+      "id": "NX-037-D-07",
+      "type": "DOCUMENT",
+      "asset": "/evidence/documents/doc_nx037_requisition.jpg",
+      "thumb": "/evidence/thumb/doc_nx037_requisition.jpg",
+      "bytes": 63911,
+      "condition": "NORMAL",
+      "treatment": "Typeset form on paper stock → ink variation, photocopy/carbon artefacts, stamps and redaction",
+      "contentLock": "9a0845d6cfbaf6d0",
+      "canonical": {
+        "title": "Facilities Requisition 2214 — Sub-Basement",
+        "location": "FACILITIES ENGINEERING",
+        "capturedAt": "11 OCT 94",
+        "device": "FILED FORM 2-A",
+        "source": "FACILITIES ENGINEERING",
+        "description": "Work order for the valve tree. The sign-off time is earlier than the call-out it answers."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-B-08~NX-037-D-07:SPATIAL",
+          "category": "LOCATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "EASY",
+          "with": "NX-037-B-08",
+          "meaning": "The same valve tree, photographed."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Build QA clean; seen on a contact sheet."
+    },
+    {
+      "id": "NX-037-D-08",
+      "type": "DOCUMENT",
+      "asset": "/evidence/documents/doc_nx037_surveillance_log.jpg",
+      "thumb": "/evidence/thumb/doc_nx037_surveillance_log.jpg",
+      "bytes": 80202,
+      "condition": "PARTIAL",
+      "treatment": "Typeset form on paper stock → ink variation, photocopy/carbon artefacts, stamps and redaction",
+      "contentLock": "ea0a20bb741a4b1b",
+      "canonical": {
+        "title": "Recorder Log Sheet, Node B-04",
+        "location": "NEXUS NODE B-04",
+        "capturedAt": "14 OCT 94",
+        "device": "BOUND LOG",
+        "source": "NODE B-04",
+        "description": "The operator's own log of the night. It records a manual stop on Tape 7 that no system log shows."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-D-08~NX-CAM-07:TEMPORAL",
+          "category": "TIMELINE",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "HARD",
+          "with": "NX-CAM-07",
+          "meaning": "The manual stop falls inside the dropout window."
+        },
+        {
+          "id": "clue:NX-037-D-01~NX-037-D-08:REFERENCE",
+          "category": "CONFIRMATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-D-01",
+          "meaning": "Incident record cites this log as item D."
+        },
+        {
+          "id": "clue:NX-037-A-04~NX-037-D-08:TEMPORAL",
+          "category": "TIMELINE",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "HARD",
+          "with": "NX-037-A-04",
+          "meaning": "Falls inside the recorder's manual stop."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Build QA clean; seen on a contact sheet."
+    },
+    {
+      "id": "NX-037-D-09",
+      "type": "DOCUMENT",
+      "asset": "/evidence/documents/doc_nx037_damaged_photo_log.jpg",
+      "thumb": "/evidence/thumb/doc_nx037_damaged_photo_log.jpg",
+      "bytes": 89695,
+      "condition": "DAMAGED",
+      "treatment": "Typeset form on paper stock → ink variation, photocopy/carbon artefacts, stamps and redaction",
+      "contentLock": "f43d7ebfbd935054",
+      "canonical": {
+        "title": "Photographic Processing Log, 14 October",
+        "location": "BUREAU LAB 3",
+        "capturedAt": "15 OCT 94",
+        "device": "LAB PRINTER / DOT MATRIX",
+        "source": "BUREAU LAB 3",
+        "description": "Lab log for the field rolls. One frame is marked as rejected before it was printed, and the reason is not the exposure."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-B-07~NX-037-D-09:REFERENCE",
+          "category": "CONFIRMATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-B-07",
+          "meaning": "The rejected frame."
+        },
+        {
+          "id": "clue:NX-037-B-02~NX-037-D-09:CONTRADICTION",
+          "category": "CONTRADICTION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "EXPERT",
+          "with": "NX-037-B-02",
+          "meaning": "The log says this frame was reshot."
+        },
+        {
+          "id": "clue:NX-037-D-09~NX-037-M-05:TEMPORAL",
+          "category": "TIMELINE",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "HARD",
+          "with": "NX-037-M-05",
+          "meaning": "The clock is the case's other recurring time reference."
+        },
+        {
+          "id": "clue:NX-037-D-09~NX-037-P-02:PERSONNEL",
+          "category": "IDENTITY",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-P-02",
+          "meaning": "The reshot frame was ordered by him."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Build QA clean; seen on a contact sheet."
+    },
+    {
+      "id": "NX-037-F-01",
+      "type": "FRAGMENT",
+      "asset": "/evidence/fragments/frag_nx037_c_01.jpg",
+      "thumb": "/evidence/thumb/frag_nx037_c_01.jpg",
+      "bytes": 192177,
+      "condition": "TORN",
+      "treatment": "Torn/partial sheet with damage masks",
+      "contentLock": "b803226458a11867",
+      "canonical": {
+        "title": "Torn Section — Incident Record",
+        "location": "RECOVERED — LOC-C214",
+        "capturedAt": "14 OCT 94",
+        "device": "FILED PAPER",
+        "source": "OBS-02 FIELD RECOVERY",
+        "description": "The middle of a typed report, torn from the file. Both ends of the sentence are gone."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-D-01~NX-037-F-01:REFERENCE",
+          "category": "CONFIRMATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-D-01",
+          "meaning": "A page of the incident record."
+        },
+        {
+          "id": "clue:NX-037-F-01~NX-037-F-08:REFERENCE",
+          "category": "CONFIRMATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-F-08",
+          "meaning": "Both mention the June survey."
+        },
+        {
+          "id": "clue:NX-037-F-01~NX-037-N-03:REFERENCE",
+          "category": "CONFIRMATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-N-03",
+          "meaning": "The torn section mentions the same survey."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Build QA clean; not individually reviewed by eye."
+    },
+    {
+      "id": "NX-037-F-02",
+      "type": "FRAGMENT",
+      "asset": "/evidence/fragments/frag_nx037_c_02.jpg",
+      "thumb": "/evidence/thumb/frag_nx037_c_02.jpg",
+      "bytes": 129643,
+      "condition": "STAIN",
+      "treatment": "Torn/partial sheet with damage masks",
+      "contentLock": "d26dc48a23ff7c9e",
+      "canonical": {
+        "title": "Torn Maintenance Label",
+        "location": "RECOVERED — LOC-C214",
+        "capturedAt": "14 OCT 94",
+        "device": "ADHESIVE LABEL",
+        "source": "OBS-02 FIELD RECOVERY",
+        "description": "A stencilled equipment label, wet and torn. It names a camera the building has no record of."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-D-01~NX-037-F-02:REFERENCE",
+          "category": "CONFIRMATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-D-01",
+          "meaning": "Item C is the wet torn label."
+        },
+        {
+          "id": "clue:NX-037-F-02~NX-CAM-07:REFERENCE",
+          "category": "CONFIRMATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-CAM-07",
+          "meaning": "Names the camera the incident record omits."
+        },
+        {
+          "id": "clue:NX-037-F-02~NX-037-N-05:REFERENCE",
+          "category": "CONFIRMATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-N-05",
+          "meaning": "The asset label carries the same re-aim date."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Build QA clean; not individually reviewed by eye."
+    },
+    {
+      "id": "NX-037-F-03",
+      "type": "FRAGMENT",
+      "asset": "/evidence/fragments/frag_nx037_c_03.jpg",
+      "thumb": "/evidence/thumb/frag_nx037_c_03.jpg",
+      "bytes": 83067,
+      "condition": "DAMAGED",
+      "treatment": "Torn/partial sheet with damage masks",
+      "contentLock": "5d04a667c34f7990",
+      "canonical": {
+        "title": "Ripped Print Corner",
+        "location": "RECOVERED — LOC-C214",
+        "capturedAt": "14 OCT 94",
+        "device": "PRINT",
+        "source": "OBS-02 FIELD RECOVERY",
+        "description": "A corner of a photographic print, recovered separately from the frame. The emulsion is scratched through."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-F-03~NX-CAM-07:REFERENCE",
+          "category": "CONFIRMATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-CAM-07",
+          "meaning": "Torn label assigns CAM-07 to this corridor."
+        },
+        {
+          "id": "clue:NX-037-B-12~NX-037-F-03:REFERENCE",
+          "category": "CONFIRMATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-B-12",
+          "meaning": "Same emulsion batch."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Build QA clean; not individually reviewed by eye."
+    },
+    {
+      "id": "NX-037-F-04",
+      "type": "FRAGMENT",
+      "asset": "/evidence/fragments/frag_nx037_c_04.jpg",
+      "thumb": "/evidence/thumb/frag_nx037_c_04.jpg",
+      "bytes": 113413,
+      "condition": "TORN",
+      "treatment": "Torn/partial sheet with damage masks",
+      "contentLock": "d87305b698bb4f79",
+      "canonical": {
+        "title": "Ledger Continuation, Torn",
+        "location": "RECOVERED — LOC-C214",
+        "capturedAt": "14 OCT 94",
+        "device": "LEDGER PAGE",
+        "source": "OBS-02 FIELD RECOVERY",
+        "description": "The bottom of a ledger page, separated at the binding. The last written line stops mid-word."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-B-08~NX-037-F-04:REFERENCE",
+          "category": "CONFIRMATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-B-08",
+          "meaning": "Torn maintenance label names the same valve tree."
+        },
+        {
+          "id": "clue:NX-037-D-02~NX-037-F-04:REFERENCE",
+          "category": "CONFIRMATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-D-02",
+          "meaning": "Torn label continues this ledger."
+        },
+        {
+          "id": "clue:NX-037-F-04~NX-037-P-06:PERSONNEL",
+          "category": "IDENTITY",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-P-06",
+          "meaning": "The name is cut off before it can be read."
+        },
+        {
+          "id": "clue:NX-037-F-04~NX-037-F-10:CONTRADICTION",
+          "category": "CONTRADICTION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "EXPERT",
+          "with": "NX-037-F-10",
+          "meaning": "Dated the day the camera was re-aimed."
+        },
+        {
+          "id": "clue:NX-037-F-04~NX-037-P-06:REFERENCE",
+          "category": "CONFIRMATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-P-06",
+          "meaning": "The name this file was opened for."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Build QA clean; not individually reviewed by eye."
+    },
+    {
+      "id": "NX-037-F-05",
+      "type": "FRAGMENT",
+      "asset": "/evidence/fragments/frag_nx037_c_05.jpg",
+      "thumb": "/evidence/thumb/frag_nx037_c_05.jpg",
+      "bytes": 112034,
+      "condition": "BURNED",
+      "treatment": "Torn/partial sheet with damage masks",
+      "contentLock": "d6f8c7a8f48af29b",
+      "canonical": {
+        "title": "Burnt Paper Fragment",
+        "location": "RECOVERED — LOC-S01",
+        "capturedAt": "14 OCT 94",
+        "device": "PAPER",
+        "source": "OBS-02 FIELD RECOVERY",
+        "description": "Recovered from a brazier in the sub-basement. Most of the sheet is gone."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-B-08~NX-037-F-05:SPATIAL",
+          "category": "LOCATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "EASY",
+          "with": "NX-037-B-08",
+          "meaning": "Found beside the valve tree."
+        },
+        {
+          "id": "clue:NX-037-F-05~NX-037-M-04:SPATIAL",
+          "category": "LOCATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "EASY",
+          "with": "NX-037-M-04",
+          "meaning": "The brazier is where the burnt fragment came from."
+        },
+        {
+          "id": "clue:NX-037-F-05~NX-037-N-01:SPATIAL",
+          "category": "LOCATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "EASY",
+          "with": "NX-037-N-01",
+          "meaning": "The burnt sheet is logged here."
+        },
+        {
+          "id": "clue:NX-037-F-05~NX-037-N-09:REFERENCE",
+          "category": "CONFIRMATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-N-09",
+          "meaning": "The scene log quotes the readable part."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Build QA clean; not individually reviewed by eye."
+    },
+    {
+      "id": "NX-037-F-06",
+      "type": "FRAGMENT",
+      "asset": "/evidence/fragments/frag_nx037_c_06.jpg",
+      "thumb": "/evidence/thumb/frag_nx037_c_06.jpg",
+      "bytes": 107511,
+      "condition": "TORN",
+      "treatment": "Torn/partial sheet with damage masks",
+      "contentLock": "bac61e51834110a7",
+      "canonical": {
+        "title": "Access Card, Cut",
+        "location": "RECOVERED — LOC-C214",
+        "capturedAt": "14 OCT 94",
+        "device": "LAMINATE",
+        "source": "OBS-02 FIELD RECOVERY",
+        "description": "A card cut through the laminate. The photograph and half the number are gone."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-D-05~NX-037-F-06:REFERENCE",
+          "category": "CONFIRMATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-D-05",
+          "meaning": "Same card number prefix."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Build QA clean; not individually reviewed by eye."
+    },
+    {
+      "id": "NX-037-F-07",
+      "type": "FRAGMENT",
+      "asset": "/evidence/fragments/frag_nx037_c_07.jpg",
+      "thumb": "/evidence/thumb/frag_nx037_c_07.jpg",
+      "bytes": 66964,
+      "condition": "NORMAL",
+      "treatment": "Torn/partial sheet with damage masks",
+      "contentLock": "5c44c13db3be6619",
+      "canonical": {
+        "title": "Archive Shelf Label, Detached",
+        "location": "RECOVERED — LOC-C101",
+        "capturedAt": "14 OCT 94",
+        "device": "SHELF LABEL",
+        "source": "OBS-02 FIELD RECOVERY",
+        "description": "A shelf label in the archive aisle, adhesive still wet on the reverse."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-B-03~NX-037-F-07:REFERENCE",
+          "category": "CONFIRMATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-B-03",
+          "meaning": "Torn shelf label recovered from the same aisle."
+        },
+        {
+          "id": "clue:NX-037-B-03~NX-037-F-07:SPATIAL",
+          "category": "LOCATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "EASY",
+          "with": "NX-037-B-03",
+          "meaning": "Taken from the aisle in this frame."
+        },
+        {
+          "id": "clue:NX-037-F-07~NX-037-N-04:REFERENCE",
+          "category": "CONFIRMATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-N-04",
+          "meaning": "Names the shelf label exactly."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Build QA clean; not individually reviewed by eye."
+    },
+    {
+      "id": "NX-037-F-08",
+      "type": "FRAGMENT",
+      "asset": "/evidence/fragments/frag_nx037_c_08.jpg",
+      "thumb": "/evidence/thumb/frag_nx037_c_08.jpg",
+      "bytes": 117398,
+      "condition": "TORN",
+      "treatment": "Torn/partial sheet with damage masks",
+      "contentLock": "36b883744d058f04",
+      "canonical": {
+        "title": "Handwritten Note, Partial",
+        "location": "RECOVERED — LOC-C214",
+        "capturedAt": "14 OCT 94",
+        "device": "FIELD NOTE",
+        "source": "OBS-02 FIELD RECOVERY",
+        "description": "A field note recovered folded in a pocket. Only the lower half survived."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-F-01~NX-037-F-08:REFERENCE",
+          "category": "CONFIRMATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-F-01",
+          "meaning": "Both mention the June survey."
+        },
+        {
+          "id": "clue:NX-037-F-08~NX-037-N-02:REFERENCE",
+          "category": "CONFIRMATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-N-02",
+          "meaning": "The torn note is the rest of this page."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Build QA clean; not individually reviewed by eye."
+    },
+    {
+      "id": "NX-037-F-09",
+      "type": "FRAGMENT",
+      "asset": "/evidence/fragments/frag_nx037_c_09.jpg",
+      "thumb": "/evidence/thumb/frag_nx037_c_09.jpg",
+      "bytes": 136418,
+      "condition": "DAMAGED",
+      "treatment": "Torn/partial sheet with damage masks",
+      "contentLock": "5a8063dfd1d0514a",
+      "canonical": {
+        "title": "Floor Plan Fragment, East Wing",
+        "location": "RECOVERED — LOC-C214",
+        "capturedAt": "14 OCT 94",
+        "device": "DRAWING",
+        "source": "OBS-02 FIELD RECOVERY",
+        "description": "A corner of a drawing, cut rather than torn. The room it belongs to is labelled with a code nobody uses."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-F-09~NX-037-M-02:REFERENCE",
+          "category": "CONFIRMATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-M-02",
+          "meaning": "The current drawing has no C214-X."
+        },
+        {
+          "id": "clue:NX-037-F-09~NX-CAM-07:SPATIAL",
+          "category": "LOCATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "EASY",
+          "with": "NX-CAM-07",
+          "meaning": "The marked room contains the CAM-07 mount point."
+        },
+        {
+          "id": "clue:NX-037-F-09~NX-037-M-01:CONTRADICTION",
+          "category": "CONTRADICTION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "EXPERT",
+          "with": "NX-037-M-01",
+          "meaning": "Issue 03 has no room C214-X."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Build QA clean; not individually reviewed by eye."
+    },
+    {
+      "id": "NX-037-F-10",
+      "type": "FRAGMENT",
+      "asset": "/evidence/fragments/frag_nx037_c_10.jpg",
+      "thumb": "/evidence/thumb/frag_nx037_c_10.jpg",
+      "bytes": 157409,
+      "condition": "TORN",
+      "treatment": "Torn/partial sheet with damage masks",
+      "contentLock": "87c3ccec7a2d6fbf",
+      "canonical": {
+        "title": "Personnel Record, Detached Page",
+        "location": "RECOVERED — LOC-C101",
+        "capturedAt": "14 OCT 94",
+        "device": "FILE PAGE",
+        "source": "OBS-02 FIELD RECOVERY",
+        "description": "The endorsement page of a personnel file, torn out at the staple."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-F-10~NX-037-P-01:PERSONNEL",
+          "category": "IDENTITY",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-P-01",
+          "meaning": "The same personnel number."
+        },
+        {
+          "id": "clue:NX-037-F-04~NX-037-F-10:CONTRADICTION",
+          "category": "CONTRADICTION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "EXPERT",
+          "with": "NX-037-F-04",
+          "meaning": "Dated the day the camera was re-aimed."
+        },
+        {
+          "id": "clue:NX-037-F-10~NX-037-P-01:REFERENCE",
+          "category": "CONFIRMATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-P-01",
+          "meaning": "The torn endorsement page is hers."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Build QA clean; not individually reviewed by eye."
+    },
+    {
+      "id": "NX-037-M-01",
+      "type": "MAP",
+      "asset": "/evidence/maps/map_admin_ground_a201g.jpg",
+      "thumb": "/evidence/thumb/map_admin_ground_a201g.jpg",
+      "bytes": 157505,
+      "condition": "NORMAL",
+      "treatment": "Plan drawing on paper stock",
+      "contentLock": "c7d4dc60e172c902",
+      "canonical": {
+        "title": "Admin Building, Ground Floor — A-201-G",
+        "location": "FACILITIES ENGINEERING",
+        "capturedAt": "MAR 94",
+        "device": "DRAWING / REPROGRAPH",
+        "source": "FACILITIES ENGINEERING",
+        "description": "The drawing of record. Issue 03. Everything in the case sits on this sheet."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-M-01~NX-CAM-07:SPATIAL",
+          "category": "LOCATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "EASY",
+          "with": "NX-CAM-07",
+          "meaning": "CAM-07 shown at the north end of C214."
+        },
+        {
+          "id": "clue:NX-037-F-09~NX-037-M-01:CONTRADICTION",
+          "category": "CONTRADICTION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "EXPERT",
+          "with": "NX-037-F-09",
+          "meaning": "Issue 03 has no room C214-X."
+        },
+        {
+          "id": "clue:NX-037-M-01~NX-037-M-02:CONTRADICTION",
+          "category": "CONTRADICTION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "EXPERT",
+          "with": "NX-037-M-02",
+          "meaning": "The current issue omits C214-X."
+        },
+        {
+          "id": "clue:NX-037-A-06~NX-037-M-01:SPATIAL",
+          "category": "LOCATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "EASY",
+          "with": "NX-037-A-06",
+          "meaning": "The recording names the drawing's subject."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Build QA clean; not individually reviewed by eye."
+    },
+    {
+      "id": "NX-037-M-02",
+      "type": "MAP",
+      "asset": "/evidence/maps/map_east_wing_issue02.jpg",
+      "thumb": "/evidence/thumb/map_east_wing_issue02.jpg",
+      "bytes": 134010,
+      "condition": "FADED",
+      "treatment": "Plan drawing on paper stock",
+      "contentLock": "9f52ba2bb8329acc",
+      "canonical": {
+        "title": "Admin Building, Ground Floor — A-201-G ISSUE 02",
+        "location": "FACILITIES ENGINEERING",
+        "capturedAt": "AUG 91",
+        "device": "DRAWING / REPROGRAPH",
+        "source": "FACILITIES ENGINEERING",
+        "description": "The superseded issue. It contains a room that the current drawing no longer has."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-F-09~NX-037-M-02:REFERENCE",
+          "category": "CONFIRMATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-F-09",
+          "meaning": "The current drawing has no C214-X."
+        },
+        {
+          "id": "clue:NX-037-M-01~NX-037-M-02:CONTRADICTION",
+          "category": "CONTRADICTION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "EXPERT",
+          "with": "NX-037-M-01",
+          "meaning": "The current issue omits C214-X."
+        },
+        {
+          "id": "clue:NX-037-M-02~NX-037-N-05:SPATIAL",
+          "category": "LOCATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "EASY",
+          "with": "NX-037-N-05",
+          "meaning": "C214-X exists only on issue 02."
+        },
+        {
+          "id": "clue:NX-037-A-02~NX-037-M-02:CONTRADICTION",
+          "category": "CONTRADICTION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "EXPERT",
+          "with": "NX-037-A-02",
+          "meaning": "The drawing disagrees."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Build QA clean; not individually reviewed by eye."
+    },
+    {
+      "id": "NX-037-M-03",
+      "type": "MAP",
+      "asset": "/evidence/maps/map_science_lab_c202.jpg",
+      "thumb": "/evidence/thumb/map_science_lab_c202.jpg",
+      "bytes": 117443,
+      "condition": "NORMAL",
+      "treatment": "Plan drawing on paper stock",
+      "contentLock": "e2726d00846f4163",
+      "canonical": {
+        "title": "Science Wing, Laboratory Level — S-114",
+        "location": "FACILITIES ENGINEERING",
+        "capturedAt": "JAN 93",
+        "device": "DRAWING / REPROGRAPH",
+        "source": "FACILITIES ENGINEERING",
+        "description": "Bench layout for Labs 01 to 06, including the bench the case keeps returning to."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-M-03~NX-037-P-01:PERSONNEL",
+          "category": "IDENTITY",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-P-01",
+          "meaning": "Confirms the bench assignment."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Build QA clean; not individually reviewed by eye."
+    },
+    {
+      "id": "NX-037-M-04",
+      "type": "MAP",
+      "asset": "/evidence/maps/map_subbasement_s01.jpg",
+      "thumb": "/evidence/thumb/map_subbasement_s01.jpg",
+      "bytes": 169147,
+      "condition": "DAMAGED",
+      "treatment": "Plan drawing on paper stock",
+      "contentLock": "0f73c2a1486390da",
+      "canonical": {
+        "title": "Sub-Basement Plant Level — S-001",
+        "location": "FACILITIES ENGINEERING",
+        "capturedAt": "MAR 78",
+        "device": "DRAWING / REPROGRAPH",
+        "source": "FACILITIES ENGINEERING",
+        "description": "The service level under the east wing. The tape route runs through it."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-F-05~NX-037-M-04:SPATIAL",
+          "category": "LOCATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "EASY",
+          "with": "NX-037-F-05",
+          "meaning": "The brazier is where the burnt fragment came from."
+        },
+        {
+          "id": "clue:NX-037-D-04~NX-037-M-04:REFERENCE",
+          "category": "CONFIRMATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-D-04",
+          "meaning": "The memo puts the tape route through here."
+        },
+        {
+          "id": "clue:NX-037-M-04~NX-037-N-07:SPATIAL",
+          "category": "LOCATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "EASY",
+          "with": "NX-037-N-07",
+          "meaning": "The drawing does not match this diagram."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Build QA clean; not individually reviewed by eye."
+    },
+    {
+      "id": "NX-037-M-05",
+      "type": "MAP",
+      "asset": "/evidence/maps/map_tower_section_t7.jpg",
+      "thumb": "/evidence/thumb/map_tower_section_t7.jpg",
+      "bytes": 156729,
+      "condition": "NORMAL",
+      "treatment": "Plan drawing on paper stock",
+      "contentLock": "a4c1e9742b11c5a1",
+      "canonical": {
+        "title": "Clock Tower, Vertical Section — T-7",
+        "location": "FACILITIES ENGINEERING",
+        "capturedAt": "JUN 74",
+        "device": "CYANOTYPE",
+        "source": "FACILITIES ENGINEERING",
+        "description": "A section through the tower. The clock movement is annotated in a hand that is not the draughtsman's."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-D-09~NX-037-M-05:TEMPORAL",
+          "category": "TIMELINE",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "HARD",
+          "with": "NX-037-D-09",
+          "meaning": "The clock is the case's other recurring time reference."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Build QA clean; not individually reviewed by eye."
+    },
+    {
+      "id": "NX-037-P-01",
+      "type": "PERSONNEL",
+      "asset": "/evidence/personnel/personnel_lv_0029.jpg",
+      "thumb": "/evidence/thumb/personnel_lv_0029.jpg",
+      "bytes": 79127,
+      "condition": "NORMAL",
+      "treatment": "Issued card/file layout on card stock",
+      "contentLock": "16a3766cdf8a315d",
+      "canonical": {
+        "title": "Personnel Record — L.V.-0029",
+        "location": "LAB 04 / EAST WING ACCESS",
+        "capturedAt": "1994",
+        "device": "FILED FORM P-1",
+        "source": "PERSONNEL FILE",
+        "description": "The file for the project lead. Every endorsement is in someone else's hand."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-B-02~NX-037-P-01:PERSONNEL",
+          "category": "IDENTITY",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-B-02",
+          "meaning": "Build matches L.V.-0029; cannot be confirmed."
+        },
+        {
+          "id": "clue:NX-037-B-05~NX-037-P-01:PERSONNEL",
+          "category": "IDENTITY",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-B-05",
+          "meaning": "Lab 04 is L.V.-0029's assigned bench."
+        },
+        {
+          "id": "clue:NX-037-B-11~NX-037-P-01:PERSONNEL",
+          "category": "IDENTITY",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-B-11",
+          "meaning": "L.V.-0029 taught this room."
+        },
+        {
+          "id": "clue:NX-037-D-03~NX-037-P-01:PERSONNEL",
+          "category": "IDENTITY",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-D-03",
+          "meaning": "L.V.-0029 is the nearest real holder."
+        },
+        {
+          "id": "clue:NX-037-D-05~NX-037-P-01:PERSONNEL",
+          "category": "IDENTITY",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-D-05",
+          "meaning": "Confirms the holder is L.V.-0029."
+        },
+        {
+          "id": "clue:NX-037-F-10~NX-037-P-01:PERSONNEL",
+          "category": "IDENTITY",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-F-10",
+          "meaning": "The same personnel number."
+        },
+        {
+          "id": "clue:NX-037-M-03~NX-037-P-01:PERSONNEL",
+          "category": "IDENTITY",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-M-03",
+          "meaning": "Confirms the bench assignment."
+        },
+        {
+          "id": "clue:NX-037-F-10~NX-037-P-01:REFERENCE",
+          "category": "CONFIRMATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-F-10",
+          "meaning": "The torn endorsement page is hers."
+        },
+        {
+          "id": "clue:NX-037-P-01~NX-037-P-05:CONTRADICTION",
+          "category": "CONTRADICTION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "EXPERT",
+          "with": "NX-037-P-05",
+          "meaning": "Same number, different appointment date."
+        },
+        {
+          "id": "clue:NX-037-A-01~NX-037-P-01:PERSONNEL",
+          "category": "IDENTITY",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-A-01",
+          "meaning": "The voice is not identified in the file."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Build QA clean; not individually reviewed by eye."
+    },
+    {
+      "id": "NX-037-P-02",
+      "type": "PERSONNEL",
+      "asset": "/evidence/personnel/personnel_mc_0114.jpg",
+      "thumb": "/evidence/thumb/personnel_mc_0114.jpg",
+      "bytes": 74611,
+      "condition": "NORMAL",
+      "treatment": "Issued card/file layout on card stock",
+      "contentLock": "680afd251933969c",
+      "canonical": {
+        "title": "Personnel Record — M.C.-0114",
+        "location": "LAB 02",
+        "capturedAt": "1994",
+        "device": "FILED FORM P-1",
+        "source": "PERSONNEL FILE",
+        "description": "The deputy lead. His file is the shortest of the four and the only one that is fully closed."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-D-04~NX-037-P-02:PERSONNEL",
+          "category": "IDENTITY",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-D-04",
+          "meaning": "He signed the east wing memo."
+        },
+        {
+          "id": "clue:NX-037-D-09~NX-037-P-02:PERSONNEL",
+          "category": "IDENTITY",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-D-09",
+          "meaning": "The reshot frame was ordered by him."
+        },
+        {
+          "id": "clue:NX-037-N-03~NX-037-P-02:PERSONNEL",
+          "category": "IDENTITY",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-N-03",
+          "meaning": "The name the note could not resolve."
+        },
+        {
+          "id": "clue:NX-037-N-08~NX-037-P-02:PERSONNEL",
+          "category": "IDENTITY",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-N-08",
+          "meaning": "Item 2 is the deputy lead."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Build QA clean; not individually reviewed by eye."
+    },
+    {
+      "id": "NX-037-P-03",
+      "type": "PERSONNEL",
+      "asset": "/evidence/personnel/personnel_nr_0471.jpg",
+      "thumb": "/evidence/thumb/personnel_nr_0471.jpg",
+      "bytes": 69928,
+      "condition": "NORMAL",
+      "treatment": "Issued card/file layout on card stock",
+      "contentLock": "6693eff694c34596",
+      "canonical": {
+        "title": "Personnel Record — N.R.-0471",
+        "location": "OBSERVATION POST 3",
+        "capturedAt": "1994",
+        "device": "FILED FORM P-1",
+        "source": "PERSONNEL FILE",
+        "description": "The officer who opened the incident record. Her photograph was taken on a different day to her file."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-D-01~NX-037-P-03:PERSONNEL",
+          "category": "IDENTITY",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-D-01",
+          "meaning": "She signed the incident record."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Build QA clean; not individually reviewed by eye."
+    },
+    {
+      "id": "NX-037-P-04",
+      "type": "PERSONNEL",
+      "asset": "/evidence/personnel/personnel_ms_0388.jpg",
+      "thumb": "/evidence/thumb/personnel_ms_0388.jpg",
+      "bytes": 81291,
+      "condition": "DAMAGED",
+      "treatment": "Issued card/file layout on card stock",
+      "contentLock": "c13dc1aab9561db3",
+      "canonical": {
+        "title": "Personnel Record — M.S.-0388",
+        "location": "CENTRAL ARCHIVE / DESK 04",
+        "capturedAt": "1994",
+        "device": "FILED FORM P-1",
+        "source": "PERSONNEL FILE",
+        "description": "The archivist. Her file carries an access endorsement for the east wing that was never signed by the holder."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-B-10~NX-037-P-04:SPATIAL",
+          "category": "LOCATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "EASY",
+          "with": "NX-037-B-10",
+          "meaning": "Desk 04 in the archive office."
+        },
+        {
+          "id": "clue:NX-037-N-08~NX-037-P-04:PERSONNEL",
+          "category": "IDENTITY",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-N-08",
+          "meaning": "Item 3 is the archivist."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Build QA clean; not individually reviewed by eye."
+    },
+    {
+      "id": "NX-037-P-05",
+      "type": "PERSONNEL",
+      "asset": "/evidence/personnel/personnel_lv_0029_duplicate.jpg",
+      "thumb": "/evidence/thumb/personnel_lv_0029_duplicate.jpg",
+      "bytes": 73481,
+      "condition": "ANOMALOUS",
+      "treatment": "Issued card/file layout on card stock",
+      "contentLock": "72977ac0a30e4969",
+      "canonical": {
+        "title": "Personnel Record — L.V.-0029 (DUPLICATE)",
+        "location": "LAB 04",
+        "capturedAt": "17 APR 98",
+        "device": "FILED FORM P-1",
+        "source": "PERSONNEL FILE / ANOMALOUS",
+        "description": "A second file for the same number. Its control number appears inside its own contents, and its dates are impossible."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-B-03~NX-037-P-05:PERSONNEL",
+          "category": "IDENTITY",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-B-03",
+          "meaning": "M.S.-0388 works this room."
+        },
+        {
+          "id": "clue:NX-037-B-10~NX-037-P-05:PERSONNEL",
+          "category": "IDENTITY",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-B-10",
+          "meaning": "Desk 04 is assigned to M.S.-0388."
+        },
+        {
+          "id": "clue:NX-037-P-01~NX-037-P-05:CONTRADICTION",
+          "category": "CONTRADICTION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "EXPERT",
+          "with": "NX-037-P-01",
+          "meaning": "Same number, different appointment date."
+        },
+        {
+          "id": "clue:NX-037-D-01~NX-037-P-05:TEMPORAL",
+          "category": "TIMELINE",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "HARD",
+          "with": "NX-037-D-01",
+          "meaning": "17 APR 98 is the case's other impossible date."
+        },
+        {
+          "id": "clue:NX-037-A-03~NX-037-P-05:TEMPORAL",
+          "category": "TIMELINE",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "HARD",
+          "with": "NX-037-A-03",
+          "meaning": "April. The anomalous date."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Build QA clean; not individually reviewed by eye."
+    },
+    {
+      "id": "NX-037-P-06",
+      "type": "PERSONNEL",
+      "asset": "/evidence/personnel/personnel_d_wright_unestablished.jpg",
+      "thumb": "/evidence/thumb/personnel_d_wright_unestablished.jpg",
+      "bytes": 75073,
+      "condition": "INCOMPLETE",
+      "treatment": "Issued card/file layout on card stock",
+      "contentLock": "1e6b60f8f129c9f4",
+      "canonical": {
+        "title": "Personnel Record — D. WRIGHT (NOT ON ESTABLISHMENT)",
+        "location": "SECTOR C / PLANT ROOM",
+        "capturedAt": "14 OCT 94",
+        "device": "FILED FORM P-1",
+        "source": "UNASSIGNED FILE / FOUND IN SECTOR C",
+        "description": "A file opened for a person the Institute has no record of employing. The surname is legible; everything that would identify the holder is not."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-F-04~NX-037-P-06:PERSONNEL",
+          "category": "IDENTITY",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-F-04",
+          "meaning": "The name is cut off before it can be read."
+        },
+        {
+          "id": "clue:NX-037-F-04~NX-037-P-06:REFERENCE",
+          "category": "CONFIRMATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-F-04",
+          "meaning": "The name this file was opened for."
+        },
+        {
+          "id": "clue:NX-037-A-05~NX-037-P-06:TEMPORAL",
+          "category": "TIMELINE",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "HARD",
+          "with": "NX-037-A-05",
+          "meaning": "Named at the same minute on the same tape."
+        },
+        {
+          "id": "clue:NX-037-D-02~NX-037-P-06:REFERENCE",
+          "category": "CONFIRMATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-D-02",
+          "meaning": "Signed the sector C ledger by order."
+        },
+        {
+          "id": "clue:NX-037-A-05~NX-037-P-06:PERSONNEL",
+          "category": "IDENTITY",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-A-05",
+          "meaning": "A name appears in the ledger fragment at the same time."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Build QA clean; not individually reviewed by eye."
+    },
+    {
+      "id": "NX-037-N-01",
+      "type": "NOTE",
+      "asset": "/evidence/notes/note_observer02_01.jpg",
+      "thumb": "/evidence/thumb/note_observer02_01.jpg",
+      "bytes": 69748,
+      "condition": "NORMAL",
+      "treatment": "Handwritten/typed sheet on paper stock",
+      "contentLock": "c5b5bf0d65538588",
+      "canonical": {
+        "title": "Field Observation Sheet 1 — OBS-02",
+        "location": "SUB-BASEMENT / EAST WING",
+        "capturedAt": "14 OCT 94",
+        "device": "FIELD BOOK",
+        "source": "OBS-02",
+        "description": "The observation team's own sheet, in order, with times that line up with everything else."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-F-05~NX-037-N-01:SPATIAL",
+          "category": "LOCATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "EASY",
+          "with": "NX-037-F-05",
+          "meaning": "The burnt sheet is logged here."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Build QA clean; not individually reviewed by eye."
+    },
+    {
+      "id": "NX-037-N-02",
+      "type": "NOTE",
+      "asset": "/evidence/notes/note_observer02_02.jpg",
+      "thumb": "/evidence/thumb/note_observer02_02.jpg",
+      "bytes": 69934,
+      "condition": "NORMAL",
+      "treatment": "Handwritten/typed sheet on paper stock",
+      "contentLock": "e79e758a2c9d817c",
+      "canonical": {
+        "title": "Field Observation Sheet 2 — OBS-02",
+        "location": "EAST CORRIDOR",
+        "capturedAt": "14 OCT 94",
+        "device": "FIELD BOOK",
+        "source": "OBS-02",
+        "description": "The sheet that stops in the middle of a line. The last entry is about the corridor."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-B-02~NX-037-N-02:TEMPORAL",
+          "category": "TIMELINE",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "HARD",
+          "with": "NX-037-B-02",
+          "meaning": "The frame is taken at the line where the note stops."
+        },
+        {
+          "id": "clue:NX-037-F-08~NX-037-N-02:REFERENCE",
+          "category": "CONFIRMATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-F-08",
+          "meaning": "The torn note is the rest of this page."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Build QA clean; not individually reviewed by eye."
+    },
+    {
+      "id": "NX-037-N-03",
+      "type": "NOTE",
+      "asset": "/evidence/notes/note_observer02_03.jpg",
+      "thumb": "/evidence/thumb/note_observer02_03.jpg",
+      "bytes": 75973,
+      "condition": "DAMAGED",
+      "treatment": "Handwritten/typed sheet on paper stock",
+      "contentLock": "1d5fcbfe82743fd4",
+      "canonical": {
+        "title": "Field Observation Sheet 3 — OBS-02",
+        "location": "MAIN ENTRANCE",
+        "capturedAt": "14 OCT 94",
+        "device": "FIELD BOOK",
+        "source": "OBS-02",
+        "description": "Written after the corridor, back in the entrance. The handwriting changes."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-N-03~NX-037-P-02:PERSONNEL",
+          "category": "IDENTITY",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-P-02",
+          "meaning": "The name the note could not resolve."
+        },
+        {
+          "id": "clue:NX-037-F-01~NX-037-N-03:REFERENCE",
+          "category": "CONFIRMATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-F-01",
+          "meaning": "The torn section mentions the same survey."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Build QA clean; not individually reviewed by eye."
+    },
+    {
+      "id": "NX-037-N-04",
+      "type": "NOTE",
+      "asset": "/evidence/notes/note_archivist_04.jpg",
+      "thumb": "/evidence/thumb/note_archivist_04.jpg",
+      "bytes": 60681,
+      "condition": "NORMAL",
+      "treatment": "Handwritten/typed sheet on paper stock",
+      "contentLock": "3b1ea38ee1ce1a7e",
+      "canonical": {
+        "title": "Archivist Note — M.S.-0388",
+        "location": "CENTRAL ARCHIVE",
+        "capturedAt": "OCT 94",
+        "device": "FILE NOTE",
+        "source": "M.S.-0388",
+        "description": "A note left inside a file, addressed to whoever reads the box next."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-F-07~NX-037-N-04:REFERENCE",
+          "category": "CONFIRMATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-F-07",
+          "meaning": "Names the shelf label exactly."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Build QA clean; not individually reviewed by eye."
+    },
+    {
+      "id": "NX-037-N-05",
+      "type": "NOTE",
+      "asset": "/evidence/notes/note_index_card_maintenance.jpg",
+      "thumb": "/evidence/thumb/note_index_card_maintenance.jpg",
+      "bytes": 21493,
+      "condition": "NORMAL",
+      "treatment": "Handwritten/typed sheet on paper stock",
+      "contentLock": "fd15e871ce86ee8c",
+      "canonical": {
+        "title": "Index Card — Camera Schedule",
+        "location": "CENTRAL ARCHIVE",
+        "capturedAt": "1994",
+        "device": "INDEX CARD",
+        "source": "CENTRAL ARCHIVE",
+        "description": "A card-index card. The card below it in the drawer is blank and not marked as withdrawn."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-F-02~NX-037-N-05:REFERENCE",
+          "category": "CONFIRMATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-F-02",
+          "meaning": "The asset label carries the same re-aim date."
+        },
+        {
+          "id": "clue:NX-037-M-02~NX-037-N-05:SPATIAL",
+          "category": "LOCATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "EASY",
+          "with": "NX-037-M-02",
+          "meaning": "C214-X exists only on issue 02."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Build QA clean; not individually reviewed by eye."
+    },
+    {
+      "id": "NX-037-N-06",
+      "type": "NOTE",
+      "asset": "/evidence/notes/note_marginalia_d01.jpg",
+      "thumb": "/evidence/thumb/note_marginalia_d01.jpg",
+      "bytes": 47792,
+      "condition": "NORMAL",
+      "treatment": "Handwritten/typed sheet on paper stock",
+      "contentLock": "bad132449d3a49d5",
+      "canonical": {
+        "title": "Marginalia — Incident Record 037",
+        "location": "CASE FILE NX-037",
+        "capturedAt": "OCT 94",
+        "device": "FILED DOCUMENT",
+        "source": "UNKNOWN HAND",
+        "description": "Written in the margin of a filed record, in a different hand from the record."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-D-01~NX-037-N-06:REFERENCE",
+          "category": "CONFIRMATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-D-01",
+          "meaning": "Written on the incident record."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Build QA clean; not individually reviewed by eye."
+    },
+    {
+      "id": "NX-037-N-07",
+      "type": "NOTE",
+      "asset": "/evidence/notes/note_tape_route.jpg",
+      "thumb": "/evidence/thumb/note_tape_route.jpg",
+      "bytes": 34539,
+      "condition": "DAMAGED",
+      "treatment": "Handwritten/typed sheet on paper stock",
+      "contentLock": "9cfcd6497d1ee3df",
+      "canonical": {
+        "title": "Maintenance Scrawl — Tape Route",
+        "location": "FACILITIES",
+        "capturedAt": "OCT 94",
+        "device": "SCRAP PAPER",
+        "source": "TECH-11",
+        "description": "A scrap of repair-room paper, in pencil, with a diagram that does not match any drawing on file."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-M-04~NX-037-N-07:SPATIAL",
+          "category": "LOCATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "EASY",
+          "with": "NX-037-M-04",
+          "meaning": "The drawing does not match this diagram."
+        },
+        {
+          "id": "clue:NX-037-N-07~NX-CAM-07:SOURCE",
+          "category": "RELATIONSHIP",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "EASY",
+          "with": "NX-CAM-07",
+          "meaning": "Explains the missing interval on tape 7."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Build QA clean; not individually reviewed by eye."
+    },
+    {
+      "id": "NX-037-N-08",
+      "type": "NOTE",
+      "asset": "/evidence/notes/note_roster_sheet.jpg",
+      "thumb": "/evidence/thumb/note_roster_sheet.jpg",
+      "bytes": 72856,
+      "condition": "NORMAL",
+      "treatment": "Handwritten/typed sheet on paper stock",
+      "contentLock": "84b5cfe870584537",
+      "canonical": {
+        "title": "Establish List, East Wing",
+        "location": "OPERATIONS",
+        "capturedAt": "OCT 94",
+        "device": "FILED LIST",
+        "source": "INTERNAL OPERATIONS",
+        "description": "A typed list of who is supposed to be in the wing after hours. Six names. One line is struck through and the ink has been gone over."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-N-08~NX-037-P-04:PERSONNEL",
+          "category": "IDENTITY",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-P-04",
+          "meaning": "Item 3 is the archivist."
+        },
+        {
+          "id": "clue:NX-037-N-08~NX-037-P-02:PERSONNEL",
+          "category": "IDENTITY",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-P-02",
+          "meaning": "Item 2 is the deputy lead."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Build QA clean; not individually reviewed by eye."
+    },
+    {
+      "id": "NX-037-N-09",
+      "type": "NOTE",
+      "asset": "/evidence/notes/note_burned_stub.jpg",
+      "thumb": "/evidence/thumb/note_burned_stub.jpg",
+      "bytes": 23859,
+      "condition": "BURNED",
+      "treatment": "Handwritten/typed sheet on paper stock",
+      "contentLock": "fa2416fb6433b14a",
+      "canonical": {
+        "title": "Ash Stub — Unreadable",
+        "location": "SUB-BASEMENT",
+        "capturedAt": "14 OCT 94",
+        "device": "ASH",
+        "source": "OBS-02",
+        "description": "A fragment of a sheet reduced to ash. The Bureau kept it because there was nothing else left of it."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-F-05~NX-037-N-09:REFERENCE",
+          "category": "CONFIRMATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-F-05",
+          "meaning": "The scene log quotes the readable part."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Build QA clean; not individually reviewed by eye."
+    },
+    {
+      "id": "NX-037-A-01",
+      "type": "AUDIO",
+      "asset": "/evidence/audio/audio_rec16_reinterpretation.jpg",
+      "thumb": "/evidence/thumb/audio_rec16_reinterpretation.jpg",
+      "bytes": 57020,
+      "condition": "NORMAL",
+      "treatment": "Recording log card with waveform",
+      "contentLock": "5a5fc89ae98e0c0a",
+      "canonical": {
+        "title": "Dictaphone REC-16 — Reinterpretation",
+        "location": "NODE B-04 / TAPE 2",
+        "capturedAt": "14 OCT 94 02:26",
+        "device": "DICTAPHONE / TAPE 2",
+        "source": "CASE FILE NX-037",
+        "description": "A memo recorded to a machine that was not in the room. The recording is intact and the room it was not in is identifiable."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-A-01~NX-037-B-05:TEMPORAL",
+          "category": "TIMELINE",
+          "method": "TIMELINE_COMPARISON",
+          "difficulty": "HARD",
+          "with": "NX-037-B-05",
+          "meaning": "Recorded during the bench inspection."
+        },
+        {
+          "id": "clue:NX-037-A-01~NX-037-P-01:PERSONNEL",
+          "category": "IDENTITY",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-P-01",
+          "meaning": "The voice is not identified in the file."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Build QA clean; not individually reviewed by eye."
+    },
+    {
+      "id": "NX-037-A-02",
+      "type": "AUDIO",
+      "asset": "/evidence/audio/audio_rec18_coherence.jpg",
+      "thumb": "/evidence/thumb/audio_rec18_coherence.jpg",
+      "bytes": 53402,
+      "condition": "NORMAL",
+      "treatment": "Recording log card with waveform",
+      "contentLock": "031f499da328d666",
+      "canonical": {
+        "title": "Dictaphone REC-18 — Coherence",
+        "location": "UNKNOWN",
+        "capturedAt": "14 OCT 94 02:44",
+        "device": "DICTAPHONE / TAPE 2",
+        "source": "CASE FILE NX-037",
+        "description": "Clean, level, and made in a room with no windows. There is no such room in the east wing."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-A-02~NX-037-M-02:CONTRADICTION",
+          "category": "CONTRADICTION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "EXPERT",
+          "with": "NX-037-M-02",
+          "meaning": "The drawing disagrees."
+        },
+        {
+          "id": "clue:NX-037-A-02~NX-CAM-02:TEMPORAL",
+          "category": "TIMELINE",
+          "method": "TIMELINE_COMPARISON",
+          "difficulty": "HARD",
+          "with": "NX-CAM-02",
+          "meaning": "Recorded three minutes after the archive frame."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Build QA clean; not individually reviewed by eye."
+    },
+    {
+      "id": "NX-037-A-03",
+      "type": "AUDIO",
+      "asset": "/evidence/audio/audio_rec20_mirror.jpg",
+      "thumb": "/evidence/thumb/audio_rec20_mirror.jpg",
+      "bytes": 57079,
+      "condition": "NORMAL",
+      "treatment": "Recording log card with waveform",
+      "contentLock": "42f5f61dd6bc2821",
+      "canonical": {
+        "title": "Dictaphone REC-20 — The Mirror Entity",
+        "location": "UNKNOWN",
+        "capturedAt": "14 OCT 94 03:02",
+        "device": "DICTAPHONE / TAPE 2",
+        "source": "CASE FILE NX-037",
+        "description": "The longest intact take. The speaker is calm throughout, which is the part that stays with you."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-A-03~NX-037-P-05:TEMPORAL",
+          "category": "TIMELINE",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "HARD",
+          "with": "NX-037-P-05",
+          "meaning": "April. The anomalous date."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Build QA clean; not individually reviewed by eye."
+    },
+    {
+      "id": "NX-037-A-04",
+      "type": "AUDIO",
+      "asset": "/evidence/audio/audio_rec22_sync_degraded.jpg",
+      "thumb": "/evidence/thumb/audio_rec22_sync_degraded.jpg",
+      "bytes": 55011,
+      "condition": "DEGRADED",
+      "treatment": "Recording log card with waveform",
+      "contentLock": "4d214515a6937daf",
+      "canonical": {
+        "title": "Dictaphone REC-22 — Synchronization (degraded)",
+        "location": "NODE B-04 / TAPE 2",
+        "capturedAt": "14 OCT 94 03:09",
+        "device": "DICTAPHONE / TAPE 2",
+        "source": "CASE FILE NX-037",
+        "description": "The tape drops out in the middle. What is missing is the part where the speaker says who they are."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-A-04~NX-037-D-08:TEMPORAL",
+          "category": "TIMELINE",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "HARD",
+          "with": "NX-037-D-08",
+          "meaning": "Falls inside the recorder's manual stop."
+        },
+        {
+          "id": "clue:NX-037-A-04~NX-CAM-07:TEMPORAL",
+          "category": "TIMELINE",
+          "method": "TIMELINE_COMPARISON",
+          "difficulty": "HARD",
+          "with": "NX-CAM-07",
+          "meaning": "Eight minutes before the dropout."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Build QA clean; not individually reviewed by eye."
+    },
+    {
+      "id": "NX-037-A-05",
+      "type": "AUDIO",
+      "asset": "/evidence/audio/audio_rec24_gmkey.jpg",
+      "thumb": "/evidence/thumb/audio_rec24_gmkey.jpg",
+      "bytes": 55907,
+      "condition": "NORMAL",
+      "treatment": "Recording log card with waveform",
+      "contentLock": "470c77004e163c5f",
+      "canonical": {
+        "title": "Dictaphone REC-24 — The GM Key",
+        "location": "UNKNOWN",
+        "capturedAt": "14 OCT 94 03:24",
+        "device": "DICTAPHONE / TAPE 2",
+        "source": "CASE FILE NX-037",
+        "description": "A short take with a long silence at the head of it. The silence is not blank tape; it is a room."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-A-05~NX-037-P-06:TEMPORAL",
+          "category": "TIMELINE",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "HARD",
+          "with": "NX-037-P-06",
+          "meaning": "Named at the same minute on the same tape."
+        },
+        {
+          "id": "clue:NX-037-A-05~NX-037-P-06:PERSONNEL",
+          "category": "IDENTITY",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "MEDIUM",
+          "with": "NX-037-P-06",
+          "meaning": "A name appears in the ledger fragment at the same time."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Build QA clean; not individually reviewed by eye."
+    },
+    {
+      "id": "NX-037-A-06",
+      "type": "AUDIO",
+      "asset": "/evidence/audio/audio_rec26_entity.jpg",
+      "thumb": "/evidence/thumb/audio_rec26_entity.jpg",
+      "bytes": 57128,
+      "condition": "PARTIAL",
+      "treatment": "Recording log card with waveform",
+      "contentLock": "987594021d659d03",
+      "canonical": {
+        "title": "Dictaphone REC-26 — The Entity",
+        "location": "UNKNOWN",
+        "capturedAt": "14 OCT 94 03:34",
+        "device": "DICTAPHONE / TAPE 2",
+        "source": "CASE FILE NX-037",
+        "description": "The last intact take before the sequence stops. The Bureau plays it once at a hearing and then files it."
+      },
+      "clues": [
+        {
+          "id": "clue:NX-037-A-06~NX-037-M-01:SPATIAL",
+          "category": "LOCATION",
+          "method": "CROSS_REFERENCE",
+          "difficulty": "EASY",
+          "with": "NX-037-M-01",
+          "meaning": "The recording names the drawing's subject."
+        },
+        {
+          "id": "clue:NX-037-A-06~NX-CAM-07:TEMPORAL",
+          "category": "TIMELINE",
+          "method": "TIMELINE_COMPARISON",
+          "difficulty": "HARD",
+          "with": "NX-CAM-07",
+          "meaning": "Seventeen minutes after the dropout."
+        }
+      ],
+      "generation": "procedural (scripts/evidence-gen), renderer fix 2026-10",
+      "qa": "Build QA clean; not individually reviewed by eye."
+    }
+  ]
+}

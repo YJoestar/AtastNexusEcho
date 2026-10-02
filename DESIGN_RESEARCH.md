@@ -20,6 +20,17 @@ not hands-on play, so they are used as principles, never as layouts.
 | Shadows of Doubt ([devblog](https://colepowered.com/shadows-of-doubt-devblog-4-case-folders-cork-boards/), [Wikipedia](https://en.wikipedia.org/wiki/Shadows_of_Doubt)) | A skeuomorphic cork board; pins hold evidence; string colour encodes how incriminating a connection is. | Pinned cards, string links with a status vocabulary. Colour is **not** the only carrier (see below). |
 | SIGNALIS ([Substack](https://steventus.substack.com/p/glancing-signalis-part-1-immersion), [Steam thread](https://steamcommunity.com/app/1262350/discussions/0/3495383984955765341/)) | Diegetic retro tech; the CRT look is a toggle, not an imposition. | `glitch` effects have a player-level *off / reduced / full* preference and obey `prefers-reduced-motion`. |
 
+## Second round (evidence & clues)
+
+Searched this session: **Her Story**, **Telling Lies**, **Orwell: Keeping an Eye On You**, **The Roottrees Are Dead**. Not researched: The Operator was covered earlier; *No Case Should Remain Unsolved* was **not** searched.
+
+| Reference | Principle | Used as |
+|---|---|---|
+| Her Story ([Thinky Games](https://thinkygames.com/games/her-story/), [Wikipedia](https://en.wikipedia.org/wiki/Her_Story_(video_game))) | No clip answers the case; the player assembles it from fragments by choosing what to look for. | No clue list is ever shown; the player only sees what they have found. |
+| Telling Lies ([Wikipedia](https://en.wikipedia.org/wiki/Telling_Lies_(video_game)), [Game Developer](https://www.gamedeveloper.com/design/deep-dive-i-telling-lies-i---making-a-mechanic-out-of-scrubbing-video)) | Pieces of a larger story matched across separate records. | Comparing two records is the discovery act. |
+| Orwell ([Steam guide](https://steamcommunity.com/sharedfiles/filedetails/?id=1493639258), [Geeks Under Grace](https://www.geeksundergrace.com/gaming/review-orwell-keeping-an-eye-on-you/)) | The player's selection of evidence is itself a judgement; context matters. | Clue status is the player's own reasoning (discovered / corroborated / contradicted), never system truth. |
+| The Roottrees Are Dead ([Wikipedia](https://en.wikipedia.org/wiki/The_Roottrees_are_Dead), [Thinky Games](https://thinkygames.com/reviews/the-roottrees-are-dead-review/)) | Photographs and notes gain meaning as relationships accumulate on a board. | Discoveries feed the board; links stay private hypotheses. |
+
 ## Patterns kept / patterns refused
 
 Kept: physical evidence (photo, document, tape, ID card each look different);

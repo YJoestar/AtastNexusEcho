@@ -129,3 +129,13 @@ describe('link identity', () => {
     expect(linked.hypotheses.map(link => link.id)).toEqual(['x', 'y'])
   })
 })
+
+describe('recorded discoveries', () => {
+  it('records a clue once and returns the same object when nothing is new', async () => {
+    const { recordDiscoveries } = await import('@/lib/investigationWorkspace')
+    const base = emptyInvestigationWorkspace()
+    const found = recordDiscoveries(base, [{ id: 'clue:A~B:TEMPORAL' }], 'TIMELINE_COMPARISON', NOW)
+    expect(found.discoveries['clue:A~B:TEMPORAL']).toEqual({ clueId: 'clue:A~B:TEMPORAL', discoveredAt: NOW, via: 'TIMELINE_COMPARISON' })
+    expect(recordDiscoveries(found, [{ id: 'clue:A~B:TEMPORAL' }], 'CROSS_REFERENCE', '2027-01-01T00:00:00.000Z')).toBe(found)
+  })
+})

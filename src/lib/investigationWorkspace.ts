@@ -1,3 +1,5 @@
+import type { ClueDiscovery, DiscoveryMethod } from '@/lib/evidence/clues'
+
 export type EvidenceMark = 'UNMARKED' | 'REVIEW' | 'IMPORTANT' | 'UNRESOLVED' | 'VERIFIED' | 'CONTRADICTION'
 export type AnnotationKind = 'NOTE' | 'QUESTION' | 'CONTRADICTION' | 'REFERENCE' | 'MARKER'
 
@@ -73,6 +75,8 @@ export interface InvestigationWorkspace {
   lastInspected: Record<string, string>
   revelations: Record<string, EvidenceRevelation>
   view: BoardView | null
+  /** Clues the player has found, by clue id. The clue list itself is never stored. */
+  discoveries: Record<string, ClueDiscovery>
 }
 
 /** Annotations on a link are stored beside object annotations under this key. */
@@ -98,6 +102,7 @@ export function emptyInvestigationWorkspace(): InvestigationWorkspace {
     lastInspected: {},
     revelations: {},
     view: null,
+    discoveries: {},
   }
 }
 
@@ -232,7 +237,20 @@ function normalizeWorkspace(value: unknown): InvestigationWorkspace {
     }
   }
 
-  return { version: 1, annotations, marks, placements, hypotheses, lastInspected, revelations, view }
+  const discoveries: InvestigationWorkspace['discoveries'] = {}
+  if (isRecord(value.discoveries)) {
+    for (const [clueId, entry] of Object.entries(value.discoveries)) {
+      if (!isRecord(entry)) continue
+      const via = entry.via === 'TIMELINE_COMPARISON' ? 'TIMELINE_COMPARISON' : 'CROSS_REFERENCE'
+      discoveries[clueId] = {
+        clueId,
+        discoveredAt: typeof entry.discoveredAt === 'string' ? entry.discoveredAt : '',
+        via,
+      }
+    }
+  }
+
+  return { version: 1, annotations, marks, placements, hypotheses, lastInspected, revelations, view, discoveries }
 }
 
 export function readInvestigationWorkspace(
@@ -465,4 +483,23 @@ export function pruneWorkspace(
     && hypotheses.length === workspace.hypotheses.length
     && Object.keys(annotations).length === Object.keys(workspace.annotations).length
   return unchanged ? workspace : { ...workspace, placements, hypotheses, annotations }
+}
+
+/**
+ * Record clues the player has just found. Already-known clues are left alone so
+ * a repeated comparison never re-announces them. Returns the same object when
+ * nothing is new.
+ */
+export function recordDiscoveries(
+  workspace: InvestigationWorkspace,
+  found: ReadonlyArray<{ id: string }>,
+  via: DiscoveryMethod,
+  nowISO?: string,
+): InvestigationWorkspace {
+  const fresh = found.filter(clue => !workspace.discoveries[clue.id])
+  if (fresh.length === 0) return workspace
+  const at = stamp(nowISO)
+  const discoveries = { ...workspace.discoveries }
+  for (const clue of fresh) discoveries[clue.id] = { clueId: clue.id, discoveredAt: at, via }
+  return { ...workspace, discoveries }
 }
