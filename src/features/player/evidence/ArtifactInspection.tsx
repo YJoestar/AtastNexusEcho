@@ -1,7 +1,8 @@
-import { useRef, useState, type PointerEvent as ReactPointerEvent, type WheelEvent as ReactWheelEvent } from 'react'
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type WheelEvent as ReactWheelEvent } from 'react'
 import { BureauIcons, Waveform } from '@/components/bureau'
 import type { EvidenceAnnotation, EvidenceMark, AnnotationKind } from '@/lib/investigationWorkspace'
-import { artifactMediaUrl, contentString, visibleArtifactFields, type CaseArtifact } from './types'
+import { artifactCondition, artifactMediaUrl, artifactType, contentString, visibleArtifactFields, type CaseArtifact } from './types'
+import { glitch, glitchForCondition, glitchForMedium } from '@/lib/vfx/glitch'
 import { cn } from '@/lib/utils'
 
 interface ArtifactInspectionProps {
@@ -61,6 +62,16 @@ export function ArtifactInspection({
     scale: number
   } | null>(null)
   const moved = useRef(false)
+
+  // Opening a degraded record, or locking onto a camera feed, is the one moment
+  // the screen is allowed to react. Side-by-side comparison stays calm.
+  useEffect(() => {
+    if (compact) return
+    const request = glitchForMedium(artifactType(artifact)) ?? glitchForCondition(artifactCondition(artifact))
+    if (request) glitch(request)
+    // Keyed on identity: re-renders of the same record must not re-trigger it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [artifact.id, compact])
 
   const imageUrl = artifactMediaUrl(artifact, 'IMAGE')
   const audioUrl = artifactMediaUrl(artifact, 'AUDIO')

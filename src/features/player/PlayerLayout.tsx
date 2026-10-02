@@ -17,6 +17,7 @@ import { PlayerHeader } from '@/components/player/PlayerHeader'
 import { BottomNav } from '@/components/player/BottomNav'
 import { OfflineBanner } from '@/components/player/OfflineBanner'
 import { SignalLayer } from '@/components/visual/SignalLayer'
+import { GlitchLayer } from '@/components/visual/GlitchLayer'
 import { VisualEnvironmentProvider } from '@/components/visual/VisualEnvironment'
 import { shouldRenderBottomNav } from '@/lib/navigation'
 import { useApp } from '@/app/providers'
@@ -75,6 +76,7 @@ export function PlayerLayout() {
         className="relative bg-nexus-bg text-nexus-text flex flex-col safe-area-x app-viewport nexus-handset-shell"
       >
         <SignalLayer signalStrength={signalStrength} />
+        <GlitchLayer />
         {showLayout && <PlayerHeader />}
         {showLayout && (
           <OfflineBanner

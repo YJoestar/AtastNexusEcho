@@ -1,111 +1,64 @@
 /**
  * NEXUS ECHO — Signal Layer
  *
- * Canvas-based signal degradation overlay for the field device.
+ * The field handset's picture: faint tape grain, and — only when the link is
+ * weak or the case has turned — an occasional short dropout routed through the
+ * glitch controller. A healthy handset at the start of a case shows almost
+ * nothing, so that later degradation reads as a change.
+ *
+ * This runs on a phone. There is no per-frame JavaScript: grain is a cached
+ * tile on the compositor, dropouts are rare timer-driven events.
  */
 
-import { useEffect, useRef, type FC } from 'react'
-import { useEffectSettings } from './VisualEnvironment'
+import { useEffect, type FC } from 'react'
+import { useEffectSettings, type EffectIntensity } from './VisualEnvironment'
+import { NoiseField } from './NoiseField'
 import { useHorrorLevel } from '@/hooks/useHorrorLevel'
+import { glitch } from '@/lib/vfx/glitch'
 
 interface SignalLayerProps {
   signalStrength?: number
+  /** Kept for API compatibility; the layer now sizes itself with CSS. */
   width?: number
   height?: number
 }
 
-export const SignalLayer: FC<SignalLayerProps> = ({
-  signalStrength = 100,
-  width: w,
-  height: h,
-}) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  const animationRef = useRef<number>(0)
+const GRAIN: Record<EffectIntensity, number> = { off: 0, low: 0.02, medium: 0.03, high: 0.055 }
+
+export const SignalLayer: FC<SignalLayerProps> = ({ signalStrength = 100 }) => {
   const settings = useEffectSettings()
   const horrorLevel = useHorrorLevel()
+  const decay = 1 - signalStrength / 100
+
+  const wantsDropouts = settings.signalDegradation !== 'off' && (signalStrength < 100 || horrorLevel >= 2)
 
   useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
-
-    const dpr = Math.min(window.devicePixelRatio || 1, 2)
-    const rect = canvas.getBoundingClientRect()
-    const cw = (w ?? rect.width) || window.innerWidth
-    const ch = (h ?? rect.height) || window.innerHeight
-
-    canvas.width = cw * dpr
-    canvas.height = ch * dpr
-    ctx.scale(dpr, dpr)
-
-    const signalDecay = 1 - signalStrength / 100
-    const baseNoise = settings.noise !== 'off' ? 0.02 + signalDecay * 0.03 : 0
-    const dropoutChance = settings.signalDegradation !== 'off' ? 0.02 + signalDecay * 0.05 : 0
-    const staticChance = settings.flicker && horrorLevel > 0
-      ? 0.001 + (horrorLevel / 6) * 0.02
-      : 0
-
-    const renderCtx = ctx
-
-    function draw() {
-      renderCtx.clearRect(0, 0, cw, ch)
-
-      // Analog noise
-      if (baseNoise > 0 && typeof renderCtx.createImageData === 'function') {
-        renderCtx.globalCompositeOperation = 'screen'
-        const imageData = renderCtx.createImageData(cw, ch)
-        const bytes = new Uint8ClampedArray(imageData.data.buffer)
-        const burst = Math.floor(baseNoise * 255)
-        for (let i = 0; i < bytes.length; i += 4) {
-          const v = (Math.random() * burst) | 0
-          bytes[i] = v
-          bytes[i + 1] = v
-          bytes[i + 2] = v
-          bytes[i + 3] = v
+    if (!wantsDropouts) return
+    let timer: ReturnType<typeof setTimeout>
+    const schedule = () => {
+      // A weak link is rare noise, not a strobe: roughly one dropout per 8-19 s.
+      const base = Math.max(7000, 22000 - decay * 9000 - horrorLevel * 1000)
+      timer = setTimeout(() => {
+        if (!document.hidden) {
+          glitch({
+            type: decay > 0.4 ? 'SIGNAL' : 'LIGHT',
+            intensity: 0.2 + decay * 0.35 + horrorLevel * 0.02,
+          })
         }
-        renderCtx.putImageData(imageData, 0, 0)
-        renderCtx.globalCompositeOperation = 'source-over'
-      }
-
-      // Signal dropout — occasional horizontal bands
-      if (dropoutChance > 0 && Math.random() < dropoutChance) {
-        const bandY = Math.random() * ch
-        const bandHeight = 2 + Math.random() * 8
-        const opacity = 0.4 + Math.random() * 0.3
-        renderCtx.fillStyle = 'rgba(0, 0, 0, ' + opacity + ')'
-        renderCtx.fillRect(0, bandY, cw, bandHeight)
-      }
-
-      // Static burst — rare full-frame flash
-      if (staticChance > 0 && Math.random() < staticChance) {
-        renderCtx.fillStyle = 'rgba(255, 255, 255, ' + (0.05 + Math.random() * 0.1) + ')'
-        renderCtx.fillRect(0, 0, cw, ch)
-      }
-
-      animationRef.current = requestAnimationFrame(draw)
+        schedule()
+      }, base * (0.6 + Math.random() * 0.8))
     }
-
-    animationRef.current = requestAnimationFrame(draw)
-
-    return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current)
-      }
-    }
-  }, [settings, signalStrength, horrorLevel, w, h])
+    schedule()
+    return () => clearTimeout(timer)
+  }, [wantsDropouts, decay, horrorLevel])
 
   return (
-    <canvas
-      ref={canvasRef}
-      className="absolute inset-0 pointer-events-none"
-      style={{
-        width: '100%',
-        height: '100%',
-        opacity: (settings.noise !== 'off' || settings.signalDegradation !== 'off') ? 0.6 : 0,
-        transition: 'opacity 300ms ease',
-      }}
-    />
+    <div
+      aria-hidden="true"
+      className="absolute inset-0 overflow-hidden pointer-events-none"
+      style={{ transition: 'opacity 300ms ease' }}
+    >
+      <NoiseField opacity={GRAIN[settings.noise] + decay * 0.02} />
+    </div>
   )
 }

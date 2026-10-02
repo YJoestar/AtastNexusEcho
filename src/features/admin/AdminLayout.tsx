@@ -12,6 +12,7 @@ import { useMemo, useState, useEffect } from 'react'
 import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { BureauIcons, SignalIntegrity } from '@/components/bureau'
 import { CRTOverlay } from '@/components/visual/CRTOverlay'
+import { GlitchLayer } from '@/components/visual/GlitchLayer'
 import { VisualEnvironmentProvider } from '@/components/visual/VisualEnvironment'
 import { cn } from '@/lib/utils'
 import { ROUTES } from '@/app/config'
@@ -89,6 +90,7 @@ export function AdminLayout() {
       >
         <div className="nexus-bureau-bezel">
           <CRTOverlay />
+          <GlitchLayer />
           <div className="bureau-glass" aria-hidden="true" />
           {/* Workstation Machine Status Bar */}
         <div className="nexus-bureau-status-bar flex items-center justify-between">

@@ -13,6 +13,8 @@ export type {
 } from '@/components/visual/VisualEnvironment'
 export { CRTOverlay } from '@/components/visual/CRTOverlay'
 export { SignalLayer } from '@/components/visual/SignalLayer'
+export { GlitchLayer } from '@/components/visual/GlitchLayer'
+export { NoiseField } from '@/components/visual/NoiseField'
 export { PaperTexture } from '@/components/visual/PaperTexture'
 export { TacticalOverlay } from '@/components/visual/TacticalOverlay'
 export { EvidenceSurface } from '@/components/visual/EvidenceSurface'

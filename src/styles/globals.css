@@ -2105,3 +2105,103 @@
     .nx-link-draw { animation: none; stroke-dashoffset: 0; }
   }
 }
+
+/* ───────────────────────────────────────────────────────────────────────────
+   VFX — grain, scanlines, glitch events
+   Rules: compositor-only (transform / opacity), never more than one flash per
+   event, and a still, opacity-only fallback under prefers-reduced-motion.
+   ─────────────────────────────────────────────────────────────────────────── */
+@layer components {
+  .nx-noise {
+    position: absolute; inset: -128px; pointer-events: none;
+    background-size: 128px 128px; mix-blend-mode: screen; will-change: transform;
+  }
+  .nx-noise[data-animated="true"] { animation: nx-noise-shift 0.5s steps(1, end) infinite; }
+  @keyframes nx-noise-shift {
+    0%   { transform: translate3d(0, 0, 0); }
+    20%  { transform: translate3d(-37px, 23px, 0); }
+    40%  { transform: translate3d(-91px, -52px, 0); }
+    60%  { transform: translate3d(44px, -97px, 0); }
+    80%  { transform: translate3d(-14px, 71px, 0); }
+  }
+
+  .nx-scanlines {
+    position: absolute; inset: 0; pointer-events: none;
+    background: repeating-linear-gradient(0deg, rgba(0, 0, 0, var(--nx-scan, 0.12)) 0 1px, transparent 1px 3px);
+  }
+  .nx-vignette {
+    position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, var(--nx-vig, 0.35)) 100%);
+  }
+  .nx-phosphor {
+    position: absolute; inset: 0; pointer-events: none; mix-blend-mode: screen;
+    background: radial-gradient(ellipse at 50% 45%, rgba(111, 179, 196, var(--nx-glow, 0.05)) 0, transparent 70%);
+  }
+  /* Two shallow dips every seven seconds: a tired tube, not a strobe. */
+  .nx-flicker { animation: nx-flicker 7s linear infinite; }
+  @keyframes nx-flicker {
+    0%, 41%, 43%, 78%, 80%, 100% { opacity: 1; }
+    42% { opacity: 0.965; }
+    79% { opacity: 0.975; }
+  }
+
+  .nx-glitch { position: fixed; inset: 0; z-index: 9000; pointer-events: none; overflow: hidden; contain: strict; }
+  .nx-glitch > i { position: absolute; display: none; }
+
+  /* LIGHT — one gentle dip. */
+  .nx-glitch[data-type="LIGHT"] .nx-g-dim,
+  .nx-glitch[data-type="FULL"] .nx-g-dim,
+  .nx-glitch[data-reduced="true"] .nx-g-dim { display: block; inset: 0; background: #000; opacity: 0; animation: nx-g-dim var(--nx-glitch-ms) ease-out forwards; }
+  @keyframes nx-g-dim { 0% { opacity: 0; } 30% { opacity: calc(var(--nx-glitch-i) * 0.18); } 100% { opacity: 0; } }
+  .nx-glitch[data-type="FULL"] .nx-g-dim { animation-delay: calc(var(--nx-glitch-ms) * 0.62); }
+
+  /* TRACKING — a bar rolls once down the frame. */
+  .nx-glitch[data-type="TRACKING"] .nx-g-roll { display: block; left: 0; right: 0; top: -12%; height: 10%;
+    background: linear-gradient(to bottom, transparent, rgba(214, 226, 220, calc(var(--nx-glitch-i) * 0.12)), transparent);
+    animation: nx-g-roll var(--nx-glitch-ms) linear forwards; }
+  @keyframes nx-g-roll { to { transform: translateY(1250%); } }
+
+  /* Torn bands — SIGNAL / FRAME / TRACKING / CORRUPTION / FULL. */
+  .nx-glitch:not([data-reduced="true"]):not([data-type="LIGHT"]) .nx-g-band {
+    display: block; left: 0; right: 0; opacity: 0;
+    background: rgba(8, 9, 8, calc(var(--nx-glitch-i) * 0.7));
+    box-shadow: 0 0 0 1px rgba(214, 226, 220, calc(var(--nx-glitch-i) * 0.08));
+    animation: nx-g-band var(--nx-glitch-ms) steps(5, end) forwards;
+  }
+  @keyframes nx-g-band {
+    0% { opacity: 0; transform: translateX(0); }
+    15% { opacity: 1; transform: translateX(var(--nx-dx)); }
+    55% { opacity: 1; transform: translateX(calc(var(--nx-dx) * -0.6)); }
+    100% { opacity: 0; transform: translateX(0); }
+  }
+
+  /* Chromatic split on the strongest events only — two faint offset strips. */
+  .nx-glitch[data-type="CORRUPTION"]:not([data-reduced="true"]) .nx-g-fringe,
+  .nx-glitch[data-type="FULL"]:not([data-reduced="true"]) .nx-g-fringe {
+    display: block; left: 0; right: 0; top: 34%; height: 18%; opacity: 0;
+    background: linear-gradient(90deg, rgba(190, 70, 60, 0.10), transparent 30%, transparent 70%, rgba(70, 150, 190, 0.10));
+    animation: nx-g-fringe var(--nx-glitch-ms) steps(4, end) forwards;
+  }
+  @keyframes nx-g-fringe { 0%, 100% { opacity: 0; } 30%, 60% { opacity: calc(var(--nx-glitch-i)); } }
+
+  /* One static burst per event — a single brief frame, low in luminance. */
+  .nx-glitch[data-type="SIGNAL"]:not([data-reduced="true"]) .nx-g-static,
+  .nx-glitch[data-type="CORRUPTION"]:not([data-reduced="true"]) .nx-g-static,
+  .nx-glitch[data-type="FULL"]:not([data-reduced="true"]) .nx-g-static {
+    display: block; inset: 0; opacity: 0; background-image: var(--nx-noise-url); background-size: 128px 128px; mix-blend-mode: screen;
+    animation: nx-g-static var(--nx-glitch-ms) steps(1, end) forwards;
+  }
+  @keyframes nx-g-static { 0%, 100% { opacity: 0; } 46% { opacity: calc(var(--nx-glitch-i) * 0.14); } 58% { opacity: 0; } }
+
+  /* Frame shift — the whole picture slips sideways twice, then settles. */
+  html[data-nx-glitch="FRAME"] #root,
+  html[data-nx-glitch="FULL"] #root { animation: nx-g-frame var(--nx-glitch-ms) steps(1, end) 1; }
+  @keyframes nx-g-frame {
+    0%, 100% { transform: none; }
+    38% { transform: translate3d(calc(var(--nx-glitch-i) * -6px), 0, 0); }
+    44% { transform: translate3d(calc(var(--nx-glitch-i) * 4px), 0, 0); }
+    50% { transform: none; }
+    70% { transform: translate3d(calc(var(--nx-glitch-i) * 3px), 0, 0); }
+    74% { transform: none; }
+  }
+}
