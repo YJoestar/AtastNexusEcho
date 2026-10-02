@@ -92,7 +92,7 @@ export function PlayerNotifications() {
             stock="paper"
             footer={<Stamp variant="archived">Channel listening</Stamp>}
           >
-            <div className="grid grid-cols-[100px_1fr] border-y border-nexus-borderSubtle font-mono text-[0.6rem] uppercase tracking-[0.12em]">
+            <div className="grid grid-cols-[6.5rem_1fr] border-y border-nexus-borderSubtle font-mono text-[0.8125rem] uppercase tracking-[0.12em]">
               <span className="border-r border-nexus-borderSubtle px-3 py-3 text-nexus-textSubtle">BUFFER</span>
               <span className="px-3 py-3 text-nexus-textMuted">NO INBOUND DISPATCHES IN LOCAL RECORD</span>
             </div>
@@ -144,7 +144,7 @@ export function PlayerNotifications() {
         )}
 
         <div className="mt-6 flex items-center justify-center gap-2 text-xs text-nexus-textSubtle">
-          <span className="font-mono text-[0.52rem] uppercase tracking-[0.12em]">
+          <span className="font-mono text-[0.75rem] uppercase tracking-[0.12em]">
             DISTRIBUTION / TEAM CHANNEL ONLY / PLAYER RECORDS WITHHELD
           </span>
         </div>

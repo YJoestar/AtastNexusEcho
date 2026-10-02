@@ -104,7 +104,10 @@ describe('QA Simulator — Real Providers Integration', () => {
     await new Promise(r => setTimeout(r, 100))
 
     await waitFor(() => {
-      expect(screen.getByText(/Investigation Progress/i)).toBeTruthy()
+      // The Case Hub leads with its case identity, then names the one thing
+      // the player is meant to do next. The team name is the screen's h1.
+      expect(screen.getByRole('heading', { level: 1, name: 'QA Simulation Team' })).toBeTruthy()
+      expect(screen.getByText(/Assigned to you/i)).toBeTruthy()
     })
 
     const criticalErrors = reactErrors.filter(

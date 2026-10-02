@@ -153,7 +153,7 @@ export function AdminTeams() {
           <div>
             <div className="flex items-center gap-2">
               <span className="w-1.5 h-1.5 bg-nexus-accent" />
-              <span className="text-[0.625rem] tracking-[0.24em] uppercase text-nexus-textSubtle">
+              <span className="text-[0.875rem] tracking-[0.24em] uppercase text-nexus-textSubtle">
                 NEXUS ECHO // FIELD PERSONNEL REGISTER
               </span>
             </div>
@@ -192,7 +192,7 @@ export function AdminTeams() {
                 type="button"
                 onClick={() => setStatusFilter(s)}
                 className={cn(
-                  'px-2 py-1 text-[0.625rem] uppercase tracking-[0.14em] border transition-colors',
+                  'px-2 py-1 text-[0.875rem] uppercase tracking-[0.14em] border transition-colors',
                   statusFilter === s
                     ? 'border-nexus-accent text-nexus-accent bg-nexus-accentBg/30'
                     : 'border-nexus-borderSubtle text-nexus-textSubtle hover:text-nexus-text hover:bg-nexus-bg',
@@ -219,7 +219,7 @@ export function AdminTeams() {
         ) : filteredTeams.length === 0 ? (
           <div className="py-12 text-center text-nexus-textSubtle font-mono text-xs">
             <p>ARCHIVE EMPTY // NO MATCHING FIELD RECORDS</p>
-            <p className="text-[0.625rem] mt-1 text-nexus-textMuted">ADJUST SEARCH FILTER OR PROVISION A NEW INVESTIGATOR UNIT</p>
+            <p className="text-[0.875rem] mt-1 text-nexus-textMuted">ADJUST SEARCH FILTER OR PROVISION A NEW INVESTIGATOR UNIT</p>
           </div>
         ) : (
           <div>
@@ -272,7 +272,7 @@ export function AdminTeams() {
         >
           <div className="font-mono text-xs space-y-2">
             <p>{confirmAction.message}</p>
-            <p className="text-nexus-textSubtle text-[0.6875rem]">
+            <p className="text-nexus-textSubtle text-[0.875rem]">
               RECORD: {confirmAction.team.name} [{confirmAction.team.code}]
             </p>
           </div>
@@ -308,7 +308,7 @@ function TeamDossierRow({
           <button
             type="button"
             onClick={onPause}
-            className="px-1.5 py-0.5 text-[0.56rem] border border-nexus-warning text-nexus-warning hover:bg-nexus-warningBg/30"
+            className="px-1.5 py-0.5 text-[0.8125rem] border border-nexus-warning text-nexus-warning hover:bg-nexus-warningBg/30"
             title="Hold field unit"
           >
             [ HOLD ]
@@ -319,7 +319,7 @@ function TeamDossierRow({
           <button
             type="button"
             onClick={onResume}
-            className="px-1.5 py-0.5 text-[0.56rem] border border-nexus-accent text-nexus-accent hover:bg-nexus-accentBg/30"
+            className="px-1.5 py-0.5 text-[0.8125rem] border border-nexus-accent text-nexus-accent hover:bg-nexus-accentBg/30"
             title="Resume field unit"
           >
             [ RESUME ]
@@ -332,7 +332,7 @@ function TeamDossierRow({
           <button
             type="button"
             onClick={onStart}
-            className="px-1.5 py-0.5 text-[0.56rem] border border-nexus-accent text-nexus-accent hover:bg-nexus-accentBg/30"
+            className="px-1.5 py-0.5 text-[0.8125rem] border border-nexus-accent text-nexus-accent hover:bg-nexus-accentBg/30"
             title="Deploy field unit"
           >
             [ DEPLOY ]
@@ -348,7 +348,7 @@ function TeamDossierRow({
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="flex min-w-0 items-start gap-3">
           <div className="min-w-12 border-r border-nexus-border pr-3">
-            <span className="block text-[0.5rem] uppercase tracking-[0.16em] text-nexus-textSubtle">UNIT</span>
+            <span className="block text-[0.75rem] uppercase tracking-[0.16em] text-nexus-textSubtle">UNIT</span>
             <span className="text-xs font-bold text-nexus-accent">{team.code}</span>
           </div>
           <div className="min-w-0">
@@ -359,7 +359,7 @@ function TeamDossierRow({
             >
               {team.name}
             </button>
-            <span className="mt-0.5 block text-[0.56rem] uppercase tracking-[0.12em] text-nexus-textSubtle">
+            <span className="mt-0.5 block text-[0.8125rem] uppercase tracking-[0.12em] text-nexus-textSubtle">
               CASE 037 / FIELD PERSONNEL DOSSIER
             </span>
           </div>
@@ -367,21 +367,21 @@ function TeamDossierRow({
         <TeamStatusBadge status={team.status} showDot />
       </div>
 
-      <dl className="mt-3 grid grid-cols-2 gap-x-4 border-y border-nexus-borderSubtle py-2 text-[0.6rem] sm:grid-cols-4">
+      <dl className="mt-3 grid grid-cols-2 gap-x-4 border-y border-nexus-borderSubtle py-2 text-[0.8125rem] sm:grid-cols-4">
         <div>
-          <dt className="text-[0.48rem] uppercase tracking-[0.14em] text-nexus-textSubtle">Personnel</dt>
+          <dt className="text-[0.75rem] uppercase tracking-[0.14em] text-nexus-textSubtle">Personnel</dt>
           <dd className="mt-0.5 font-bold text-nexus-text">{team.playerCount ?? 0} ASSIGNED</dd>
         </div>
         <div>
-          <dt className="text-[0.48rem] uppercase tracking-[0.14em] text-nexus-textSubtle">Current node</dt>
+          <dt className="text-[0.75rem] uppercase tracking-[0.14em] text-nexus-textSubtle">Current node</dt>
           <dd className="mt-0.5 truncate font-bold text-nexus-text">{team.currentNodeCode ?? 'POSITION UNREPORTED'}</dd>
         </div>
         <div>
-          <dt className="text-[0.48rem] uppercase tracking-[0.14em] text-nexus-textSubtle">Nodes verified</dt>
+          <dt className="text-[0.75rem] uppercase tracking-[0.14em] text-nexus-textSubtle">Nodes verified</dt>
           <dd className="mt-0.5 font-bold text-nexus-text">{team.solvedCount ?? 0}</dd>
         </div>
         <div>
-          <dt className="text-[0.48rem] uppercase tracking-[0.14em] text-nexus-textSubtle">Case score</dt>
+          <dt className="text-[0.75rem] uppercase tracking-[0.14em] text-nexus-textSubtle">Case score</dt>
           <dd className="mt-0.5 font-bold text-nexus-text">{formatNumber(team.score ?? 0)}</dd>
         </div>
       </dl>
@@ -391,7 +391,7 @@ function TeamDossierRow({
           <button
             type="button"
             onClick={onCopyCode}
-            className="flex min-h-9 items-center gap-1.5 border border-nexus-border px-2 text-[0.56rem] text-nexus-textSubtle hover:border-nexus-accent hover:text-nexus-accent"
+            className="flex min-h-9 items-center gap-1.5 border border-nexus-border px-2 text-[0.8125rem] text-nexus-textSubtle hover:border-nexus-accent hover:text-nexus-accent"
             title="Copy unit identifier"
             aria-label={`Copy identifier for ${team.name}`}
           >
@@ -401,7 +401,7 @@ function TeamDossierRow({
           <button
             type="button"
             onClick={onShowCodes}
-            className="min-h-9 border border-nexus-border px-2 text-[0.56rem] text-nexus-text hover:border-nexus-accent hover:text-nexus-accent"
+            className="min-h-9 border border-nexus-border px-2 text-[0.8125rem] text-nexus-text hover:border-nexus-accent hover:text-nexus-accent"
             aria-label={`Show login codes for ${team.name}`}
           >
             ACCESS CODES
@@ -409,7 +409,7 @@ function TeamDossierRow({
           <button
             type="button"
             onClick={onNotify}
-            className="min-h-9 border border-nexus-border px-2 text-[0.56rem] text-nexus-textSubtle hover:border-nexus-text hover:text-nexus-text"
+            className="min-h-9 border border-nexus-border px-2 text-[0.8125rem] text-nexus-textSubtle hover:border-nexus-text hover:text-nexus-text"
             aria-label={`Transmit directive to ${team.name}`}
           >
             TRANSMIT

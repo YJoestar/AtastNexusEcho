@@ -166,19 +166,19 @@ export function PlayerCredentialsPanel({
                 className="flex items-center justify-between gap-3 p-3 bg-nexus-bg rounded-xl border border-nexus-border"
               >
                 <div className="min-w-0">
-                  <span className="text-[10px] uppercase tracking-wider text-nexus-textSubtle">
+                  <span className="text-[0.75rem] uppercase tracking-wider text-nexus-textSubtle">
                     Player {i + 1}
                   </span>
                   <span className="font-medium text-nexus-text block truncate">
                     {c.displayName || '—'}
                   </span>
-                  <span className="text-[10px] uppercase tracking-wider text-nexus-textSubtle">
+                  <span className="text-[0.75rem] uppercase tracking-wider text-nexus-textSubtle">
                     {c.role}
                   </span>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <div className="text-right">
-                    <span className="block text-[10px] uppercase tracking-wider text-nexus-textSubtle">
+                    <span className="block text-[0.75rem] uppercase tracking-wider text-nexus-textSubtle">
                       Logic Code
                     </span>
                     <code className="text-nexus-accent font-mono text-lg tracking-widest">

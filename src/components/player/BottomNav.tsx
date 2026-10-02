@@ -18,12 +18,24 @@ import { NAV_ITEMS, shouldRenderBottomNav } from '@/lib/navigation'
 import { ROUTES } from '@/app/config'
 import { cn } from '@/lib/utils'
 
+/**
+ * Handset labels, keyed by the route constants themselves: the earlier
+ * literal keys drifted away from the real paths, so four of the five tabs
+ * silently fell back to their generic names.
+ *
+ * These read in sentence case on purpose. The control bar renders them in
+ * uppercase through CSS, but assistive technology announces the DOM text, and
+ * "Evidence" read normally beats "EVIDENCE" shouted at a player.
+ *
+ * Two are renamed outright, because the route name was the weaker word:
+ * "Game" says nothing, and "QR" names the format rather than the action.
+ */
 const DEVICE_LABELS: Record<string, string> = {
-  '/player/game': 'CASE',
-  '/player/evidence': 'EVIDENCE',
-  '/player/inventory': 'TOOLS',
-  '/player/qr': 'SCAN',
-  '/player/leaderboard': 'RANK',
+  [ROUTES.PLAYER_GAME]: 'Case',
+  [ROUTES.PLAYER_EVIDENCE]: 'Evidence',
+  [ROUTES.PLAYER_INVENTORY]: 'Inventory',
+  [ROUTES.PLAYER_QR]: 'Scan',
+  [ROUTES.PLAYER_LEADERBOARD]: 'Rank',
 }
 
 export function BottomNav() {
@@ -45,21 +57,21 @@ export function BottomNav() {
             {connection.status !== 'online' ? (
               <>
                 <span className="nexus-device-signal-dot offline bg-nexus-danger" aria-label="Offline" />
-                <span className="font-mono text-[0.56rem] uppercase tracking-[0.18em] text-nexus-danger">
+                <span className="font-mono text-[0.8125rem] uppercase tracking-[0.18em] text-nexus-danger">
                   SIGNAL: {connection.status.toUpperCase()}
                 </span>
               </>
             ) : (
               <>
                 <span className="nexus-device-signal-dot online" aria-label="Online" />
-                <span className="font-mono text-[0.56rem] uppercase tracking-[0.18em] text-nexus-accent">
+                <span className="font-mono text-[0.8125rem] uppercase tracking-[0.18em] text-nexus-accent">
                   LINKED
                 </span>
               </>
             )}
           </div>
           {queuedCount > 0 && isActivePath(ROUTES.PLAYER_GAME) && (
-            <span className="font-mono text-[0.52rem] uppercase tracking-[0.18em] text-nexus-warning">
+            <span className="font-mono text-[0.75rem] uppercase tracking-[0.18em] text-nexus-warning">
               {queuedCount} PENDING
             </span>
           )}
@@ -90,7 +102,7 @@ export function BottomNav() {
                 )}>
                   <Icon className="bureau-icon w-5 h-5" />
                 </span>
-                <span className="font-mono text-[0.56rem] uppercase tracking-[0.18em] leading-none">
+                <span className="font-mono text-[0.8125rem] uppercase tracking-[0.18em] leading-none">
                   {label}
                 </span>
               </NavLink>

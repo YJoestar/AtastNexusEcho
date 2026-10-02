@@ -71,7 +71,7 @@ export function SignalIntegrity({
     <div className={cn('min-w-0', className)}>
       <div className="mb-1 flex items-baseline justify-between gap-2">
         <span className="section-label">{label}</span>
-        <span className="font-mono text-[0.6875rem] tabular-nums text-nexus-textMuted">
+        <span className="font-mono text-[0.875rem] tabular-nums text-nexus-textMuted">
           {tenths === null ? '— / 10' : `${tenths} / 10`}
         </span>
       </div>

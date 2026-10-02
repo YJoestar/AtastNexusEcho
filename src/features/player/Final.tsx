@@ -106,12 +106,13 @@ export function PlayerFinal() {
           </div>
         </div>
 
-        {/* Phase Indicator */}
+        {/* Access state. Named for the state it reports rather than repeating
+            the page title directly above it. */}
         <DocumentShell
           reference="Protocol Status"
-          title="Final Protocol"
+          title={isCompleted || unlocked ? 'Access granted' : 'Locked'}
           stock="digital"
-            footer={
+          footer={
             isCompleted || unlocked
               ? <Stamp variant="verified" impressed>{isCompleted ? 'COMPLETED' : 'ACCESS GRANTED'}</Stamp>
               : <Stamp variant="incomplete" impressed>{isCompleted ? 'COMPLETED' : 'LOCKED'}</Stamp>

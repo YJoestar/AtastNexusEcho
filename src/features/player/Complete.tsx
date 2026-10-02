@@ -126,15 +126,16 @@ export function PlayerComplete() {
           stock="digital"
           footer={<Stamp variant="verified">Filed</Stamp>}
         >
+          {/* Stated once for the whole register. Repeating it on every row said
+              the same thing five times and left no room for the figures. */}
+          <p className="meta mb-3">Case 037 &middot; verified debrief</p>
           <RegisterList>
             {debriefEntries.map(entry => (
               <RegisterRow
                 key={entry.label}
-                id={entry.label}
                 label={entry.label}
-                meta="CASE 037 / VERIFIED DEBRIEF"
                 trailing={
-                  <span className="font-mono text-sm font-bold tabular-nums text-nexus-text">
+                  <span className="font-mono text-base font-bold tabular-nums text-nexus-text">
                     {entry.value}
                   </span>
                 }
@@ -169,7 +170,7 @@ export function PlayerComplete() {
         </div>
 
         {shareMessage && (
-          <p className="border-l-2 border-nexus-accent px-3 py-2 text-center font-mono text-[0.6rem] uppercase tracking-[0.14em] text-nexus-textMuted" role="status" aria-live="polite">
+          <p className="border-l-2 border-nexus-accent px-3 py-2 text-center font-mono text-[0.8125rem] uppercase tracking-[0.14em] text-nexus-textMuted" role="status" aria-live="polite">
             {shareMessage}
           </p>
         )}

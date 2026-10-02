@@ -1,4 +1,4 @@
-﻿/**
+/**
  * NEXUS — Admin Location Management
  *
  * Runtime-configurable physical puzzle locations. Each puzzle node can have
@@ -189,7 +189,7 @@ export function AdminLocations() {
           <div>
             <div className="flex items-center gap-2">
               <span className="w-1.5 h-1.5 bg-nexus-accent" />
-              <span className="text-[0.625rem] tracking-[0.24em] uppercase text-nexus-textSubtle">
+              <span className="text-[0.875rem] tracking-[0.24em] uppercase text-nexus-textSubtle">
                 NEXUS ECHO // CAMPUS INVESTIGATION ARCHIVE
               </span>
             </div>
@@ -236,7 +236,7 @@ export function AdminLocations() {
             />
           </div>
 
-          <div className="text-[0.56rem] uppercase tracking-[0.16em] text-nexus-textSubtle">
+          <div className="text-[0.8125rem] uppercase tracking-[0.16em] text-nexus-textSubtle">
             {filteredNodes.length} NODES CATALOGUED
           </div>
         </div>
@@ -264,11 +264,11 @@ export function AdminLocations() {
               />
               <TacticalOverlay nodes={mapNodes} />
             </div>
-            <div className="mt-2 text-[0.56rem] font-mono uppercase tracking-[0.14em] text-nexus-textSubtle flex justify-between">
+            <div className="mt-2 text-[0.8125rem] font-mono uppercase tracking-[0.14em] text-nexus-textSubtle flex justify-between">
               <span>LEGEND</span>
               <span>CLICK MARKER TO INSPECT</span>
             </div>
-            <div className="mt-1 flex gap-3 text-[0.625rem]">
+            <div className="mt-1 flex gap-3 text-[0.875rem]">
               <span className="flex items-center gap-1">
                 <span className="w-2 h-2 bg-nexus-accent" />
                 <span className="text-nexus-textSubtle">VERIFIED</span>
@@ -299,16 +299,22 @@ export function AdminLocations() {
           ) : filteredNodes.length === 0 ? (
             <div className="py-12 text-center text-nexus-textSubtle font-mono text-xs">
               <p>NO FIELD NODES MATCH FILTER</p>
-              <p className="text-[0.625rem] mt-1 text-nexus-textMuted">ADJUST FILTER PARAMETERS OR CATALOG A NEW NODE</p>
+              <p className="text-[0.875rem] mt-1 text-nexus-textMuted">ADJUST FILTER PARAMETERS OR CATALOG A NEW NODE</p>
             </div>
           ) : (
             <div className="space-y-1">
-              <div className="grid grid-cols-[100px_140px_1fr_100px_80px] gap-2 px-3 py-1.5 text-[0.56rem] uppercase tracking-[0.18em] text-nexus-textSubtle border-b border-nexus-border">
-                <span>MARKER</span>
-                <span>CLASSIFICATION</span>
-                <span>LOCATION</span>
-                <span>STAGE</span>
-                <span className="text-right">STATUS</span>
+              {/* Five data columns cannot reflow into a narrow window without
+                  losing their headers, so the register scrolls sideways rather
+                  than breaking. The minimum width is what the columns need at
+                  the largest text scale. */}
+              <div className="overflow-x-auto">
+                <div className="min-w-[46rem]">
+              <div className="grid grid-cols-[7rem_9rem_1fr_7rem_5rem] gap-2 px-3 py-2 nx-eyebrow border-b border-nexus-border">
+                <span>Marker</span>
+                <span>Classification</span>
+                <span>Location</span>
+                <span>Stage</span>
+                <span className="text-right">Status</span>
               </div>
 
               {filteredNodes.map(node => {
@@ -327,7 +333,7 @@ export function AdminLocations() {
                     key={node.id}
                     type="button"
                     onClick={() => openEditor(node)}
-                    className="w-full grid grid-cols-[100px_140px_1fr_100px_80px] gap-2 px-3 py-2 text-xs items-center border-b border-nexus-borderSubtle/50 hover:bg-nexus-surfaceElevated transition-colors font-mono text-left"
+                    className="w-full grid grid-cols-[7rem_9rem_1fr_7rem_5rem] gap-2 px-3 py-3 nx-body items-center border-b border-nexus-borderSubtle/50 hover:bg-nexus-surfaceElevated transition-colors font-mono text-left"
                   >
                     <span className="font-bold text-nexus-accent">{node.code}</span>
                     <span className="text-nexus-textMuted truncate">
@@ -348,7 +354,7 @@ export function AdminLocations() {
                     <div className="text-right">
                       <span
                         className={cn(
-                          'inline-block text-[0.56rem] font-mono px-1 py-0.5 border uppercase tracking-[0.12em]',
+                          'inline-block nx-micro font-mono px-1 py-0.5 border uppercase tracking-[0.12em]',
                           statusText === 'OVERRIDDEN' && 'border-nexus-accent text-nexus-accent',
                           statusText === 'INACTIVE' && 'border-nexus-warning text-nexus-warning',
                           statusText === 'DEFAULT' && 'border-nexus-borderSubtle text-nexus-textSubtle',
@@ -360,6 +366,8 @@ export function AdminLocations() {
                   </button>
                 )
               })}
+                </div>
+              </div>
             </div>
           )}
         </TerminalFrame>
@@ -474,7 +482,7 @@ function DeploymentTool({
         <div className="p-4 border-b border-nexus-borderSubtle space-y-3">
           <div className="flex gap-3 items-end">
             <div className="flex-1">
-              <label className="block font-mono text-[0.56rem] uppercase tracking-[0.14em] text-nexus-textSubtle mb-1">
+              <label className="block font-mono text-[0.8125rem] uppercase tracking-[0.14em] text-nexus-textSubtle mb-1">
                 DEPLOYMENT BATCH
               </label>
               <select
@@ -504,23 +512,23 @@ function DeploymentTool({
           {/* Batch Summary */}
           <div className="grid grid-cols-5 gap-2 text-center">
             <div className="border border-nexus-borderSubtle p-2">
-              <div className="font-mono text-[0.56rem] uppercase tracking-[0.14em] text-nexus-textSubtle">TOTAL</div>
+              <div className="font-mono text-[0.8125rem] uppercase tracking-[0.14em] text-nexus-textSubtle">TOTAL</div>
               <div className="font-mono text-xl font-bold text-nexus-text">{batchSummary.totalMarkers}</div>
             </div>
             <div className="border border-nexus-borderSubtle p-2">
-              <div className="font-mono text-[0.56rem] uppercase tracking-[0.14em] text-nexus-textSubtle">PAGES</div>
+              <div className="font-mono text-[0.8125rem] uppercase tracking-[0.14em] text-nexus-textSubtle">PAGES</div>
               <div className="font-mono text-xl font-bold text-nexus-accent">{batchSummary.pages}</div>
             </div>
             <div className="border border-nexus-borderSubtle p-2">
-              <div className="font-mono text-[0.56rem] uppercase tracking-[0.14em] text-nexus-textSubtle">DEPLOYED</div>
+              <div className="font-mono text-[0.8125rem] uppercase tracking-[0.14em] text-nexus-textSubtle">DEPLOYED</div>
               <div className="font-mono text-xl font-bold text-nexus-warning">{batchSummary.deployed}</div>
             </div>
             <div className="border border-nexus-borderSubtle p-2">
-              <div className="font-mono text-[0.56rem] uppercase tracking-[0.14em] text-nexus-textSubtle">ACTIVE</div>
+              <div className="font-mono text-[0.8125rem] uppercase tracking-[0.14em] text-nexus-textSubtle">ACTIVE</div>
               <div className="font-mono text-xl font-bold text-nexus-accent">{batchSummary.active}</div>
             </div>
             <div className="border border-nexus-borderSubtle p-2">
-              <div className="font-mono text-[0.56rem] uppercase tracking-[0.14em] text-nexus-textSubtle">ISSUES</div>
+              <div className="font-mono text-[0.8125rem] uppercase tracking-[0.14em] text-nexus-textSubtle">ISSUES</div>
               <div className={cn(
                 'font-mono text-xl font-bold',
                 batchSummary.duplicates === 0 ? 'text-nexus-text' : 'text-nexus-danger'
@@ -537,7 +545,7 @@ function DeploymentTool({
 
           {(duplicateManualCodes.length > 0 || duplicateMarkerIds.length > 0) && (
             <div className="p-2 bg-nexus-warningBg/30 border border-nexus-warning text-nexus-warning text-xs">
-              <div className="font-mono text-[0.56rem] uppercase tracking-[0.14em] mb-1">DUPLICATE DETECTED</div>
+              <div className="font-mono text-[0.8125rem] uppercase tracking-[0.14em] mb-1">DUPLICATE DETECTED</div>
               {duplicateManualCodes.length > 0 && (
                 <div>Manual codes: {duplicateManualCodes.join(', ')}</div>
               )}
@@ -550,7 +558,7 @@ function DeploymentTool({
 
         {/* Markers Grid */}
         <div className="p-4">
-          <div className="font-mono text-[0.56rem] uppercase tracking-[0.14em] text-nexus-textSubtle mb-3">
+          <div className="font-mono text-[0.8125rem] uppercase tracking-[0.14em] text-nexus-textSubtle mb-3">
             MARKER PREVIEW — CLICK ANY UNIT FOR FULL VIEW
           </div>
           {isLoading ? (
@@ -574,7 +582,7 @@ function DeploymentTool({
                 </button>
               ))}
               {qrCodes.length > 12 && (
-                <div className="text-[0.56rem] font-mono uppercase tracking-[0.12em] text-nexus-textSubtle">
+                <div className="text-[0.8125rem] font-mono uppercase tracking-[0.12em] text-nexus-textSubtle">
                   …and {qrCodes.length - 12} more markers
                 </div>
               )}
@@ -585,7 +593,7 @@ function DeploymentTool({
         {/* Generator */}
         <div className="border-t border-nexus-borderSubtle p-4 flex justify-between items-center">
           <div>
-            <p className="font-mono text-[0.56rem] uppercase tracking-[0.12em] text-nexus-textSubtle">
+            <p className="font-mono text-[0.8125rem] uppercase tracking-[0.12em] text-nexus-textSubtle">
               {qrCodes.length} markers • {batchSummary.pages} pages (2×2) • PDF will download automatically
             </p>
             {generateError && (
@@ -620,7 +628,7 @@ function DeploymentTool({
         <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
           <div className="bg-nexus-paper max-w-[320px] w-full border border-nexus-border">
             <div className="border-b border-nexus-borderSubtle p-2 flex justify-between items-center">
-              <span className="font-mono text-[0.56rem] uppercase tracking-[0.14em] text-nexus-textSubtle">
+              <span className="font-mono text-[0.8125rem] uppercase tracking-[0.14em] text-nexus-textSubtle">
                 MARKER PREVIEW
               </span>
               <button

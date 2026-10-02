@@ -131,7 +131,7 @@ export function AdminLayout() {
             isIndexCollapsed ? 'w-12' : 'w-60',
           )}>
             <div className="border-b border-nexus-border px-3 py-2 flex items-center justify-between">
-              <span className="font-mono text-[0.56rem] uppercase tracking-[0.22em] text-nexus-textSubtle">
+              <span className="font-mono text-[0.8125rem] uppercase tracking-[0.22em] text-nexus-textSubtle">
                 {isIndexCollapsed ? '▌' : 'CASE ARCHIVE & INDEX'}
               </span>
               <button
@@ -149,7 +149,7 @@ export function AdminLayout() {
                 <>
                   {/* Active Investigation Cases */}
                   <div className="px-3 py-1.5 border-b border-nexus-border">
-                    <span className="font-mono text-[0.52rem] uppercase tracking-[0.2em] text-nexus-textSubtle">
+                    <span className="font-mono text-[0.75rem] uppercase tracking-[0.2em] text-nexus-textSubtle">
                       ACTIVE INVESTIGATIONS
                     </span>
                   </div>
@@ -167,16 +167,16 @@ export function AdminLayout() {
                           )}
                         >
                           <div className="flex items-center justify-between">
-                            <span className="text-[0.6875rem] tracking-[0.16em] font-bold text-nexus-text">
+                            <span className="text-[0.875rem] tracking-[0.16em] font-bold text-nexus-text">
                               {item.label}
                             </span>
                             {item.active && (
-                              <span className="text-[0.5rem] px-1 py-0.2 border border-nexus-accent text-nexus-accent uppercase">
+                              <span className="text-[0.75rem] px-1 py-0.2 border border-nexus-accent text-nexus-accent uppercase">
                                 ACTIVE
                               </span>
                             )}
                           </div>
-                          <p className="text-[0.56rem] tracking-[0.08em] text-nexus-textSubtle mt-0.5">
+                          <p className="text-[0.8125rem] tracking-[0.08em] text-nexus-textSubtle mt-0.5">
                             {item.sub}
                           </p>
                         </button>
@@ -186,7 +186,7 @@ export function AdminLayout() {
 
                   {/* Field Operations */}
                   <div className="px-3 py-1.5 border-b border-nexus-border mt-2">
-                    <span className="font-mono text-[0.52rem] uppercase tracking-[0.2em] text-nexus-textSubtle">
+                    <span className="font-mono text-[0.75rem] uppercase tracking-[0.2em] text-nexus-textSubtle">
                       FIELD OPERATIONS
                     </span>
                   </div>
@@ -196,7 +196,7 @@ export function AdminLayout() {
                         <NavLink
                           to={item.path}
                           className={({ isActive }) => cn(
-                            'flex items-center gap-2 px-2.5 py-1.5 text-[0.6875rem] tracking-[0.14em] transition-colors border-l-2 font-mono',
+                            'flex items-center gap-2 px-2.5 py-1.5 text-[0.875rem] tracking-[0.14em] transition-colors border-l-2 font-mono',
                             isActive
                               ? 'border-nexus-accent text-nexus-text bg-nexus-bg'
                               : 'border-transparent text-nexus-textSubtle hover:text-nexus-text hover:bg-nexus-bg hover:border-nexus-border',
@@ -213,7 +213,7 @@ export function AdminLayout() {
 
                   {/* System & Simulation */}
                   <div className="px-3 py-1.5 border-b border-nexus-border mt-2">
-                    <span className="font-mono text-[0.52rem] uppercase tracking-[0.2em] text-nexus-textSubtle">
+                    <span className="font-mono text-[0.75rem] uppercase tracking-[0.2em] text-nexus-textSubtle">
                       SYSTEM & DIAGNOSTICS
                     </span>
                   </div>
@@ -223,7 +223,7 @@ export function AdminLayout() {
                         <NavLink
                           to={item.path}
                           className={({ isActive }) => cn(
-                            'flex items-center gap-2 px-2.5 py-1.5 text-[0.6875rem] tracking-[0.14em] transition-colors border-l-2 font-mono',
+                            'flex items-center gap-2 px-2.5 py-1.5 text-[0.875rem] tracking-[0.14em] transition-colors border-l-2 font-mono',
                             isActive
                               ? 'border-nexus-accent text-nexus-text bg-nexus-bg'
                               : 'border-transparent text-nexus-textSubtle hover:text-nexus-text hover:bg-nexus-bg hover:border-nexus-border',
@@ -244,7 +244,7 @@ export function AdminLayout() {
                 type="button"
                 onClick={handleLogout}
                 className={cn(
-                  'flex items-center gap-2 w-full px-2 py-1.5 text-[0.6875rem] text-nexus-textSubtle hover:text-nexus-danger hover:bg-nexus-dangerBg/20 transition-colors border-l-2 border-transparent',
+                  'flex items-center gap-2 w-full px-2 py-1.5 text-[0.875rem] text-nexus-textSubtle hover:text-nexus-danger hover:bg-nexus-dangerBg/20 transition-colors border-l-2 border-transparent',
                   !isIndexCollapsed && 'justify-start',
                   isIndexCollapsed && 'justify-center',
                 )}
@@ -270,7 +270,7 @@ export function AdminLayout() {
                   <button
                     type="button"
                     onClick={() => window.location.reload()}
-                    className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-nexus-text underline hover:text-nexus-accent"
+                    className="font-mono text-[0.875rem] uppercase tracking-[0.16em] text-nexus-text underline hover:text-nexus-accent"
                   >
                     [ RE-ESTABLISH LINK ]
                   </button>
@@ -284,7 +284,7 @@ export function AdminLayout() {
           {/* Right Observation & Live Telemetry Rail */}
           <aside className="nexus-observation-rail w-64 min-w-[256px] border-l border-nexus-border bg-nexus-surfaceElevated flex flex-col">
             <div className="border-b border-nexus-borderSubtle px-3 py-2 flex items-center justify-between">
-              <span className="font-mono text-[0.52rem] uppercase tracking-[0.22em] text-nexus-textSubtle">
+              <span className="font-mono text-[0.75rem] uppercase tracking-[0.22em] text-nexus-textSubtle">
                 OBSERVATION RAIL
               </span>
               <span className="w-1.5 h-1.5 bg-nexus-accent" />
@@ -293,38 +293,38 @@ export function AdminLayout() {
             <div className="p-3 space-y-4 flex-1 overflow-y-auto font-mono text-xs">
               {/* Telemetry Channel */}
               <div className="space-y-2">
-                <p className="text-[0.52rem] uppercase tracking-[0.18em] text-nexus-textSubtle">
+                <p className="text-[0.75rem] uppercase tracking-[0.18em] text-nexus-textSubtle">
                   TELEMETRY LINK
                 </p>
                 {connectionInfo.lastSync ? (
                   <SignalIntegrity value={connectionInfo.signalStrength / 100} known label="LINK ACK FRESHNESS" />
                 ) : (
                   <div className="border border-nexus-borderSubtle px-2 py-2 font-mono">
-                    <span className="block text-[0.52rem] uppercase tracking-[0.14em] text-nexus-textSubtle">SERVER HANDSHAKE</span>
-                    <span className="mt-1 block text-[0.625rem] font-bold uppercase tracking-[0.1em] text-nexus-warning">NOT ESTABLISHED</span>
+                    <span className="block text-[0.75rem] uppercase tracking-[0.14em] text-nexus-textSubtle">SERVER HANDSHAKE</span>
+                    <span className="mt-1 block text-[0.875rem] font-bold uppercase tracking-[0.1em] text-nexus-warning">NOT ESTABLISHED</span>
                   </div>
                 )}
               </div>
 
               {/* Station Operator Details */}
               <div className="space-y-1.5 pt-2 border-t border-nexus-borderSubtle">
-                <p className="text-[0.52rem] uppercase tracking-[0.18em] text-nexus-textSubtle">
+                <p className="text-[0.75rem] uppercase tracking-[0.18em] text-nexus-textSubtle">
                   STATION OPERATOR
                 </p>
                 <div className="text-nexus-text font-bold">
                   {admin?.username ?? 'BUREAU-OPERATOR'}
                 </div>
-                <div className="text-[0.625rem] text-nexus-textSubtle">
+                <div className="text-[0.875rem] text-nexus-textSubtle">
                   CLEARANCE: {admin?.role ?? 'NOT CLASSIFIED'}
                 </div>
               </div>
 
               {/* Mission Phase Telemetry */}
               <div className="space-y-2 pt-2 border-t border-nexus-borderSubtle">
-                <p className="text-[0.52rem] uppercase tracking-[0.18em] text-nexus-textSubtle">
+                <p className="text-[0.75rem] uppercase tracking-[0.18em] text-nexus-textSubtle">
                   MISSION LIFECYCLE
                 </p>
-                <div className="space-y-1.5 text-[0.6875rem]">
+                <div className="space-y-1.5 text-[0.875rem]">
                   <div className="flex justify-between">
                     <span className="text-nexus-textSubtle">PHASE</span>
                     <span className="text-nexus-text font-semibold uppercase">
@@ -355,10 +355,10 @@ export function AdminLayout() {
               {/* Live Team Positions */}
               {teams.filter(team => team.status === 'ACTIVE').length > 0 && (
                 <div className="pt-2 border-t border-nexus-borderSubtle">
-                  <p className="text-[0.52rem] uppercase tracking-[0.18em] text-nexus-textSubtle mb-2">
+                  <p className="text-[0.75rem] uppercase tracking-[0.18em] text-nexus-textSubtle mb-2">
                     ACTIVE FIELD POSITIONS
                   </p>
-                  <div className="space-y-1.5 text-[0.6875rem]">
+                  <div className="space-y-1.5 text-[0.875rem]">
                     {teams.filter(team => team.status === 'ACTIVE').slice(0, 4).map(team => (
                       <div key={team.id} className="flex justify-between">
                         <span className="text-nexus-textMuted truncate">{team.code}</span>
@@ -373,7 +373,7 @@ export function AdminLayout() {
 
               {/* Diegetic Station Note */}
               <div className="pt-2 border-t border-nexus-borderSubtle">
-                <p className="text-[0.5rem] tracking-[0.12em] text-nexus-textSubtle/70 leading-relaxed uppercase">
+                <p className="text-[0.75rem] tracking-[0.12em] text-nexus-textSubtle/70 leading-relaxed uppercase">
                   UNAUTHORIZED DUPLICATION OR DISCLOSURE OF INCIDENT RECORDS SUBJECT TO ARTICLE 9 INVESTIGATION CODES.
                 </p>
               </div>
@@ -383,10 +383,10 @@ export function AdminLayout() {
 
         {/* Workstation Machine Footer */}
         <div className="nexus-bureau-footer flex items-center justify-between">
-          <span className="font-mono text-[0.52rem] uppercase tracking-[0.22em] text-nexus-textSubtle">
+          <span className="font-mono text-[0.75rem] uppercase tracking-[0.22em] text-nexus-textSubtle">
             NEXUS ECHO // CLASSIFIED BUREAU ASSET — OPERATIONAL RECORD 037
           </span>
-          <span className="font-mono text-[0.56rem] text-nexus-textSubtle font-bold">
+          <span className="font-mono text-[0.8125rem] text-nexus-textSubtle font-bold">
             NODE-02 // SHIFT 07 // {stationTime}
           </span>
         </div>

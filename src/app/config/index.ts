@@ -18,6 +18,7 @@ export const ROUTES = {
   // Player routes
   PLAYER_LOGIN: '/player/login',
   PLAYER_WAITING: '/player/waiting',
+  PLAYER_ACCESSIBILITY: '/player/accessibility',
   PLAYER_GAME: '/player/game',
   PLAYER_NODE: '/player/game/node/:nodeId',
   PLAYER_EVIDENCE: '/player/game/evidence',

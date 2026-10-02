@@ -420,9 +420,9 @@ export function AdminEvidenceLab() {
     <div className="space-y-3 font-mono">
       <header className="flex flex-wrap items-end justify-between gap-3 border-b border-nexus-border pb-3">
         <div>
-          <p className="text-[0.52rem] uppercase tracking-[0.18em] text-nexus-textSubtle">NEXUS / INTERNAL EVIDENCE SYSTEM / NODE 02</p>
+          <p className="text-[0.75rem] uppercase tracking-[0.18em] text-nexus-textSubtle">NEXUS / INTERNAL EVIDENCE SYSTEM / NODE 02</p>
           <h1 className="mt-1 text-xl font-bold text-nexus-text">EVIDENCE REGISTER</h1>
-          <p className="mt-1 text-[0.55rem] uppercase tracking-[0.14em] text-nexus-warning">CASE 037 / FULL SIMULATION / ALL CATALOGED MATERIAL ACCESSIBLE</p>
+          <p className="mt-1 text-[0.8125rem] uppercase tracking-[0.14em] text-nexus-warning">CASE 037 / FULL SIMULATION / ALL CATALOGED MATERIAL ACCESSIBLE</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
             {showcaseEnabled() && (
@@ -431,27 +431,27 @@ export function AdminEvidenceLab() {
                 onClick={() => setShowcaseLoaded(current => !current)}
                 aria-pressed={showcaseLoaded}
                 className={cn(
-                  'min-h-9 border px-2 py-1 font-mono text-[0.5rem] uppercase',
+                  'min-h-9 border px-2 py-1 font-mono text-[0.75rem] uppercase',
                   showcaseLoaded ? 'border-nexus-info text-nexus-info' : 'border-nexus-border text-nexus-textMuted',
                 )}
               >[ SHOWCASE {SHOWCASE_CASE.id} / {showcaseArtifacts.length} {SHOWCASE_LABEL} ]</button>
             )}
-            <span className="border border-nexus-accent px-2 py-1 text-[0.5rem] uppercase text-nexus-accent">SANDBOX / NO LIVE PROGRESSION</span>
-            <button type="button" onClick={resetSimulation} className="min-h-9 border border-nexus-danger px-2 font-mono text-[0.5rem] uppercase text-nexus-danger">[ RESET SIMULATION ]</button>
+            <span className="border border-nexus-accent px-2 py-1 text-[0.75rem] uppercase text-nexus-accent">SANDBOX / NO LIVE PROGRESSION</span>
+            <button type="button" onClick={resetSimulation} className="min-h-9 border border-nexus-danger px-2 font-mono text-[0.75rem] uppercase text-nexus-danger">[ RESET SIMULATION ]</button>
           </div>
       </header>
 
       {usingDevFallback && (
-        <div className="border border-nexus-warning/40 bg-nexus-warningBg/10 px-3 py-2 font-mono text-[0.5rem] uppercase">
+        <div className="border border-nexus-warning/40 bg-nexus-warningBg/10 px-3 py-2 font-mono text-[0.75rem] uppercase">
           DEVELOPMENT FALLBACK DATA — LIVE INDEX UNAVAILABLE: {apiError}
         </div>
       )}
 
       <div className="grid gap-3 2xl:grid-cols-[230px_minmax(0,1fr)_270px]">
         <aside className="min-w-0 border-r border-nexus-borderSubtle pr-3">
-          <p className="border-b border-nexus-borderSubtle pb-1 text-[0.52rem] uppercase tracking-[0.14em] text-nexus-textSubtle">EVIDENCE INDEX / {filteredArtifacts.length} OF {artifacts.length}</p>
+          <p className="border-b border-nexus-borderSubtle pb-1 text-[0.75rem] uppercase tracking-[0.14em] text-nexus-textSubtle">EVIDENCE INDEX / {filteredArtifacts.length} OF {artifacts.length}</p>
           <div className="py-2">
-            <input value={search} onChange={event => setSearch(event.target.value)} placeholder="QUERY ID / TYPE / LOCATION" className="min-h-9 w-full border border-nexus-border bg-nexus-bg px-2 font-mono text-[0.55rem] text-nexus-text" aria-label="Search evidence catalog" />
+            <input value={search} onChange={event => setSearch(event.target.value)} placeholder="QUERY ID / TYPE / LOCATION" className="min-h-9 w-full border border-nexus-border bg-nexus-bg px-2 font-mono text-[0.8125rem] text-nexus-text" aria-label="Search evidence catalog" />
             <FileTabs tabs={LAB_FILTERS} activeId={filter} onSelect={id => setFilter(id as LabFilter)} className="mt-2 max-h-44 overflow-auto" />
           </div>
           <div className="max-h-[62vh] overflow-auto border-y border-nexus-borderSubtle">
@@ -471,7 +471,7 @@ export function AdminEvidenceLab() {
                         {condition !== 'NORMAL' && <span className="absolute inset-x-0 bottom-0 h-0.5 bg-nexus-warning" aria-hidden="true" />}
                       </div>
                     ) : (
-                      <div className="flex h-[38px] w-[38px] items-center justify-center border border-nexus-borderSubtle font-mono text-[0.4rem] text-nexus-textSubtle" aria-hidden="true">
+                      <div className="flex h-[38px] w-[38px] items-center justify-center border border-nexus-borderSubtle font-mono text-[0.75rem] text-nexus-textSubtle" aria-hidden="true">
                         {artifactType(artifact).slice(0, 3)}
                       </div>
                     )}
@@ -483,7 +483,7 @@ export function AdminEvidenceLab() {
                       onSelect={() => openArtifact(artifact.id)}
                     />
                   </div>
-                  <div className="flex items-center justify-between gap-1 px-2 pb-1.5 text-[0.46rem] uppercase text-nexus-textSubtle">
+                  <div className="flex items-center justify-between gap-1 px-2 pb-1.5 text-[0.75rem] uppercase text-nexus-textSubtle">
                     <span className="truncate">
                       {condition !== 'NORMAL' && <span className="text-nexus-warning">{condition} / </span>}
                       {(state === 'CONTRADICTED' || state === 'ANOMALOUS') && <span className="text-nexus-danger">{state} / </span>}
@@ -495,7 +495,7 @@ export function AdminEvidenceLab() {
                 </div>
               )
             })}
-            {filteredArtifacts.length === 0 && <p className="py-4 font-mono text-[0.52rem] uppercase text-nexus-textSubtle">NO MATCHING RECORDS</p>}
+            {filteredArtifacts.length === 0 && <p className="py-4 font-mono text-[0.75rem] uppercase text-nexus-textSubtle">NO MATCHING RECORDS</p>}
           </div>
         </aside>
 
@@ -515,7 +515,7 @@ export function AdminEvidenceLab() {
           {mode === 'REGISTER' && (
             <div className="grid min-h-[460px] place-items-center border border-nexus-borderSubtle bg-nexus-bg p-6 text-center">
               <div>
-                <p className="font-mono text-[0.55rem] uppercase tracking-[0.16em] text-nexus-accent">{artifacts.length.toString().padStart(2, '0')} RECORDS LOADED / PROGRESSION BYPASS</p>
+                <p className="font-mono text-[0.8125rem] uppercase tracking-[0.16em] text-nexus-accent">{artifacts.length.toString().padStart(2, '0')} RECORDS LOADED / PROGRESSION BYPASS</p>
                 <h2 className="mt-3 font-mono text-lg font-bold text-nexus-text">SELECT A RECORD FROM THE INDEX</h2>
                 <p className="mx-auto mt-2 max-w-md text-sm text-nexus-textMuted">All cataloged evidence is available in this isolated lab. Test marks, annotations, inspection, comparison, and table placement without changing a team’s inventory.</p>
               </div>
@@ -524,7 +524,7 @@ export function AdminEvidenceLab() {
 
           {mode === 'INSPECT' && selectedArtifact && (
             <div className="border border-nexus-border p-2">
-              <div className="mb-2 flex items-center justify-between border-b border-nexus-borderSubtle pb-2 font-mono text-[0.52rem] uppercase text-nexus-textSubtle">
+              <div className="mb-2 flex items-center justify-between border-b border-nexus-borderSubtle pb-2 font-mono text-[0.75rem] uppercase text-nexus-textSubtle">
                 <span>INTERNAL INSPECTION / SIMULATION ONLY</span>
                 <button type="button" onClick={() => placeOnTable(selectedArtifact.id)} className="border border-nexus-accent px-2 py-1 text-nexus-accent">[ ADD TO TABLE ]</button>
               </div>
@@ -546,14 +546,14 @@ export function AdminEvidenceLab() {
           {mode === 'COMPARE' && (
             <div className="space-y-2">
               <div className="flex items-center justify-between border-b border-nexus-borderSubtle pb-2">
-                <div><p className="text-xs font-bold uppercase text-nexus-text">COMPARISON BAY</p><p className="text-[0.5rem] uppercase text-nexus-textSubtle">PLAYER-DEFINED / NO AUTOMATIC RELATION ASSERTED</p></div>
-                {comparedArtifacts.length === 2 && <span className="font-mono text-[0.5rem] text-nexus-warning">2 RECORDS IN BAY</span>}
+                <div><p className="text-xs font-bold uppercase text-nexus-text">COMPARISON BAY</p><p className="text-[0.75rem] uppercase text-nexus-textSubtle">PLAYER-DEFINED / NO AUTOMATIC RELATION ASSERTED</p></div>
+                {comparedArtifacts.length === 2 && <span className="font-mono text-[0.75rem] text-nexus-warning">2 RECORDS IN BAY</span>}
               </div>
               {comparedArtifacts.length === 2 ? (
                 <div className="grid gap-3 xl:grid-cols-2">
-                  {comparedArtifacts.map(artifact => <div key={artifact.id} className="min-w-0 border border-nexus-border p-2"><p className="mb-2 font-mono text-[0.52rem] uppercase text-nexus-accent">{artifact.code} / {artifact.title}</p><ArtifactInspection compact artifact={artifact} mark={workspace.marks[artifact.id] ?? 'UNMARKED'} annotations={workspace.annotations[artifact.id] ?? []} onMarkChange={status => mark(artifact.id, status)} onAddAnnotation={(kind, text, point) => updateWorkspace(current => ({ ...current, annotations: { ...current.annotations, [artifact.id]: [...(current.annotations[artifact.id] ?? []), { id: crypto.randomUUID(), kind, text, createdAt: new Date().toISOString(), ...point }] } }))} onPlaceOnTable={() => placeOnTable(artifact.id)} isOnTable={!!workspace.placements[artifact.id]} /></div>)}
+                  {comparedArtifacts.map(artifact => <div key={artifact.id} className="min-w-0 border border-nexus-border p-2"><p className="mb-2 font-mono text-[0.75rem] uppercase text-nexus-accent">{artifact.code} / {artifact.title}</p><ArtifactInspection compact artifact={artifact} mark={workspace.marks[artifact.id] ?? 'UNMARKED'} annotations={workspace.annotations[artifact.id] ?? []} onMarkChange={status => mark(artifact.id, status)} onAddAnnotation={(kind, text, point) => updateWorkspace(current => ({ ...current, annotations: { ...current.annotations, [artifact.id]: [...(current.annotations[artifact.id] ?? []), { id: crypto.randomUUID(), kind, text, createdAt: new Date().toISOString(), ...point }] } }))} onPlaceOnTable={() => placeOnTable(artifact.id)} isOnTable={!!workspace.placements[artifact.id]} /></div>)}
                 </div>
-              ) : <p className="border-y border-nexus-borderSubtle py-6 text-center font-mono text-[0.55rem] uppercase text-nexus-textSubtle">SELECT TWO RECORDS IN THE INDEX</p>}
+              ) : <p className="border-y border-nexus-borderSubtle py-6 text-center font-mono text-[0.8125rem] uppercase text-nexus-textSubtle">SELECT TWO RECORDS IN THE INDEX</p>}
             </div>
           )}
 
@@ -561,8 +561,8 @@ export function AdminEvidenceLab() {
         </main>
 
         <aside className="border-l border-nexus-borderSubtle pl-3">
-          <p className="border-b border-nexus-borderSubtle pb-1 text-[0.52rem] uppercase tracking-[0.14em] text-nexus-textSubtle">SIMULATION INTERLOCKS</p>
-          <p className="py-2 font-mono text-[0.5rem] uppercase leading-relaxed text-nexus-accent">ISOLATED LOCAL STATE / LIVE EVIDENCE READ-ONLY</p>
+          <p className="border-b border-nexus-borderSubtle pb-1 text-[0.75rem] uppercase tracking-[0.14em] text-nexus-textSubtle">SIMULATION INTERLOCKS</p>
+          <p className="py-2 font-mono text-[0.75rem] uppercase leading-relaxed text-nexus-accent">ISOLATED LOCAL STATE / LIVE EVIDENCE READ-ONLY</p>
           <div className="space-y-1 border-y border-nexus-borderSubtle py-2">
             <StateReadout label="CATALOG RECORDS" value={visibleArtifacts.length} />
             <StateReadout label="PLACED" value={Object.keys(workspace.placements).length} />
@@ -570,37 +570,37 @@ export function AdminEvidenceLab() {
             <StateReadout label="HYPOTHESES" value={workspace.hypotheses.length} />
           </div>
            <div className="mt-3 space-y-1">
-             <button type="button" onClick={clearBoard} className="min-h-9 w-full border border-nexus-border px-2 text-left font-mono text-[0.48rem] uppercase text-nexus-textMuted">[ CLEAR BOARD / RELATIONS ]</button>
-             <button type="button" onClick={clearAnnotations} className="min-h-9 w-full border border-nexus-border px-2 text-left font-mono text-[0.48rem] uppercase text-nexus-textMuted">[ CLEAR ANNOTATIONS ]</button>
-             <button type="button" onClick={clearMarks} className="min-h-9 w-full border border-nexus-border px-2 text-left font-mono text-[0.48rem] uppercase text-nexus-textMuted">[ RESET MARKS ]</button>
-            <button type="button" onClick={resetSimulation} className="min-h-9 w-full border border-nexus-danger px-2 text-left font-mono text-[0.48rem] uppercase text-nexus-danger">[ RESET SIMULATION ]</button>
+             <button type="button" onClick={clearBoard} className="min-h-9 w-full border border-nexus-border px-2 text-left font-mono text-[0.75rem] uppercase text-nexus-textMuted">[ CLEAR BOARD / RELATIONS ]</button>
+             <button type="button" onClick={clearAnnotations} className="min-h-9 w-full border border-nexus-border px-2 text-left font-mono text-[0.75rem] uppercase text-nexus-textMuted">[ CLEAR ANNOTATIONS ]</button>
+             <button type="button" onClick={clearMarks} className="min-h-9 w-full border border-nexus-border px-2 text-left font-mono text-[0.75rem] uppercase text-nexus-textMuted">[ RESET MARKS ]</button>
+            <button type="button" onClick={resetSimulation} className="min-h-9 w-full border border-nexus-danger px-2 text-left font-mono text-[0.75rem] uppercase text-nexus-danger">[ RESET SIMULATION ]</button>
           </div>
 
           {selectedArtifact && (
             <>
               <div className="mt-3 space-y-1 border-t border-nexus-borderSubtle pt-3">
-                <p className="font-mono text-[0.52rem] uppercase tracking-[0.12em] text-nexus-textSubtle">TEST SIMULATION</p>
+                <p className="font-mono text-[0.75rem] uppercase tracking-[0.12em] text-nexus-textSubtle">TEST SIMULATION</p>
                 <button
                   type="button"
                   onClick={() => simulateEvidenceUpdate(selectedArtifact.id)}
-                  className="min-h-9 w-full border border-nexus-border px-2 text-left font-mono text-[0.48rem] uppercase text-nexus-textMuted hover:border-nexus-info hover:text-nexus-info"
+                  className="min-h-9 w-full border border-nexus-border px-2 text-left font-mono text-[0.75rem] uppercase text-nexus-textMuted hover:border-nexus-info hover:text-nexus-info"
                 >[ SIMULATE RECORD UPDATE ]</button>
                 <button
                   type="button"
                   onClick={simulateContradiction}
-                  className="min-h-9 w-full border border-nexus-border px-2 text-left font-mono text-[0.48rem] uppercase text-nexus-warning hover:border-nexus-warning hover:text-nexus-warning"
+                  className="min-h-9 w-full border border-nexus-border px-2 text-left font-mono text-[0.75rem] uppercase text-nexus-warning hover:border-nexus-warning hover:text-nexus-warning"
                 >[ SIMULATE CONTRADICTION ]</button>
                 <button
                   type="button"
                   onClick={() => placeOnTable(selectedArtifact.id)}
                   disabled={!!workspace.placements[selectedArtifact.id]}
-                  className="min-h-9 w-full border border-nexus-border px-2 text-left font-mono text-[0.48rem] uppercase text-nexus-textMuted disabled:opacity-40"
+                  className="min-h-9 w-full border border-nexus-border px-2 text-left font-mono text-[0.75rem] uppercase text-nexus-textMuted disabled:opacity-40"
                 >[ ADD TO TABLE ]</button>
               </div>
 
               <div className="mt-2 space-y-0.5 border-t border-nexus-borderSubtle pt-2">
-                <p className="font-mono text-[0.52rem] uppercase tracking-[0.12em] text-nexus-textSubtle">KEYBOARD SHORTCUTS</p>
-                <div className="grid grid-cols-[48px_1fr] gap-1 font-mono text-[0.55rem]">
+                <p className="font-mono text-[0.75rem] uppercase tracking-[0.12em] text-nexus-textSubtle">KEYBOARD SHORTCUTS</p>
+                <div className="grid grid-cols-[48px_1fr] gap-1 font-mono text-[0.8125rem]">
                   <span className="text-nexus-textSubtle">← →</span><span className="text-nexus-textMuted">PREV / NEXT EVIDENCE</span>
                   <span className="text-nexus-textSubtle">T</span><span className="text-nexus-textMuted">ADD TO TABLE</span>
                   <span className="text-nexus-textSubtle">M</span><span className="text-nexus-textMuted">CYCLE MARK TYPE</span>
@@ -609,7 +609,7 @@ export function AdminEvidenceLab() {
               </div>
 
               <div className="mt-4 space-y-2 border-t border-nexus-borderSubtle pt-2">
-                <p className="font-mono text-[0.52rem] uppercase tracking-[0.12em] text-nexus-textSubtle">STATE INSPECTOR</p>
+                <p className="font-mono text-[0.75rem] uppercase tracking-[0.12em] text-nexus-textSubtle">STATE INSPECTOR</p>
                 <StateLine label="ID" value={selectedArtifact.code} />
                 <StateLine label="TYPE" value={artifactType(selectedArtifact)} />
                 <StateLine label="COND" value={artifactCondition(selectedArtifact)} />
@@ -626,7 +626,7 @@ export function AdminEvidenceLab() {
               <RelationList artifact={selectedArtifact} onOpen={openArtifact} />
             </>
           )}
-          <p className="mt-4 border-t border-nexus-borderSubtle pt-2 text-[0.48rem] uppercase leading-relaxed text-nexus-textSubtle">RESET CLEARS ONLY THIS OPERATOR’S LOCAL SIMULATION. PRODUCTION INVENTORY IS NEVER MUTATED.</p>
+          <p className="mt-4 border-t border-nexus-borderSubtle pt-2 text-[0.75rem] uppercase leading-relaxed text-nexus-textSubtle">RESET CLEARS ONLY THIS OPERATOR’S LOCAL SIMULATION. PRODUCTION INVENTORY IS NEVER MUTATED.</p>
         </aside>
       </div>
     </div>
@@ -643,16 +643,16 @@ function RelationList({ artifact, onOpen }: { artifact: CaseArtifact; onOpen: (i
   if (relations.length === 0) return null
   return (
     <div className="mt-3 border-t border-nexus-borderSubtle pt-2">
-      <p className="font-mono text-[0.52rem] uppercase tracking-[0.12em] text-nexus-textSubtle">RELATIONS / {relations.length}</p>
+      <p className="font-mono text-[0.75rem] uppercase tracking-[0.12em] text-nexus-textSubtle">RELATIONS / {relations.length}</p>
       <ul className="mt-1 space-y-1">
         {relations.map(relation => (
           <li key={`${relation.kind}-${relation.to}`} className="border-l border-nexus-border pl-2">
             <button
               type="button"
               onClick={() => onOpen(`evidence:${relation.to}`)}
-              className="text-left font-mono text-[0.5rem] uppercase text-nexus-info hover:underline"
+              className="text-left font-mono text-[0.75rem] uppercase text-nexus-info hover:underline"
             >{relation.kind} → {relation.to}</button>
-            <p className="text-[0.48rem] leading-snug text-nexus-textSubtle">{relation.note}</p>
+            <p className="text-[0.75rem] leading-snug text-nexus-textSubtle">{relation.note}</p>
           </li>
         ))}
       </ul>
@@ -661,9 +661,9 @@ function RelationList({ artifact, onOpen }: { artifact: CaseArtifact; onOpen: (i
 }
 
 function StateReadout({ label, value }: { label: string; value: number }) {
-  return <div className="flex items-center justify-between gap-2 font-mono text-[0.52rem]"><span className="uppercase text-nexus-textSubtle">{label}</span><span className="font-bold tabular-nums text-nexus-text">{value.toString().padStart(2, '0')}</span></div>
+  return <div className="flex items-center justify-between gap-2 font-mono text-[0.75rem]"><span className="uppercase text-nexus-textSubtle">{label}</span><span className="font-bold tabular-nums text-nexus-text">{value.toString().padStart(2, '0')}</span></div>
 }
 
 function StateLine({ label, value }: { label: string; value: string | number }) {
-  return <div className="grid grid-cols-[62px_1fr] gap-2 font-mono text-[0.5rem]"><span className="uppercase text-nexus-textSubtle">{label}</span><span className="break-words text-nexus-text">{value}</span></div>
+  return <div className="grid grid-cols-[62px_1fr] gap-2 font-mono text-[0.75rem]"><span className="uppercase text-nexus-textSubtle">{label}</span><span className="break-words text-nexus-text">{value}</span></div>
 }

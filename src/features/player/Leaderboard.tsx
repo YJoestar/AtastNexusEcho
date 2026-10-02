@@ -119,11 +119,11 @@ export function PlayerLeaderboard() {
                       <div className={cn('min-w-0 border-l-2 pl-3', isCurrentTeam ? 'border-nexus-accent' : 'border-transparent')}>
                         <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
                           <span className="font-mono text-xs font-bold text-nexus-accent">{rankMark}</span>
-                          <span className="font-mono text-[0.56rem] text-nexus-textSubtle">{entry.teamCode}</span>
+                          <span className="font-mono text-[0.8125rem] text-nexus-textSubtle">{entry.teamCode}</span>
                           <span className="break-words font-medium text-nexus-text">{entry.teamName}</span>
                           {isCurrentTeam && <Stamp variant="verified">YOUR UNIT</Stamp>}
                         </div>
-                        <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 border-t border-nexus-borderSubtle pt-2 font-mono text-[0.56rem] sm:grid-cols-3">
+                        <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 border-t border-nexus-borderSubtle pt-2 font-mono text-[0.8125rem] sm:grid-cols-3">
                           <span className="text-nexus-textMuted">SCORE / <b className="text-nexus-text">{entry.score.toLocaleString()}</b></span>
                           <span className="text-nexus-textMuted">ELAPSED / <b className="text-nexus-text">{formatTime(entry.elapsedMinutes)}</b></span>
                           <span className="text-nexus-textMuted">CASE / <b className="text-nexus-text">{isCompleted ? 'CLOSED' : 'ACTIVE'}</b></span>

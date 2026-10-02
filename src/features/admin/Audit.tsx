@@ -95,10 +95,10 @@ export function AdminAudit() {
               <span className="mr-2 text-nexus-accent">REC {entry.id.slice(0, 8).toUpperCase()}</span>
               {action} / {target}
             </span>
-            <span className="mt-1 block text-[0.65rem] text-nexus-textMuted">
+            <span className="mt-1 block text-[0.875rem] text-nexus-textMuted">
               {entry.reason || 'NO JUSTIFICATION FILED'}
             </span>
-            <span className="mt-1 block font-mono text-[0.52rem] uppercase tracking-[0.1em] text-nexus-textSubtle">
+            <span className="mt-1 block font-mono text-[0.75rem] uppercase tracking-[0.1em] text-nexus-textSubtle">
               OPERATOR {entry.adminId || 'UNRECORDED'} / SOURCE {entry.ipAddress || 'INTERNAL'}
             </span>
           </span>
@@ -120,7 +120,7 @@ export function AdminAudit() {
           <div>
             <div className="flex items-center gap-2">
               <span className="w-1.5 h-1.5 bg-nexus-accent" />
-              <span className="text-[0.625rem] tracking-[0.24em] uppercase text-nexus-textSubtle">
+              <span className="text-[0.875rem] tracking-[0.24em] uppercase text-nexus-textSubtle">
                 NEXUS ECHO // SYSTEM ACCESS RECORD
               </span>
             </div>
@@ -187,7 +187,7 @@ export function AdminAudit() {
             <span>READING ARCHIVAL LEDGER…</span>
           </div>
         ) : filteredLog.length === 0 ? (
-          <div className="grid min-h-28 grid-cols-[120px_1fr] items-center gap-3 px-4 font-mono text-[0.625rem] uppercase tracking-[0.12em]">
+          <div className="grid min-h-28 grid-cols-[120px_1fr] items-center gap-3 px-4 font-mono text-[0.875rem] uppercase tracking-[0.12em]">
             <span className="border-r border-nexus-border py-4 text-nexus-warning">NO RECORD</span>
             <span className="text-nexus-textSubtle">{searchTerm || actionFilter ? 'QUERY RETURNED NO MATCHING ACCESS RECORDS' : 'NO ACCESS ENTRIES IN THE AVAILABLE LEDGER'}</span>
           </div>

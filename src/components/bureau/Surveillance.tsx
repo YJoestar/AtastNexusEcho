@@ -38,7 +38,7 @@ export function SurveillanceFrame({
 
       <figcaption className="flex items-center justify-between gap-2 border-t border-nexus-borderSubtle px-2 py-1">
         <RecordingLamp active={recording} startedAt={startedAt} />
-        <span className="font-mono text-[0.625rem] tabular-nums tracking-[0.14em] text-nexus-textSubtle">
+        <span className="font-mono text-[0.875rem] tabular-nums tracking-[0.14em] text-nexus-textSubtle">
           {[reference, timestamp].filter(Boolean).join(' · ')}
         </span>
       </figcaption>

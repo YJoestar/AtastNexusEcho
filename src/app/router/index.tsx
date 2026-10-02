@@ -15,6 +15,7 @@ import { RequireAdmin } from '@/components/auth/RequireAdmin'
 
 // Player route components
 import { PlayerLogin } from '@/features/player/Login'
+import { PlayerAccessibility } from '@/features/player/Accessibility'
 import { PlayerWaiting } from '@/features/player/Waiting'
 import { PlayerGame } from '@/features/player/Game'
 import { PlayerNode } from '@/features/player/Node'
@@ -77,6 +78,13 @@ export const router = createBrowserRouter([
             ),
           },
         ],
+      },
+      {
+        // Deliberately unguarded. Legibility settings have to be reachable
+        // before sign-in, by anyone who needs them to read the sign-in page.
+        path: 'player/accessibility',
+        Component: PlayerLayout,
+        children: [{ index: true, Component: PlayerAccessibility }],
       },
       {
         path: 'player/game',

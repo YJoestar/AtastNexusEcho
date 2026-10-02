@@ -210,7 +210,7 @@ export function AdminDashboard() {
             <div>
               <div className="flex items-center gap-2">
                 <span className="inline-block w-2 h-2 bg-nexus-accent animate-pulse" />
-                <span className="font-mono text-[0.625rem] tracking-[0.24em] uppercase text-nexus-textSubtle">
+                <span className="font-mono text-[0.875rem] tracking-[0.24em] uppercase text-nexus-textSubtle">
                   NEXUS ECHO // FIELD OPERATIONS COMMAND
                 </span>
                 <span className="stamp stamp-restricted ml-2">RESTRICTED // EYES ONLY</span>
@@ -223,15 +223,15 @@ export function AdminDashboard() {
             {/* Readout Identifiers */}
             <div className="flex flex-wrap items-center gap-2">
               <div className="border border-nexus-border bg-nexus-bg px-3 py-1.5 font-mono text-xs">
-                <span className="text-nexus-textSubtle block text-[0.5rem] tracking-[0.2em] uppercase">NODE</span>
+                <span className="text-nexus-textSubtle block text-[0.75rem] tracking-[0.2em] uppercase">NODE</span>
                 <span className="text-nexus-text font-semibold">02-BUREAU</span>
               </div>
               <div className="border border-nexus-border bg-nexus-bg px-3 py-1.5 font-mono text-xs">
-                <span className="text-nexus-textSubtle block text-[0.5rem] tracking-[0.2em] uppercase">SHIFT</span>
+                <span className="text-nexus-textSubtle block text-[0.75rem] tracking-[0.2em] uppercase">SHIFT</span>
                 <span className="text-nexus-text font-semibold">07</span>
               </div>
               <div className="border border-nexus-border bg-nexus-bg px-3 py-1.5 font-mono text-xs">
-                <span className="text-nexus-textSubtle block text-[0.5rem] tracking-[0.2em] uppercase">STATION TIME</span>
+                <span className="text-nexus-textSubtle block text-[0.75rem] tracking-[0.2em] uppercase">STATION TIME</span>
                 <span className="text-nexus-accent font-semibold">{currentTime}</span>
               </div>
             </div>
@@ -240,11 +240,11 @@ export function AdminDashboard() {
           {/* Machine Controls Toolbar */}
           <div className="mt-3 pt-3 border-t border-nexus-borderSubtle flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2">
-              <span className="font-mono text-[0.625rem] uppercase tracking-[0.16em] text-nexus-textSubtle">
+              <span className="font-mono text-[0.875rem] uppercase tracking-[0.16em] text-nexus-textSubtle">
                 CHANNEL STATUS:
               </span>
               <span className={cn(
-                'inline-flex items-center gap-1 font-mono text-[0.625rem] uppercase tracking-[0.18em] px-2 py-0.5 border',
+                'inline-flex items-center gap-1 font-mono text-[0.875rem] uppercase tracking-[0.18em] px-2 py-0.5 border',
                 isConnected ? 'border-nexus-accent/40 text-nexus-accent bg-nexus-accentBg/30' : 'border-nexus-danger text-nexus-danger bg-nexus-dangerBg/30'
               )}>
                 {isConnected ? 'LIVE FEED ACTIVE' : 'CONNECTION FAILING'}
@@ -292,7 +292,7 @@ export function AdminDashboard() {
                   <CampusMap nodes={mapNodes} showFog />
                   <TacticalOverlay nodes={mapNodes} showCoordinates showScaleBar />
                 </div>
-                <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-nexus-borderSubtle pt-2 font-mono text-[0.56rem] uppercase tracking-[0.14em] text-nexus-textSubtle">
+                <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-nexus-borderSubtle pt-2 font-mono text-[0.8125rem] uppercase tracking-[0.14em] text-nexus-textSubtle">
                   <span>FIELD MARKERS: {teams.filter(team => !!team.currentNodeCode).length.toString().padStart(2, '0')}</span>
                   <span>VERIFIED IN EVENT BUFFER: {evidenceRegister.length.toString().padStart(2, '0')}</span>
                   <Link to={ROUTES.ADMIN_LOCATIONS} className="text-nexus-accent hover:underline">
@@ -304,22 +304,22 @@ export function AdminDashboard() {
 
             <TerminalFrame title="RECOVERED MATERIAL REGISTER" reference={`EVENT BUFFER // ${evidenceRegister.length} VERIFIED`} variant="register">
               {evidenceRegister.length === 0 ? (
-                <div className="grid min-h-24 grid-cols-[110px_1fr] items-center gap-3 px-4 font-mono text-[0.625rem] uppercase tracking-[0.12em]">
+                <div className="grid min-h-24 grid-cols-[110px_1fr] items-center gap-3 px-4 font-mono text-[0.875rem] uppercase tracking-[0.12em]">
                   <span className="border-r border-nexus-border py-4 text-nexus-warning">NO RECORD</span>
                   <span className="text-nexus-textSubtle">No verified node recovery in the available event buffer.</span>
                 </div>
               ) : (
                 <div className="font-mono">
-                  <div className="grid grid-cols-[64px_minmax(0,1fr)_88px] gap-2 border-b border-nexus-border px-3 py-1.5 text-[0.52rem] uppercase tracking-[0.16em] text-nexus-textSubtle">
+                  <div className="grid grid-cols-[64px_minmax(0,1fr)_88px] gap-2 border-b border-nexus-border px-3 py-1.5 text-[0.75rem] uppercase tracking-[0.16em] text-nexus-textSubtle">
                     <span>NODE</span><span>RECOVERED RECORD</span><span className="text-right">TIME</span>
                   </div>
                   {evidenceRegister.map(item => (
                     <div key={item.code} className="grid grid-cols-[64px_minmax(0,1fr)_88px] items-center gap-2 border-b border-nexus-borderSubtle px-3 py-2 text-xs">
                       <span className="font-bold text-nexus-accent">{item.code}</span>
                       <span className="min-w-0 truncate text-nexus-text">
-                        {item.title}<span className="ml-2 text-[0.56rem] text-nexus-textSubtle">{item.teamLabel} / {item.type}</span>
+                        {item.title}<span className="ml-2 text-[0.8125rem] text-nexus-textSubtle">{item.teamLabel} / {item.type}</span>
                       </span>
-                      <time className="text-right text-[0.625rem] tabular-nums text-nexus-textSubtle">
+                      <time className="text-right text-[0.875rem] tabular-nums text-nexus-textSubtle">
                         {new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
                       </time>
                     </div>
@@ -361,7 +361,7 @@ export function AdminDashboard() {
               {teams.length === 0 ? (
                 <div className="px-3 py-6 font-mono text-xs text-nexus-textSubtle">
                   <p>PERSONNEL REGISTER / NO FILES</p>
-                  <p className="mt-1 text-[0.625rem] text-nexus-textMuted">No field units are assigned to this case.</p>
+                  <p className="mt-1 text-[0.875rem] text-nexus-textMuted">No field units are assigned to this case.</p>
                 </div>
               ) : (
                 <div className="divide-y divide-nexus-borderSubtle">
@@ -371,7 +371,7 @@ export function AdminDashboard() {
                         <span className="truncate text-xs font-bold text-nexus-text">{team.code} / {team.name}</span>
                         <TeamStatusBadge status={team.status} showDot />
                       </div>
-                      <div className="mt-1 flex justify-between gap-2 font-mono text-[0.56rem] uppercase tracking-[0.1em] text-nexus-textSubtle">
+                      <div className="mt-1 flex justify-between gap-2 font-mono text-[0.8125rem] uppercase tracking-[0.1em] text-nexus-textSubtle">
                         <span>{team.playerCount ?? 0} PERSONNEL</span>
                         <span>{team.currentNodeCode ? `NODE ${team.currentNodeCode}` : 'POSITION UNREPORTED'}</span>
                       </div>
@@ -383,14 +383,14 @@ export function AdminDashboard() {
 
             <TerminalFrame title="INBOUND TRANSMISSION" reference="LATEST EVENT RECORD" variant="system">
               {gameEvents.length === 0 ? (
-                <div className="px-3 py-5 font-mono text-[0.625rem] uppercase tracking-[0.12em] text-nexus-textSubtle">
+                <div className="px-3 py-5 font-mono text-[0.875rem] uppercase tracking-[0.12em] text-nexus-textSubtle">
                   <p>CHANNEL OPEN</p>
                   <p className="mt-1 text-nexus-textMuted">No field transmissions in the event buffer.</p>
                 </div>
               ) : gameEvents.slice(0, 4).map(event => {
                 const team = event.teamId ? teams.find(candidate => candidate.id === event.teamId) : null
                 return (
-                  <div key={event.id} className="grid grid-cols-[54px_1fr] gap-2 border-b border-nexus-borderSubtle px-3 py-2 font-mono text-[0.625rem]">
+                  <div key={event.id} className="grid grid-cols-[54px_1fr] gap-2 border-b border-nexus-borderSubtle px-3 py-2 font-mono text-[0.875rem]">
                     <time className="tabular-nums text-nexus-warning">
                       {new Date(event.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
                     </time>
@@ -412,10 +412,10 @@ export function AdminDashboard() {
           variant="system"
           footer={
             <div className="flex justify-between items-center w-full font-mono text-xs">
-              <span className="text-nexus-textSubtle text-[0.625rem]">
+              <span className="text-nexus-textSubtle text-[0.875rem]">
                 SHOWING RECENT LOG TRANSACTIONS · ALL FIELD ACTIVITY RECORDED
               </span>
-              <Link to={ROUTES.ADMIN_AUDIT} className="text-nexus-accent hover:underline text-[0.6875rem] uppercase tracking-[0.16em]">
+              <Link to={ROUTES.ADMIN_AUDIT} className="text-nexus-accent hover:underline text-[0.875rem] uppercase tracking-[0.16em]">
                 OPEN SYSTEM ACCESS RECORD →
               </Link>
             </div>

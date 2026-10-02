@@ -64,7 +64,7 @@ export function EvidenceBoard({
     >
       {pins.length === 0 ? (
         <div className="evidence-board-empty py-12 text-center text-nexus-textSubtle">
-          <p className="font-mono text-[0.6875rem] uppercase tracking-[0.16em]">
+          <p className="font-mono text-[0.875rem] uppercase tracking-[0.16em]">
             No evidence collected
           </p>
         </div>
@@ -95,10 +95,10 @@ export function EvidenceBoard({
                   footer={
                     connected && (
                       <div className="flex items-center gap-1.5">
-                        <span className="evidence-link-marker font-mono text-[0.5rem] text-nexus-accent">
+                        <span className="evidence-link-marker font-mono text-[0.75rem] text-nexus-accent">
                           ⓧ
                         </span>
-                        <span className="font-mono text-[0.625rem] uppercase tracking-[0.12em] text-nexus-textSubtle">
+                        <span className="font-mono text-[0.875rem] uppercase tracking-[0.12em] text-nexus-textSubtle">
                           {pinLinks.length} connection{pinLinks.length !== 1 ? 's' : ''}
                         </span>
                       </div>

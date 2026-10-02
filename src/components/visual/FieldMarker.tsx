@@ -78,17 +78,17 @@ export const FieldMarker: FC<FieldMarkerProps> = ({
     >
       {/* Header */}
       <div className="field-marker-header flex items-center justify-between border-b border-nexus-borderSubtle px-3 py-1.5">
-        <span className="text-[0.625rem] uppercase tracking-[0.18em] text-nexus-textSubtle">
+        <span className="text-[0.875rem] uppercase tracking-[0.18em] text-nexus-textSubtle">
           NEXUS ECHO
         </span>
-        <span className="text-[0.56rem] uppercase tracking-[0.12em] text-nexus-textMuted">
+        <span className="text-[0.8125rem] uppercase tracking-[0.12em] text-nexus-textMuted">
           FIELD MARKER
         </span>
       </div>
 
       {/* Marker ID */}
       <div className="field-marker-id px-3 py-2 border-b border-nexus-borderSubtle">
-        <div className="text-[0.56rem] uppercase tracking-[0.14em] text-nexus-textSubtle">
+        <div className="text-[0.8125rem] uppercase tracking-[0.14em] text-nexus-textSubtle">
           MARKER ID
         </div>
         <div className="font-display text-xl font-bold tracking-tight text-nexus-text mt-0.5">
@@ -107,14 +107,14 @@ export const FieldMarker: FC<FieldMarkerProps> = ({
             />
           ) : (
             <div className="qr-placeholder w-24 h-24 border border-nexus-border bg-nexus-bg flex items-center justify-center">
-              <span className="text-[0.5rem] text-nexus-textSubtle">QR</span>
+              <span className="text-[0.75rem] text-nexus-textSubtle">QR</span>
             </div>
           )}
           {/* Quiet zone: empty border around QR */}
           <div className="absolute inset-0 border border-transparent" aria-hidden="true" />
         </div>
         <div className="qr-manual flex-1 min-w-0">
-          <div className="text-[0.56rem] uppercase tracking-[0.14em] text-nexus-textSubtle">
+          <div className="text-[0.8125rem] uppercase tracking-[0.14em] text-nexus-textSubtle">
             MANUAL CODE
           </div>
           <div
@@ -128,7 +128,7 @@ export const FieldMarker: FC<FieldMarkerProps> = ({
 
       {/* Location */}
       <div className="field-marker-location px-3 py-2 border-b border-nexus-borderSubtle">
-        <div className="text-[0.56rem] uppercase tracking-[0.14em] text-nexus-textSubtle">
+        <div className="text-[0.8125rem] uppercase tracking-[0.14em] text-nexus-textSubtle">
           LOCATION
         </div>
         <div className="text-xs text-nexus-text mt-0.5 truncate">
@@ -140,7 +140,7 @@ export const FieldMarker: FC<FieldMarkerProps> = ({
       <div className="field-marker-context px-3 py-2 border-b border-nexus-borderSubtle">
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <div className="text-[0.56rem] uppercase tracking-[0.14em] text-nexus-textSubtle">
+            <div className="text-[0.8125rem] uppercase tracking-[0.14em] text-nexus-textSubtle">
               CASE
             </div>
             <div className="text-xs text-nexus-text mt-0.5">
@@ -148,7 +148,7 @@ export const FieldMarker: FC<FieldMarkerProps> = ({
             </div>
           </div>
           <div>
-            <div className="text-[0.56rem] uppercase tracking-[0.14em] text-nexus-textSubtle">
+            <div className="text-[0.8125rem] uppercase tracking-[0.14em] text-nexus-textSubtle">
               NODE
             </div>
             <div className="text-xs text-nexus-text mt-0.5">
@@ -171,11 +171,11 @@ export const FieldMarker: FC<FieldMarkerProps> = ({
                 : 'bg-nexus-warning',
             )}
           />
-          <span className="text-[0.56rem] uppercase tracking-[0.12em] text-nexus-textMuted">
+          <span className="text-[0.8125rem] uppercase tracking-[0.12em] text-nexus-textMuted">
             {status}
           </span>
         </div>
-        <span className="text-[0.52rem] font-mono tracking-[0.12em] text-nexus-textSubtle">
+        <span className="text-[0.75rem] font-mono tracking-[0.12em] text-nexus-textSubtle">
           {qrCode.puzzleNodeStage !== undefined && `STAGE ${qrCode.puzzleNodeStage}`}
         </span>
       </div>

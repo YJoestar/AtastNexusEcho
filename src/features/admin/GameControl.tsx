@@ -136,7 +136,7 @@ export function AdminGameControl() {
           <div>
             <div className="flex items-center gap-2">
               <span className="w-1.5 h-1.5 bg-nexus-warning animate-pulse" />
-              <span className="text-[0.625rem] tracking-[0.24em] uppercase text-nexus-textSubtle">
+              <span className="text-[0.875rem] tracking-[0.24em] uppercase text-nexus-textSubtle">
                 NEXUS ECHO // OPERATIONS CONTROL & MASTER INTERLOCKS
               </span>
             </div>
@@ -172,7 +172,7 @@ export function AdminGameControl() {
           <div className="space-y-4 p-2">
             <div className="flex items-center justify-between border-b border-nexus-border pb-3">
               <div>
-                <span className="text-[0.56rem] uppercase tracking-[0.2em] text-nexus-textSubtle block">
+                <span className="text-[0.8125rem] uppercase tracking-[0.2em] text-nexus-textSubtle block">
                   CURRENT SYSTEM STATE
                 </span>
                 <span className={cn(
@@ -188,7 +188,7 @@ export function AdminGameControl() {
 
               {gameStatus === 'RUNNING' && deadline && (
                 <div className="text-right">
-                  <span className="text-[0.56rem] uppercase tracking-[0.2em] text-nexus-textSubtle block">
+                  <span className="text-[0.8125rem] uppercase tracking-[0.2em] text-nexus-textSubtle block">
                     MISSION CLOCK
                   </span>
                   <span className="text-lg font-bold text-nexus-warning">
@@ -245,7 +245,7 @@ export function AdminGameControl() {
               )}
             </div>
 
-            <p className="text-[0.625rem] text-nexus-textSubtle leading-relaxed">
+            <p className="text-[0.875rem] text-nexus-textSubtle leading-relaxed">
               {gameStatus === 'NOT_STARTED'
                 ? `Ready to arm. ${preStartTeams} field unit(s) waiting for deployment.`
                 : gameStatus === 'RUNNING'
@@ -262,7 +262,7 @@ export function AdminGameControl() {
           <div className="p-2 space-y-2 text-xs">
             <div className="grid grid-cols-2 gap-2">
               <div className="border border-nexus-border bg-nexus-bg p-2.5">
-                <span className="text-[0.52rem] uppercase tracking-[0.18em] text-nexus-textSubtle block">
+                <span className="text-[0.75rem] uppercase tracking-[0.18em] text-nexus-textSubtle block">
                   MISSION INITIATED
                 </span>
                 <span className="text-nexus-text font-bold block mt-1">
@@ -271,7 +271,7 @@ export function AdminGameControl() {
               </div>
 
               <div className="border border-nexus-border bg-nexus-bg p-2.5">
-                <span className="text-[0.52rem] uppercase tracking-[0.18em] text-nexus-textSubtle block">
+                <span className="text-[0.75rem] uppercase tracking-[0.18em] text-nexus-textSubtle block">
                   TARGET DEADLINE
                 </span>
                 <span className="text-nexus-warning font-bold block mt-1">
@@ -280,7 +280,7 @@ export function AdminGameControl() {
               </div>
 
               <div className="border border-nexus-border bg-nexus-bg p-2.5">
-                <span className="text-[0.52rem] uppercase tracking-[0.18em] text-nexus-textSubtle block">
+                <span className="text-[0.75rem] uppercase tracking-[0.18em] text-nexus-textSubtle block">
                   ALLOCATED DURATION
                 </span>
                 <span className="text-nexus-text font-bold block mt-1">
@@ -289,7 +289,7 @@ export function AdminGameControl() {
               </div>
 
               <div className="border border-nexus-border bg-nexus-bg p-2.5">
-                <span className="text-[0.52rem] uppercase tracking-[0.18em] text-nexus-textSubtle block">
+                <span className="text-[0.75rem] uppercase tracking-[0.18em] text-nexus-textSubtle block">
                   REGISTERED UNITS
                 </span>
                 <span className="text-nexus-accent font-bold block mt-1">
@@ -311,7 +311,7 @@ export function AdminGameControl() {
                 className="border border-nexus-border bg-nexus-bg p-2 flex items-center justify-between"
               >
                 <div className="min-w-0">
-                  <span className="text-[0.56rem] text-nexus-textSubtle block uppercase tracking-[0.12em] truncate">
+                  <span className="text-[0.8125rem] text-nexus-textSubtle block uppercase tracking-[0.12em] truncate">
                     {status}
                   </span>
                   <TeamStatusBadge status={status as TeamStatus} showDot={false} />
@@ -332,7 +332,7 @@ export function AdminGameControl() {
         variant="system"
         footer={
           <div className="flex justify-between items-center w-full">
-            <span className="text-[0.625rem] text-nexus-textSubtle">
+            <span className="text-[0.875rem] text-nexus-textSubtle">
               CHANGES TO PARAMETERS WRITE DIRECTLY TO BUREAU PROTOCOL
             </span>
             <button
@@ -349,32 +349,32 @@ export function AdminGameControl() {
       >
         <div className="p-2 grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
           <div className="border border-nexus-borderSubtle bg-nexus-bg p-2">
-            <span className="text-nexus-textSubtle text-[0.56rem] uppercase tracking-[0.14em] block">MAXIMUM UNITS</span>
+            <span className="text-nexus-textSubtle text-[0.8125rem] uppercase tracking-[0.14em] block">MAXIMUM UNITS</span>
             <span className="font-bold text-nexus-text mt-1 block">{String(config?.max_teams ?? 25)}</span>
           </div>
 
           <div className="border border-nexus-borderSubtle bg-nexus-bg p-2">
-            <span className="text-nexus-textSubtle text-[0.56rem] uppercase tracking-[0.14em] block">INVESTIGATORS / UNIT</span>
+            <span className="text-nexus-textSubtle text-[0.8125rem] uppercase tracking-[0.14em] block">INVESTIGATORS / UNIT</span>
             <span className="font-bold text-nexus-text mt-1 block">{String(config?.players_per_team ?? 3)}</span>
           </div>
 
           <div className="border border-nexus-borderSubtle bg-nexus-bg p-2">
-            <span className="text-nexus-textSubtle text-[0.56rem] uppercase tracking-[0.14em] block">DURATION</span>
+            <span className="text-nexus-textSubtle text-[0.8125rem] uppercase tracking-[0.14em] block">DURATION</span>
             <span className="font-bold text-nexus-text mt-1 block">{gameDuration} MIN</span>
           </div>
 
           <div className="border border-nexus-borderSubtle bg-nexus-bg p-2">
-            <span className="text-nexus-textSubtle text-[0.56rem] uppercase tracking-[0.14em] block">ROLLING INTERVAL</span>
+            <span className="text-nexus-textSubtle text-[0.8125rem] uppercase tracking-[0.14em] block">ROLLING INTERVAL</span>
             <span className="font-bold text-nexus-text mt-1 block">{String(config?.rolling_start_interval_minutes ?? 10)} MIN</span>
           </div>
 
           <div className="border border-nexus-borderSubtle bg-nexus-bg p-2">
-            <span className="text-nexus-textSubtle text-[0.56rem] uppercase tracking-[0.14em] block">AUTO-ASSIGN ROLES</span>
+            <span className="text-nexus-textSubtle text-[0.8125rem] uppercase tracking-[0.14em] block">AUTO-ASSIGN ROLES</span>
             <span className="font-bold text-nexus-text mt-1 block">{config?.auto_assign_roles ? 'AUTHORIZED' : 'MANUAL'}</span>
           </div>
 
           <div className="border border-nexus-borderSubtle bg-nexus-bg p-2">
-            <span className="text-nexus-textSubtle text-[0.56rem] uppercase tracking-[0.14em] block">ROLE COMPLETENESS</span>
+            <span className="text-nexus-textSubtle text-[0.8125rem] uppercase tracking-[0.14em] block">ROLE COMPLETENESS</span>
             <span className="font-bold text-nexus-text mt-1 block">{config?.require_all_roles ? 'ENFORCED' : 'OPTIONAL'}</span>
           </div>
         </div>

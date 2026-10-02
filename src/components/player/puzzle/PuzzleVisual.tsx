@@ -222,7 +222,7 @@ const AudioVisual: Renderer = ({ dataPayload, interactiveData }) => {
           <div className="flex items-end gap-2 h-24" role="img" aria-label="Frequency peaks">
             {frequencies.map((hz, i) => (
               <div key={`${hz}-${i}`} className="flex-1 flex flex-col items-center gap-1 h-full justify-end">
-                <span className="font-mono text-[10px] text-nexus-textSubtle">{hz}</span>
+                <span className="font-mono text-[0.75rem] text-nexus-textSubtle">{hz}</span>
                 <div
                   className="w-full rounded-t-md bg-nexus-accent/60 border border-nexus-accent/40"
                   style={{ height: `${Math.max(8, Math.round((hz / peak) * 100))}%` }}
@@ -256,7 +256,7 @@ const BinaryVisual: Renderer = ({ dataPayload, interactiveData }) => {
         <PayloadText>{dataPayload}</PayloadText>
         {bytes.map((byte, i) => (
           <div key={`${byte}-${i}`} className="flex items-center gap-3">
-            <span className="font-mono text-[10px] text-nexus-textSubtle w-5 text-right">
+            <span className="font-mono text-[0.75rem] text-nexus-textSubtle w-5 text-right">
               {i + 1}
             </span>
             <div className="flex gap-[3px]">
@@ -271,7 +271,7 @@ const BinaryVisual: Renderer = ({ dataPayload, interactiveData }) => {
                 />
               ))}
             </div>
-            <span className="font-mono text-[10px] text-nexus-textSubtle">
+            <span className="font-mono text-[0.75rem] text-nexus-textSubtle">
               {String.fromCharCode(parseInt(byte, 2)).replace(/[^\x20-\x7e]/g, '.')}
             </span>
           </div>
@@ -489,7 +489,7 @@ const EntryLedgerVisual: Renderer = ({ dataPayload, interactiveData }) => {
                   <span className="text-xs uppercase tracking-wider text-nexus-textSubtle">
                     {entry.source}
                   </span>
-                  {!entry.flag && <span className="badge badge-accent text-[10px]">SIGNAL</span>}
+                  {!entry.flag && <span className="badge badge-accent text-[0.75rem]">SIGNAL</span>}
                 </div>
                 <p className="text-sm text-nexus-textMuted break-words">{entry.text}</p>
               </li>
@@ -515,7 +515,7 @@ const ThreePhoneVisual: Renderer = ({ dataPayload, interactiveData }) => {
         <PayloadText>{dataPayload}</PayloadText>
         <div className="grid gap-2 sm:grid-cols-3">
           <div className="rounded-lg border border-nexus-accent/40 bg-nexus-accentBg/20 p-3">
-            <p className="text-[10px] uppercase tracking-wider text-nexus-accent mb-1">Your shard</p>
+            <p className="text-[0.75rem] uppercase tracking-wider text-nexus-accent mb-1">Your shard</p>
             <p className="text-sm text-nexus-text">{message ?? 'Read your phone aloud.'}</p>
           </div>
           {['Left', 'Center'].map(placeholder => (
@@ -523,7 +523,7 @@ const ThreePhoneVisual: Renderer = ({ dataPayload, interactiveData }) => {
               key={placeholder}
               className="rounded-lg border border-dashed border-nexus-border p-3"
             >
-              <p className="text-[10px] uppercase tracking-wider text-nexus-textSubtle mb-1">
+              <p className="text-[0.75rem] uppercase tracking-wider text-nexus-textSubtle mb-1">
                 {placeholder} shard
               </p>
               <p className="text-sm text-nexus-textSubtle">Held by a teammate</p>

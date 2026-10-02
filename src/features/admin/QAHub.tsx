@@ -1,4 +1,4 @@
-﻿/**
+/**
  * NEXUS — QA Simulator Hub
  *
  * Admin-only control panel for walking the full player experience end-to-end
@@ -248,8 +248,10 @@ function QAHubInner() {
       <div className="page-content max-w-7xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <p className="font-mono text-[0.56rem] uppercase tracking-[0.18em] text-nexus-textSubtle">ISOLATED MEMORY / NO PRODUCTION STATE</p>
-            <h1 className="mt-1 font-mono text-xl font-bold text-nexus-text">FIELD DEVICE EMULATION</h1>
+            <p className="nx-eyebrow">Isolated memory / no production state</p>
+            {/* The page title already belongs to the simulator header above;
+                this is the section heading for the device under test. */}
+            <h2 className="nx-title mt-1">Field device emulation</h2>
           </div>
           <div className="flex items-center gap-2">
             <select
@@ -664,7 +666,7 @@ function QAHubInner() {
                           </span>
                         </div>
                         {idx === 0 && p.role === qa.role && (
-                          <div className="text-[0.56rem] uppercase tracking-[0.14em] text-nexus-info">YOU</div>
+                          <div className="text-[0.8125rem] uppercase tracking-[0.14em] text-nexus-info">YOU</div>
                         )}
                       </div>
                     )
@@ -701,7 +703,7 @@ function QAHubInner() {
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="font-medium text-nexus-text">EVIDENCE REGISTER</h3>
-                    <p className="mt-1 font-mono text-[0.5rem] uppercase text-nexus-textSubtle">
+                    <p className="mt-1 font-mono text-[0.75rem] uppercase text-nexus-textSubtle">
                       {qa.evidenceLabMode
                         ? 'SANDBOX MODE / ALL CATALOGED EVIDENCE VISIBLE'
                         : 'SIMULATION LAB / PROGRESSION-LIMITED EVIDENCE'}
@@ -711,7 +713,7 @@ function QAHubInner() {
                     <button
                       onClick={() => qa.setEvidenceLabMode(!qa.evidenceLabMode)}
                       className={cn(
-                        'min-h-9 border px-2 font-mono text-[0.5rem] uppercase transition-colors',
+                        'min-h-9 border px-2 font-mono text-[0.75rem] uppercase transition-colors',
                         qa.evidenceLabMode
                           ? 'border-nexus-accent bg-nexus-accentBg/20 text-nexus-accent'
                           : 'border-nexus-border bg-nexus-surfaceElevated text-nexus-textSubtle hover:text-nexus-text',
@@ -719,13 +721,13 @@ function QAHubInner() {
                     >
                       {qa.evidenceLabMode ? '[ SANDBOX: ON ]' : '[ SANDBOX: OFF ]'}
                     </button>
-                    <Link to={ROUTES.ADMIN_EVIDENCE_REGISTER} className="min-h-9 border border-nexus-accent px-2 py-2 font-mono text-[0.5rem] uppercase text-nexus-accent">
+                    <Link to={ROUTES.ADMIN_EVIDENCE_REGISTER} className="min-h-9 border border-nexus-accent px-2 py-2 font-mono text-[0.75rem] uppercase text-nexus-accent">
                       [ OPEN FULL EVIDENCE LAB ]
                     </Link>
                   </div>
                 </div>
 
-                <div className="border border-nexus-borderSubtle bg-nexus-bg px-3 py-2 font-mono text-[0.52rem] uppercase text-nexus-textSubtle">
+                <div className="border border-nexus-borderSubtle bg-nexus-bg px-3 py-2 font-mono text-[0.75rem] uppercase text-nexus-textSubtle">
                   CASE {qa.team?.code ?? 'QA001'} / SIMULATION — {qa.inventory?.evidence.length ?? 0} EVIDENCE ITEMS / {qa.inventory?.fragments.length ?? 0} FRAGMENTS / {qa.inventory?.inventory.length ?? 0} INVENTORY
                 </div>
 
@@ -743,10 +745,10 @@ function QAHubInner() {
           <div className="border border-nexus-borderSubtle">
           <div className="flex items-center justify-between gap-3 border-b border-nexus-border px-3 py-2">
             <div className="min-w-0 font-mono">
-              <p className="text-[0.56rem] uppercase tracking-[0.16em] text-nexus-textSubtle">PLAYER VIEW / FH-037 FIELD DEVICE EMULATION</p>
+              <p className="text-[0.8125rem] uppercase tracking-[0.16em] text-nexus-textSubtle">PLAYER VIEW / FH-037 FIELD DEVICE EMULATION</p>
               <p className="mt-1 truncate text-xs font-bold text-nexus-text">{ROLE_LABELS[qa.role]} / {DEVICE_PRESETS.find(d => d.key === devicePreset)?.label ?? 'Desktop'} VIEWPORT</p>
             </div>
-            <div className="shrink-0 text-right font-mono text-[0.56rem] uppercase tracking-[0.12em] text-nexus-textSubtle">
+            <div className="shrink-0 text-right font-mono text-[0.8125rem] uppercase tracking-[0.12em] text-nexus-textSubtle">
               <span className="block">LOCAL SIMULATION</span>
               <span className="mt-1 block text-nexus-accent">{solvedCount.toString().padStart(2, '0')} / {totalNodes} VERIFIED</span>
             </div>
@@ -754,7 +756,7 @@ function QAHubInner() {
           <div className={cn('mx-auto border-x border-nexus-border bg-nexus-bg transition-all duration-300', DEVICE_PRESETS.find(d => d.key === devicePreset)?.width)}>
             <QAPlayerShell />
           </div>
-          <div className="flex items-center justify-between border-t border-nexus-border px-3 py-1.5 font-mono text-[0.5rem] uppercase tracking-[0.14em] text-nexus-textSubtle">
+          <div className="flex items-center justify-between border-t border-nexus-border px-3 py-1.5 font-mono text-[0.75rem] uppercase tracking-[0.14em] text-nexus-textSubtle">
             <span>PRODUCTION PLAYER SCREENS / ISOLATED GAME STATE</span>
             <span>NO LIVE TEAM DATA</span>
           </div>
@@ -861,7 +863,7 @@ function PuzzleDetailViewer({ nodeId, role, getNode }: PuzzleDetailViewerProps) 
 
       {detail && detail.roleContent && (
         <div className="space-y-3">
-          <h5 className="font-mono text-[0.56rem] uppercase tracking-[0.14em] text-nexus-textSubtle">
+          <h5 className="font-mono text-[0.8125rem] uppercase tracking-[0.14em] text-nexus-textSubtle">
             {role} ROLE CONTENT
           </h5>
           <div className="bg-nexus-surfaceElevated p-3 rounded border border-nexus-borderSubtle space-y-2 text-sm">
@@ -901,7 +903,7 @@ function PuzzleDetailViewer({ nodeId, role, getNode }: PuzzleDetailViewerProps) 
 
       {detail && detail.narrativeObjective && (
         <div>
-          <h5 className="font-mono text-[0.56rem] uppercase tracking-[0.14em] text-nexus-textSubtle">
+          <h5 className="font-mono text-[0.8125rem] uppercase tracking-[0.14em] text-nexus-textSubtle">
             Narrative Objective
           </h5>
           <p className="text-sm text-nexus-text mt-1">{detail.narrativeObjective}</p>
@@ -910,7 +912,7 @@ function PuzzleDetailViewer({ nodeId, role, getNode }: PuzzleDetailViewerProps) 
 
       {detail && detail.coordinationChain && (
         <div>
-          <h5 className="font-mono text-[0.56rem] uppercase tracking-[0.14em] text-nexus-textSubtle">
+          <h5 className="font-mono text-[0.8125rem] uppercase tracking-[0.14em] text-nexus-textSubtle">
             Coordination Chain
           </h5>
           <div className="grid grid-cols-3 gap-2 text-xs mt-1">
@@ -932,7 +934,7 @@ function PuzzleDetailViewer({ nodeId, role, getNode }: PuzzleDetailViewerProps) 
 
       {detail && detail.failurePropagation && (
         <div>
-          <h5 className="font-mono text-[0.56rem] uppercase tracking-[0.14em] text-nexus-textSubtle">
+          <h5 className="font-mono text-[0.8125rem] uppercase tracking-[0.14em] text-nexus-textSubtle">
             Failure Propagation
           </h5>
           <div className="text-xs bg-nexus-surfaceElevated p-2 rounded border border-nexus-borderSubtle space-y-1">
@@ -945,7 +947,7 @@ function PuzzleDetailViewer({ nodeId, role, getNode }: PuzzleDetailViewerProps) 
 
       {detail && detail.locationClue && (
         <div>
-          <h5 className="font-mono text-[0.56rem] uppercase tracking-[0.14em] text-nexus-textSubtle">
+          <h5 className="font-mono text-[0.8125rem] uppercase tracking-[0.14em] text-nexus-textSubtle">
             Location Clue
           </h5>
           <div className="text-xs bg-nexus-surfaceElevated p-2 rounded border border-nexus-borderSubtle space-y-1">
@@ -959,7 +961,7 @@ function PuzzleDetailViewer({ nodeId, role, getNode }: PuzzleDetailViewerProps) 
 
       {detail && detail.evidenceUnlocked && (
         <div>
-          <h5 className="font-mono text-[0.56rem] uppercase tracking-[0.14em] text-nexus-textSubtle">
+          <h5 className="font-mono text-[0.8125rem] uppercase tracking-[0.14em] text-nexus-textSubtle">
             Evidence Unlocked
           </h5>
           <div className="text-xs bg-nexus-surfaceElevated p-2 rounded border border-nexus-borderSubtle">

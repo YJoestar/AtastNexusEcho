@@ -1,4 +1,4 @@
-﻿/**
+/**
  * NEXUS — Team Detail
  *
  * Full team management interface with all admin actions:
@@ -162,7 +162,7 @@ export function AdminTeamDetail() {
         <div className="flex items-center gap-4">
           <button
             onClick={() => navigate(ROUTES.ADMIN_TEAMS)}
-            className="min-h-10 border-r border-nexus-border pr-4 font-mono text-[0.6rem] uppercase tracking-[0.12em] text-nexus-textSubtle hover:text-nexus-text"
+            className="min-h-10 border-r border-nexus-border pr-4 font-mono text-[0.8125rem] uppercase tracking-[0.12em] text-nexus-textSubtle hover:text-nexus-text"
           >
             ← PERSONNEL REGISTER
           </button>
@@ -178,27 +178,27 @@ export function AdminTeamDetail() {
       <TerminalFrame title="FIELD UNIT DOSSIER" reference={`CASE 037 / ${team.code}`} variant="register">
         <dl className="grid grid-cols-2 divide-x divide-y divide-nexus-borderSubtle sm:grid-cols-3 sm:divide-y-0">
           <div className="px-3 py-3">
-            <dt className="text-[0.52rem] uppercase tracking-[0.16em] text-nexus-textSubtle">CASE ASSIGNMENT</dt>
+            <dt className="text-[0.75rem] uppercase tracking-[0.16em] text-nexus-textSubtle">CASE ASSIGNMENT</dt>
             <dd className="mt-1 text-sm font-bold text-nexus-text">CASE 037</dd>
           </div>
           <div className="px-3 py-3">
-            <dt className="text-[0.52rem] uppercase tracking-[0.16em] text-nexus-textSubtle">CURRENT NODE</dt>
+            <dt className="text-[0.75rem] uppercase tracking-[0.16em] text-nexus-textSubtle">CURRENT NODE</dt>
             <dd className="mt-1 text-sm font-bold text-nexus-text">{team.currentNodeCode ?? 'POSITION UNREPORTED'}</dd>
           </div>
           <div className="px-3 py-3">
-            <dt className="text-[0.52rem] uppercase tracking-[0.16em] text-nexus-textSubtle">PERSONNEL</dt>
+            <dt className="text-[0.75rem] uppercase tracking-[0.16em] text-nexus-textSubtle">PERSONNEL</dt>
             <dd className="mt-1 text-sm font-bold text-nexus-text">{team.playerCount} ASSIGNED</dd>
           </div>
           <div className="px-3 py-3">
-            <dt className="text-[0.52rem] uppercase tracking-[0.16em] text-nexus-textSubtle">NODES VERIFIED</dt>
+            <dt className="text-[0.75rem] uppercase tracking-[0.16em] text-nexus-textSubtle">NODES VERIFIED</dt>
             <dd className="mt-1 text-sm font-bold text-nexus-text">{team.solvedCount ?? 0}</dd>
           </div>
           <div className="px-3 py-3">
-            <dt className="text-[0.52rem] uppercase tracking-[0.16em] text-nexus-textSubtle">HINTS ISSUED</dt>
+            <dt className="text-[0.75rem] uppercase tracking-[0.16em] text-nexus-textSubtle">HINTS ISSUED</dt>
             <dd className="mt-1 text-sm font-bold text-nexus-text">{team.hintsUsed ?? 0}</dd>
           </div>
           <div className="px-3 py-3">
-            <dt className="text-[0.52rem] uppercase tracking-[0.16em] text-nexus-textSubtle">CASE SCORE</dt>
+            <dt className="text-[0.75rem] uppercase tracking-[0.16em] text-nexus-textSubtle">CASE SCORE</dt>
             <dd className="mt-1 text-sm font-bold text-nexus-warning">{formatNumber(team.score)}</dd>
           </div>
         </dl>
@@ -399,13 +399,13 @@ export function AdminTeamDetail() {
                     className="flex items-center justify-between gap-3 p-3 bg-nexus-bg rounded-xl border border-nexus-border"
                   >
                     <div className="min-w-0">
-                      <span className="text-[10px] uppercase tracking-wider text-nexus-textSubtle">
+                      <span className="text-[0.75rem] uppercase tracking-wider text-nexus-textSubtle">
                         Player {i + 1}
                       </span>
                       <span className="font-medium text-nexus-text block truncate">
                         {p.displayName}
                       </span>
-                      <span className="text-[10px] uppercase tracking-wider text-nexus-textSubtle">
+                      <span className="text-[0.75rem] uppercase tracking-wider text-nexus-textSubtle">
                         {p.role}
                       </span>
                     </div>

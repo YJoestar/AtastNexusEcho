@@ -976,10 +976,23 @@
     background: linear-gradient(90deg, rgba(16, 17, 18, 0.96), rgba(12, 13, 14, 0.96));
   }
 
-  /* Buttons — institutional controls. A press should feel like a switch. */
+  /* Buttons — institutional controls. A press should feel like a switch.
+     The bureau family keeps its own visual weight, but it answers the same way
+     the player family does: one focus ring, one press, one disabled voice.
+     Behaviour is shared so a player moving between the handset and the
+     workstation is not handed two different response models. */
   .nexus-btn {
     @apply inline-flex items-center justify-center gap-2 font-medium text-sm px-4 py-2.5 min-h-[44px];
     @apply transition-colors duration-fast;
+  }
+  .nexus-btn:focus-visible {
+    outline: none;
+    box-shadow: var(--nx-focus-ring);
+  }
+  .nexus-btn:disabled,
+  .nexus-btn[aria-disabled='true'] {
+    opacity: 0.45;
+    cursor: not-allowed;
   }
   .nexus-btn-primary {
     @apply nexus-btn bg-nexus-text text-nexus-bg;
@@ -1993,3 +2006,341 @@
      scrollbar-color: var(--nx-border) transparent;
    }
  }
+
+  /* ====================================================================
+     NEXUS UI SYSTEM
+
+     The Bureau DNA above describes what the institution LOOKS like. This
+     layer describes how it BEHAVES for the person using it: type that can be
+     read at a glance, space that lets a screen breathe, one obvious next
+     action per surface, and a full set of player-controllable preferences.
+
+     Three levers, in priority order:
+       1  scale     everything rem-based grows together, so nothing overlaps
+       2  contrast  the palette mirror is re-pointed, not re-invented
+       3  motion    movement is a preference, not an entitlement
+     ==================================================================== */
+
+@layer base {
+  /* ---- TYPE SCALE ---------------------------------------------------
+     Four steps only. The old interface carried eighteen near-identical
+     rem values between 6.4px and 11.5px, which is what made every screen
+     feel cramped: no step could actually be read, so everything shouted
+     at the same volume and nothing stood out.
+
+     --nx-fs-micro  12px  tags, timestamps, provenance, register columns
+     --nx-fs-meta   13px  labels, helper text, secondary status
+     --nx-fs-body   15px  running text, table cells, list rows
+     --nx-fs-lead   17px  primary reading, descriptions, dialog copy
+     --nx-fs-title  22px  screen titles
+     --nx-fs-display 34px case names, protocol names, the one big idea     */
+  :root {
+    --nx-fs-micro: 0.75rem;
+    --nx-fs-meta: 0.8125rem;
+    --nx-fs-body: 0.9375rem;
+    --nx-fs-lead: 1.0625rem;
+    --nx-fs-title: 1.375rem;
+    --nx-fs-display: 2.125rem;
+
+    --nx-track-wide: 0.14em;
+    --nx-track-normal: 0.01em;
+    --nx-leading-tight: 1.2;
+    --nx-leading-ui: 1.45;
+    --nx-leading-prose: 1.65;
+
+    /* ---- SPACE ------------------------------------------------------
+       A 4px-based ramp. --nx-gap is the default rhythm between related
+       blocks; --nx-breathe is the gap between separate regions of a screen.
+       Spacing is the cheapest legibility win available and the previous
+       interface had almost none of it. */
+    --nx-space-1: 0.25rem;
+    --nx-space-2: 0.5rem;
+    --nx-space-3: 0.75rem;
+    --nx-space-4: 1rem;
+    --nx-space-5: 1.5rem;
+    --nx-space-6: 2rem;
+    --nx-space-7: 3rem;
+    --nx-space-8: 4rem;
+    --nx-gap: var(--nx-space-4);
+    --nx-breathe: var(--nx-space-6);
+
+    /* ---- INTERACTION -------------------------------------------------
+       One target size, one focus ring, one pressed state. Every control in
+       the app resolves to these so the interface answers the same way
+       everywhere a player presses something. */
+    --nx-tap: 44px;
+    --nx-tap-primary: 52px;
+    --nx-focus-ring: 0 0 0 2px var(--nx-bg), 0 0 0 4px var(--nx-accent);
+    --nx-press: 0.98;
+    --nx-press-lift: -1px;
+    --nx-dur-fast: 120ms;
+    --nx-dur: 180ms;
+    --nx-dur-slow: 320ms;
+    --nx-ease: cubic-bezier(0.2, 0, 0, 1);
+
+    /* ---- RADIUS ------------------------------------------------------
+       Institution, not consumer app. Corners are barely there. */
+    --nx-radius-sm: 2px;
+    --nx-radius: 3px;
+    --nx-radius-lg: 4px;
+  }
+
+  /* ---- SCALE PREFERENCE ---------------------------------------------
+     rem is the unit the entire interface is written in, so scaling the root
+     scales type, spacing, icon glyphs and layout together. Layouts that use
+     flex/grid reflow instead of overflowing. */
+  [data-ui-scale='compact'] { font-size: 15px; }
+  [data-ui-scale='standard'] { font-size: 16px; }
+  [data-ui-scale='large'] { font-size: 18px; }
+  [data-ui-scale='xlarge'] { font-size: 20px; }
+
+  /* ---- CONTRAST PREFERENCE -----------------------------------------
+     Re-points the palette mirror rather than replacing it, so every existing
+     surface inherits the boost. Targets the 7:1 high-contrast guidance for
+     standard text and clears the 3:1 inactive-element floor. */
+  [data-contrast='boost'] {
+    --nx-text: #f4f3ef;
+    --nx-text-muted: #c2c0b9;
+    --nx-text-subtle: #9a988f;
+    --nx-border: #4a4a50;
+    --nx-border-subtle: #38383e;
+    --nx-border-strong: #6a6a72;
+    --nx-accent: #96d4e4;
+    --nx-accent-bg: #10333a;
+    --nx-warning: #e0a75a;
+    --nx-danger: #d96a61;
+    --nx-inactive: #7b7b80;
+  }
+
+  /* Reduced transparency: the interface stops pretending to be glass. */
+  @media (prefers-reduced-transparency: reduce) {
+    [data-transparency='reduced'] .nx-surface,
+    [data-transparency='reduced'] .nx-panel {
+      background-color: var(--nx-surface) !important;
+      backdrop-filter: none !important;
+    }
+  }
+
+  @media (prefers-contrast: more) {
+    :root:not([data-contrast='standard']) {
+      --nx-text: #f4f3ef;
+      --nx-text-muted: #c2c0b9;
+      --nx-text-subtle: #9a988f;
+      --nx-border: #4a4a50;
+      --nx-border-subtle: #38383e;
+    }
+  }
+}
+
+@layer components {
+  /* ---- TYPE PRIMITIVES ----------------------------------------------
+     The scale expressed as classes so screens stop inventing values. */
+  .nx-display {
+    font-size: var(--nx-fs-display);
+    line-height: var(--nx-leading-tight);
+    letter-spacing: -0.01em;
+  }
+  .nx-title {
+    font-size: var(--nx-fs-title);
+    line-height: var(--nx-leading-tight);
+  }
+  .nx-lead {
+    font-size: var(--nx-fs-lead);
+    line-height: var(--nx-leading-ui);
+  }
+  .nx-body {
+    font-size: var(--nx-fs-body);
+    line-height: var(--nx-leading-ui);
+  }
+  .nx-prose {
+    font-size: var(--nx-fs-body);
+    line-height: var(--nx-leading-prose);
+    max-width: 68ch;
+  }
+  .nx-meta {
+    font-size: var(--nx-fs-meta);
+    line-height: var(--nx-leading-ui);
+  }
+  .nx-micro {
+    font-size: var(--nx-fs-micro);
+    line-height: var(--nx-leading-ui);
+  }
+  .nx-eyebrow {
+    font-size: var(--nx-fs-micro);
+    letter-spacing: var(--nx-track-wide);
+    text-transform: uppercase;
+    color: var(--nx-text-subtle);
+  }
+
+  /* ---- SURFACES ------------------------------------------------------
+     Three tiers, and a reason for each. A screen that uses all three at the
+     same weight is the reason screens used to feel like dashboards. */
+  .nx-surface {
+    background-color: var(--nx-surface);
+    border: 1px solid var(--nx-border-subtle);
+    border-radius: var(--nx-radius);
+  }
+  .nx-panel {
+    background-color: var(--nx-surface);
+    border: 1px solid var(--nx-border-subtle);
+    border-radius: var(--nx-radius-lg);
+    padding: var(--nx-space-5);
+  }
+  /* The lead surface of a screen. Exactly one per view. */
+  .nx-stage {
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.028), rgba(255, 255, 255, 0) 60%),
+      var(--nx-surface-elevated);
+    border: 1px solid var(--nx-border);
+    border-radius: var(--nx-radius-lg);
+    padding: var(--nx-space-6);
+  }
+  .nx-inset {
+    background-color: var(--nx-surface-subtle);
+    border: 1px solid var(--nx-border-subtle);
+    border-radius: var(--nx-radius);
+  }
+
+  /* ---- ACTIONS -------------------------------------------------------
+     A primary action is a filled, full-width, unmistakable target. A ghost
+     action is quiet and never competes. Everything interactive gets a
+     visible pressed state and a visible focus ring. */
+  .nx-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--nx-space-2);
+    min-height: var(--nx-tap-primary);
+    padding: var(--nx-space-3) var(--nx-space-5);
+    border-radius: var(--nx-radius);
+    border: 1px solid var(--nx-accent);
+    background-color: var(--nx-accent-bg);
+    color: var(--nx-text);
+    font-size: var(--nx-fs-body);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background-color var(--nx-dur-fast) var(--nx-ease),
+      border-color var(--nx-dur-fast) var(--nx-ease),
+      transform var(--nx-dur-fast) var(--nx-ease);
+  }
+  .nx-action:hover:not(:disabled) { border-color: var(--nx-accent); background-color: #12313a; }
+  .nx-action:active:not(:disabled) { transform: scale(var(--nx-press)); }
+  .nx-action:focus-visible { outline: none; box-shadow: var(--nx-focus-ring); }
+
+  .nx-action-ghost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--nx-space-2);
+    min-height: var(--nx-tap);
+    padding: var(--nx-space-2) var(--nx-space-4);
+    border-radius: var(--nx-radius);
+    border: 1px solid var(--nx-border);
+    background-color: transparent;
+    color: var(--nx-text-muted);
+    font-size: var(--nx-fs-meta);
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: color var(--nx-dur-fast) var(--nx-ease),
+      border-color var(--nx-dur-fast) var(--nx-ease),
+      background-color var(--nx-dur-fast) var(--nx-ease);
+  }
+  .nx-action-ghost:hover:not(:disabled) {
+    color: var(--nx-text);
+    border-color: var(--nx-border-strong);
+    background-color: var(--nx-surface-elevated);
+  }
+  .nx-action-ghost:active:not(:disabled) { transform: scale(var(--nx-press)); }
+  .nx-action-ghost:focus-visible { outline: none; box-shadow: var(--nx-focus-ring); }
+  .nx-action-ghost[aria-current='page'],
+  .nx-action-ghost[data-selected='true'] {
+    color: var(--nx-text);
+    border-color: var(--nx-accent);
+    background-color: var(--nx-accent-bg);
+  }
+
+  /* Every interactive element shares one disabled voice. A locked action
+     explains itself rather than going silently inert. */
+  .nx-action:disabled,
+  .nx-action-ghost:disabled,
+  [aria-disabled='true'] {
+    opacity: 0.45;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  /* ---- STATUS -------------------------------------------------------
+     Status is never carried by color alone; every chip has a label. */
+  .nx-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--nx-space-2);
+    padding: 0.35rem 0.6rem;
+    border-radius: var(--nx-radius-sm);
+    border: 1px solid var(--nx-border);
+    background-color: var(--nx-surface-subtle);
+    color: var(--nx-text-muted);
+    font-size: var(--nx-fs-micro);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .nx-chip[data-tone='verified'] { border-color: #2f5b4a; color: #9fd0b6; }
+  .nx-chip[data-tone='warning'] { border-color: #6a5326; color: var(--nx-warning); }
+  .nx-chip[data-tone='danger'] { border-color: #6b3330; color: var(--nx-danger); }
+  .nx-chip[data-tone='signal'] { border-color: #2d5560; color: var(--nx-accent); }
+
+  /* ---- RHYTHM -------------------------------------------------------
+     Stacks and rows. Most cramped layouts were really just missing gaps. */
+  .nx-stack { display: flex; flex-direction: column; gap: var(--nx-gap); }
+  .nx-stack-tight { display: flex; flex-direction: column; gap: var(--nx-space-2); }
+  .nx-stack-loose { display: flex; flex-direction: column; gap: var(--nx-breathe); }
+  .nx-row { display: flex; align-items: center; gap: var(--nx-space-3); }
+  .nx-row-between { display: flex; align-items: center; justify-content: space-between; gap: var(--nx-space-3); }
+
+  /* A section header that a player can scan in under a second: what this
+     is, and how many things are in it. */
+  .nx-section-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--nx-space-3);
+    padding-bottom: var(--nx-space-2);
+    border-bottom: 1px solid var(--nx-border-subtle);
+  }
+
+  /* ---- EMPTY STATE ---------------------------------------------------
+     An empty screen is still a screen. It states the situation, the reason,
+     and the one thing that would change it. */
+  .nx-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--nx-space-3);
+    padding: var(--nx-space-7) var(--nx-space-5);
+    text-align: center;
+    color: var(--nx-text-muted);
+  }
+  .nx-empty-title {
+    font-size: var(--nx-fs-lead);
+    color: var(--nx-text);
+  }
+
+  /* ---- REDUCED MOTION PREFERENCE ------------------------------------
+     Same snap, but driven by the app's own setting rather than only by the
+     operating system, so the Bureau terminal and the handset agree. */
+  [data-motion='reduced'] *,
+  [data-motion='reduced'] *::before,
+  [data-motion='reduced'] *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  [data-motion='reduced'] .nx-action:active:not(:disabled),
+  [data-motion='reduced'] .nx-action-ghost:active:not(:disabled) {
+    transform: none;
+  }
+}

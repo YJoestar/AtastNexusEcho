@@ -44,7 +44,7 @@ export function AdminLeaderboard() {
           <div>
             <div className="flex items-center gap-2">
               <span className="w-1.5 h-1.5 bg-nexus-accent" />
-              <span className="text-[0.625rem] tracking-[0.24em] uppercase text-nexus-textSubtle">
+              <span className="text-[0.875rem] tracking-[0.24em] uppercase text-nexus-textSubtle">
                 NEXUS ECHO // ARCHIVAL OPERATIONS RECORD
               </span>
             </div>
@@ -86,7 +86,7 @@ export function AdminLeaderboard() {
         ) : sortedLeaderboard.length === 0 ? (
           <div className="py-12 text-center text-nexus-textSubtle font-mono text-xs">
             <p>NO OPERATIONAL RECORDS TRANSMITTED</p>
-            <p className="text-[0.625rem] mt-1 text-nexus-textMuted">AWAITING FIRST VERIFIED EVIDENCE SUBMISSION</p>
+            <p className="text-[0.875rem] mt-1 text-nexus-textMuted">AWAITING FIRST VERIFIED EVIDENCE SUBMISSION</p>
           </div>
         ) : (
           <ol className="divide-y divide-nexus-borderSubtle">
@@ -108,21 +108,21 @@ export function AdminLeaderboard() {
                       </div>
                       <TeamStatusBadge status={entry.status} showDot={false} />
                     </div>
-                    <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-2 border-t border-nexus-borderSubtle pt-2 text-[0.6rem] sm:grid-cols-4">
+                    <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-2 border-t border-nexus-borderSubtle pt-2 text-[0.8125rem] sm:grid-cols-4">
                       <div>
-                        <dt className="text-[0.48rem] uppercase tracking-[0.12em] text-nexus-textSubtle">Nodes verified</dt>
+                        <dt className="text-[0.75rem] uppercase tracking-[0.12em] text-nexus-textSubtle">Nodes verified</dt>
                         <dd className="mt-0.5 font-bold text-nexus-text">{entry.solvedCount ?? 0}</dd>
                       </div>
                       <div>
-                        <dt className="text-[0.48rem] uppercase tracking-[0.12em] text-nexus-textSubtle">Aids issued</dt>
+                        <dt className="text-[0.75rem] uppercase tracking-[0.12em] text-nexus-textSubtle">Aids issued</dt>
                         <dd className="mt-0.5 font-bold text-nexus-warning">{entry.hintsUsed ?? 0}</dd>
                       </div>
                       <div>
-                        <dt className="text-[0.48rem] uppercase tracking-[0.12em] text-nexus-textSubtle">Elapsed</dt>
+                        <dt className="text-[0.75rem] uppercase tracking-[0.12em] text-nexus-textSubtle">Elapsed</dt>
                         <dd className="mt-0.5 tabular-nums text-nexus-textMuted">{formatDuration((entry.timeElapsedMinutes ?? 0) * 60000)}</dd>
                       </div>
                       <div>
-                        <dt className="text-[0.48rem] uppercase tracking-[0.12em] text-nexus-textSubtle">Score filed</dt>
+                        <dt className="text-[0.75rem] uppercase tracking-[0.12em] text-nexus-textSubtle">Score filed</dt>
                         <dd className="mt-0.5 font-bold text-nexus-accent">{formatNumber(entry.score ?? 0)}</dd>
                       </div>
                     </dl>

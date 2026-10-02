@@ -91,6 +91,16 @@ export function PlayerEvidenceArchive() {
   const [search, setSearch] = useState('')
   const [compareIds, setCompareIds] = useState<string[]>([])
   const [mode, setMode] = useState<WorkspaceMode>('ARCHIVE')
+  /**
+   * Comparison is chosen from a tray, not from a button on every row.
+   *
+   * Each row used to carry three targets: open the record, place it on the
+   * table, and add it to a comparison. Across a full archive that is roughly
+   * two hundred controls competing with the list itself, and the row stopped
+   * reading as "the thing you open". Placement already exists inside the
+   * record, where the player can see what the object actually is.
+   */
+  const [pickingForCompare, setPickingForCompare] = useState(false)
 
   useEffect(() => {
     void fetchInventory()
@@ -269,6 +279,23 @@ export function PlayerEvidenceArchive() {
     current.includes(id) ? current.filter(entry => entry !== id) : [...current.slice(-1), id],
   )
 
+  /**
+   * One row, one meaning. While a comparison is being assembled the rows are
+   * selection targets; otherwise they open the record.
+   */
+  const activateRow = (artifact: CaseArtifact) => {
+    if (pickingForCompare) {
+      toggleCompare(artifact.id)
+      return
+    }
+    openArtifact(artifact.id, artifact)
+  }
+
+  const cancelComparePicking = () => {
+    setPickingForCompare(false)
+    setCompareIds([])
+  }
+
   const placeOnTable = (id: string) => updateWorkspace(current => {
     if (current.placements[id]) return current
     const order = Math.max(0, ...Object.values(current.placements).map(placement => placement.order)) + 1
@@ -311,20 +338,20 @@ export function PlayerEvidenceArchive() {
   return (
     <div className="page">
       <div className="page-content mx-auto max-w-5xl space-y-4">
-        <header className="flex items-center gap-3 border-b border-nexus-border pb-3">
-          <Link to={ROUTES.PLAYER_GAME} className="flex min-h-10 min-w-10 items-center justify-center border border-nexus-borderSubtle text-nexus-textMuted hover:text-nexus-text" aria-label="RETURN TO FIELD">
+        <header className="flex items-center gap-3 border-b border-nexus-border pb-4">
+          <Link to={ROUTES.PLAYER_GAME} className="flex min-h-11 min-w-11 items-center justify-center border border-nexus-borderSubtle text-nexus-textMuted hover:text-nexus-text" aria-label="Return to case">
             <BureauIcons.Back className="bureau-icon h-5 w-5" />
           </Link>
           <div className="min-w-0 flex-1">
-            <p className="font-mono text-[0.52rem] uppercase tracking-[0.18em] text-nexus-textSubtle">CASE {team?.code ?? 'UNASSIGNED'} / FIELD ARCHIVE</p>
-            <h1 className="mt-1 font-mono text-lg font-bold text-nexus-text">RECOVERED MATERIAL</h1>
+            <p className="nx-eyebrow">Case {team?.code ?? 'unassigned'} / field archive</p>
+            <h1 className="nx-title mt-1">Recovered material</h1>
           </div>
-          <span className="hidden text-right font-mono text-[0.52rem] uppercase text-nexus-textSubtle sm:block">
-            {Object.values(workspace.annotations).reduce((sum, notes) => sum + notes.length, 0)} NOTES FILED
+          <span className="hidden text-right font-mono text-[0.8125rem] uppercase text-nexus-textSubtle sm:block">
+            {Object.values(workspace.annotations).reduce((sum, notes) => sum + notes.length, 0)} notes filed
             <br />
-            {Object.keys(workspace.placements).length} OBJECTS ON TABLE
+            {Object.keys(workspace.placements).length} objects on table
           </span>
-          <button type="button" onClick={() => void fetchInventory()} className="flex min-h-10 min-w-10 items-center justify-center border border-nexus-borderSubtle text-nexus-textSubtle hover:text-nexus-text" aria-label="Re-query case archive" title="Re-query archive">
+          <button type="button" onClick={() => void fetchInventory()} className="flex min-h-11 min-w-11 items-center justify-center border border-nexus-borderSubtle text-nexus-textSubtle hover:text-nexus-text" aria-label="Re-query case archive" title="Re-query archive">
             <BureauIcons.Refresh className="bureau-icon h-4 w-4" />
           </button>
         </header>
@@ -342,14 +369,65 @@ export function PlayerEvidenceArchive() {
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_250px]">
             <section className="min-w-0">
               <div className="mb-3 flex flex-col gap-2 border-b border-nexus-borderSubtle pb-3">
-                <label className="font-mono text-[0.52rem] uppercase tracking-[0.14em] text-nexus-textSubtle" htmlFor="archive-query">ARCHIVE QUERY / LOCAL + SERVER INDEX</label>
-                <input id="archive-query" type="search" value={search} onChange={event => setSearch(event.target.value)} placeholder="QUERY REF, TITLE, OR CLASS…" className="min-h-10 border border-nexus-border bg-nexus-bg px-3 font-mono text-xs text-nexus-text placeholder:text-nexus-textSubtle" />
+                <label className="nx-eyebrow" htmlFor="archive-query">Search the archive</label>
+                <input id="archive-query" type="search" value={search} onChange={event => setSearch(event.target.value)} placeholder="Reference, title, or class…" className="min-h-11 border border-nexus-border bg-nexus-bg px-3 font-mono text-[0.9375rem] text-nexus-text placeholder:text-nexus-textSubtle" />
                 <FileTabs tabs={ARCHIVE_TABS} activeId={archiveClass} onSelect={id => setArchiveClass(id as ArchiveClass)} />
               </div>
 
+              {/* One comparison control for the whole archive, plus a tray that
+                  shows exactly what has been chosen. Replaces a button on all
+                  sixty-six rows. */}
+              <div className="nx-row-between flex-wrap gap-3 mb-3">
+                <button
+                  type="button"
+                  onClick={() => (pickingForCompare ? cancelComparePicking() : setPickingForCompare(true))}
+                  className="nx-action-ghost"
+                  aria-pressed={pickingForCompare}
+                >
+                  <BureauIcons.Eye className="bureau-icon w-4 h-4" />
+                  <span>{pickingForCompare ? 'Cancel comparison' : 'Compare two records'}</span>
+                </button>
+
+                {compareIds.length > 0 && (
+                  <div className="nx-row flex-wrap gap-2">
+                    {compareIds.map((id, index) => {
+                      const picked = artifacts.find(item => item.id === id)
+                      return (
+                        <span key={id} className="nx-chip" data-tone="warning">
+                          <span className="text-nexus-textSubtle">{index === 0 ? 'A' : 'B'}</span>
+                          <span>{picked?.code ?? id}</span>
+                          <button
+                            type="button"
+                            onClick={() => toggleCompare(id)}
+                            className="text-nexus-textMuted hover:text-nexus-text"
+                            aria-label={`Remove ${picked?.code ?? id} from comparison`}
+                          >
+                            <BureauIcons.Close className="bureau-icon w-3.5 h-3.5" />
+                          </button>
+                        </span>
+                      )
+                    })}
+                    {compareIds.length === 2 && (
+                      <button type="button" onClick={() => setMode('COMPARE')} className="nx-action">
+                        <span>Compare side by side</span>
+                        <BureauIcons.Forward className="bureau-icon w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {pickingForCompare && (
+                <p className="nx-body text-nexus-textMuted mb-3" role="status">
+                  {compareIds.length === 0
+                    ? 'Choose the first record to compare.'
+                    : 'Now choose the second record.'}
+                </p>
+              )}
+
               {filteredArtifacts.length === 0 ? (
                 <DocumentShell reference="ARCHIVE QUERY / CASE 037" title={artifacts.length ? 'NO MATCHING FILES' : 'ARCHIVE EMPTY'} stock="paper" footer={<Stamp variant="incomplete">INDEX CHECKED</Stamp>}>
-                  <div className="grid grid-cols-[100px_1fr] border-y border-nexus-borderSubtle font-mono text-[0.6rem] uppercase tracking-[0.1em]">
+                  <div className="grid grid-cols-[6.5rem_1fr] border-y border-nexus-borderSubtle font-mono text-[0.8125rem] uppercase tracking-[0.1em]">
                     <span className="border-r border-nexus-borderSubtle px-3 py-3 text-nexus-textSubtle">RESULT</span>
                     <span className="px-3 py-3 text-nexus-warning">{artifacts.length ? 'QUERY RETURNED NO MATCHING MATERIAL' : 'NO VERIFIED MATERIAL IN TEAM INDEX'}</span>
                     <span className="border-r border-t border-nexus-borderSubtle px-3 py-3 text-nexus-textSubtle">SOURCE</span>
@@ -370,9 +448,15 @@ export function PlayerEvidenceArchive() {
                     const condition = artifactCondition(artifact)
                     const state = artifactState(artifact)
                     return (
-                      <div key={artifact.id} className="grid grid-cols-[44px_minmax(0,1fr)_auto] items-center gap-2 py-2">
+                      <div
+                        key={artifact.id}
+                        className={cn(
+                          'grid grid-cols-[52px_minmax(0,1fr)] items-center gap-3 py-2',
+                          pickingForCompare && 'cursor-pointer',
+                        )}
+                      >
                         {thumb ? (
-                          <div className="relative h-11 w-11 overflow-hidden border border-nexus-borderSubtle bg-nexus-surface">
+                          <div className="relative h-13 w-13 overflow-hidden border border-nexus-borderSubtle bg-nexus-surface">
                             <img
                               src={thumb}
                               alt=""
@@ -388,7 +472,7 @@ export function PlayerEvidenceArchive() {
                             )}
                           </div>
                         ) : (
-                          <div className="flex h-11 w-11 items-center justify-center border border-nexus-borderSubtle font-mono text-[0.45rem] text-nexus-textSubtle" aria-hidden="true">
+                          <div className="flex h-13 w-13 items-center justify-center border border-nexus-borderSubtle font-mono text-[0.75rem] text-nexus-textSubtle" aria-hidden="true">
                             {artifactType(artifact).slice(0, 3)}
                           </div>
                         )}
@@ -398,58 +482,55 @@ export function PlayerEvidenceArchive() {
                             <span className="inline-flex items-center gap-1">
                               {artifact.title}
                               {condition !== 'NORMAL' && (
-                                <span className="font-mono text-[0.45rem] uppercase tracking-[0.12em] text-nexus-warning">{condition}</span>
+                                <span className="font-mono text-[0.8125rem] uppercase tracking-[0.12em] text-nexus-warning">{condition}</span>
                               )}
                               {state === 'CONTRADICTED' || state === 'ANOMALOUS' ? (
-                                <span className="font-mono text-[0.45rem] uppercase tracking-[0.12em] text-nexus-danger">{state}</span>
+                                <span className="font-mono text-[0.8125rem] uppercase tracking-[0.12em] text-nexus-danger">{state}</span>
                               ) : null}
                               {artifact.simulation && (
-                                <span className="font-mono text-[0.45rem] uppercase tracking-[0.12em] text-nexus-textSubtle">SIM</span>
+                                <span className="font-mono text-[0.8125rem] uppercase tracking-[0.12em] text-nexus-textSubtle">SIM</span>
                               )}
                               {hasNewInfo && (
-                                <span className="font-mono text-[0.45rem] uppercase tracking-[0.12em] text-nexus-warning">NEW</span>
+                                <span className="font-mono text-[0.8125rem] uppercase tracking-[0.12em] text-nexus-warning">NEW</span>
+                              )}
+                              {pickingForCompare && (
+                                <span
+                                  className={cn(
+                                    'font-mono text-[0.8125rem] uppercase tracking-[0.12em]',
+                                    isComparing ? 'text-nexus-warning' : 'text-nexus-textSubtle',
+                                  )}
+                                >
+                                  {isComparing ? '✓ PICKED' : 'PICK'}
+                                </span>
                               )}
                             </span>
                           }
                           meta={`${artifactType(artifact)} / ${artifact.location ?? 'LOCATION UNKNOWN'} / ${MARK_LABEL[mark]}${noteCount ? ` / ${noteCount} NOTES` : ''}${position ? ' / ON TABLE' : ''}`}
-                          selected={activeId === artifact.id}
-                          onSelect={() => openArtifact(artifact.id, artifact)}
+                          selected={activeId === artifact.id || (pickingForCompare && isComparing)}
+                          onSelect={() => activateRow(artifact)}
                           trailing={
-                            <div className="flex items-center gap-2">
+                            <span className="flex items-center gap-3">
+                              {position && (
+                                <span className="nx-chip" data-tone="signal">On table</span>
+                              )}
                               {lastInspected && (
-                                <time className="font-mono text-[0.45rem] text-nexus-textSubtle" title={`LAST INSPECTED: ${new Date(lastInspected).toLocaleString()}`}>
+                                <time className="font-mono text-[0.8125rem] text-nexus-textSubtle" title={`LAST INSPECTED: ${new Date(lastInspected).toLocaleString()}`}>
                                   {formatRelativeTime(lastInspected)}
                                 </time>
                               )}
-                              {artifact.acquiredAt && (
-                                <time className="font-mono text-[0.52rem] text-nexus-textSubtle" title={`ACQUIRED: ${new Date(artifact.acquiredAt).toLocaleString()}`}>
-                                  {artifact.acquiredAt}
-                                </time>
-                              )}
-                            </div>
+                            </span>
                           }
                         />
-                        <div className="flex items-center gap-1">
-                          <button type="button" onClick={() => placeOnTable(artifact.id)} disabled={!!position} className="min-h-9 border border-nexus-border px-2 font-mono text-[0.48rem] uppercase text-nexus-textSubtle disabled:opacity-45" aria-label={`${position ? 'Already on table' : 'Place on table'} ${artifact.title}`} title={position ? 'Already on table' : 'Place on investigation table'}>
-                            {position ? 'PLACED' : 'TABLE'}
-                          </button>
-                          <button type="button" onClick={() => toggleCompare(artifact.id)} aria-pressed={isComparing} className={`min-h-9 border px-2 font-mono text-[0.48rem] uppercase ${isComparing ? 'border-nexus-warning text-nexus-warning' : 'border-nexus-border text-nexus-textSubtle'}`}>
-                            COMPARE
-                          </button>
-                        </div>
                       </div>
                     )
                   })}
                 </div>
               )}
-              {compareIds.length === 2 && (
-                <button type="button" onClick={() => setMode('COMPARE')} className="mt-3 min-h-10 border border-nexus-warning px-3 font-mono text-[0.55rem] uppercase text-nexus-warning">[ OPEN SIDE-BY-SIDE COMPARISON ]</button>
-              )}
             </section>
 
             <aside className="border-l border-nexus-borderSubtle pl-3">
-              <p className="font-mono text-[0.52rem] uppercase tracking-[0.14em] text-nexus-textSubtle">CASE STATE / LOCAL WORKSPACE</p>
-              <dl className="mt-2 space-y-2 font-mono text-[0.58rem]">
+              <p className="font-mono text-[0.75rem] uppercase tracking-[0.14em] text-nexus-textSubtle">CASE STATE / LOCAL WORKSPACE</p>
+              <dl className="mt-2 space-y-2 font-mono text-[0.8125rem]">
                 <SummaryField label="EVIDENCE" value={String(artifacts.filter(item => item.source === 'EVIDENCE').length).padStart(2, '0')} />
                 <SummaryField label="OBJECTS" value={String(artifacts.filter(item => item.source === 'INVENTORY').length).padStart(2, '0')} />
                 <SummaryField label="FRAGMENTS" value={String(artifacts.filter(item => item.source === 'FRAGMENT').length).padStart(2, '0')} />
@@ -465,7 +546,7 @@ export function PlayerEvidenceArchive() {
                   const revelation = workspace.revelations[artifact.id]
                   const hasNew = revelation?.hasNewInfo ?? false
                   return (
-                    <div key={artifact.id} className="mt-1 grid grid-cols-[minmax(0,1fr)_50px] gap-2 border-t border-nexus-borderSubtle pt-1 font-mono text-[0.55rem]">
+                    <div key={artifact.id} className="mt-1 grid grid-cols-[minmax(0,1fr)_50px] gap-2 border-t border-nexus-borderSubtle pt-1 font-mono text-[0.8125rem]">
                       <span className="truncate text-nexus-textMuted">{artifact.code}</span>
                       <span className={cn('tabular-nums text-nexus-textSubtle', hasNew && 'text-nexus-warning')} title={workspace.lastInspected[artifact.id]}>
                         {formatRelativeTime(workspace.lastInspected[artifact.id]!)}
@@ -473,7 +554,7 @@ export function PlayerEvidenceArchive() {
                     </div>
                   )
                 })}
-              <p className="mt-4 border-t border-nexus-borderSubtle pt-2 font-mono text-[0.5rem] uppercase leading-relaxed text-nexus-textSubtle">
+              <p className="mt-4 border-t border-nexus-borderSubtle pt-2 font-mono text-[0.75rem] uppercase leading-relaxed text-nexus-textSubtle">
                 PERSONAL NOTES AND TABLE LAYOUT ARE SAVED ON THIS DEVICE. SERVER EVIDENCE IS READ-ONLY.
               </p>
             </aside>
@@ -483,8 +564,8 @@ export function PlayerEvidenceArchive() {
         {mode === 'INSPECT' && activeArtifact && (
           <section className="space-y-3">
             <div className="flex items-center justify-between gap-2 border-b border-nexus-border pb-2">
-              <button type="button" onClick={closeArtifact} className="min-h-10 border-r border-nexus-border pr-3 font-mono text-[0.55rem] uppercase text-nexus-textSubtle hover:text-nexus-text">← CASE ARCHIVE</button>
-              <span className="truncate font-mono text-[0.55rem] uppercase tracking-[0.12em] text-nexus-textSubtle">OBJECT EXAMINATION / {activeArtifact.code}</span>
+              <button type="button" onClick={closeArtifact} className="min-h-10 border-r border-nexus-border pr-3 font-mono text-[0.8125rem] uppercase text-nexus-textSubtle hover:text-nexus-text">← CASE ARCHIVE</button>
+              <span className="truncate font-mono text-[0.8125rem] uppercase tracking-[0.12em] text-nexus-textSubtle">OBJECT EXAMINATION / {activeArtifact.code}</span>
             </div>
             <ArtifactInspection
               artifact={activeArtifact}
@@ -505,15 +586,15 @@ export function PlayerEvidenceArchive() {
             <div className="flex items-center justify-between gap-2 border-b border-nexus-border pb-2">
               <div>
                 <h2 className="font-mono text-xs font-bold uppercase tracking-[0.14em] text-nexus-text">SIDE-BY-SIDE EXAMINATION</h2>
-                <p className="mt-1 font-mono text-[0.5rem] uppercase text-nexus-textSubtle">NO RELATION IS ASSUMED / COMPARISON IS PLAYER-LED</p>
+                <p className="mt-1 font-mono text-[0.75rem] uppercase text-nexus-textSubtle">NO RELATION IS ASSUMED / COMPARISON IS PLAYER-LED</p>
               </div>
-              <button type="button" onClick={() => setMode('ARCHIVE')} className="min-h-10 border border-nexus-border px-2 font-mono text-[0.52rem] uppercase text-nexus-textSubtle">RETURN TO INDEX</button>
+              <button type="button" onClick={() => setMode('ARCHIVE')} className="min-h-10 border border-nexus-border px-2 font-mono text-[0.75rem] uppercase text-nexus-textSubtle">RETURN TO INDEX</button>
             </div>
             {comparedArtifacts.length === 2 ? (
               <div className="grid gap-5 xl:grid-cols-2">
                 {comparedArtifacts.map(artifact => (
                   <section key={artifact.id} className="min-w-0 border-t border-nexus-borderSubtle pt-2">
-                    <button type="button" onClick={() => openArtifact(artifact.id, artifact)} className="mb-2 text-left font-mono text-[0.58rem] uppercase text-nexus-accent">OPEN FULL RECORD / {artifact.code} →</button>
+                    <button type="button" onClick={() => openArtifact(artifact.id, artifact)} className="mb-2 text-left font-mono text-[0.8125rem] uppercase text-nexus-accent">OPEN FULL RECORD / {artifact.code} →</button>
                     <ArtifactInspection
                       compact
                       artifact={artifact}
@@ -554,7 +635,7 @@ export function PlayerEvidenceArchive() {
 function SummaryField({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between gap-2 border-b border-nexus-borderSubtle pb-1">
-      <dt className="text-[0.52rem] uppercase text-nexus-textSubtle">{label}</dt>
+      <dt className="text-[0.75rem] uppercase text-nexus-textSubtle">{label}</dt>
       <dd className="font-bold tabular-nums text-nexus-text">{value}</dd>
     </div>
   )

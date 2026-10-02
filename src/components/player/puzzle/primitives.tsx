@@ -77,7 +77,7 @@ export function GlyphTile({ glyph, index }: { glyph: string; index: number }) {
   return (
     <span className="flex flex-col items-center gap-1">
       <Slot>{glyph}</Slot>
-      <span className="font-mono text-[10px] text-nexus-textSubtle">
+      <span className="font-mono text-[0.75rem] text-nexus-textSubtle">
         {String(index + 1).padStart(2, '0')}
       </span>
     </span>

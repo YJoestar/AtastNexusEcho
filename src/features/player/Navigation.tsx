@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 /**
  * NEXUS ECHO — Player Navigation
  *
@@ -21,9 +22,9 @@ import {
   RegisterColumn,
   RegisterList,
   RegisterRow,
-  StateMarker,
   Stamp,
 } from '@/components/bureau'
+import { cn } from '@/lib/utils'
 import { CampusMap, DynamicMinimap } from '@/components/player/map'
 
 export function PlayerNavigation() {
@@ -151,50 +152,33 @@ export function PlayerNavigation() {
               />
             </div>
 
-            {/* Legend */}
+            {/* Legend. Each marker is described by exactly one visible term.
+                StateMarker keeps its label in the accessibility tree and the
+                tooltip, which left sighted players reading a caption that did
+                not match what the glyph meant — the marker said "Discovered"
+                while the text beside it said "Visited / Available". The glyph
+                and its label now agree, and both are in the DOM. */}
             <DocumentShell
               reference="Map Legend"
-              title="Site Status"
+              title="Site status"
               stock="paper"
+              titleAs="h2"
               footer={<Stamp variant="archived">Reference</Stamp>}
             >
-              <div className="grid grid-cols-2 gap-3">
-                <div className="flex items-center gap-2">
-                  <StateMarker glyph="●" tone="active" label="Discovered" />
-                  <span className="text-sm text-nexus-accent">Visited / Available</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <StateMarker glyph="■" tone="active" label="In Progress" />
-                  <span className="text-sm text-nexus-textMuted">Assigned</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <StateMarker glyph="✓" tone="active" label="Verified" />
-                  <span className="text-sm text-nexus-textMuted">Solved</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <StateMarker glyph="◦" tone="inactive" label="Locked" />
-                  <span className="text-sm text-nexus-textSubtle">Unexplored</span>
-                </div>
-              </div>
+              <ul className="nx-stack-tight">
+                <LegendRow glyph="●" tone="text-nexus-accent">Assigned or available</LegendRow>
+                <LegendRow glyph="■" tone="text-nexus-accent">In progress</LegendRow>
+                <LegendRow glyph="✓" tone="text-nexus-accent">Verified</LegendRow>
+                <LegendRow glyph="◦" tone="text-nexus-textSubtle">Not yet explored</LegendRow>
+              </ul>
 
-              <div className="mt-3 space-y-2">
-                <h4 className="text-xs font-semibold text-nexus-textSubtle uppercase tracking-wider">
-                  Reality Status
-                </h4>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="flex items-center gap-2">
-                    <span className="w-3 h-3 bg-nexus-inactive border border-nexus-border" aria-hidden="true" />
-                    <span className="text-sm text-nexus-textSubtle">Normal</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="w-3 h-3 bg-nexus-warning border border-nexus-border" aria-hidden="true" />
-                    <span className="text-sm text-nexus-warning">Suspicious</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="w-3 h-3 bg-nexus-danger border border-nexus-border" aria-hidden="true" />
-                    <span className="text-sm text-nexus-danger">Anomalous</span>
-                  </div>
-                </div>
+              <div className="mt-6 border-t border-nexus-borderSubtle pt-4">
+                <h3 className="nx-eyebrow mb-3">What is happening on site</h3>
+                <ul className="nx-stack-tight">
+                  <LegendRow swatch="bg-nexus-inactive" tone="text-nexus-textMuted">Nothing unusual</LegendRow>
+                  <LegendRow swatch="bg-nexus-warning" tone="text-nexus-warning">Something is wrong</LegendRow>
+                  <LegendRow swatch="bg-nexus-danger" tone="text-nexus-danger">Cannot be explained</LegendRow>
+                </ul>
               </div>
             </DocumentShell>
 
@@ -310,5 +294,36 @@ export function PlayerNavigation() {
         </RegisterColumn>
       </div>
     </div>
+  )
+}
+
+/**
+ * One legend entry: a visible marker and one visible term that means the same
+ * thing. `glyph` draws a typographic marker; `swatch` draws a filled block.
+ * The marker is hidden from assistive technology because the text beside it
+ * already carries the meaning.
+ */
+function LegendRow({
+  glyph,
+  swatch,
+  tone,
+  children,
+}: {
+  glyph?: string
+  swatch?: string
+  tone: string
+  children: ReactNode
+}) {
+  return (
+    <li className="flex items-center gap-3">
+      {glyph ? (
+        <span className={cn('w-5 text-center font-mono text-[0.9375rem]', tone)} aria-hidden="true">
+          {glyph}
+        </span>
+      ) : (
+        <span className={cn('w-5 h-5 border border-nexus-border', swatch)} aria-hidden="true" />
+      )}
+      <span className="nx-body text-nexus-textMuted">{children}</span>
+    </li>
   )
 }

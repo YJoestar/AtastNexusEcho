@@ -145,11 +145,11 @@ export function InvestigationTable({ artifacts, workspace, onUpdate, onInspect }
       <header className="flex flex-wrap items-end justify-between gap-3 border-b border-nexus-border pb-2">
         <div>
           <h2 className="font-mono text-xs font-bold uppercase tracking-[0.16em] text-nexus-text">INVESTIGATION TABLE</h2>
-          <p className="mt-1 font-mono text-[0.52rem] uppercase tracking-[0.12em] text-nexus-textSubtle">
+          <p className="mt-1 font-mono text-[0.75rem] uppercase tracking-[0.12em] text-nexus-textSubtle">
             {placed.length.toString().padStart(2, '0')} PLACED / {artifacts.length.toString().padStart(2, '0')} CASE OBJECTS / POSITIONS SAVED ON THIS DEVICE
           </p>
         </div>
-        <label className="flex items-center gap-2 font-mono text-[0.52rem] uppercase text-nexus-textSubtle">
+        <label className="flex items-center gap-2 font-mono text-[0.75rem] uppercase text-nexus-textSubtle">
           SCALE
           <input type="range" min="0.55" max="1" step="0.05" value={scale} onChange={event => setScale(Number(event.target.value))} aria-label="Investigation table scale" />
           <span className="w-8 text-right tabular-nums">{Math.round(scale * 100)}%</span>
@@ -158,12 +158,12 @@ export function InvestigationTable({ artifacts, workspace, onUpdate, onInspect }
 
       {unplaced.length > 0 && (
         <div className="flex flex-wrap items-center gap-2 border-b border-nexus-borderSubtle pb-3">
-          <label htmlFor="table-artifact" className="font-mono text-[0.52rem] uppercase tracking-[0.12em] text-nexus-textSubtle">ADD RECOVERED OBJECT</label>
+          <label htmlFor="table-artifact" className="font-mono text-[0.75rem] uppercase tracking-[0.12em] text-nexus-textSubtle">ADD RECOVERED OBJECT</label>
           <select id="table-artifact" value={placeCode} onChange={event => setPlaceCode(event.target.value)} className="min-h-10 min-w-0 flex-1 border border-nexus-border bg-nexus-bg px-2 font-mono text-xs text-nexus-text">
             <option value="">SELECT FROM CASE ARCHIVE</option>
             {unplaced.map(artifact => <option key={artifact.id} value={artifact.id}>{artifact.code} / {artifact.title}</option>)}
           </select>
-          <button type="button" disabled={!placeCode} onClick={() => placeArtifact(placeCode)} className="min-h-10 border border-nexus-accent px-3 font-mono text-[0.55rem] uppercase text-nexus-accent disabled:opacity-40">[ PLACE ]</button>
+          <button type="button" disabled={!placeCode} onClick={() => placeArtifact(placeCode)} className="min-h-10 border border-nexus-accent px-3 font-mono text-[0.8125rem] uppercase text-nexus-accent disabled:opacity-40">[ PLACE ]</button>
         </div>
       )}
 
@@ -178,7 +178,7 @@ export function InvestigationTable({ artifacts, workspace, onUpdate, onInspect }
             onPointerCancel={handlePointerUp}
           >
             <div className="pointer-events-none absolute inset-0 opacity-25" style={{ backgroundImage: 'repeating-linear-gradient(0deg, transparent 0px, transparent 31px, rgba(207,197,164,0.18) 32px)' }} />
-            <div className="pointer-events-none absolute left-4 top-3 font-mono text-[0.5rem] uppercase tracking-[0.18em] text-[#b5ae96]">CASE 037 / WORK SURFACE / PRIVATE HYPOTHESES</div>
+            <div className="pointer-events-none absolute left-4 top-3 font-mono text-[0.75rem] uppercase tracking-[0.18em] text-[#b5ae96]">CASE 037 / WORK SURFACE / PRIVATE HYPOTHESES</div>
 
             <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
               {workspace.hypotheses.map(hypothesis => {
@@ -210,13 +210,13 @@ export function InvestigationTable({ artifacts, workspace, onUpdate, onInspect }
                 >
                   <div className="flex items-start justify-between gap-2">
                     <button type="button" onClick={() => toggleSelected(id)} className="min-w-0 flex-1 text-left" aria-pressed={isSelected}>
-                      <span className="block font-mono text-[0.5rem] uppercase tracking-[0.14em] opacity-70">{artifact.type} / {artifact.code}</span>
+                      <span className="block font-mono text-[0.75rem] uppercase tracking-[0.14em] opacity-70">{artifact.type} / {artifact.code}</span>
                       <span className="mt-1 block break-words font-document text-sm font-semibold">{artifact.title}</span>
                     </button>
                     <div className="flex items-center gap-1">
-                      {hasNewInfo && <span className="font-mono text-[0.45rem] uppercase text-nexus-warning">NEW</span>}
+                      {hasNewInfo && <span className="font-mono text-[0.75rem] uppercase text-nexus-warning">NEW</span>}
                       <button type="button" onClick={() => togglePin(id)} className="min-h-8 min-w-8 border border-current/30 p-1" aria-label={current.pinned ? `Unpin ${artifact.code}` : `Pin ${artifact.code}`} aria-pressed={current.pinned} title={current.pinned ? 'UNPIN' : 'PIN'}>
-                        <span className="font-mono text-[0.45rem] uppercase">{current.pinned ? 'FIXED' : 'PIN'}</span>
+                        <span className="font-mono text-[0.75rem] uppercase">{current.pinned ? 'FIXED' : 'PIN'}</span>
                       </button>
                     </div>
                   </div>
@@ -225,12 +225,12 @@ export function InvestigationTable({ artifacts, workspace, onUpdate, onInspect }
                   ) : artifact.type.toUpperCase() === 'AUDIO' ? (
                     <Waveform seed={artifact.id} height={32} tone="normal" />
                   ) : (
-                    <p className="mt-2 line-clamp-3 font-document text-[0.68rem] leading-relaxed opacity-75">{artifact.description || artifact.code}</p>
+                    <p className="mt-2 line-clamp-3 font-document text-[0.875rem] leading-relaxed opacity-75">{artifact.description || artifact.code}</p>
                   )}
                   <div className="mt-2 flex items-center justify-between gap-1 border-t border-current/20 pt-1">
-                    <button type="button" onClick={() => onInspect(id)} className="min-h-8 px-1 font-mono text-[0.48rem] uppercase">OPEN</button>
-                    <button type="button" onClick={() => rotate(id)} className="min-h-8 px-1 font-mono text-[0.48rem] uppercase" aria-label={`Rotate ${artifact.code}`}>ROTATE</button>
-                    <button type="button" onClick={() => removeFromTable(id)} className="min-h-8 px-1 font-mono text-[0.48rem] uppercase text-nexus-warning">REMOVE</button>
+                    <button type="button" onClick={() => onInspect(id)} className="min-h-8 px-1 font-mono text-[0.75rem] uppercase">OPEN</button>
+                    <button type="button" onClick={() => rotate(id)} className="min-h-8 px-1 font-mono text-[0.75rem] uppercase" aria-label={`Rotate ${artifact.code}`}>ROTATE</button>
+                    <button type="button" onClick={() => removeFromTable(id)} className="min-h-8 px-1 font-mono text-[0.75rem] uppercase text-nexus-warning">REMOVE</button>
                   </div>
                 </article>
               )
@@ -238,13 +238,13 @@ export function InvestigationTable({ artifacts, workspace, onUpdate, onInspect }
 
             {placed.length === 0 && (
               <div className="absolute left-1/2 top-1/2 w-64 -translate-x-1/2 -translate-y-1/2 border-l border-[#b5ae96] pl-4 font-mono">
-                <p className="text-[0.56rem] uppercase tracking-[0.16em] text-[#d3b87b]">TABLE / UNSET</p>
+                <p className="text-[0.8125rem] uppercase tracking-[0.16em] text-[#d3b87b]">TABLE / UNSET</p>
                 <p className="mt-2 text-xs text-[#c0bcaf]">No objects placed. The archive remains intact.</p>
               </div>
             )}
           </div>
         </div>
-        <div className="mt-2 flex justify-between gap-2 font-mono text-[0.48rem] uppercase tracking-[0.12em] text-[#b5ae96]">
+        <div className="mt-2 flex justify-between gap-2 font-mono text-[0.75rem] uppercase tracking-[0.12em] text-[#b5ae96]">
           <span>DRAG TO ARRANGE / REMOVE NEVER DELETES CASE EVIDENCE</span>
           <span>{placed.length.toString().padStart(2, '0')} OBJECTS ON SURFACE</span>
         </div>
@@ -252,25 +252,25 @@ export function InvestigationTable({ artifacts, workspace, onUpdate, onInspect }
 
       {selected.length === 2 && (
         <section className="grid gap-2 border-y border-nexus-borderSubtle py-3 sm:grid-cols-[1fr_auto] sm:items-end">
-          <label className="block font-mono text-[0.52rem] uppercase tracking-[0.12em] text-nexus-textSubtle">
+          <label className="block font-mono text-[0.75rem] uppercase tracking-[0.12em] text-nexus-textSubtle">
             PLAYER HYPOTHESIS / {selected.map(id => artifactById.get(id)?.code ?? id).join(' ↔ ')}
             <input value={hypothesisNote} onChange={event => setHypothesisNote(event.target.value)} maxLength={300} placeholder="RECORD A SUSPECTED RELATION…" className="mt-1 min-h-10 w-full border border-nexus-border bg-nexus-bg px-2 font-sans text-sm normal-case tracking-normal text-nexus-text" />
           </label>
-          <button type="button" onClick={addHypothesis} className="min-h-10 border border-nexus-warning px-3 font-mono text-[0.55rem] uppercase text-nexus-warning">[ FILE UNVERIFIED LINK ]</button>
+          <button type="button" onClick={addHypothesis} className="min-h-10 border border-nexus-warning px-3 font-mono text-[0.8125rem] uppercase text-nexus-warning">[ FILE UNVERIFIED LINK ]</button>
         </section>
       )}
 
       {workspace.hypotheses.length > 0 && (
         <section className="border-t border-nexus-borderSubtle pt-2">
-          <h3 className="font-mono text-[0.52rem] uppercase tracking-[0.14em] text-nexus-textSubtle">PLAYER-FILED HYPOTHESES / NOT SYSTEM-VERIFIED</h3>
+          <h3 className="font-mono text-[0.75rem] uppercase tracking-[0.14em] text-nexus-textSubtle">PLAYER-FILED HYPOTHESES / NOT SYSTEM-VERIFIED</h3>
           <ul className="mt-1 divide-y divide-nexus-borderSubtle">
             {workspace.hypotheses.map(hypothesis => (
-              <li key={hypothesis.id} className="grid grid-cols-[1fr_auto] gap-2 py-2 font-mono text-[0.6rem]">
+              <li key={hypothesis.id} className="grid grid-cols-[1fr_auto] gap-2 py-2 font-mono text-[0.8125rem]">
                 <span className="min-w-0 text-nexus-textMuted">
                   <b className="text-nexus-text">{artifactById.get(hypothesis.from)?.code ?? hypothesis.from} ↔ {artifactById.get(hypothesis.to)?.code ?? hypothesis.to}</b>
                   <span className="ml-2">{hypothesis.note}</span>
                 </span>
-                <button type="button" onClick={() => onUpdate(current => ({ ...current, hypotheses: current.hypotheses.filter(entry => entry.id !== hypothesis.id) }))} className="min-h-8 px-2 text-[0.5rem] uppercase text-nexus-textSubtle hover:text-nexus-warning">REMOVE LINK</button>
+                <button type="button" onClick={() => onUpdate(current => ({ ...current, hypotheses: current.hypotheses.filter(entry => entry.id !== hypothesis.id) }))} className="min-h-8 px-2 text-[0.75rem] uppercase text-nexus-textSubtle hover:text-nexus-warning">REMOVE LINK</button>
               </li>
             ))}
           </ul>

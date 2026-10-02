@@ -1,4 +1,4 @@
-﻿/**
+/**
  * NEXUS — Admin Login
  * Terminal initialization for bureau access.
  *
@@ -94,7 +94,7 @@ export function AdminLogin() {
                   <div
                     key={i}
                     className={cn(
-                      'font-mono text-[0.72rem] tracking-[0.06em]',
+                      'font-mono text-[0.9375rem] tracking-[0.06em]',
                       line.text.includes('WARNING') && 'text-nexus-warning',
                       line.text.includes('OK') && 'text-nexus-accent',
                     )}
@@ -102,7 +102,7 @@ export function AdminLogin() {
                     {line.text === '' ? '\u00A0' : line.text}
                   </div>
                 ))}
-                <div className="mt-2 h-3 w-3 animate-pulse rounded bg-nexus-accent/50 font-mono text-[0.72rem]" />
+                <div className="mt-2 h-3 w-3 animate-pulse rounded bg-nexus-accent/50 font-mono text-[0.9375rem]" />
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="nexus-terminal-form space-y-5" noValidate>
@@ -129,7 +129,7 @@ export function AdminLogin() {
                     />
                   </div>
                   {touched.email && !email.trim() && (
-                    <p className="mt-1.5 flex items-center gap-1 text-[0.62rem] text-nexus-danger">
+                    <p className="mt-1.5 flex items-center gap-1 text-[0.8125rem] text-nexus-danger">
                       <BureauIcons.Alert className="bureau-icon w-3 h-3 flex-shrink-0" />
                       Operator ID is required
                     </p>
@@ -170,7 +170,7 @@ export function AdminLogin() {
                     </button>
                   </div>
                   {touched.password && !password.trim() && (
-                    <p className="mt-1.5 flex items-center gap-1 text-[0.62rem] text-nexus-danger">
+                    <p className="mt-1.5 flex items-center gap-1 text-[0.8125rem] text-nexus-danger">
                       <BureauIcons.Alert className="bureau-icon w-3 h-3 flex-shrink-0" />
                       Access key is required
                     </p>
@@ -180,7 +180,7 @@ export function AdminLogin() {
                 {error && (
                   <div className="flex items-start gap-2 rounded border border-nexus-danger/40 bg-nexus-dangerBg/30 px-3 py-2.5">
                     <BureauIcons.AlertTriangle className="bureau-icon w-4 h-4 flex-shrink-0 text-nexus-danger mt-0.5" />
-                    <p className="font-mono text-[0.68rem] text-nexus-danger">{error}</p>
+                    <p className="font-mono text-[0.875rem] text-nexus-danger">{error}</p>
                   </div>
                 )}
 
@@ -209,10 +209,10 @@ export function AdminLogin() {
           </div>
 
           <div className="nexus-terminal-footer">
-            <span className="font-mono text-[0.52rem] uppercase tracking-[0.22em] text-nexus-textSubtle">
+            <span className="font-mono text-[0.75rem] uppercase tracking-[0.22em] text-nexus-textSubtle">
               AUTHORIZED PERSONNEL ONLY
             </span>
-            <span className="font-mono text-[0.56rem] text-nexus-textSubtle">
+            <span className="font-mono text-[0.8125rem] text-nexus-textSubtle">
               NODE 02 · SHIFT 07
             </span>
           </div>

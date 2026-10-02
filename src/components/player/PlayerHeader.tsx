@@ -53,43 +53,48 @@ export function PlayerHeader() {
           <Link to={ROUTES.PLAYER_GAME} className="flex items-center gap-2 shrink-0">
             <div className="handset-badge-mark">N</div>
             <div className="min-w-0">
-              <div className="font-display text-[0.62rem] uppercase tracking-[0.32em] text-nexus-textSubtle">NEXUS</div>
-              <div className="font-mono text-[0.6rem] uppercase tracking-[0.2em] text-nexus-textMuted">Case 037</div>
+              <div className="font-display text-[0.8125rem] uppercase tracking-[0.32em] text-nexus-textSubtle">NEXUS</div>
+              <div className="font-mono text-[0.8125rem] uppercase tracking-[0.2em] text-nexus-textMuted">Case 037</div>
             </div>
           </Link>
-          <span className="font-mono text-[0.62rem] uppercase tracking-[0.18em] text-nexus-textMuted hidden sm:block">
+          <span className="font-mono text-[0.8125rem] uppercase tracking-[0.18em] text-nexus-textMuted hidden sm:block">
             Team {team.name}
           </span>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-6 h-6">
-            <ConnectionIcon
-              className={cn(
-                'bureau-icon w-3.5 h-3.5',
-                indicator.className,
-                connection.status !== 'online' && 'animate-pulse',
-              )}
-              aria-hidden="true"
-            />
-          </div>
-          <span
-            className={cn(
-              'font-mono text-[0.56rem] uppercase tracking-[0.18em]',
-              connection.status !== 'online' ? 'text-nexus-warning' : 'text-nexus-accent',
-            )}
-            aria-label={`Signal ${connection.status}`}
-          >
-            {connection.status.toUpperCase()}
-          </span>
+        <div className="flex items-center gap-2">
           {queuedCount > 0 && (
             <span
-              className="min-w-[18px] h-[18px] px-1 border border-nexus-warning text-nexus-warning text-[10px] font-bold flex items-center justify-center bg-nexus-bg"
+              className="nx-chip"
+              data-tone="warning"
               aria-label={`${queuedCount} submissions queued`}
             >
-              {queuedCount}
+              {queuedCount} queued
             </span>
           )}
+
+          {/* Signal is carried by the icon plus its accessible name. Repeating
+              it as a word in a 44px-tall header is what made the bar feel
+              crowded; the icon is enough for anyone who can see it. */}
+          <ConnectionIcon
+            className={cn(
+              'bureau-icon w-5 h-5',
+              indicator.className,
+              connection.status !== 'online' && 'animate-pulse',
+            )}
+            aria-hidden="true"
+          />
+          <span className="sr-only" role="status">
+            {indicator.label}
+          </span>
+
+          <Link
+            to={ROUTES.PLAYER_ACCESSIBILITY}
+            className="nexus-device-control-icon text-nexus-textMuted hover:text-nexus-text"
+            aria-label="Display and access settings"
+          >
+            <BureauIcons.Monitor className="bureau-icon w-5 h-5" />
+          </Link>
         </div>
       </div>
 
@@ -97,40 +102,25 @@ export function PlayerHeader() {
         <div className="flex items-center gap-3 min-w-0">
           <span
             className={cn(
-              'px-2 py-1 text-[0.58rem] font-medium uppercase tracking-[0.22em] border border-current bg-transparent',
+              'px-2 py-1 text-[0.8125rem] font-medium uppercase tracking-[0.22em] border border-current bg-transparent',
               roleTheme?.badge,
             )}
           >
             {player.role}
           </span>
-          <span className={cn('text-[0.58rem] uppercase tracking-[0.18em]', roleTheme?.text)}>
+          <span className={cn('text-[0.8125rem] uppercase tracking-[0.18em]', roleTheme?.text)}>
             {player.role && ROLE_SUBTITLES[player.role]}
           </span>
         </div>
         <div className="flex items-center gap-3">
-          <span className="font-mono text-[0.62rem] uppercase tracking-[0.18em] text-nexus-textSubtle">
+          <span className="font-mono text-[0.8125rem] uppercase tracking-[0.18em] text-nexus-textSubtle truncate">
             {player.displayName}
           </span>
-          <div
-            className="handset-badge-mark"
-            aria-label={`Timer: ${timer.isArmed ? timeRemaining : 'not started'}`}
-            role="timer"
-          >
-            <BureauIcons.Clock
-              className={cn(
-                'bureau-icon w-3 h-3',
-                timer.urgency === 'normal' ? 'text-nexus-textSubtle' : TIMER_TONE[timer.urgency],
-              )}
-              aria-hidden="true"
-            />
-          </div>
           <span
-            className={cn(
-              'font-mono text-[0.64rem] uppercase tracking-[0.18em]',
-              TIMER_TONE[timer.urgency],
-            )}
+            className={cn('font-mono text-[0.875rem] uppercase tracking-[0.18em] tabular-nums', TIMER_TONE[timer.urgency])}
             aria-live="off"
           >
+            <span className="sr-only">Time remaining: </span>
             {timeRemaining}
           </span>
         </div>

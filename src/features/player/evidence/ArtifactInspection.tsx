@@ -164,18 +164,18 @@ export function ArtifactInspection({
       <div className="flex flex-wrap items-center justify-between gap-2 border-y border-nexus-borderSubtle py-2">
         <div className="flex items-center gap-1">
           <button type="button" onClick={() => changeScale(-0.2)} className="min-h-10 min-w-10 border border-nexus-border px-2 font-mono text-xs" aria-label="Zoom out">−</button>
-          <span className="min-w-12 text-center font-mono text-[0.56rem] tabular-nums text-nexus-textSubtle">{Math.round(scale * 100)}%</span>
+          <span className="min-w-12 text-center font-mono text-[0.8125rem] tabular-nums text-nexus-textSubtle">{Math.round(scale * 100)}%</span>
           <button type="button" onClick={() => changeScale(0.2)} className="min-h-10 min-w-10 border border-nexus-border px-2 font-mono text-xs" aria-label="Zoom in">+</button>
-          <button type="button" onClick={resetView} className="min-h-10 border border-nexus-border px-2 font-mono text-[0.52rem] uppercase">FIT</button>
-          <button type="button" onClick={() => setRotation(current => (current + 90) % 360)} className="min-h-10 border border-nexus-border px-2 font-mono text-[0.52rem] uppercase" aria-label="Rotate artifact">
+          <button type="button" onClick={resetView} className="min-h-10 border border-nexus-border px-2 font-mono text-[0.75rem] uppercase">FIT</button>
+          <button type="button" onClick={() => setRotation(current => (current + 90) % 360)} className="min-h-10 border border-nexus-border px-2 font-mono text-[0.75rem] uppercase" aria-label="Rotate artifact">
             <BureauIcons.RotateCcw className="bureau-icon h-3.5 w-3.5" />
           </button>
         </div>
         <div className="flex items-center gap-2">
-          <button type="button" onClick={() => setMarkMode(current => !current)} aria-pressed={markMode} className={cn('min-h-10 border px-2 font-mono text-[0.52rem] uppercase', markMode ? 'border-nexus-warning text-nexus-warning' : 'border-nexus-border text-nexus-textMuted')}>
+          <button type="button" onClick={() => setMarkMode(current => !current)} aria-pressed={markMode} className={cn('min-h-10 border px-2 font-mono text-[0.75rem] uppercase', markMode ? 'border-nexus-warning text-nexus-warning' : 'border-nexus-border text-nexus-textMuted')}>
             {markMode ? '[ TAP ARTIFACT TO MARK ]' : '[ MARK AREA ]'}
           </button>
-          <button type="button" onClick={onPlaceOnTable} disabled={isOnTable} className="min-h-10 border border-nexus-accent px-2 font-mono text-[0.52rem] uppercase text-nexus-accent disabled:opacity-45">
+          <button type="button" onClick={onPlaceOnTable} disabled={isOnTable} className="min-h-10 border border-nexus-accent px-2 font-mono text-[0.75rem] uppercase text-nexus-accent disabled:opacity-45">
             {isOnTable ? '[ ON TABLE ]' : '[ PLACE ON TABLE ]'}
           </button>
         </div>
@@ -210,7 +210,7 @@ export function ArtifactInspection({
         >
           {isAudio ? (
             <div className="absolute inset-0 flex flex-col justify-center border border-nexus-border bg-nexus-surfaceElevated p-5" onPointerDown={event => event.stopPropagation()}>
-              <p className="mb-2 font-mono text-[0.56rem] uppercase tracking-[0.16em] text-nexus-textSubtle">ARCHIVAL RECORDING / {artifact.code}</p>
+              <p className="mb-2 font-mono text-[0.8125rem] uppercase tracking-[0.16em] text-nexus-textSubtle">ARCHIVAL RECORDING / {artifact.code}</p>
               <Waveform seed={artifact.id} height={92} tone="normal" />
               {audioUrl ? (
                 <AudioScrubber key={artifact.id} src={audioUrl} />
@@ -225,7 +225,7 @@ export function ArtifactInspection({
             ) : (
               <div className="absolute inset-0 flex flex-col items-center justify-center border border-nexus-border bg-nexus-surfaceElevated p-6 text-center">
                 <BureauIcons.Image className="bureau-icon mb-4 h-8 w-8 text-nexus-textSubtle" aria-hidden="true" />
-                <p className="font-mono text-[0.56rem] uppercase tracking-[0.16em] text-nexus-warning">IMAGE SOURCE / NOT ATTACHED</p>
+                <p className="font-mono text-[0.8125rem] uppercase tracking-[0.16em] text-nexus-warning">IMAGE SOURCE / NOT ATTACHED</p>
                 <p className="mt-2 max-w-sm text-sm text-nexus-textMuted">{contentText || artifact.description || 'No image payload is available in this recovered record.'}</p>
               </div>
             )
@@ -234,7 +234,7 @@ export function ArtifactInspection({
               <video src={videoUrl} controls className="absolute inset-0 h-full w-full bg-black object-contain" />
             ) : (
               <div className="absolute inset-0 flex flex-col justify-center border border-nexus-border bg-[#111416] p-5 font-mono">
-                <div className="mb-4 flex items-center justify-between border-b border-nexus-border pb-2 text-[0.52rem] uppercase tracking-[0.14em] text-nexus-textSubtle">
+                <div className="mb-4 flex items-center justify-between border-b border-nexus-border pb-2 text-[0.75rem] uppercase tracking-[0.14em] text-nexus-textSubtle">
                   <span>SURVEILLANCE REVIEW / {artifact.code}</span><span>SOURCE UNAVAILABLE</span>
                 </div>
                 <p className="whitespace-pre-wrap text-sm leading-relaxed text-nexus-textMuted">{contentText || artifact.description || 'NO PLAYABLE FOOTAGE ATTACHED TO THIS RECORD.'}</p>
@@ -244,16 +244,16 @@ export function ArtifactInspection({
             <article className="absolute inset-0 overflow-auto border border-nexus-border bg-[#d4d0c5] p-5 text-[#24231f] shadow-[4px_5px_0_rgba(0,0,0,0.25)]">
               <header className="mb-5 flex items-start justify-between gap-3 border-b border-[#77746c] pb-3">
                 <div>
-                  <p className="font-mono text-[0.55rem] uppercase tracking-[0.15em]">NEXUS ECHO / CASE MATERIAL</p>
+                  <p className="font-mono text-[0.8125rem] uppercase tracking-[0.15em]">NEXUS ECHO / CASE MATERIAL</p>
                   <h3 className="mt-2 font-document text-lg font-semibold">{artifact.title}</h3>
                 </div>
-                <span className="font-mono text-[0.55rem]">{artifact.code}</span>
+                <span className="font-mono text-[0.8125rem]">{artifact.code}</span>
               </header>
               <p className="whitespace-pre-wrap font-document text-sm leading-relaxed">{contentText || artifact.description || 'NO TEXTUAL CONTENT ATTACHED.'}</p>
               {fields.length > 0 && (
-                <dl className="mt-5 space-y-2 border-t border-[#77746c] pt-3 font-mono text-[0.58rem]">
+                <dl className="mt-5 space-y-2 border-t border-[#77746c] pt-3 font-mono text-[0.8125rem]">
                   {fields.map(([label, value]) => (
-                    <div key={label} className="grid grid-cols-[110px_1fr] gap-2">
+                    <div key={label} className="grid grid-cols-[7rem_1fr] gap-2">
                       <dt className="text-[#69665e]">{label}</dt><dd className="whitespace-pre-wrap break-words">{value}</dd>
                     </div>
                   ))}
@@ -264,7 +264,7 @@ export function ArtifactInspection({
           {annotations.filter(annotation => annotation.x !== undefined && annotation.y !== undefined).map((annotation, index) => (
             <span
               key={annotation.id}
-              className="absolute z-20 flex h-6 w-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center border border-nexus-warning bg-nexus-bg font-mono text-[0.55rem] font-bold text-nexus-warning"
+              className="absolute z-20 flex h-6 w-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center border border-nexus-warning bg-nexus-bg font-mono text-[0.8125rem] font-bold text-nexus-warning"
               style={{ left: `${annotation.x}%`, top: `${annotation.y}%` }}
               title={annotation.text}
             >
@@ -272,13 +272,13 @@ export function ArtifactInspection({
             </span>
           ))}
         </div>
-        <div className="pointer-events-none absolute bottom-2 left-2 font-mono text-[0.48rem] uppercase tracking-[0.12em] text-nexus-textSubtle">
+        <div className="pointer-events-none absolute bottom-2 left-2 font-mono text-[0.75rem] uppercase tracking-[0.12em] text-nexus-textSubtle">
           {markMode ? 'MARK MODE / TAP DETAIL' : 'DRAG PAN / PINCH OR WHEEL ZOOM / DOUBLE TAP FIT'}
         </div>
       </div>
 
       {newKeys && newKeys.length > 0 && (
-        <div className="border border-nexus-warning/30 bg-nexus-warningBg/10 px-3 py-2 font-mono text-[0.55rem] uppercase tracking-[0.1em] text-nexus-warning">
+        <div className="border border-nexus-warning/30 bg-nexus-warningBg/10 px-3 py-2 font-mono text-[0.8125rem] uppercase tracking-[0.1em] text-nexus-warning">
           RECORD UPDATED — NEW FIELDS: {newKeys.join(', ').toUpperCase()}
         </div>
       )}
@@ -286,20 +286,20 @@ export function ArtifactInspection({
       <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_250px]">
         <section className="border border-nexus-border bg-nexus-surfaceElevated p-3">
           <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-            <h3 className="font-mono text-[0.58rem] font-bold uppercase tracking-[0.14em] text-nexus-text">INVESTIGATOR ANNOTATIONS / {annotations.length.toString().padStart(2, '0')}</h3>
-            <select value={noteKind} onChange={event => setNoteKind(event.target.value as AnnotationKind)} className="min-h-9 border border-nexus-border bg-nexus-bg px-2 font-mono text-[0.55rem] uppercase text-nexus-text" aria-label="Annotation class">
+            <h3 className="font-mono text-[0.8125rem] font-bold uppercase tracking-[0.14em] text-nexus-text">INVESTIGATOR ANNOTATIONS / {annotations.length.toString().padStart(2, '0')}</h3>
+            <select value={noteKind} onChange={event => setNoteKind(event.target.value as AnnotationKind)} className="min-h-9 border border-nexus-border bg-nexus-bg px-2 font-mono text-[0.8125rem] uppercase text-nexus-text" aria-label="Annotation class">
               {NOTE_KINDS.map(kind => <option key={kind} value={kind}>{kind}</option>)}
             </select>
           </div>
           <div className="flex gap-2">
             <textarea value={noteDraft} onChange={event => setNoteDraft(event.target.value)} maxLength={1000} rows={2} placeholder="ADD A PRIVATE CASE NOTE…" className="min-h-12 min-w-0 flex-1 resize-y border border-nexus-border bg-nexus-bg p-2 text-sm text-nexus-text placeholder:text-nexus-textSubtle" />
-            <button type="button" disabled={!noteDraft.trim()} onClick={() => { onAddAnnotation(noteKind, noteDraft.trim()); setNoteDraft('') }} className="min-h-12 border border-nexus-accent px-3 font-mono text-[0.55rem] uppercase text-nexus-accent disabled:opacity-40">FILE NOTE</button>
+            <button type="button" disabled={!noteDraft.trim()} onClick={() => { onAddAnnotation(noteKind, noteDraft.trim()); setNoteDraft('') }} className="min-h-12 border border-nexus-accent px-3 font-mono text-[0.8125rem] uppercase text-nexus-accent disabled:opacity-40">FILE NOTE</button>
           </div>
           {annotations.length > 0 && (
             <ol className="mt-3 divide-y divide-nexus-borderSubtle border-t border-nexus-borderSubtle">
               {annotations.map(annotation => (
                 <li key={annotation.id} className="grid grid-cols-[90px_1fr] gap-2 py-2 text-xs">
-                  <span className="font-mono text-[0.52rem] uppercase text-nexus-warning">{annotation.kind}{annotation.x !== undefined ? ` / ${Math.round(annotation.x)}:${Math.round(annotation.y ?? 0)}` : ''}</span>
+                  <span className="font-mono text-[0.75rem] uppercase text-nexus-warning">{annotation.kind}{annotation.x !== undefined ? ` / ${Math.round(annotation.x)}:${Math.round(annotation.y ?? 0)}` : ''}</span>
                   <span className="whitespace-pre-wrap text-nexus-textMuted">{annotation.text}</span>
                 </li>
               ))}
@@ -307,7 +307,7 @@ export function ArtifactInspection({
           )}
         </section>
 
-        <dl className="grid grid-cols-2 gap-x-3 gap-y-2 border-y border-nexus-borderSubtle py-3 font-mono text-[0.58rem] lg:grid-cols-1">
+        <dl className="grid grid-cols-2 gap-x-3 gap-y-2 border-y border-nexus-borderSubtle py-3 font-mono text-[0.8125rem] lg:grid-cols-1">
           <MetaField label="EVIDENCE ID" value={artifact.code} />
           <MetaField label="TYPE" value={artifact.type} />
           <MetaField label="CASE" value="CURRENT CASE" />
@@ -338,7 +338,7 @@ export function ArtifactInspection({
 
       <div className="flex flex-wrap gap-1 border-t border-nexus-borderSubtle pt-2" role="group" aria-label="Classify evidence">
         {MARK_OPTIONS.map(option => (
-          <button key={option.value} type="button" aria-pressed={mark === option.value} onClick={() => onMarkChange(option.value)} className={cn('min-h-9 border px-2 font-mono text-[0.5rem] uppercase tracking-[0.08em]', mark === option.value ? 'border-nexus-warning bg-nexus-warningBg/20 text-nexus-warning' : 'border-nexus-border text-nexus-textSubtle hover:text-nexus-text')}>
+          <button key={option.value} type="button" aria-pressed={mark === option.value} onClick={() => onMarkChange(option.value)} className={cn('min-h-9 border px-2 font-mono text-[0.75rem] uppercase tracking-[0.08em]', mark === option.value ? 'border-nexus-warning bg-nexus-warningBg/20 text-nexus-warning' : 'border-nexus-border text-nexus-textSubtle hover:text-nexus-text')}>
             {option.label}
           </button>
         ))}
@@ -351,12 +351,12 @@ function MetaField({ label, value, isNew = false }: { label: string; value: stri
   return (
     <div>
       <dt className={cn(
-        'text-[0.47rem] uppercase tracking-[0.12em] text-nexus-textSubtle',
+        'text-[0.75rem] uppercase tracking-[0.12em] text-nexus-textSubtle',
         isNew && 'text-nexus-warning',
       )}>
         {label}{isNew && ' · NEW'}
       </dt>
-      <dd className="mt-0.5 break-words text-[0.58rem] text-nexus-text">{value}</dd>
+      <dd className="mt-0.5 break-words text-[0.8125rem] text-nexus-text">{value}</dd>
     </div>
   )
 }
@@ -393,7 +393,7 @@ function AudioScrubber({ src }: { src: string }) {
         className="mt-2 w-full accent-nexus-accent"
         disabled={!duration}
       />
-      <div className="flex justify-between font-mono text-[0.5rem] tabular-nums text-nexus-textSubtle">
+      <div className="flex justify-between font-mono text-[0.75rem] tabular-nums text-nexus-textSubtle">
         <span>{format(current)}</span><span>{duration ? format(duration) : 'DURATION UNKNOWN'}</span>
       </div>
     </div>

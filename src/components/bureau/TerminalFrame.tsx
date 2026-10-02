@@ -76,7 +76,7 @@ export function TerminalFrame({
             </span>
           </div>
           {reference && (
-            <span className="font-mono text-[0.625rem] uppercase tracking-[0.14em] text-nexus-textSubtle">
+            <span className="font-mono text-[0.875rem] uppercase tracking-[0.14em] text-nexus-textSubtle">
               {reference}
             </span>
           )}

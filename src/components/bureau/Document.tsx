@@ -57,6 +57,7 @@ export function DocumentShell({
   stock = 'paper',
   lit = false,
   className,
+  titleAs = 'h2',
 }: {
   reference?: string
   title: ReactNode
@@ -68,7 +69,14 @@ export function DocumentShell({
   stock?: PaperStock
   lit?: boolean
   className?: string
+  /**
+   * Heading level for the title. Defaults to h2, which is correct for a
+   * document sitting inside a screen. A screen whose document IS the screen
+   * passes h1 so the page still has exactly one top-level heading.
+   */
+  titleAs?: 'h1' | 'h2' | 'h3'
 }) {
+  const TitleTag = titleAs
   return (
     <section
       className={cn(
@@ -82,7 +90,7 @@ export function DocumentShell({
       <header className="bureau-doc-header flex items-start justify-between gap-3">
         <div className="min-w-0">
           {reference && <p className="bureau-doc-subtitle">{reference}</p>}
-          <h2 className="bureau-doc-title">{title}</h2>
+          <TitleTag className="bureau-doc-title">{title}</TitleTag>
           {subtitle && <p className="mt-1 text-xs text-nexus-textMuted">{subtitle}</p>}
         </div>
         {(classification || revision) && (
@@ -155,5 +163,5 @@ export function FieldGrid({
 
 /** Monospaced reference string. Always monospaced, always uppercase. */
 export function Reference({ children, className }: { children: ReactNode; className?: string }) {
-  return <span className={cn('font-mono text-[0.6875rem] uppercase tracking-[0.16em]', className)}>{children}</span>
+  return <span className={cn('font-mono text-[0.875rem] uppercase tracking-[0.16em]', className)}>{children}</span>
 }

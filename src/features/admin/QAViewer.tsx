@@ -1,4 +1,4 @@
-﻿/**
+/**
  * NEXUS — Admin QA Viewer
  *
  * Audits all puzzle nodes for content completeness:
@@ -105,7 +105,7 @@ export function AdminQAViewer() {
         <div className="space-y-3 p-4 font-mono text-xs uppercase tracking-[0.14em] text-nexus-textMuted" role="status" aria-live="polite">
           <p>INDEXING CONTENT RECORDS…</p>
           <div className="h-px w-full bg-nexus-border"><div className="h-px w-1/3 bg-nexus-accent animate-pulse" /></div>
-          <p className="text-[0.56rem] text-nexus-textSubtle">VERIFYING MEDIA REFERENCES / NODE METADATA</p>
+          <p className="text-[0.8125rem] text-nexus-textSubtle">VERIFYING MEDIA REFERENCES / NODE METADATA</p>
         </div>
       </TerminalFrame>
     )
@@ -130,7 +130,7 @@ export function AdminQAViewer() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-[0.56rem] uppercase tracking-[0.2em] text-nexus-textSubtle">NEXUS ECHO / CONTENT INTEGRITY OFFICE</p>
+          <p className="text-[0.8125rem] uppercase tracking-[0.2em] text-nexus-textSubtle">NEXUS ECHO / CONTENT INTEGRITY OFFICE</p>
           <h1 className="mt-1 text-xl font-bold text-nexus-text">FIELD CONTENT VERIFICATION</h1>
           <p className="mt-1 text-xs text-nexus-textMuted">
             {totalAudio === 0
@@ -192,7 +192,7 @@ export function AdminQAViewer() {
 
       <TerminalFrame title="FIELD VERIFICATION SHEETS" reference={`${filteredPuzzles.length} / ${puzzles.length} NODES`} variant="register">
         {filteredPuzzles.length === 0 ? (
-          <div className="grid min-h-24 grid-cols-[100px_1fr] items-center gap-3 px-4 font-mono text-[0.625rem] uppercase tracking-[0.12em]">
+          <div className="grid min-h-24 grid-cols-[100px_1fr] items-center gap-3 px-4 font-mono text-[0.875rem] uppercase tracking-[0.12em]">
             <span className="border-r border-nexus-border py-3 text-nexus-warning">NO RECORD</span>
             <span className="text-nexus-textSubtle">QUERY RETURNED NO MATCHING NODE SHEETS</span>
           </div>
@@ -217,13 +217,13 @@ export function AdminQAViewer() {
                     <span className="border-r border-nexus-border pr-2 font-mono text-xs font-bold text-nexus-accent">{puzzle.code}</span>
                     <span className="min-w-0">
                       <span className="block truncate text-sm font-bold text-nexus-text">{puzzle.title}</span>
-                      <span className="mt-1 block font-mono text-[0.52rem] uppercase tracking-[0.1em] text-nexus-textSubtle">
+                      <span className="mt-1 block font-mono text-[0.75rem] uppercase tracking-[0.1em] text-nexus-textSubtle">
                         {puzzle.type} / {puzzle.evidence.length} EVIDENCE OBJECTS
                       </span>
                     </span>
                     <span className="flex items-center gap-2">
                       <AudioStatusIcon status={audioStatus} />
-                      <span className="font-mono text-[0.56rem] uppercase text-nexus-textMuted">
+                      <span className="font-mono text-[0.8125rem] uppercase text-nexus-textMuted">
                         {puzzle.audioEvidence.length === 0 ? 'NO AUDIO' : `${puzzle.audioEvidence.filter(audio => audio.audioExists).length}/${puzzle.audioEvidence.length} MEDIA`}
                       </span>
                       <span aria-hidden="true" className="font-mono text-xs text-nexus-textSubtle">{isExpanded ? '−' : '+'}</span>
@@ -234,7 +234,7 @@ export function AdminQAViewer() {
                     <div className="border-t border-nexus-borderSubtle bg-nexus-bg px-3 py-3">
                       <div className="grid gap-4 md:grid-cols-2">
                         <div>
-                          <p className="mb-2 font-mono text-[0.52rem] uppercase tracking-[0.14em] text-nexus-textSubtle">EVIDENCE OBJECTS</p>
+                          <p className="mb-2 font-mono text-[0.75rem] uppercase tracking-[0.14em] text-nexus-textSubtle">EVIDENCE OBJECTS</p>
                           {puzzle.evidence.length === 0 ? (
                             <p className="font-mono text-xs text-nexus-textMuted">NO EVIDENCE OBJECTS ATTACHED</p>
                           ) : (
@@ -246,13 +246,13 @@ export function AdminQAViewer() {
                               ))}
                             </ul>
                           )}
-                          <p className="mt-3 font-mono text-[0.52rem] uppercase tracking-[0.14em] text-nexus-textSubtle">ANSWER METADATA</p>
+                          <p className="mt-3 font-mono text-[0.75rem] uppercase tracking-[0.14em] text-nexus-textSubtle">ANSWER METADATA</p>
                           <code className="mt-1 block break-all text-xs text-nexus-accent">
                             {typeof acceptedAnswer === 'string' ? acceptedAnswer : 'NOT INDEXED'}
                           </code>
                         </div>
                         <div>
-                          <p className="mb-2 font-mono text-[0.52rem] uppercase tracking-[0.14em] text-nexus-textSubtle">AUDIO REFERENCE CHECK</p>
+                          <p className="mb-2 font-mono text-[0.75rem] uppercase tracking-[0.14em] text-nexus-textSubtle">AUDIO REFERENCE CHECK</p>
                           {puzzle.audioEvidence.length === 0 ? (
                             <p className="font-mono text-xs text-nexus-textMuted">NO AUDIO MATERIAL ASSOCIATED</p>
                           ) : (
