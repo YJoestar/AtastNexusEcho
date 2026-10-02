@@ -16,10 +16,11 @@ import { ALL_POIS } from '@/content/campus'
 import { useCampusMapState } from '@/hooks/useCampusMap'
 import { CampusMap } from '@/components/player/map/CampusMap'
 import { TacticalOverlay } from '@/components/visual/TacticalOverlay'
+import { FieldMarker } from '@/components/visual/FieldMarker'
 import { LocationEditor } from '@/components/admin/LocationEditor'
 import { adminAPI } from '@/lib/admin'
 import { generateQRCodeSheet } from '@/lib/qr-download'
-import type { LocationEntry } from '@/lib/admin'
+import type { QRCodeEntry, LocationEntry } from '@/lib/admin'
 import type { NodeIndexEntry } from '@/content/puzzles'
 import { PUZZLE_TYPE_LABELS } from '@/app/config'
 import { ALL_PUZZLES } from '@/content/puzzles'
@@ -39,10 +40,62 @@ export function AdminLocations() {
   const [selectedNodeCode, setSelectedNodeCode] = useState<string | null>(null)
   const [isDownloading, setIsDownloading] = useState(false)
   const [downloadError, setDownloadError] = useState<string | null>(null)
+  const [qrCodes, setQrCodes] = useState<QRCodeEntry[]>([])
+  const [isQrLoading, setIsQrLoading] = useState(false)
+  const [qrError, setQrError] = useState<string | null>(null)
+  const [showDeploymentTool, setShowDeploymentTool] = useState(false)
+  const [selectedBatchName, setSelectedBatchName] = useState('BATCH-01')
 
   useEffect(() => {
     void fetchLocations()
   }, [fetchLocations])
+
+  const loadQRCodes = async () => {
+    setIsQrLoading(true)
+    setQrError(null)
+    try {
+      const codes = await adminAPI.listQRCodes()
+      setQrCodes(codes)
+    } catch (err: unknown) {
+      setQrError(err instanceof Error ? err.message : 'Failed to load QR codes')
+    } finally {
+      setIsQrLoading(false)
+    }
+  }
+
+  // Duplicate detection
+  const duplicateManualCodes = useMemo(() => {
+    const seen = new Map<string, number>()
+    const dups: string[] = []
+    for (const qr of qrCodes) {
+      const manual = qr.manualCode
+      if (!manual) continue
+      const count = seen.get(manual) ?? 0
+      seen.set(manual, count + 1)
+      if (count === 1) dups.push(manual)
+    }
+    return dups
+  }, [qrCodes])
+
+  const duplicateMarkerIds = useMemo(() => {
+    const seen = new Map<string, number>()
+    const dups: string[] = []
+    for (const qr of qrCodes) {
+      const id = qr.markerId ?? qr.code
+      const count = seen.get(id) ?? 0
+      seen.set(id, count + 1)
+      if (count === 1) dups.push(id)
+    }
+    return dups
+  }, [qrCodes])
+
+  const batchSummary = useMemo(() => ({
+    totalMarkers: qrCodes.length,
+    pages: Math.ceil(qrCodes.length / 4),
+    duplicates: [...new Set([...duplicateManualCodes, ...duplicateMarkerIds])].length,
+    deployed: qrCodes.filter(q => q.deploymentStatus === 'DEPLOYED').length,
+    active: qrCodes.filter(q => q.deploymentStatus === 'ACTIVE').length,
+  }), [qrCodes, duplicateManualCodes, duplicateMarkerIds])
 
   const locationMap = useMemo(() => {
     const map = new Map<string, LocationEntry>()
@@ -127,29 +180,18 @@ export function AdminLocations() {
           </div>
 
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={async () => {
-                setIsDownloading(true)
-                setDownloadError(null)
-                try {
-                  const qrCodes = await adminAPI.listQRCodes()
-                  const result = await generateQRCodeSheet(qrCodes)
-                  if (!result.success) {
-                    setDownloadError(result.error ?? 'FAILED TO GENERATE QR SHEET')
-                  }
-                } catch (err: unknown) {
-                  setDownloadError(err instanceof Error ? err.message : 'FAILED TO GENERATE QR SHEET')
-                } finally {
-                  setIsDownloading(false)
-                }
-              }}
-              disabled={isDownloading}
-              className="nexus-btn-primary text-xs px-3 py-1.5 min-h-[36px]"
-            >
-              <BureauIcons.Download className="bureau-icon w-3.5 h-3.5" aria-hidden="true" />
-              <span>[ FIELD MARKER SHEET ]</span>
-            </button>
+             <button
+               type="button"
+               onClick={() => {
+                 void loadQRCodes()
+                 setShowDeploymentTool(true)
+               }}
+               disabled={isQrLoading}
+               className="nexus-btn-primary text-xs px-3 py-1.5 min-h-[36px]"
+             >
+               <BureauIcons.Download className="bureau-icon w-3.5 h-3.5" aria-hidden="true" />
+               <span>[ DEPLOYMENT TOOL ]</span>
+             </button>
 
             <button
               type="button"
@@ -313,6 +355,264 @@ export function AdminLocations() {
           existingLocation={locationMap.get(editorNode.id) ?? null}
           onSaved={handleSave}
         />
+      )}
+
+      {/* Deployment Tool Modal */}
+      {showDeploymentTool && (
+        <DeploymentTool
+          qrCodes={qrCodes}
+          isLoading={isQrLoading}
+          error={qrError}
+          batchName={selectedBatchName}
+          onBatchNameChange={setSelectedBatchName}
+          onReload={loadQRCodes}
+          onClose={() => setShowDeploymentTool(false)}
+          onGenerate={async () => {
+            setIsDownloading(true)
+            setDownloadError(null)
+            try {
+              const result = await generateQRCodeSheet(qrCodes, { batchName: selectedBatchName })
+              if (!result.success) {
+                setDownloadError(result.error ?? 'FAILED TO GENERATE QR SHEET')
+              }
+            } catch (err: unknown) {
+              setDownloadError(err instanceof Error ? err.message : 'FAILED TO GENERATE QR SHEET')
+            } finally {
+              setIsDownloading(false)
+            }
+          }}
+          isGenerating={isDownloading}
+          generateError={downloadError}
+          duplicateManualCodes={duplicateManualCodes}
+          duplicateMarkerIds={duplicateMarkerIds}
+          batchSummary={batchSummary}
+          FieldMarkerComponent={FieldMarker}
+        />
+      )}
+    </div>
+  )
+}
+
+interface DeploymentToolProps {
+  qrCodes: QRCodeEntry[]
+  isLoading: boolean
+  error: string | null
+  batchName: string
+  onBatchNameChange: (name: string) => void
+  onReload: () => void
+  onClose: () => void
+  onGenerate: () => void
+  isGenerating: boolean
+  generateError: string | null
+  duplicateManualCodes: string[]
+  duplicateMarkerIds: string[]
+  batchSummary: { totalMarkers: number; pages: number; duplicates: number; deployed: number; active: number }
+  FieldMarkerComponent: React.ComponentType<{ qrCode: QRCodeEntry; variant?: 'preview' | 'print'; className?: string }>
+}
+
+function DeploymentTool({
+  qrCodes,
+  isLoading,
+  error,
+  batchName,
+  onBatchNameChange,
+  onReload,
+  onClose,
+  onGenerate,
+  isGenerating,
+  generateError,
+  duplicateManualCodes,
+  duplicateMarkerIds,
+  batchSummary,
+  FieldMarkerComponent,
+}: DeploymentToolProps) {
+  const [previewItem, setPreviewItem] = useState<QRCodeEntry | null>(null)
+
+  const hasIssues = duplicateManualCodes.length > 0 || duplicateMarkerIds.length > 0
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 overflow-y-auto">
+      <div className="bg-nexus-paper max-w-4xl w-full max-h-[90vh] overflow-y-auto border border-nexus-border">
+        {/* Header */}
+        <div className="border-b border-nexus-borderSubtle px-4 py-3 flex items-center justify-between">
+          <div>
+            <h2 className="font-mono text-xs uppercase tracking-[0.18em] text-nexus-textSubtle">
+              NEXUS ECHO // FIELD DEPLOYMENT WORKSTATION
+            </h2>
+            <div className="font-mono text-lg font-bold text-nexus-text mt-1">
+              MARKER DEPLOYMENT TOOL
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1 text-nexus-textMuted hover:text-nexus-text"
+          >
+            <BureauIcons.Close className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Controls */}
+        <div className="p-4 border-b border-nexus-borderSubtle space-y-3">
+          <div className="flex gap-3 items-end">
+            <div className="flex-1">
+              <label className="block font-mono text-[0.56rem] uppercase tracking-[0.14em] text-nexus-textSubtle mb-1">
+                DEPLOYMENT BATCH
+              </label>
+              <input
+                type="text"
+                value={batchName}
+                onChange={e => onBatchNameChange(e.target.value)}
+                className="input w-full font-mono text-xs"
+              />
+            </div>
+            <button
+              onClick={onReload}
+              disabled={isLoading}
+              className="nexus-btn-secondary text-xs px-3 py-1.5"
+            >
+              {isLoading ? (
+                <BureauIcons.Spinner className="bureau-icon w-3 h-3 animate-spin" />
+              ) : (
+                <BureauIcons.RotateCcw className="bureau-icon w-3 h-3" />
+              )}
+              <span>[ REFRESH ]</span>
+            </button>
+          </div>
+
+          {/* Batch Summary */}
+          <div className="grid grid-cols-5 gap-2 text-center">
+            <div className="border border-nexus-borderSubtle p-2">
+              <div className="font-mono text-[0.56rem] uppercase tracking-[0.14em] text-nexus-textSubtle">TOTAL</div>
+              <div className="font-mono text-xl font-bold text-nexus-text">{batchSummary.totalMarkers}</div>
+            </div>
+            <div className="border border-nexus-borderSubtle p-2">
+              <div className="font-mono text-[0.56rem] uppercase tracking-[0.14em] text-nexus-textSubtle">PAGES</div>
+              <div className="font-mono text-xl font-bold text-nexus-accent">{batchSummary.pages}</div>
+            </div>
+            <div className="border border-nexus-borderSubtle p-2">
+              <div className="font-mono text-[0.56rem] uppercase tracking-[0.14em] text-nexus-textSubtle">DEPLOYED</div>
+              <div className="font-mono text-xl font-bold text-nexus-warning">{batchSummary.deployed}</div>
+            </div>
+            <div className="border border-nexus-borderSubtle p-2">
+              <div className="font-mono text-[0.56rem] uppercase tracking-[0.14em] text-nexus-textSubtle">ACTIVE</div>
+              <div className="font-mono text-xl font-bold text-nexus-accent">{batchSummary.active}</div>
+            </div>
+            <div className="border border-nexus-borderSubtle p-2">
+              <div className="font-mono text-[0.56rem] uppercase tracking-[0.14em] text-nexus-textSubtle">ISSUES</div>
+              <div className={cn(
+                'font-mono text-xl font-bold',
+                batchSummary.duplicates === 0 ? 'text-nexus-text' : 'text-nexus-danger'
+              )}>{batchSummary.duplicates}</div>
+            </div>
+          </div>
+
+          {/* Error display */}
+          {error && (
+            <div className="p-2 bg-nexus-dangerBg/30 border border-nexus-danger text-nexus-danger text-xs">
+              {error}
+            </div>
+          )}
+
+          {(duplicateManualCodes.length > 0 || duplicateMarkerIds.length > 0) && (
+            <div className="p-2 bg-nexus-warningBg/30 border border-nexus-warning text-nexus-warning text-xs">
+              <div className="font-mono text-[0.56rem] uppercase tracking-[0.14em] mb-1">DUPLICATE DETECTED</div>
+              {duplicateManualCodes.length > 0 && (
+                <div>Manual codes: {duplicateManualCodes.join(', ')}</div>
+              )}
+              {duplicateMarkerIds.length > 0 && (
+                <div>Marker IDs: {duplicateMarkerIds.join(', ')}</div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Markers Grid */}
+        <div className="p-4">
+          <div className="font-mono text-[0.56rem] uppercase tracking-[0.14em] text-nexus-textSubtle mb-3">
+            MARKER PREVIEW — CLICK ANY UNIT FOR FULL VIEW
+          </div>
+          {isLoading ? (
+            <div className="text-center py-8 text-nexus-textMuted">
+              <BureauIcons.Spinner className="bureau-icon w-6 h-6 animate-spin mx-auto mb-2" />
+              LOADING MARKER REGISTER
+            </div>
+          ) : qrCodes.length === 0 ? (
+            <div className="text-center py-8 text-nexus-textMuted">
+              NO MARKERS FOUND
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {qrCodes.slice(0, 12).map(qr => (
+                <button
+                  key={qr.code}
+                  onClick={() => setPreviewItem(qr)}
+                  className="cursor-pointer focus:outline-none focus:ring-1 focus:ring-nexus-accent"
+                >
+                  <FieldMarkerComponent qrCode={qr} variant="preview" className="w-full max-w-[180px] mx-auto" />
+                </button>
+              ))}
+              {qrCodes.length > 12 && (
+                <div className="text-[0.56rem] font-mono uppercase tracking-[0.12em] text-nexus-textSubtle">
+                  …and {qrCodes.length - 12} more markers
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Generator */}
+        <div className="border-t border-nexus-borderSubtle p-4 flex justify-between items-center">
+          <div>
+            <p className="font-mono text-[0.56rem] uppercase tracking-[0.12em] text-nexus-textSubtle">
+              {qrCodes.length} markers • {batchSummary.pages} pages (2×2) • PDF will download automatically
+            </p>
+            {generateError && (
+              <p className="text-xs text-nexus-danger mt-1">{generateError}</p>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={onClose}
+              className="nexus-btn-secondary text-xs px-3 py-1.5"
+            >
+              [ CANCEL ]
+            </button>
+            <button
+              onClick={onGenerate}
+              disabled={isGenerating || qrCodes.length === 0 || hasIssues}
+              className="nexus-btn-primary text-xs px-4 py-1.5 min-h-[36px]"
+            >
+              {isGenerating ? (
+                <BureauIcons.Spinner className="bureau-icon w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <BureauIcons.Download className="bureau-icon w-3.5 h-3.5" />
+              )}
+              <span>[ GENERATE DEPLOYMENT SHEET ]</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Full-size preview modal */}
+      {previewItem && (
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
+          <div className="bg-nexus-paper max-w-[320px] w-full border border-nexus-border">
+            <div className="border-b border-nexus-borderSubtle p-2 flex justify-between items-center">
+              <span className="font-mono text-[0.56rem] uppercase tracking-[0.14em] text-nexus-textSubtle">
+                MARKER PREVIEW
+              </span>
+              <button
+                onClick={() => setPreviewItem(null)}
+                className="p-1 text-nexus-textMuted hover:text-nexus-text"
+              >
+                <BureauIcons.Close className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="p-2">
+              <FieldMarkerComponent qrCode={previewItem} variant="print" className="w-full" />
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

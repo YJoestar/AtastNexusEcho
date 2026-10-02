@@ -346,6 +346,12 @@ export interface QRCodeEntry {
   puzzleNodeType: string
   puzzleNodeStage: number
   puzzleNodeLocation: string
+  markerId?: string | null
+  manualCode?: string | null
+  deploymentStatus?: string
+  deploymentBatch?: string | null
+  caseNumber?: string
+  building?: string
 }
 
 export interface LeaderboardEntryAdmin {
@@ -760,16 +766,29 @@ export const adminAPI = {
       return (result.qrCodes ?? []).map(qr => {
         const q = qr as Record<string, unknown>
         const pg = (q.puzzle_node ?? q.puzzle_nodes ?? {}) as Record<string, unknown>
+        const metadata = (q.metadata ?? {}) as Record<string, unknown>
+
+        const puzzleCode = (metadata.puzzleCode as string) ?? (pg.code as string) ?? ''
+        const stage = (metadata.stage as number) ?? (pg.stage as number) ?? 1
+        const label = (q.label as string) ?? ''
+        const building = label.split(' — ')[0]?.replace('[', '')?.replace(']', '') ?? ''
+
         return {
           id: toText(firstPresent(q, ['id']), ''),
           code: toText(firstPresent(q, ['code']), ''),
           label: toText(firstPresent(q, ['label']), ''),
           type: toText(firstPresent(q, ['type']), ''),
-          puzzleNodeCode: toText(firstPresent(pg, ['code']), ''),
+          puzzleNodeCode: toText(firstPresent(pg, ['code']), puzzleCode),
           puzzleNodeTitle: toText(firstPresent(pg, ['title']), 'Unknown Node'),
           puzzleNodeType: toText(firstPresent(pg, ['type']), ''),
-          puzzleNodeStage: toCount(firstPresent(pg, ['stage']), 1),
-          puzzleNodeLocation: toText(firstPresent(pg, ['location']), ''),
+          puzzleNodeStage: toCount(firstPresent(pg, ['stage']), stage),
+          puzzleNodeLocation: toText(firstPresent(pg, ['location']), label),
+          markerId: toOptionalText(firstPresent(q, ['marker_id'])),
+          manualCode: toOptionalText(firstPresent(q, ['manual_code'])),
+          deploymentStatus: toText(firstPresent(q, ['deployment_status']), 'GENERATED'),
+          deploymentBatch: toOptionalText(firstPresent(q, ['deployment_batch'])),
+          caseNumber: '037',
+          building: building || toText(firstPresent(q, ['building']), ''),
         }
       })
     },

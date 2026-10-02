@@ -239,6 +239,10 @@ describe('listQRCodes', () => {
             puzzle_node_id: 'node-1',
             position: { x: 0, y: 0 },
             metadata: { puzzleCode: 'P01', stage: 1 },
+            marker_id: 'NX-037-A',
+            manual_code: '037-A-4821',
+            deployment_status: 'GENERATED',
+            deployment_batch: 'BATCH-01',
             puzzle_nodes: {
               code: 'P01',
               title: 'The Facade',
@@ -281,6 +285,12 @@ describe('listQRCodes', () => {
       puzzleNodeType: 'OBSERVATION',
       puzzleNodeStage: 1,
       puzzleNodeLocation: '[ADMIN BUILDING] — Main Entrance Facade',
+      markerId: 'NX-037-A',
+      manualCode: '037-A-4821',
+      deploymentStatus: 'GENERATED',
+      deploymentBatch: 'BATCH-01',
+      caseNumber: '037',
+      building: 'ADMIN BUILDING',
     })
     expect(result[1].puzzleNodeStage).toBe(5)
     expect(lastRequestBody().action).toBe('list-qr-codes')

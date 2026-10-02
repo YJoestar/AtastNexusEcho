@@ -81,13 +81,15 @@ export interface MergedInventory {
 export interface QRScanResult {
   discovered: boolean
   qrLabel?: string
-  /** Set when the marker maps to a puzzle node the team has now unlocked. */
   nodeCode?: string
   nodeTitle?: string
-  /** Another member of the team already claimed this non-puzzle marker. */
   alreadyClaimed?: boolean
   message?: string
   error?: string
+  markerId?: string
+  manualCode?: string
+  deploymentStatus?: string
+  qrCode?: string
 }
 
 function parseTimeToMinutes(timeStr: string): number {
@@ -368,6 +370,10 @@ export function useGameEngine() {
             ? undefined
             : 'ACCESS DENIED. The system recognizes the marker, but whatever it points to remains sealed.',
           error: result.error,
+          markerId: result.markerId,
+          manualCode: result.manualCode,
+          deploymentStatus: result.deploymentStatus,
+          qrCode: result.qrCode,
         }
       } catch {
         return {

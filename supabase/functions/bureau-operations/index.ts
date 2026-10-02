@@ -1909,7 +1909,7 @@ Deno.serve(async (req: Request) => {
        case 'list-qr-codes': {
          const { data: qrNodes, error: qrError } = await supabaseAdmin
            .from('qr_nodes')
-           .select('id, code, label, type, puzzle_node_id, position, metadata')
+           .select('id, code, label, type, puzzle_node_id, position, metadata, marker_id, manual_code, deployment_status, deployment_batch')
 
          if (qrError) {
            return jsonResponse(400, { error: qrError.message })
@@ -1932,36 +1932,57 @@ Deno.serve(async (req: Request) => {
            })
          }
 
-         const enriched = (qrNodes ?? []).map((q: Record<string, unknown>) => {
-           const nodeId = q.puzzle_node_id as string | null
-           const nodeInfo = nodeId ? nodeMap.get(nodeId) : null
-           return {
-             id: q.id,
-             code: q.code,
-             label: q.label,
-             type: q.type,
-             puzzle_node_id: nodeId,
-             position: q.position,
-             metadata: q.metadata,
-             puzzle_node: nodeInfo,
-           }
-         })
+          const enriched = (qrNodes ?? []).map((q: Record<string, unknown>) => {
+            const nodeId = q.puzzle_node_id as string | null
+            const nodeInfo = nodeId ? nodeMap.get(nodeId) : null
+
+            const position = q.position as Record<string, unknown> | undefined
+            const metadata = q.metadata as Record<string, unknown> | undefined
+            const puzzleCode = (metadata?.puzzleCode as string) ?? (nodeInfo?.code as string) ?? ''
+            const stage = (metadata?.stage as number) ?? nodeInfo?.stage ?? 1
+            const building = (q.label as string ?? '').split(' — ')[0]?.replace('[', '')?.replace(']', '') ?? ''
+
+            return {
+              id: q.id,
+              code: q.code,
+              label: q.label,
+              type: q.type,
+              puzzle_node_id: nodeId,
+              position: q.position,
+              metadata: q.metadata,
+              puzzle_node: nodeInfo,
+              marker_id: q.marker_id ?? null,
+              manual_code: q.manual_code ?? null,
+              deployment_status: q.deployment_status ?? 'GENERATED',
+              deployment_batch: q.deployment_batch ?? null,
+              case_number: '037',
+              puzzle_code: puzzleCode,
+              puzzle_stage: stage,
+              building: building,
+            }
+          })
 
          const now = new Date().toISOString()
          await logAction('QR_DOWNLOAD', undefined, undefined, {
            qrCount: enriched.length,
-         })
+          })
 
-         await supabaseAdmin.from('game_events').insert({
-           type: 'ADMIN_ACTION',
-           payload: { action: 'QR_DOWNLOAD', qrCount: enriched.length },
-           metadata: { source: 'bureau', timestamp: now },
-         })
+          await supabaseAdmin.from('game_events').insert({
+            type: 'ADMIN_ACTION',
+            payload: { action: 'QR_DOWNLOAD', qrCount: enriched.length },
+            metadata: { source: 'bureau', timestamp: now },
+          })
 
-         return jsonResponse(200, {
-           success: true,
-           qrCodes: enriched,
-         })
+          const duplicates = enriched
+            .map(e => e.code)
+            .filter((code: string, idx: number, arr: string[]) => arr.indexOf(code) !== idx)
+
+          return jsonResponse(200, {
+            success: true,
+            qrCodes: enriched,
+            duplicates: [...new Set(duplicates)],
+            totalPages: Math.ceil(enriched.length / 4),
+          })
        }
 
        default:

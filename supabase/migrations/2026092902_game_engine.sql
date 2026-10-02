@@ -930,6 +930,8 @@ END;
 $$;
 
 -- Server-authoritative: scan a QR code (does not leak what node it maps to)
+-- Accepts the QR-encoded code (e.g. 'QR-NODE-02'), the marker_id (e.g. 'NX-037-A'),
+-- or the manual_code (e.g. '037-A-4821') as fallback.
 CREATE OR REPLACE FUNCTION scan_qr_code(
   p_qr_code TEXT
 )
@@ -953,7 +955,9 @@ BEGIN
 
   SELECT * INTO v_qr_node
   FROM qr_nodes
-  WHERE code = p_qr_code;
+  WHERE code = p_qr_code
+     OR marker_id = p_qr_code
+     OR manual_code = p_qr_code;
 
   IF NOT FOUND THEN
     RETURN jsonb_build_object('error', 'Invalid QR code');
@@ -988,7 +992,11 @@ BEGIN
       RETURN jsonb_build_object(
         'discovered', true,
         'nodeCode', (SELECT code FROM puzzle_nodes WHERE id = v_qr_node.puzzle_node_id),
-        'nodeTitle', v_qr_node.label
+        'nodeTitle', v_qr_node.label,
+        'markerId', v_qr_node.marker_id,
+        'manualCode', v_qr_node.manual_code,
+        'deploymentStatus', v_qr_node.deployment_status,
+        'qrCode', v_qr_node.code
       );
     ELSE
       RETURN jsonb_build_object('discovered', false);
@@ -1005,7 +1013,11 @@ BEGIN
     INSERT INTO game_events (type, team_id, payload)
     VALUES ('QR_SCANNED', v_team_id, jsonb_build_object('qrCode', p_qr_code));
 
-    RETURN jsonb_build_object('discovered', true, 'qrLabel', v_qr_node.label);
+    RETURN jsonb_build_object('discovered', true, 'qrLabel', v_qr_node.label,
+      'markerId', v_qr_node.marker_id,
+      'manualCode', v_qr_node.manual_code,
+      'deploymentStatus', v_qr_node.deployment_status,
+      'qrCode', v_qr_node.code);
   END IF;
 END;
 $$;

@@ -41,6 +41,10 @@ export interface QRScanResponse {
   nodeTitle?: string
   alreadyClaimed?: boolean
   error?: string
+  markerId?: string
+  manualCode?: string
+  deploymentStatus?: string
+  qrCode?: string
 }
 
 async function callFunction<T>(name: string, body: unknown = {}): Promise<T> {

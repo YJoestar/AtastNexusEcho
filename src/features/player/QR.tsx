@@ -487,12 +487,35 @@ export function PlayerQR() {
             <div className="flex items-start gap-3">
               <div className="flex-1 min-w-0">
                 <div className="mb-2 flex items-center justify-between gap-2">
-                  <p className="font-mono text-[0.6rem] uppercase tracking-[0.16em] text-nexus-textSubtle">ACQUISITION RESULT</p>
+                  <p className="font-mono text-[0.6rem] uppercase tracking-[0.16em] text-nexus-textSubtle">FIELD MARKER ACQUIRED</p>
                   <Stamp variant={lastResult.discovered ? 'verified' : 'restricted'} impressed>
                     {isResolving ? 'VERIFYING' : lastResult.alreadyClaimed ? 'ALREADY FILED' : lastResult.discovered ? 'IDENTIFIED' : 'UNRESOLVED'}
                   </Stamp>
                 </div>
-                {lastResult.qrLabel && (
+
+                {lastResult.markerId && (
+                  <p className="font-display text-lg font-bold text-nexus-text mb-1">
+                    {lastResult.markerId}
+                  </p>
+                )}
+
+                {lastResult.qrCode && (
+                  <p className="font-mono text-[0.625rem] uppercase tracking-[0.12em] text-nexus-textSubtle mb-2">
+                    QR: {lastResult.qrCode}
+                  </p>
+                )}
+
+                {lastResult.manualCode && (
+                  <>
+                    <p className="font-mono text-[0.56rem] uppercase tracking-[0.14em] text-nexus-textSubtle">
+                      MANUAL REFERENCE
+                    </p>
+                    <p className="font-mono text-base font-bold tracking-[0.08em] text-nexus-text mt-0.5 mb-2 break-all">
+                      {lastResult.manualCode}
+                    </p>
+                  </>
+                )}
+                {lastResult.qrLabel && !lastResult.manualCode && (
                   <p className="text-sm text-nexus-textMuted font-mono break-all">
                     {lastResult.qrLabel}
                   </p>
@@ -569,7 +592,7 @@ export function PlayerQR() {
                 type="text"
                 value={manualCode}
                 onChange={e => setManualCode(e.target.value)}
-                placeholder="NX-Loc-001-XXXX-XX"
+                 placeholder="037-A-4821"
                 aria-label="Marker code"
                 autoCapitalize="characters"
                 autoComplete="off"
@@ -594,7 +617,7 @@ export function PlayerQR() {
             <div>
               <h4 className="mb-1 font-mono text-xs font-bold uppercase tracking-[0.14em] text-nexus-info">FIELD MARKER PROCEDURE</h4>
               <p className="text-xs leading-relaxed text-nexus-textMuted">
-                Markers are fixed at campus locations. Manual codes use the same verification channel. In simulation, use <code className="font-mono">NX-TEST-ENTRY</code>.
+                Markers are fixed at campus locations. Manual codes use the same verification channel. In simulation, use <code className="font-mono">QR-NODE-02</code> or the manual code format <code className="font-mono">037-A-4821</code>.
               </p>
             </div>
           </div>
