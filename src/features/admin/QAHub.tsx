@@ -15,7 +15,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { BureauIcons } from '@/components/bureau'
 import { ROLE_LABELS, ROLE_DESCRIPTIONS, ROLES } from '@/app/config'
-import { ALL_PUZZLES } from '@/content/puzzles'
+import { ALL_PUZZLES, PUZZLES_BY_CODE } from '@/content/puzzles'
 import { cn } from '@/lib/utils'
 import { QASimulatorProvider, useQA } from '@/contexts/QASimulatorContext'
 import type { Role, SimulationType } from '@/contexts/QASimulatorContext'
@@ -510,6 +510,14 @@ function QAHubInner() {
                     </code>
                   </div>
                 </div>
+
+                {qa.currentNodeId && (
+                  <PuzzleDetailViewer
+                    nodeId={qa.currentNodeId}
+                    role={qa.role}
+                    getNode={qa.getNode}
+                  />
+                )}
               </div>
             )}
 
@@ -730,6 +738,184 @@ function KeyboardShortcuts({
   }, [onSolve, onReset])
 
   return null
+}
+
+interface PuzzleDetailViewerProps {
+  nodeId: string
+  role: Role
+  getNode: (nodeId: string, role?: Role) => Promise<unknown>
+}
+
+function PuzzleDetailViewer({ nodeId, role, getNode }: PuzzleDetailViewerProps) {
+  const [detail, setDetail] = useState<any>(null)
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    setLoading(true)
+    void (async () => {
+      const result = await getNode(nodeId, role)
+      if (!cancelled) setDetail(result)
+      setLoading(false)
+    })()
+    return () => { cancelled = true }
+  }, [nodeId, role, getNode])
+
+  const puzzle = PUZZLES_BY_CODE[nodeId]
+
+  return (
+    <div className="border-t border-nexus-border pt-4 space-y-3">
+      <h4 className="font-mono text-xs uppercase tracking-[0.14em] text-nexus-textSubtle">
+        CURRENT NODE DETAIL — {puzzle?.code ?? nodeId}
+      </h4>
+      {puzzle && (
+        <div className="text-sm space-y-1">
+          <div className="flex justify-between">
+            <span className="text-nexus-textMuted">Title:</span>
+            <span className="text-nexus-text">{puzzle.name}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-nexus-textMuted">Location:</span>
+            <span className="text-nexus-text">{puzzle.location}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-nexus-textMuted">Type:</span>
+            <span className="text-nexus-text">{puzzle.type}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-nexus-textMuted">Stage:</span>
+            <span className="text-nexus-text">{puzzle.stage}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-nexus-textMuted">Prerequisites:</span>
+            <span className="text-nexus-text font-mono">{puzzle.prerequisiteNodes.length > 0 ? puzzle.prerequisiteNodes.join(', ') : 'None'}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-nexus-textMuted">Next Nodes:</span>
+            <span className="text-nexus-text font-mono">{puzzle.nextNodes?.length ? puzzle.nextNodes.join(', ') : '—'}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-nexus-textMuted">Points:</span>
+            <span className="text-nexus-text">{puzzle.points}</span>
+          </div>
+        </div>
+      )}
+
+      {loading && (
+        <div className="text-xs text-nexus-textSubtle">Loading puzzle content...</div>
+      )}
+
+      {detail && detail.roleContent && (
+        <div className="space-y-3">
+          <h5 className="font-mono text-[0.56rem] uppercase tracking-[0.14em] text-nexus-textSubtle">
+            {role} ROLE CONTENT
+          </h5>
+          <div className="bg-nexus-surfaceElevated p-3 rounded border border-nexus-borderSubtle space-y-2 text-sm">
+            <div>
+              <span className="text-nexus-textMuted">Screen Title:</span>
+              <span className="text-nexus-text ml-2">{detail.roleContent.screenTitle}</span>
+            </div>
+            <div>
+              <span className="text-nexus-textMuted">Data Payload:</span>
+              <div className="mt-1 text-nexus-text bg-nexus-bg p-2 rounded font-mono text-xs overflow-x-auto">
+                {detail.roleContent.dataPayload}
+              </div>
+            </div>
+            <div>
+              <span className="text-nexus-textMuted">Task Prompt:</span>
+              <div className="mt-1 text-nexus-text">{detail.roleContent.taskPrompt}</div>
+            </div>
+            {detail.roleContent.intermediateOutput && (
+              <div>
+                <span className="text-nexus-textMuted">Intermediate Output:</span>
+                <div className="mt-1 text-nexus-text font-mono text-xs">
+                  {detail.roleContent.intermediateOutput}
+                </div>
+              </div>
+            )}
+            {detail.roleContent.interactiveData && (
+              <div>
+                <span className="text-nexus-textMuted">Interactive Data:</span>
+                <div className="mt-1 text-nexus-text font-mono text-xs bg-nexus-bg p-2 rounded overflow-x-auto">
+                  {JSON.stringify(detail.roleContent.interactiveData)}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {detail && detail.narrativeObjective && (
+        <div>
+          <h5 className="font-mono text-[0.56rem] uppercase tracking-[0.14em] text-nexus-textSubtle">
+            Narrative Objective
+          </h5>
+          <p className="text-sm text-nexus-text mt-1">{detail.narrativeObjective}</p>
+        </div>
+      )}
+
+      {detail && detail.coordinationChain && (
+        <div>
+          <h5 className="font-mono text-[0.56rem] uppercase tracking-[0.14em] text-nexus-textSubtle">
+            Coordination Chain
+          </h5>
+          <div className="grid grid-cols-3 gap-2 text-xs mt-1">
+            <div className="bg-nexus-surfaceElevated p-2 rounded border border-nexus-borderSubtle">
+              <span className="text-nexus-textMuted">Observer:</span>
+              <div className="text-nexus-text mt-1">{detail.coordinationChain.observerProduces}</div>
+            </div>
+            <div className="bg-nexus-surfaceElevated p-2 rounded border border-nexus-borderSubtle">
+              <span className="text-nexus-textMuted">Analyst:</span>
+              <div className="text-nexus-text mt-1">{detail.coordinationChain.analystTransforms}</div>
+            </div>
+            <div className="bg-nexus-surfaceElevated p-2 rounded border border-nexus-borderSubtle">
+              <span className="text-nexus-textMuted">Operator:</span>
+              <div className="text-nexus-text mt-1">{detail.coordinationChain.operatorExecutes}</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {detail && detail.failurePropagation && (
+        <div>
+          <h5 className="font-mono text-[0.56rem] uppercase tracking-[0.14em] text-nexus-textSubtle">
+            Failure Propagation
+          </h5>
+          <div className="text-xs bg-nexus-surfaceElevated p-2 rounded border border-nexus-borderSubtle space-y-1">
+            <div><span className="text-nexus-textMuted">Wrong Step:</span> {detail.failurePropagation.wrongStep}</div>
+            <div><span className="text-nexus-textMuted">Consequence:</span> {detail.failurePropagation.consequence}</div>
+            <div><span className="text-nexus-textMuted">Recovery:</span> {detail.failurePropagation.recoveryGuidance}</div>
+          </div>
+        </div>
+      )}
+
+      {detail && detail.locationClue && (
+        <div>
+          <h5 className="font-mono text-[0.56rem] uppercase tracking-[0.14em] text-nexus-textSubtle">
+            Location Clue
+          </h5>
+          <div className="text-xs bg-nexus-surfaceElevated p-2 rounded border border-nexus-borderSubtle space-y-1">
+            <div><span className="text-nexus-textMuted">Clue:</span> {detail.locationClue.clueText}</div>
+            {detail.locationClue.solution && <div><span className="text-nexus-textMuted">Solution:</span> {detail.locationClue.solution}</div>}
+            {detail.locationClue.nextPhysicalLocation && <div><span className="text-nexus-textMuted">Next Location:</span> {detail.locationClue.nextPhysicalLocation}</div>}
+            {detail.locationClue.nextQrNode && <div><span className="text-nexus-textMuted">Next QR Node:</span> <span className="text-nexus-accent">{detail.locationClue.nextQrNode}</span></div>}
+          </div>
+        </div>
+      )}
+
+      {detail && detail.evidenceUnlocked && (
+        <div>
+          <h5 className="font-mono text-[0.56rem] uppercase tracking-[0.14em] text-nexus-textSubtle">
+            Evidence Unlocked
+          </h5>
+          <div className="text-xs bg-nexus-surfaceElevated p-2 rounded border border-nexus-borderSubtle">
+            <div className="font-medium text-nexus-text">{detail.evidenceUnlocked.title}</div>
+            <div className="text-nexus-textMuted mt-1">{detail.evidenceUnlocked.content?.text ? String(detail.evidenceUnlocked.content.text).substring(0, 200) + '...' : ''}</div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
 }
 
 export function QAHub() {
