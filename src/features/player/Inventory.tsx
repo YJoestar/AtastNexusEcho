@@ -138,8 +138,8 @@ export function PlayerInventory() {
           <button
             onClick={() => fetchInventory()}
             className="p-2 border border-nexus-borderSubtle text-nexus-textMuted hover:text-nexus-text hover:bg-nexus-surfaceElevated touch-target-primary"
-            aria-label="Refresh inventory"
-            title="Refresh"
+            aria-label="Recalibrate inventory"
+            title="RECALIBRATE"
           >
             <BureauIcons.Refresh className="bureau-icon w-4 h-4" />
           </button>
@@ -291,7 +291,7 @@ export function PlayerInventory() {
               <button
                 onClick={() => setInspected(null)}
                 className="p-1 -m-1 border border-nexus-borderSubtle text-nexus-textSubtle hover:text-nexus-text"
-                aria-label="Close"
+                aria-label="Dismiss"
                 type="button"
               >
                 <BureauIcons.Close className="bureau-icon w-5 h-5" />

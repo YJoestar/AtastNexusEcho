@@ -11,6 +11,8 @@
 import { useMemo, useState, useEffect } from 'react'
 import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { BureauIcons, SignalIntegrity } from '@/components/bureau'
+import { CRTOverlay } from '@/components/visual/CRTOverlay'
+import { VisualEnvironmentProvider } from '@/components/visual/VisualEnvironment'
 import { cn } from '@/lib/utils'
 import { ROUTES } from '@/app/config'
 import { useAdmin } from '@/app/providers/AdminProvider'
@@ -63,6 +65,7 @@ export function AdminLayout() {
   }, [])
 
   const narrativeLevel = useMemo(() => levelFromCasePhase(gameState?.currentPhase), [gameState?.currentPhase])
+  const signalStrength = connectionInfo.signalStrength
 
   const handleLogout = async () => {
     await logout()
@@ -73,12 +76,20 @@ export function AdminLayout() {
   const totalPersonnel = teams.reduce((sum, t) => sum + (t.playerCount ?? 0), 0)
 
   return (
-    <div
-      data-horror={narrativeLevel}
-      className="min-h-screen bg-nexus-bg text-nexus-text font-mono antialiased"
+    <VisualEnvironmentProvider
+      profile="BUREAU_PC"
+      horrorLevel={narrativeLevel}
+      signalStrength={signalStrength}
+      isConnected={isConnected}
     >
-      <div className="nexus-bureau-bezel">
-        {/* Workstation Machine Status Bar */}
+      <div
+        data-horror={narrativeLevel}
+        className="min-h-screen bg-nexus-bg text-nexus-text font-mono antialiased relative overflow-hidden"
+      >
+        <div className="nexus-bureau-bezel">
+          <CRTOverlay />
+          <div className="bureau-glass" aria-hidden="true" />
+          {/* Workstation Machine Status Bar */}
         <div className="nexus-bureau-status-bar flex items-center justify-between">
           <div className="flex items-center gap-4">
             <span className="nexus-bureau-status-item flex items-center gap-1.5 font-bold text-nexus-text">
@@ -115,7 +126,7 @@ export function AdminLayout() {
         <div className="nexus-bureau-workarea">
           {/* Left Filing Spine / Case Index */}
           <aside className={cn(
-            'nexus-case-index border-r border-nexus-border bg-nexus-surfaceElevated transition-all duration-normal flex flex-col',
+            'nexus-case-index border-r border-nexus-border bg-nexus-surfaceElevated transition-all duration-normal flex flex-col cursor-inspect',
             isIndexCollapsed ? 'w-12' : 'w-60',
           )}>
             <div className="border-b border-nexus-border px-3 py-2 flex items-center justify-between">
@@ -243,9 +254,10 @@ export function AdminLayout() {
             </div>
           </aside>
 
-          {/* Center Workspace Canvas */}
-          <main className="nexus-bureau-canvas flex-1 overflow-auto bg-nexus-bg">
-            <div className="p-4 md:p-6 max-w-[1600px] mx-auto">
+           {/* Center Workspace Canvas */}
+           <main className="nexus-bureau-canvas flex-1 overflow-auto bg-nexus-bg">
+             <div className="nexus-bureau-monitor-frame">
+               <div className="p-4 md:p-6 max-w-[1600px] mx-auto">
               {!isConnected && location.pathname !== ROUTES.ADMIN_LOGIN && (
                 <div className="mb-4 flex items-center justify-between gap-2 px-3 py-2 border border-nexus-danger bg-nexus-dangerBg/30 text-xs">
                   <div className="flex items-center gap-2">
@@ -265,6 +277,7 @@ export function AdminLayout() {
               )}
               <Outlet />
             </div>
+          </div>
           </main>
 
           {/* Right Observation & Live Telemetry Rail */}
@@ -377,6 +390,7 @@ export function AdminLayout() {
           </span>
         </div>
       </div>
-    </div>
+      </div>
+    </VisualEnvironmentProvider>
   )
 }

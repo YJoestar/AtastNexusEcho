@@ -16,6 +16,8 @@ import { Outlet, useLocation } from 'react-router-dom'
 import { PlayerHeader } from '@/components/player/PlayerHeader'
 import { BottomNav } from '@/components/player/BottomNav'
 import { OfflineBanner } from '@/components/player/OfflineBanner'
+import { SignalLayer } from '@/components/visual/SignalLayer'
+import { VisualEnvironmentProvider } from '@/components/visual/VisualEnvironment'
 import { shouldRenderBottomNav } from '@/lib/navigation'
 import { useApp } from '@/app/providers'
 import { useConnection } from '@/hooks/useConnection'
@@ -47,33 +49,54 @@ export function PlayerLayout() {
   )
 
   const narrative = useNarrative(signals)
+  const horrorLevel = narrative.level
+
+  // Derive signal strength from connection state for the visual environment
+  const signalStrength = useMemo(() => {
+    switch (connection.status) {
+      case 'online': return 100
+      case 'degraded': return 50
+      case 'unavailable': return 30
+      case 'reconnecting': return 60
+      case 'offline': return 0
+      default: return 0
+    }
+  }, [connection.status])
 
   return (
-    <div
-      data-horror={narrative.level}
-      className="bg-nexus-bg text-nexus-text flex flex-col safe-area-x app-viewport nexus-handset-shell"
+    <VisualEnvironmentProvider
+      profile="FIELD_DEVICE"
+      horrorLevel={horrorLevel}
+      signalStrength={signalStrength}
+      isConnected={connection.isOffline ? false : true}
     >
-      {showLayout && <PlayerHeader />}
-      {showLayout && (
-        <OfflineBanner
-          connection={connection}
-          queuedCount={queue.count}
-          lastFlush={queue.lastFlush}
-          onAcknowledge={queue.clearLastFlush}
-        />
-      )}
-
-      <main
-        className={
-          showBottomNav
-            ? 'flex-1 w-full overflow-x-hidden pb-[calc(56px+var(--safe-bottom))] md:pb-0'
-            : 'flex-1 w-full overflow-x-hidden'
-        }
+      <div
+        data-horror={narrative.level}
+        className="relative bg-nexus-bg text-nexus-text flex flex-col safe-area-x app-viewport nexus-handset-shell"
       >
-        <Outlet />
-      </main>
+        <SignalLayer signalStrength={signalStrength} />
+        {showLayout && <PlayerHeader />}
+        {showLayout && (
+          <OfflineBanner
+            connection={connection}
+            queuedCount={queue.count}
+            lastFlush={queue.lastFlush}
+            onAcknowledge={queue.clearLastFlush}
+          />
+        )}
 
-      {showLayout && <BottomNav />}
-    </div>
+        <main
+          className={
+            showBottomNav
+              ? 'relative flex-1 w-full overflow-x-hidden pb-[calc(56px+var(--safe-bottom))] md:pb-0'
+              : 'relative flex-1 w-full overflow-x-hidden'
+          }
+        >
+          <Outlet />
+        </main>
+
+        {showLayout && <BottomNav />}
+      </div>
+    </VisualEnvironmentProvider>
   )
 }

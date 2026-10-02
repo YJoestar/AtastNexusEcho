@@ -340,7 +340,7 @@ export function PlayerQR() {
             className="btn-primary touch-target-comfortable"
           >
             <BureauIcons.Camera className="bureau-icon w-4 h-4" />
-            <span>Retry Camera</span>
+            <span>REACQUIRE SIGNAL</span>
           </button>
         )}
       </div>
@@ -463,7 +463,7 @@ export function PlayerQR() {
                 <button
                   onClick={stopScan}
                   className="absolute top-4 right-4 p-2 bg-nexus-dangerBg border border-nexus-danger/30 text-nexus-danger hover:bg-nexus-danger/20 transition-colors touch-target-primary"
-                  aria-label="Cancel scan"
+                  aria-label="Exit viewfinder"
                 >
                   <BureauIcons.Close className="bureau-icon w-5 h-5" />
                 </button>
@@ -581,7 +581,7 @@ export function PlayerQR() {
                 disabled={!manualCode.trim() || isResolving || isOffline}
                 className="btn-primary touch-target-comfortable flex-shrink-0"
               >
-                Submit
+                Verify Code
               </button>
             </form>
           )}

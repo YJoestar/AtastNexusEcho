@@ -31,6 +31,7 @@ import {
   type StatusTone,
 } from '@/components/bureau'
 import { CampusMap } from '@/components/player/map/CampusMap'
+import { TacticalOverlay } from '@/components/visual/TacticalOverlay'
 
 export function PlayerGame() {
   const navigate = useNavigate()
@@ -242,12 +243,13 @@ export function PlayerGame() {
               {availableNodes.length.toString().padStart(2, '0')} ACCESSIBLE
             </span>
           </div>
-          <div className="h-[min(42vh,360px)] min-h-[260px]">
+          <div className="relative h-[min(42vh,360px)] min-h-[260px]">
             <CampusMap
               nodes={mapNodes}
               showFog
               onNodeSelect={code => navigate(ROUTES.PLAYER_NODE.replace(':nodeId', code))}
             />
+            <TacticalOverlay nodes={mapNodes} showScaleBar={false} />
           </div>
           <div className="flex items-center justify-between gap-2 border-t border-nexus-border px-3 py-2 font-mono text-[0.52rem] uppercase tracking-[0.12em] text-nexus-textSubtle">
             <span>OPEN MARKERS ONLY</span>

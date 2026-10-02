@@ -145,7 +145,7 @@ export function PlayerNode() {
         <BureauIcons.Back className="bureau-icon w-12 h-12 text-nexus-textMuted mx-auto mb-4" aria-hidden="true" />
         <h1 className="heading-3 mb-2">Invalid Node</h1>
         <Link to={ROUTES.PLAYER_GAME} className="nexus-btn nexus-btn-secondary w-full touch-target-comfortable">
-          Back to Game
+          RETURN TO FIELD
         </Link>
       </div>
     )
@@ -167,7 +167,7 @@ export function PlayerNode() {
       <div className="page">
         <div className="page-content max-w-md mx-auto text-center py-12">
           <BureauIcons.Flag className="bureau-icon w-8 h-8 text-nexus-warning mx-auto mb-4" aria-hidden="true" />
-          <h3 className="heading-4 mb-2">Error</h3>
+          <h3 className="heading-4 mb-2">INVESTIGATION BLOCKED</h3>
           <p className="text-nexus-textMuted mb-4">{error}</p>
           <Link to={ROUTES.PLAYER_GAME} className="nexus-btn nexus-btn-secondary w-full touch-target-comfortable">
 RETURN TO FIELD
@@ -502,7 +502,7 @@ RETURN TO FIELD
                         className="nexus-btn nexus-btn-secondary flex-1 touch-target-primary"
                         type="button"
                       >
-                        Cancel
+                        Discard
                       </button>
                     </div>
                   </div>

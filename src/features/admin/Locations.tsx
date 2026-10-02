@@ -15,6 +15,7 @@ import { useBureau } from '@/hooks/useBureau'
 import { ALL_POIS } from '@/content/campus'
 import { useCampusMapState } from '@/hooks/useCampusMap'
 import { CampusMap } from '@/components/player/map/CampusMap'
+import { TacticalOverlay } from '@/components/visual/TacticalOverlay'
 import { LocationEditor } from '@/components/admin/LocationEditor'
 import { adminAPI } from '@/lib/admin'
 import { generateQRCodeSheet } from '@/lib/qr-download'
@@ -193,13 +194,14 @@ export function AdminLocations() {
         {/* Campus Map as Primary Interface */}
         <TerminalFrame title="CAMPUS CARTOGRAPHY" reference="SECTOR MAP" variant="monitor">
           <div className="p-2">
-            <div className="border border-nexus-border bg-nexus-bg h-80">
+            <div className="relative border border-nexus-border bg-nexus-bg h-80">
               <CampusMap
                 nodes={mapNodes}
                 showFog={true}
                 onNodeSelect={handleNodeSelect}
                 onNodeHover={() => {}}
               />
+              <TacticalOverlay nodes={mapNodes} />
             </div>
             <div className="mt-2 text-[0.56rem] font-mono uppercase tracking-[0.14em] text-nexus-textSubtle flex justify-between">
               <span>LEGEND</span>

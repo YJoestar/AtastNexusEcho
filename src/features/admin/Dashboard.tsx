@@ -10,6 +10,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { BureauIcons, TerminalFrame, IncidentLog, type IncidentEntry } from '@/components/bureau'
 import { CampusMap } from '@/components/player/map/CampusMap'
+import { TacticalOverlay } from '@/components/visual/TacticalOverlay'
 import { ROUTES } from '@/app/config'
 import { cn } from '@/lib/utils'
 import { useBureau, useBureauRealtime } from '@/hooks/useBureau'
@@ -287,8 +288,9 @@ export function AdminDashboard() {
           <section className="min-w-0 space-y-4">
             <TerminalFrame title="CAMPUS INTELLIGENCE MAP" reference="FIELD POSITIONS // CANONICAL SITE PLAN" variant="monitor">
               <div className="p-2">
-                <div className="h-[min(58vh,560px)] min-h-[340px] border border-nexus-border bg-nexus-bg">
+                <div className="relative h-[min(58vh,560px)] min-h-[340px] border border-nexus-border bg-nexus-bg">
                   <CampusMap nodes={mapNodes} showFog />
+                  <TacticalOverlay nodes={mapNodes} showCoordinates showScaleBar />
                 </div>
                 <div className="mt-2 flex flex-wrap items-center justify-between gap-2 border-t border-nexus-borderSubtle pt-2 font-mono text-[0.56rem] uppercase tracking-[0.14em] text-nexus-textSubtle">
                   <span>FIELD MARKERS: {teams.filter(team => !!team.currentNodeCode).length.toString().padStart(2, '0')}</span>
