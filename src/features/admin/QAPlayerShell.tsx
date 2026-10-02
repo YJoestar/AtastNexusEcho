@@ -44,7 +44,7 @@ import { PlayerNotifications } from '@/features/player/Notifications'
 import { PlayerFinal } from '@/features/player/Final'
 import { PlayerComplete } from '@/features/player/Complete'
 
-const DUMMY_APP_CONTEXT: AppContextValue = {
+export const DUMMY_APP_CONTEXT: AppContextValue = {
   player: null,
   team: null,
   role: null,

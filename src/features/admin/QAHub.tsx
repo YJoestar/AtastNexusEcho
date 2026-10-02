@@ -19,9 +19,11 @@ import { ALL_PUZZLES, PUZZLES_BY_CODE } from '@/content/puzzles'
 import { cn } from '@/lib/utils'
 import { QASimulatorProvider, useQA } from '@/contexts/QASimulatorContext'
 import type { Role, SimulationType } from '@/contexts/QASimulatorContext'
-import { QAPlayerShell } from '@/features/admin/QAPlayerShell'
+import { QAPlayerShell, DUMMY_APP_CONTEXT } from '@/features/admin/QAPlayerShell'
 import { SCAN_LOCATIONS, TEST_CODE, type ScanLocation } from '@/lib/qr'
-
+import { PlayerEvidenceArchive } from '@/features/player/evidence/EvidenceArchive'
+import { useInvestigationWorkspace } from '@/hooks/useInvestigationWorkspace'
+import { AppContext } from '@/app/providers/AppProvider'
 const SIMULATION_TYPES: { value: SimulationType; label: string; description: string }[] = [
   { value: 'FRESH', label: 'Fresh Start', description: 'No nodes solved — walk the progression from scratch' },
   { value: 'PARTIAL', label: 'Partial Progress', description: 'First 5 nodes solved — mid-game flow' },
@@ -43,9 +45,10 @@ const ROLE_ICONS = {
 
 function QAHubInner() {
   const qa = useQA()
+  const { clearWorkspace } = useInvestigationWorkspace(qa.team?.id)
   const [isStarted, setIsStarted] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
-  const [activeTab, setActiveTab] = useState<'controls' | 'inspector' | 'nodes' | 'qr' | 'players'>('controls')
+  const [activeTab, setActiveTab] = useState<'evidence' | 'players' | 'qr' | 'nodes' | 'controls' | 'inspector'>('controls')
   const [devicePreset, setDevicePreset] = useState('desktop')
   const [nodeJumpInput, setNodeJumpInput] = useState('')
 
@@ -329,6 +332,17 @@ function QAHubInner() {
                 )}
               >
                 PLAYERS
+              </button>
+              <button
+                onClick={() => setActiveTab('evidence')}
+                className={cn(
+                  'px-4 py-2 text-sm font-medium border-b-2 transition-colors',
+                  activeTab === 'evidence'
+                    ? 'border-nexus-accent text-nexus-accent'
+                    : 'border-transparent text-nexus-textMuted hover:text-nexus-text',
+                )}
+              >
+                EVIDENCE REGISTER
               </button>
             </nav>
 
@@ -680,6 +694,32 @@ function QAHubInner() {
                     <span className="text-nexus-text font-mono">{qa.score.toLocaleString()}</span>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {activeTab === 'evidence' && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-medium text-nexus-text">Evidence Register</h3>
+                  <div className="flex items-center gap-4 text-xs font-mono text-nexus-textSubtle">
+                    <span>{qa.inventory?.evidence.length ?? 0} EVIDENCE ITEMS</span>
+                    <button
+                      onClick={clearWorkspace}
+                      className="text-nexus-warning hover:text-nexus-warning/80 underline"
+                    >
+                      CLEAR LOCAL NOTES
+                    </button>
+                  </div>
+                </div>
+
+                <AppContext.Provider value={{ ...DUMMY_APP_CONTEXT, team: qa.team ?? null }}>
+                  <div className="border border-nexus-borderSubtle bg-nexus-bg p-2 text-xs text-nexus-textSubtle">
+                    CASE {qa.team?.code ?? 'QA001'} / LOCAL INVESTIGATION WORKSPACE — PERSONAL ANNOTATIONS SAVED ON THIS DEVICE
+                  </div>
+                  <div className="-mx-2 -mb-2 max-h-[600px]">
+                    <PlayerEvidenceArchive />
+                  </div>
+                </AppContext.Provider>
               </div>
             )}
           </div>

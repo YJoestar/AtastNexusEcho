@@ -43,17 +43,22 @@ export function useInvestigationWorkspace(teamId: string | null | undefined) {
     return () => window.removeEventListener('storage', handleStorage)
   }, [normalizedTeamId])
 
-  const updateWorkspace = useCallback((update: (current: InvestigationWorkspace) => InvestigationWorkspace) => {
-    setStored(current => {
-      const workspace = current.teamId === normalizedTeamId
-        ? current.workspace
-        : readInvestigationWorkspace(normalizedTeamId)
-      return { teamId: normalizedTeamId, workspace: update(workspace) }
-    })
-  }, [normalizedTeamId])
+   const updateWorkspace = useCallback((update: (current: InvestigationWorkspace) => InvestigationWorkspace) => {
+     setStored(current => {
+       const workspace = current.teamId === normalizedTeamId
+         ? current.workspace
+         : readInvestigationWorkspace(normalizedTeamId)
+       return { teamId: normalizedTeamId, workspace: update(workspace) }
+     })
+   }, [normalizedTeamId])
 
-  return {
-    workspace: stored.teamId === normalizedTeamId ? stored.workspace : emptyInvestigationWorkspace(),
-    updateWorkspace,
-  }
+   const clearWorkspace = useCallback(() => {
+     setStored({ teamId: normalizedTeamId, workspace: emptyInvestigationWorkspace() })
+   }, [normalizedTeamId])
+
+   return {
+     workspace: stored.teamId === normalizedTeamId ? stored.workspace : emptyInvestigationWorkspace(),
+     updateWorkspace,
+     clearWorkspace,
+   }
 }
