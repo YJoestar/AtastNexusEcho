@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type WheelEvent as ReactWheelEvent } from 'react'
 import { BureauIcons, Waveform } from '@/components/bureau'
 import type { EvidenceAnnotation, EvidenceMark, AnnotationKind } from '@/lib/investigationWorkspace'
-import { artifactCondition, artifactMediaUrl, artifactType, contentString, visibleArtifactFields, type CaseArtifact } from './types'
+import { artifactCondition, artifactImageUrl, artifactMediaUrl, artifactType, contentString, visibleArtifactFields, type CaseArtifact } from './types'
 import { glitch, glitchForCondition, glitchForMedium } from '@/lib/vfx/glitch'
 import { cn } from '@/lib/utils'
 
@@ -73,7 +73,8 @@ export function ArtifactInspection({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [artifact.id, compact])
 
-  const imageUrl = artifactMediaUrl(artifact, 'IMAGE')
+  // Generated media first, then whatever the server put in the record.
+  const imageUrl = artifactImageUrl(artifact)
   const audioUrl = artifactMediaUrl(artifact, 'AUDIO')
   const videoUrl = artifactMediaUrl(artifact, 'VIDEO')
   const isAudio = artifact.type.toUpperCase() === 'AUDIO' || !!audioUrl

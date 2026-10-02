@@ -200,4 +200,21 @@ describe('player evidence inspection', () => {
     expect(onAddAnnotation.mock.calls[1]?.[0]).toBe('NOTE')
     expect(onAddAnnotation.mock.calls[1]?.[1]).toBe('Compare this frame with the night register.')
   })
+
+  it('shows generated media that lives on the artifact, not only in server content', () => {
+    const artifact = { ...ARTIFACTS[0], imageUrl: '/evidence/photographs/photo_nx037_b_01.jpg', content: {} }
+    render(
+      <ArtifactInspection
+        artifact={artifact}
+        mark="UNMARKED"
+        annotations={[]}
+        onMarkChange={() => {}}
+        onAddAnnotation={() => {}}
+        onPlaceOnTable={() => {}}
+        isOnTable={false}
+      />,
+    )
+    const image = screen.getByAltText('PHOTO A') as HTMLImageElement
+    expect(image.getAttribute('src')).toContain('/evidence/photographs/photo_nx037_b_01.jpg')
+  })
 })

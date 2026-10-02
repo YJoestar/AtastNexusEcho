@@ -130,7 +130,9 @@ export function artifactCondition(artifact: CaseArtifact): ArtifactCondition {
   const raw = artifact.condition
     ?? contentString(artifact.content, ['condition', 'evidence_condition'])
     ?? 'NORMAL'
-  return raw.toUpperCase() as ArtifactCondition
+  const condition = raw.toUpperCase()
+  // The generator's register says STAIN; the vocabulary the UI paints is STAINED.
+  return (condition === 'STAIN' ? 'STAINED' : condition) as ArtifactCondition
 }
 
 export function artifactState(artifact: CaseArtifact): ArtifactState {
