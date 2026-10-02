@@ -244,7 +244,10 @@ function QAHubInner() {
     <div className="page">
       <div className="page-content max-w-7xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="heading-2 text-nexus-text">Player Experience Simulator</h1>
+          <div>
+            <p className="font-mono text-[0.56rem] uppercase tracking-[0.18em] text-nexus-textSubtle">ISOLATED MEMORY / NO PRODUCTION STATE</p>
+            <h1 className="mt-1 font-mono text-xl font-bold text-nexus-text">FIELD DEVICE EMULATION</h1>
+          </div>
           <div className="flex items-center gap-2">
             <select
               value={devicePreset}
@@ -256,15 +259,15 @@ function QAHubInner() {
             <button
               onClick={handleFullscreen}
               className="btn-ghost touch-target-primary"
-              aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+              aria-label={isFullscreen ? 'EXIT DISPLAY OVERLAY' : 'ENGAGE DISPLAY OVERLAY'}
             >
               {isFullscreen ? <BureauIcons.Minimize className="bureau-icon w-5 h-5" /> : <BureauIcons.Maximize className="bureau-icon w-5 h-5" />}
             </button>
             <button
               onClick={handleStop}
-              className="btn-secondary touch-target-primary"
+              className="nexus-btn-secondary min-h-10 touch-target-primary"
             >
-              Stop Simulation
+              [ TERMINATE SIMULATION ]
             </button>
           </div>
         </div>
@@ -280,7 +283,7 @@ function QAHubInner() {
                   : 'border-transparent text-nexus-textMuted hover:text-nexus-text',
               )}
             >
-              QA Controls
+              CONTROL INTERLOCKS
             </button>
             <button
               onClick={() => setActiveTab('inspector')}
@@ -291,7 +294,7 @@ function QAHubInner() {
                   : 'border-transparent text-nexus-textMuted hover:text-nexus-text',
               )}
             >
-              Inspector
+              STATE INSPECTOR
             </button>
             <button
               onClick={() => setActiveTab('nodes')}
@@ -302,7 +305,7 @@ function QAHubInner() {
                   : 'border-transparent text-nexus-textMuted hover:text-nexus-text',
               )}
             >
-              Node Index ({solvedCount}/{totalNodes})
+              NODE REGISTER ({solvedCount}/{totalNodes})
             </button>
               <button
                 onClick={() => setActiveTab('qr')}
@@ -391,7 +394,7 @@ function QAHubInner() {
                       type="text"
                       value={nodeJumpInput}
                       onChange={e => setNodeJumpInput(e.target.value)}
-                      placeholder="Node code (e.g. P15)"
+                      placeholder="FIELD NODE CODE (E.G. P15)"
                       className="flex-1 form-input text-sm"
                       onKeyDown={e => {
                         if (e.key === 'Enter') {
@@ -601,19 +604,25 @@ function QAHubInner() {
           </div>
         </div>
 
-        <div className="border border-nexus-border rounded-xl overflow-hidden">
-          <div className="bg-nexus-surfaceElevated px-4 py-2 border-b border-nexus-border flex items-center justify-between">
-            <div className="flex items-center gap-2 text-sm text-nexus-textMuted">
-              <BureauIcons.Monitor className="bureau-icon w-4 h-4" />
-              <span>Player View — {ROLE_LABELS[qa.role]} — {DEVICE_PRESETS.find(d => d.key === devicePreset)?.label ?? 'Desktop'}</span>
+        <div className="border border-nexus-border bg-nexus-surfaceElevated p-1">
+          <div className="border border-nexus-borderSubtle">
+          <div className="flex items-center justify-between gap-3 border-b border-nexus-border px-3 py-2">
+            <div className="min-w-0 font-mono">
+              <p className="text-[0.56rem] uppercase tracking-[0.16em] text-nexus-textSubtle">PLAYER VIEW / FH-037 FIELD DEVICE EMULATION</p>
+              <p className="mt-1 truncate text-xs font-bold text-nexus-text">{ROLE_LABELS[qa.role]} / {DEVICE_PRESETS.find(d => d.key === devicePreset)?.label ?? 'Desktop'} VIEWPORT</p>
             </div>
-            <div className="flex items-center gap-1 text-xs text-nexus-textSubtle">
-              <BureauIcons.BarChart3 className="bureau-icon w-4 h-4" />
-              <span>{solvedCount}/{totalNodes}</span>
+            <div className="shrink-0 text-right font-mono text-[0.56rem] uppercase tracking-[0.12em] text-nexus-textSubtle">
+              <span className="block">LOCAL SIMULATION</span>
+              <span className="mt-1 block text-nexus-accent">{solvedCount.toString().padStart(2, '0')} / {totalNodes} VERIFIED</span>
             </div>
           </div>
-          <div className={cn('mx-auto transition-all duration-300', DEVICE_PRESETS.find(d => d.key === devicePreset)?.width)}>
+          <div className={cn('mx-auto border-x border-nexus-border bg-nexus-bg transition-all duration-300', DEVICE_PRESETS.find(d => d.key === devicePreset)?.width)}>
             <QAPlayerShell />
+          </div>
+          <div className="flex items-center justify-between border-t border-nexus-border px-3 py-1.5 font-mono text-[0.5rem] uppercase tracking-[0.14em] text-nexus-textSubtle">
+            <span>PRODUCTION PLAYER SCREENS / ISOLATED GAME STATE</span>
+            <span>NO LIVE TEAM DATA</span>
+          </div>
           </div>
         </div>
 

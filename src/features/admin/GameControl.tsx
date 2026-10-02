@@ -1,12 +1,12 @@
-﻿/**
- * NEXUS — Admin Game Control
+/**
+ * NEXUS — Operations Control Console
  *
- * Real-time game state management. Controls game-wide
- * start, pause, resume, and end. Shows live status counts.
+ * Master system switches and mission execution controls.
+ * Built as an operational interlock terminal.
  */
 
 import { useEffect, useState } from 'react'
-import { BureauIcons } from '@/components/bureau'
+import { BureauIcons, TerminalFrame } from '@/components/bureau'
 import { cn } from '@/lib/utils'
 import { formatDateTime, formatTimeRemaining } from '@/lib/time'
 import { useBureau } from '@/hooks/useBureau'
@@ -41,24 +41,11 @@ export function AdminGameControl() {
   const statusCounts = gameState?.statusCounts ?? {}
   const config = gameState?.config ?? {}
 
-  const getGameStateConfig = (status: string) => {
-    const configs: Record<string, { icon: JSX.Element; color: string; bg: string; label: string }> = {
-      NOT_STARTED: { icon: <BureauIcons.Play className="bureau-icon w-6 h-6" />, color: 'text-nexus-info', bg: 'bg-nexus-infoBg/20', label: 'Not Started' },
-      RUNNING: { icon: <BureauIcons.Pause className="bureau-icon w-6 h-6" />, color: 'text-nexus-accent', bg: 'bg-nexus-accentBg/20', label: 'Running' },
-      PAUSED: { icon: <BureauIcons.Play className="bureau-icon w-6 h-6" />, color: 'text-nexus-warning', bg: 'bg-nexus-warningBg/20', label: 'Paused' },
-      ENDED: { icon: <BureauIcons.Square className="bureau-icon w-6 h-6" />, color: 'text-nexus-danger', bg: 'bg-nexus-dangerBg/20', label: 'Ended' },
-    }
-    return configs[status] ?? configs.NOT_STARTED
-  }
-
-  const stateConfig = getGameStateConfig(gameStatus)
-
   const deadline = config?.game_deadline as string | null
   const gameDuration = config?.game_duration_minutes as number ?? 180
   const startedAt = config?.game_started_at as string | null
 
   const activeTeams = teams.filter(t => t.status === 'ACTIVE').length
-  const completedTeams = teams.filter(t => ['COMPLETED', 'DISQUALIFIED', 'ABANDONED'].includes(t.status)).length
   const preStartTeams = teams.filter(t => ['REGISTERED', 'FORMING', 'READY', 'WAITING'].includes(t.status)).length
 
   const handleSaveConfig = async () => {
@@ -68,10 +55,10 @@ export function AdminGameControl() {
       const durationMinutes = gameDuration
       await adminAPI.updateGameConfig({
         game_duration_minutes: String(durationMinutes),
-      }, 'Game duration updated from Game Control')
+      }, 'Game duration updated from Operations Control')
       void fetchGameState()
     } catch (err: unknown) {
-      setActionError(err instanceof Error ? err.message : 'Failed to save config')
+      setActionError(err instanceof Error ? err.message : 'Failed to update system parameters')
     } finally {
       setIsSaving(false)
     }
@@ -85,22 +72,22 @@ export function AdminGameControl() {
     try {
       switch (actionConfirmOpen) {
         case 'start':
-          await adminAPI.startGame('Game started by Bureau')
+          await adminAPI.startGame('Mission execution initiated from Bureau Console')
           break
         case 'pause':
-          await adminAPI.pauseGame('Game paused by Bureau')
+          await adminAPI.pauseGame('Mission execution suspended by Operator')
           break
         case 'end':
-          await adminAPI.endGame('Game ended by Bureau')
+          await adminAPI.endGame('Mission terminated by Bureau')
           break
         case 'reset':
-          await adminAPI.resetGame('Game reset by Bureau')
+          await adminAPI.resetGame('Master baseline reset executed')
           break
       }
       void fetchGameState()
       void fetchTeams()
     } catch (err: unknown) {
-      setActionError(err instanceof Error ? err.message : 'Action failed')
+      setActionError(err instanceof Error ? err.message : 'Interlock rejected command')
     } finally {
       setIsActionLoading(false)
       setActionConfirmOpen(null)
@@ -109,10 +96,10 @@ export function AdminGameControl() {
 
   const getConfirmTitle = (action: GameAction) => {
     switch (action) {
-      case 'start': return 'Start Game'
-      case 'pause': return 'Pause Game'
-      case 'end': return 'End Game'
-      case 'reset': return 'Reset Game'
+      case 'start': return 'CONFIRM MISSION INITIATION'
+      case 'pause': return 'CONFIRM MISSION HOLD'
+      case 'end': return 'CONFIRM MISSION TERMINATION'
+      case 'reset': return 'CONFIRM BASELINE RE-INITIALIZATION'
       default: return ''
     }
   }
@@ -120,13 +107,13 @@ export function AdminGameControl() {
   const getConfirmMessage = (action: GameAction) => {
     switch (action) {
       case 'start':
-        return `Start the game for all ${preStartTeams} pre-start team(s)? The game timer will begin for all teams.`
+        return `Initiate active case operation for all ${preStartTeams} standby unit(s)? Mission countdown will begin.`
       case 'pause':
-        return `Pause the game for all ${activeTeams} active team(s)? Their timers will stop.`
+        return `Hold mission execution for ${activeTeams} active field unit(s)? Telemetry timers will be frozen.`
       case 'end':
-        return `End the game? All ${teams.filter(t => !['COMPLETED', 'DISQUALIFIED', 'ABANDONED'].includes(t.status)).length} in-progress team(s) will be marked as completed.`
+        return `Terminate mission? All active field units (${teams.filter(t => !['COMPLETED', 'DISQUALIFIED', 'ABANDONED'].includes(t.status)).length}) will be marked completed.`
       case 'reset':
-        return 'Reset the game? This will clear all teams\' progression data. This cannot be undone.'
+        return 'WARNING: Full baseline reset. This will wipe all field progression data and return station to standby. This cannot be undone.'
       default:
         return ''
     }
@@ -142,179 +129,256 @@ export function AdminGameControl() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="heading-2">Game Control</h1>
-        <button
-          onClick={() => { void fetchGameState(); void fetchTeams() }}
-          disabled={isLoading}
-          className="btn-secondary text-xs py-1.5"
-        >
-          <BureauIcons.RotateCcw className={cn('bureau-icon w- h-4', isLoading && 'animate-spin')} />
-          <span>Refresh</span>
-        </button>
+    <div className="space-y-4 font-mono">
+      {/* Header Banner */}
+      <div className="border border-nexus-border bg-nexus-surfaceElevated p-3">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="w-1.5 h-1.5 bg-nexus-warning animate-pulse" />
+              <span className="text-[0.625rem] tracking-[0.24em] uppercase text-nexus-textSubtle">
+                NEXUS ECHO // OPERATIONS CONTROL & MASTER INTERLOCKS
+              </span>
+            </div>
+            <h1 className="text-xl font-bold tracking-tight text-nexus-text mt-1">
+              MISSION EXECUTION CONSOLE
+            </h1>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => { void fetchGameState(); void fetchTeams() }}
+            disabled={isLoading}
+            className="nexus-btn-secondary text-xs px-3 py-1.5"
+          >
+            <BureauIcons.RotateCcw className={cn('bureau-icon w-3.5 h-3.5', isLoading && 'animate-spin')} />
+            <span>[ POLL STATUS ]</span>
+          </button>
+        </div>
       </div>
 
-      {/* Error */}
+      {/* Error Alert */}
       {(error || actionError) && (
-        <div className="p-3 rounded-xl bg-nexus-dangerBg border border-nexus-danger/30 text-nexus-danger text-sm animate-slide-down">
-          {actionError ?? error}
+        <div className="p-3 bg-nexus-dangerBg/30 border border-nexus-danger text-nexus-danger text-xs flex items-center gap-2">
+          <BureauIcons.AlertTriangle className="bureau-icon w-4 h-4 shrink-0" />
+          <span>INTERLOCK ALERT: {actionError ?? error}</span>
         </div>
       )}
 
-      {/* Game Status Card */}
-      <div className={cn(
-        'panel border',
-        stateConfig.bg,
-        `border-${stateConfig.color.replace('text-', '')}/30`,
-      )}>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            {stateConfig.icon}
-            <div>
-              <p className="text-sm text-nexus-textMuted">Game Status</p>
-              <p className={cn('font-display font-bold text-2xl', stateConfig.color)}>
-                {stateConfig.label}
-              </p>
-            </div>
-          </div>
-          <div className="text-right">
-            {gameStatus === 'RUNNING' && deadline && (
-              <div className="text-right">
-                <p className="text-sm text-nexus-textMuted">Time Remaining</p>
-                <p className="font-display font-bold text-xl text-nexus-warning">
-                  {formatTimeRemaining(deadline)}
-                </p>
+      {/* Grid: Master Interlocks + System Status */}
+      <div className="grid gap-4 md:grid-cols-2">
+        {/* Master Execution Switches */}
+        <TerminalFrame title="MASTER EXECUTION CONTROLS" reference="SAFETY INTERLOCK" variant="monitor">
+          <div className="space-y-4 p-2">
+            <div className="flex items-center justify-between border-b border-nexus-border pb-3">
+              <div>
+                <span className="text-[0.56rem] uppercase tracking-[0.2em] text-nexus-textSubtle block">
+                  CURRENT SYSTEM STATE
+                </span>
+                <span className={cn(
+                  'text-lg font-bold uppercase tracking-[0.14em]',
+                  gameStatus === 'RUNNING' && 'text-nexus-accent',
+                  gameStatus === 'PAUSED' && 'text-nexus-warning',
+                  gameStatus === 'ENDED' && 'text-nexus-danger',
+                  gameStatus === 'NOT_STARTED' && 'text-nexus-textMuted',
+                )}>
+                  [ {gameStatus.replace(/_/g, ' ')} ]
+                </span>
               </div>
-            )}
-            {startedAt && (
-              <p className="text-sm text-nexus-textSubtle mt-1">
-                Started: {formatDateTime(startedAt)}
-              </p>
-            )}
-          </div>
-        </div>
-      </div>
 
-      {/* Game Timer */}
-      <div className="panel">
-        <h2 className="heading-3 mb-4">Game Timer</h2>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <TimerCard label="Started" value={startedAt ? formatDateTime(startedAt) : '—'} icon={<BureauIcons.Clock className="bureau-icon w-5 h-5 text-nexus-info" />} color="text-nexus-info" />
-          <TimerCard label="Deadline" value={deadline ? formatDateTime(deadline) : '—'} icon={<BureauIcons.Square className="bureau-icon w-5 h-5 text-nexus-danger" />} color="text-nexus-danger" />
-          <TimerCard label="Duration" value={`${gameDuration} min`} icon={<BureauIcons.Clock className="bureau-icon w-5 h-5 text-nexus-info" />} color="text-nexus-info" />
-          <TimerCard label="Total Teams" value={String(teams.length)} icon={<BureauIcons.Users className="bureau-icon w-5 h-5 text-nexus-accent" />} color="text-nexus-accent" />
-        </div>
-      </div>
+              {gameStatus === 'RUNNING' && deadline && (
+                <div className="text-right">
+                  <span className="text-[0.56rem] uppercase tracking-[0.2em] text-nexus-textSubtle block">
+                    MISSION CLOCK
+                  </span>
+                  <span className="text-lg font-bold text-nexus-warning">
+                    {formatTimeRemaining(deadline)}
+                  </span>
+                </div>
+              )}
+            </div>
 
-      {/* Status Counts */}
-      <div className="panel">
-        <h2 className="heading-3 mb-4">Team Status Distribution</h2>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          {Object.entries(statusCounts).map(([status, count]) => (
-            <StatusCountCard
-              key={status}
-              status={status}
-              count={count as number}
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* Game Configuration */}
-      <div className="panel">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="heading-3">Game Configuration</h2>
-          {isSaving ? (
-            <BureauIcons.Spinner className="bureau-icon w-5 h-5 animate-spin text-nexus-info" />
-          ) : (
-            <button
-              onClick={handleSaveConfig}
-              className="btn-secondary text-xs py-1.5"
-            >
-              <BureauIcons.Save className="bureau-icon w-4 h-4" />
-              <span>Save Config</span>
-            </button>
-          )}
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-          <ConfigItem label="Max Teams" value={String(config?.max_teams ?? 25)} />
-          <ConfigItem label="Players/Team" value={String(config?.players_per_team ?? 3)} />
-          <ConfigItem label="Game Duration" value={`${gameDuration} min`} />
-          <ConfigItem label="Rolling Start" value={`${config?.rolling_start_interval_minutes ?? 10} min`} />
-          <ConfigItem label="Auto Assign Roles" value={config?.auto_assign_roles ? 'Yes' : 'No'} />
-          <ConfigItem label="Require All Roles" value={config?.require_all_roles ? 'Yes' : 'No'} />
-        </div>
-      </div>
-
-      {/* Game Actions */}
-      <div className="panel">
-        <h2 className="heading-3 mb-4">Game Lifecycle Actions</h2>
-        <div className="flex flex-wrap gap-3">
-          {gameStatus === 'NOT_STARTED' && (
-            <button
-              onClick={() => setActionConfirmOpen('start')}
-              disabled={isActionLoading || preStartTeams === 0}
-              className="btn-primary"
-            >
-              <BureauIcons.Play className="bureau-icon w-4 h-4" />
-              Start Game
-            </button>
-          )}
-          {gameStatus === 'RUNNING' && (
-            <>
-              <button
-                onClick={() => setActionConfirmOpen('pause')}
-                disabled={isActionLoading || activeTeams === 0}
-                className="btn-warning"
-              >
-                <BureauIcons.Pause className="bureau-icon w-4 h-4" />
-                Pause Game
-              </button>
-              {completedTeams === teams.length && (
+            {/* Action Buttons */}
+            <div className="space-y-2">
+              {gameStatus === 'NOT_STARTED' && (
                 <button
-                  onClick={() => setActionConfirmOpen('end')}
-                  disabled={isActionLoading}
-                  className="btn-danger"
+                  type="button"
+                  onClick={() => setActionConfirmOpen('start')}
+                  disabled={isActionLoading || preStartTeams === 0}
+                  className="w-full py-2.5 px-4 bg-nexus-text text-nexus-bg font-bold text-xs uppercase tracking-[0.18em] hover:bg-nexus-textMuted disabled:opacity-40 transition-colors"
                 >
-                  <BureauIcons.Square className="bureau-icon w-4 h-4" />
-                  End Game
+                  [ INITIATE MISSION / DEPLOY ALL STANDBY UNITS ]
                 </button>
               )}
-            </>
-          )}
-          {gameStatus === 'PAUSED' && (
-            <button
-              onClick={() => setActionConfirmOpen('reset')}
-              disabled={isActionLoading}
-              className="btn-primary"
-            >
-              <BureauIcons.RotateCcw className="bureau-icon w-4 h-4" />
-              <span>Reset Game</span>
-            </button>
-          )}
-          {gameStatus === 'ENDED' && (
-            <button
-              onClick={() => setActionConfirmOpen('reset')}
-              disabled={isActionLoading}
-              className="btn-secondary"
-            >
-              <BureauIcons.RotateCcw className="bureau-icon w-4 h-4" />
-              Reset Game
-            </button>
-          )}
-        </div>
-        <p className="text-xs text-nexus-textSubtle mt-3">
-          {gameStatus === 'NOT_STARTED'
-            ? `Start the game to begin the team timer for ${preStartTeams} team(s).`
-            : gameStatus === 'RUNNING'
-            ? `Game is live. ${activeTeams} teams currently playing.`
-            : gameStatus === 'PAUSED'
-            ? 'Game is paused. Reset to restart all teams.'
-            : 'Game has ended. All teams are finalized.'}
-        </p>
+
+              {gameStatus === 'RUNNING' && (
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setActionConfirmOpen('pause')}
+                    disabled={isActionLoading || activeTeams === 0}
+                    className="py-2.5 px-3 border border-nexus-warning text-nexus-warning bg-nexus-warningBg/20 font-bold text-xs uppercase tracking-[0.14em] hover:bg-nexus-warningBg/50 disabled:opacity-40 transition-colors"
+                  >
+                    [ HOLD MISSION ]
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setActionConfirmOpen('end')}
+                    disabled={isActionLoading}
+                    className="py-2.5 px-3 border border-nexus-danger text-nexus-danger bg-nexus-dangerBg/20 font-bold text-xs uppercase tracking-[0.14em] hover:bg-nexus-dangerBg/50 disabled:opacity-40 transition-colors"
+                  >
+                    [ TERMINATE MISSION ]
+                  </button>
+                </div>
+              )}
+
+              {(gameStatus === 'PAUSED' || gameStatus === 'ENDED') && (
+                <button
+                  type="button"
+                  onClick={() => setActionConfirmOpen('reset')}
+                  disabled={isActionLoading}
+                  className="w-full py-2.5 px-4 border border-nexus-danger text-nexus-danger bg-nexus-dangerBg/20 font-bold text-xs uppercase tracking-[0.18em] hover:bg-nexus-dangerBg/50 transition-colors"
+                >
+                  [ RETURN SYSTEM TO BASELINE / HARD RESET ]
+                </button>
+              )}
+            </div>
+
+            <p className="text-[0.625rem] text-nexus-textSubtle leading-relaxed">
+              {gameStatus === 'NOT_STARTED'
+                ? `Ready to arm. ${preStartTeams} field unit(s) waiting for deployment.`
+                : gameStatus === 'RUNNING'
+                ? `Operation is active across ${activeTeams} field unit(s). Unit progress remains recorded in the case ledger.`
+                : gameStatus === 'PAUSED'
+                ? 'Operation suspended. Reset system to return parameters to baseline.'
+                : 'Operation ended. All field registers preserved.'}
+            </p>
+          </div>
+        </TerminalFrame>
+
+        {/* Telemetry & Clocks */}
+        <TerminalFrame title="TELEMETRY READOUTS" reference="STATION CHRONO" variant="system">
+          <div className="p-2 space-y-2 text-xs">
+            <div className="grid grid-cols-2 gap-2">
+              <div className="border border-nexus-border bg-nexus-bg p-2.5">
+                <span className="text-[0.52rem] uppercase tracking-[0.18em] text-nexus-textSubtle block">
+                  MISSION INITIATED
+                </span>
+                <span className="text-nexus-text font-bold block mt-1">
+                  {startedAt ? formatDateTime(startedAt) : '— / NOT INITIALIZED'}
+                </span>
+              </div>
+
+              <div className="border border-nexus-border bg-nexus-bg p-2.5">
+                <span className="text-[0.52rem] uppercase tracking-[0.18em] text-nexus-textSubtle block">
+                  TARGET DEADLINE
+                </span>
+                <span className="text-nexus-warning font-bold block mt-1">
+                  {deadline ? formatDateTime(deadline) : '— / OPEN'}
+                </span>
+              </div>
+
+              <div className="border border-nexus-border bg-nexus-bg p-2.5">
+                <span className="text-[0.52rem] uppercase tracking-[0.18em] text-nexus-textSubtle block">
+                  ALLOCATED DURATION
+                </span>
+                <span className="text-nexus-text font-bold block mt-1">
+                  {gameDuration} MINUTES
+                </span>
+              </div>
+
+              <div className="border border-nexus-border bg-nexus-bg p-2.5">
+                <span className="text-[0.52rem] uppercase tracking-[0.18em] text-nexus-textSubtle block">
+                  REGISTERED UNITS
+                </span>
+                <span className="text-nexus-accent font-bold block mt-1">
+                  {teams.length} UNITS
+                </span>
+              </div>
+            </div>
+          </div>
+        </TerminalFrame>
       </div>
+
+      {/* Status Distribution Grid */}
+      <TerminalFrame title="UNIT DEPLOYMENT DISTRIBUTION" reference="PERSONNEL REGISTRY" variant="register">
+        <div className="p-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
+            {Object.entries(statusCounts).map(([status, count]) => (
+              <div
+                key={status}
+                className="border border-nexus-border bg-nexus-bg p-2 flex items-center justify-between"
+              >
+                <div className="min-w-0">
+                  <span className="text-[0.56rem] text-nexus-textSubtle block uppercase tracking-[0.12em] truncate">
+                    {status}
+                  </span>
+                  <TeamStatusBadge status={status as TeamStatus} showDot={false} />
+                </div>
+                <span className="text-sm font-bold text-nexus-text ml-2">
+                  {count as number}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </TerminalFrame>
+
+      {/* System Parameter Configuration */}
+      <TerminalFrame
+        title="SYSTEM OPERATING PARAMETERS"
+        reference="REGULATION 037"
+        variant="system"
+        footer={
+          <div className="flex justify-between items-center w-full">
+            <span className="text-[0.625rem] text-nexus-textSubtle">
+              CHANGES TO PARAMETERS WRITE DIRECTLY TO BUREAU PROTOCOL
+            </span>
+            <button
+              type="button"
+              onClick={handleSaveConfig}
+              disabled={isSaving}
+              className="nexus-btn-primary text-xs px-3 py-1 min-h-[30px]"
+            >
+              <BureauIcons.Save className={cn('bureau-icon w-3 h-3', isSaving && 'animate-spin')} />
+              <span>[ COMMIT PARAMETERS ]</span>
+            </button>
+          </div>
+        }
+      >
+        <div className="p-2 grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
+          <div className="border border-nexus-borderSubtle bg-nexus-bg p-2">
+            <span className="text-nexus-textSubtle text-[0.56rem] uppercase tracking-[0.14em] block">MAXIMUM UNITS</span>
+            <span className="font-bold text-nexus-text mt-1 block">{String(config?.max_teams ?? 25)}</span>
+          </div>
+
+          <div className="border border-nexus-borderSubtle bg-nexus-bg p-2">
+            <span className="text-nexus-textSubtle text-[0.56rem] uppercase tracking-[0.14em] block">INVESTIGATORS / UNIT</span>
+            <span className="font-bold text-nexus-text mt-1 block">{String(config?.players_per_team ?? 3)}</span>
+          </div>
+
+          <div className="border border-nexus-borderSubtle bg-nexus-bg p-2">
+            <span className="text-nexus-textSubtle text-[0.56rem] uppercase tracking-[0.14em] block">DURATION</span>
+            <span className="font-bold text-nexus-text mt-1 block">{gameDuration} MIN</span>
+          </div>
+
+          <div className="border border-nexus-borderSubtle bg-nexus-bg p-2">
+            <span className="text-nexus-textSubtle text-[0.56rem] uppercase tracking-[0.14em] block">ROLLING INTERVAL</span>
+            <span className="font-bold text-nexus-text mt-1 block">{String(config?.rolling_start_interval_minutes ?? 10)} MIN</span>
+          </div>
+
+          <div className="border border-nexus-borderSubtle bg-nexus-bg p-2">
+            <span className="text-nexus-textSubtle text-[0.56rem] uppercase tracking-[0.14em] block">AUTO-ASSIGN ROLES</span>
+            <span className="font-bold text-nexus-text mt-1 block">{config?.auto_assign_roles ? 'AUTHORIZED' : 'MANUAL'}</span>
+          </div>
+
+          <div className="border border-nexus-borderSubtle bg-nexus-bg p-2">
+            <span className="text-nexus-textSubtle text-[0.56rem] uppercase tracking-[0.14em] block">ROLE COMPLETENESS</span>
+            <span className="font-bold text-nexus-text mt-1 block">{config?.require_all_roles ? 'ENFORCED' : 'OPTIONAL'}</span>
+          </div>
+        </div>
+      </TerminalFrame>
 
       {/* Confirmation Dialog */}
       <ConfirmationDialog
@@ -322,72 +386,15 @@ export function AdminGameControl() {
         onClose={() => setActionConfirmOpen(null)}
         title={getConfirmTitle(actionConfirmOpen)}
         confirmAction={{
-          label: actionConfirmOpen === 'reset' ? 'RESET GAME' : actionConfirmOpen === 'end' ? 'END GAME' : actionConfirmOpen === 'pause' ? 'PAUSE GAME' : 'START GAME',
+          label: actionConfirmOpen === 'reset' ? 'CONFIRM HARD RESET' : actionConfirmOpen === 'end' ? 'CONFIRM TERMINATION' : actionConfirmOpen === 'pause' ? 'CONFIRM HOLD' : 'CONFIRM INITIATE',
           variant: getConfirmVariant(actionConfirmOpen),
           loading: isActionLoading,
         }}
         onConfirm={executeAction}
         danger={actionConfirmOpen === 'end' || actionConfirmOpen === 'reset'}
       >
-        <p>{actionConfirmOpen ? getConfirmMessage(actionConfirmOpen) : ''}</p>
+        <p className="font-mono text-xs">{actionConfirmOpen ? getConfirmMessage(actionConfirmOpen) : ''}</p>
       </ConfirmationDialog>
     </div>
   )
 }
-
-function TimerCard({ label, value, icon, color }: {
-  label: string
-  value: string
-  icon: JSX.Element
-  color: string
-}) {
-  return (
-    <div className="flex items-center gap-3 p-4 bg-nexus-bg rounded-xl border border-nexus-border">
-      {icon}
-      <div>
-        <p className="text-xs text-nexus-textSubtle">{label}</p>
-        <p className={cn('font-mono font-medium', color)}>{value}</p>
-      </div>
-    </div>
-  )
-}
-
-function StatusCountCard({ status, count }: {
-  status: string
-  count: number
-}) {
-  const statusColors: Record<string, { text: string; bg: string }> = {
-    REGISTERED: { text: 'text-nexus-textSubtle', bg: 'bg-nexus-borderSubtle/20' },
-    FORMING: { text: 'text-nexus-accent', bg: 'bg-nexus-accentBg/20' },
-    READY: { text: 'text-nexus-accent', bg: 'bg-nexus-accentBg/20' },
-    WAITING: { text: 'text-nexus-warning', bg: 'bg-nexus-warningBg/20' },
-    ACTIVE: { text: 'text-nexus-accent', bg: 'bg-nexus-accentBg/20' },
-    PAUSED: { text: 'text-nexus-accent', bg: 'bg-nexus-accentBg/20' },
-    COMPLETED: { text: 'text-nexus-info', bg: 'bg-nexus-infoBg/20' },
-    DISQUALIFIED: { text: 'text-nexus-danger', bg: 'bg-nexus-dangerBg/20' },
-    ABANDONED: { text: 'text-nexus-textSubtle', bg: 'bg-nexus-borderSubtle/20' },
-    RESET: { text: 'text-nexus-textSubtle', bg: 'bg-nexus-borderSubtle/20' },
-  }
-
-  const style = statusColors[status] ?? { text: 'text-nexus-textMuted', bg: 'bg-nexus-borderSubtle/30' }
-
-  return (
-    <div className={cn('flex items-center gap-2 p-3 rounded-xl border border-nexus-border', style.bg, style.text)}>
-      <span className="text-xs font-medium">{count}</span>
-      <TeamStatusBadge status={status as TeamStatus} showDot={false} />
-    </div>
-  )
-}
-
-function ConfigItem({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex justify-between py-2 border-b border-nexus-borderSubtle/50">
-      <span className="text-nexus-textSubtle">{label}</span>
-      <span className="font-medium text-nexus-text">{value}</span>
-    </div>
-  )
-}
-
-
-
-

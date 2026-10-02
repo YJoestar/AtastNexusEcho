@@ -1,15 +1,15 @@
-﻿/**
- * NEXUS — Teams Management
+/**
+ * NEXUS — Field Personnel & Investigator Dossiers
  *
- * Real-time team list with status management.
- * All mutations flow through adminAPI → Edge Functions.
+ * Real-time registry of all field teams and personnel.
+ * Rebuilt as a forensic operations register.
  */
 
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { BureauIcons } from '@/components/bureau'
+import { BureauIcons, TerminalFrame } from '@/components/bureau'
 import { ROUTES } from '@/app/config'
-import { cn, formatNumber, getAvatarInitials } from '@/lib/utils'
+import { cn, formatNumber } from '@/lib/utils'
 import { useBureau } from '@/hooks/useBureau'
 import { TeamCreationWizard } from '@/components/admin/TeamCreationWizard'
 import { TeamCodesModal } from '@/components/admin/TeamCodesModal'
@@ -57,17 +57,16 @@ export function AdminTeams() {
     return matchesSearch && matchesStatus
   })
 
-  // One click, straight to the codes. No confirmation step: reading a code
-  // changes nothing, and a player waiting at the desk should not face a dialog.
   const openTeamCodes = (team: TeamWithStats) => {
     setCodesTeam(team)
   }
 
-  const handleStartTeam = (team: TeamWithStats) => {    setConfirmAction({
+  const handleStartTeam = (team: TeamWithStats) => {
+    setConfirmAction({
       team,
       action: 'start',
-      title: 'Start Team',
-      message: `Start ${team.name}? They will enter the active game with the current timer.`,
+      title: 'Authorize Field Unit Deployment',
+      message: `Deploy ${team.name} into active investigation? Their mission clock will initiate.`,
       variant: 'primary',
       isConfirming: false,
     })
@@ -77,8 +76,8 @@ export function AdminTeams() {
     setConfirmAction({
       team,
       action: 'pause',
-      title: 'Pause Team',
-      message: `Pause ${team.name}? Their game timer will stop.`,
+      title: 'Hold Field Unit Operation',
+      message: `Signal HOLD to ${team.name}? Their investigation clock will be suspended.`,
       variant: 'warning',
       isConfirming: false,
     })
@@ -88,12 +87,12 @@ export function AdminTeams() {
     setConfirmAction({
       team,
       action: 'resume',
-      title: 'Resume Team',
-      message: `Resume ${team.name}? Their game timer will continue.`,
+      title: 'Resume Field Unit Operation',
+      message: `Resume investigation channel for ${team.name}?`,
       variant: 'primary',
       isConfirming: false,
     })
-   }
+  }
 
   const executeAction = async () => {
     if (!confirmAction) return
@@ -124,20 +123,20 @@ export function AdminTeams() {
       setConfirmAction({
         ...confirmAction,
         isConfirming: false,
-        message: `Failed: ${err instanceof Error ? err.message : 'Unknown error'}`,
+        message: `Command Rejected: ${err instanceof Error ? err.message : 'Unknown error'}`,
       })
     }
   }
 
   const sendNotification = (team: TeamWithStats) => {
-    const message = prompt('Enter notification message:')
+    const message = prompt('Enter priority dispatch message for unit:')
     if (message) {
       void adminAPI.sendNotification({
         target: 'single',
         teamIds: [team.id],
-        title: 'Bureau Notice',
+        title: 'BUREAU DIRECTIVE',
         message,
-        reason: 'Manual notification from Bureau',
+        reason: 'Manual directive from Bureau Terminal',
       })
     }
   }
@@ -147,99 +146,101 @@ export function AdminTeams() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="heading-2">Teams Management</h1>
-        <button
-          onClick={() => setIsWizardOpen(true)}
-          className="btn-primary"
-        >
-          <BureauIcons.Users className="bureau-icon w-4 h-4" />
-          <span>Create Team</span>
-        </button>
-      </div>
+    <div className="space-y-4 font-mono">
+      {/* Header Banner */}
+      <div className="border border-nexus-border bg-nexus-surfaceElevated p-3">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="w-1.5 h-1.5 bg-nexus-accent" />
+              <span className="text-[0.625rem] tracking-[0.24em] uppercase text-nexus-textSubtle">
+                NEXUS ECHO // FIELD PERSONNEL REGISTER
+              </span>
+            </div>
+            <h1 className="text-xl font-bold tracking-tight text-nexus-text mt-1">
+              FIELD INVESTIGATION UNITS
+            </h1>
+          </div>
 
-      {/* Filters */}
-      <div className="flex items-center gap-4">
-        <div className="relative flex-1 max-w-sm">
-          <BureauIcons.Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-nexus-textSubtle" aria-hidden="true" />
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            placeholder="Search by name or code…"
-            className="input pl-10"
-          />
+          <button
+            type="button"
+            onClick={() => setIsWizardOpen(true)}
+            className="nexus-btn-primary text-xs px-3 py-2"
+          >
+            <BureauIcons.Users className="bureau-icon w-4 h-4" />
+            <span>[ CREATE TEAM / DISPATCH ]</span>
+          </button>
         </div>
-        <div className="flex gap-1">
-          {STATUS_FILTERS.map(s => (
-            <button
-              key={s}
-              onClick={() => setStatusFilter(s)}
-              className={cn(
-                'px-3 py-1.5 rounded-lg text-xs font-medium transition-all',
-                statusFilter === s
-                  ? 'bg-nexus-dangerBg text-nexus-danger'
-                  : 'text-nexus-textMuted hover:text-nexus-text hover:bg-nexus-surfaceElevated',
-              )}
-            >
-              {s.replace(/_/g, ' ')}
-            </button>
-          ))}
-        </div>
-      </div>
 
-      {/* Teams Table */}
-      <div className="panel overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-nexus-borderSubtle">
-                <th className="text-left py-3 px-4 text-xs font-medium text-nexus-textSubtle uppercase">Team</th>
-                <th className="text-left py-3 px-4 text-xs font-medium text-nexus-textSubtle uppercase">Status</th>
-                <th className="text-center py-3 px-4 text-xs font-medium text-nexus-textSubtle uppercase">Players</th>
-                <th className="text-center py-3 px-4 text-xs font-medium text-nexus-textSubtle uppercase">Solved</th>
-                <th className="text-right py-3 px-4 text-xs font-medium text-nexus-textSubtle uppercase">Score</th>
-                <th className="text-center py-3 px-4 text-xs font-medium text-nexus-textSubtle uppercase">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading ? (
-                <tr>
-                  <td colSpan={6} className="py-8 text-center text-nexus-textSubtle">
-                    <BureauIcons.Spinner className="bureau-icon w-6 h-6 animate-spin mx-auto mb-2" />
-                    Loading teams…
-                  </td>
-                </tr>
-              ) : filteredTeams.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="py-8 text-center text-nexus-textSubtle">
-                    {teams.length === 0 ? 'No teams registered' : 'No teams match filter'}
-                  </td>
-                </tr>
-              ) : (
-                filteredTeams.map(team => (
-                  <TeamRow
-                    key={team.id}
-                    team={team}
-                    onTeamClick={() => navigate(`${ROUTES.ADMIN_TEAMS}/${team.id}`)}
-                    onCopyCode={() => copyTeamCode(team.code)}
-                    onStart={() => handleStartTeam(team)}
-                    onPause={() => handlePauseTeam(team)}
-                    onResume={() => handleResumeTeam(team)}
-                    onNotify={() => sendNotification(team)}
-                    onShowCodes={() => openTeamCodes(team)}
-                  />
-                ))
-              )}
-            </tbody>
-          </table>
+        {/* Filters & Search Toolbar */}
+        <div className="mt-3 pt-3 border-t border-nexus-borderSubtle flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+          <div className="relative flex-1 max-w-md">
+            <BureauIcons.Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-nexus-textSubtle" aria-hidden="true" />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              placeholder="SEARCH IDENTIFIER OR CALL SIGN…"
+              className="w-full bg-nexus-bg border border-nexus-border text-nexus-text pl-8 pr-3 py-1.5 text-xs placeholder:text-nexus-textSubtle focus:outline-none focus:border-nexus-accent font-mono"
+            />
+          </div>
+
+          <div className="flex flex-wrap gap-1">
+            {STATUS_FILTERS.map(s => (
+              <button
+                key={s}
+                type="button"
+                onClick={() => setStatusFilter(s)}
+                className={cn(
+                  'px-2 py-1 text-[0.625rem] uppercase tracking-[0.14em] border transition-colors',
+                  statusFilter === s
+                    ? 'border-nexus-accent text-nexus-accent bg-nexus-accentBg/30'
+                    : 'border-nexus-borderSubtle text-nexus-textSubtle hover:text-nexus-text hover:bg-nexus-bg',
+                )}
+              >
+                {s.replace(/_/g, ' ')}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Team Creation Wizard — stays open on the credentials step on success,
-          so the freshly issued codes can be read out before it is closed. */}
+      {/* Personnel Dossier Register */}
+      <TerminalFrame
+        title="INVESTIGATOR UNITS REGISTER"
+        reference={`${filteredTeams.length} OF ${teams.length} LISTED`}
+        variant="register"
+      >
+        {isLoading ? (
+          <div className="py-12 text-center text-nexus-textSubtle font-mono text-xs">
+            <BureauIcons.Spinner className="bureau-icon w-6 h-6 animate-spin mx-auto mb-2 text-nexus-accent" />
+            <span>SYNCHRONIZING FIELD REGISTERS…</span>
+          </div>
+        ) : filteredTeams.length === 0 ? (
+          <div className="py-12 text-center text-nexus-textSubtle font-mono text-xs">
+            <p>ARCHIVE EMPTY // NO MATCHING FIELD RECORDS</p>
+            <p className="text-[0.625rem] mt-1 text-nexus-textMuted">ADJUST SEARCH FILTER OR PROVISION A NEW INVESTIGATOR UNIT</p>
+          </div>
+        ) : (
+          <div>
+            {filteredTeams.map(team => (
+              <TeamDossierRow
+                key={team.id}
+                team={team}
+                onTeamClick={() => navigate(`${ROUTES.ADMIN_TEAMS}/${team.id}`)}
+                onCopyCode={() => copyTeamCode(team.code)}
+                onStart={() => handleStartTeam(team)}
+                onPause={() => handlePauseTeam(team)}
+                onResume={() => handleResumeTeam(team)}
+                onNotify={() => sendNotification(team)}
+                onShowCodes={() => openTeamCodes(team)}
+              />
+            ))}
+          </div>
+        )}
+      </TerminalFrame>
+
+      {/* Team Creation Wizard */}
       <TeamCreationWizard
         isOpen={isWizardOpen}
         onClose={() => setIsWizardOpen(false)}
@@ -248,7 +249,7 @@ export function AdminTeams() {
         }}
       />
 
-      {/* Read-only code display — one click per team, never rotates a code. */}
+      {/* Team Codes Modal */}
       <TeamCodesModal
         isOpen={codesTeam !== null}
         teamId={codesTeam?.id ?? null}
@@ -263,23 +264,25 @@ export function AdminTeams() {
           onClose={() => setConfirmAction(null)}
           title={confirmAction.title}
           confirmAction={{
-            label: confirmAction.action === 'complete' ? 'COMPLETE' : confirmAction.action.toUpperCase(),
+            label: confirmAction.action === 'complete' ? 'CONFIRM COMPLETE' : confirmAction.action.toUpperCase(),
             variant: confirmAction.variant,
             loading: confirmAction.isConfirming,
           }}
           onConfirm={executeAction}
         >
-          <p>{confirmAction.message}</p>
-          <p className="mt-2 text-xs">
-            Team: {confirmAction.team.name} ({confirmAction.team.code})
-          </p>
+          <div className="font-mono text-xs space-y-2">
+            <p>{confirmAction.message}</p>
+            <p className="text-nexus-textSubtle text-[0.6875rem]">
+              RECORD: {confirmAction.team.name} [{confirmAction.team.code}]
+            </p>
+          </div>
         </ConfirmationDialog>
       )}
     </div>
   )
 }
 
-function TeamRow({
+function TeamDossierRow({
   team,
   onTeamClick,
   onCopyCode,
@@ -298,106 +301,122 @@ function TeamRow({
   onNotify: () => void
   onShowCodes: () => void
 }) {
-  const statusActionMap: Record<string, JSX.Element> = {
-    ACTIVE: (
-      <button onClick={onPause} className="btn-icon btn-secondary" title="Pause team">
-        <BureauIcons.Pause className="bureau-icon w-4 h-4" />
-      </button>
-    ),
-    PAUSED: (
-      <button onClick={onResume} className="btn-icon btn-primary" title="Resume team">
-        <BureauIcons.Play className="bureau-icon w-4 h-4" />
-      </button>
-    ),
-    READY: (
-      <button onClick={onStart} className="btn-icon btn-primary" title="Start team">
-        <BureauIcons.Play className="bureau-icon w-4 h-4" />
-      </button>
-    ),
-    WAITING: (
-      <button onClick={onStart} className="btn-icon btn-primary" title="Start team">
-        <BureauIcons.Play className="bureau-icon w-4 h-4" />
-      </button>
-    ),
-    REGISTERED: (
-      <button onClick={onStart} className="btn-icon btn-primary" title="Start team">
-        <BureauIcons.Play className="bureau-icon w-4 h-4" />
-      </button>
-    ),
-    COMPLETED: <span className="text-xs text-nexus-accent">Done</span>,
-    DISQUALIFIED: <span className="text-xs text-nexus-danger">Disq.</span>,
-    ABANDONED: <span className="text-xs text-nexus-textMuted">Aban.</span>,
+  const statusAction = () => {
+    switch (team.status) {
+      case 'ACTIVE':
+        return (
+          <button
+            type="button"
+            onClick={onPause}
+            className="px-1.5 py-0.5 text-[0.56rem] border border-nexus-warning text-nexus-warning hover:bg-nexus-warningBg/30"
+            title="Hold field unit"
+          >
+            [ HOLD ]
+          </button>
+        )
+      case 'PAUSED':
+        return (
+          <button
+            type="button"
+            onClick={onResume}
+            className="px-1.5 py-0.5 text-[0.56rem] border border-nexus-accent text-nexus-accent hover:bg-nexus-accentBg/30"
+            title="Resume field unit"
+          >
+            [ RESUME ]
+          </button>
+        )
+      case 'READY':
+      case 'WAITING':
+      case 'REGISTERED':
+        return (
+          <button
+            type="button"
+            onClick={onStart}
+            className="px-1.5 py-0.5 text-[0.56rem] border border-nexus-accent text-nexus-accent hover:bg-nexus-accentBg/30"
+            title="Deploy field unit"
+          >
+            [ DEPLOY ]
+          </button>
+        )
+      default:
+        return null
+    }
   }
 
   return (
-    <tr className="border-b border-nexus-borderSubtle/50 hover:bg-nexus-bg/50">
-      <td className="py-3 px-4">
-        <div className="flex items-center gap-3">
-          <div className="bureau-icon w-8 h-8 rounded-lg bg-nexus-surfaceElevated flex items-center justify-center">
-            <span className="font-display font-bold text-sm text-nexus-danger">
-              {getAvatarInitials(team.name)}
-            </span>
+    <article className="border-b border-nexus-border px-3 py-3 font-mono transition-colors hover:bg-nexus-surfaceElevated">
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div className="flex min-w-0 items-start gap-3">
+          <div className="min-w-12 border-r border-nexus-border pr-3">
+            <span className="block text-[0.5rem] uppercase tracking-[0.16em] text-nexus-textSubtle">UNIT</span>
+            <span className="text-xs font-bold text-nexus-accent">{team.code}</span>
           </div>
-          <div>
+          <div className="min-w-0">
             <button
+              type="button"
               onClick={onTeamClick}
-              className="font-medium text-nexus-text hover:underline text-left"
+              className="block max-w-full break-words text-left text-sm font-bold text-nexus-text hover:text-nexus-accent hover:underline"
             >
               {team.name}
             </button>
-            <div className="flex items-center gap-1 text-xs text-nexus-textSubtle font-mono">
-              {team.code}
-              <button
-                onClick={onCopyCode}
-                className="p-0.5 rounded hover:text-nexus-text hover:bg-nexus-surfaceElevated transition-colors"
-                title="Copy code"
-              >
-                <BureauIcons.Copy className="bureau-icon w-3 h-3" />
-              </button>
-            </div>
+            <span className="mt-0.5 block text-[0.56rem] uppercase tracking-[0.12em] text-nexus-textSubtle">
+              CASE 037 / FIELD PERSONNEL DOSSIER
+            </span>
           </div>
         </div>
-      </td>
-      <td className="py-3 px-4">
-        <TeamStatusBadge status={team.status} />
-      </td>
-      <td className="py-3 px-4 text-center">
-        <span className="text-nexus-text font-medium">{team.playerCount ?? 0}</span>
-      </td>
-      <td className="py-3 px-4 text-center">
-        <span className="text-nexus-text font-medium">{team.solvedCount ?? 0}</span>
-      </td>
-      <td className="py-3 px-4 text-right">
-        <span className="font-mono font-medium text-nexus-text">
-          {formatNumber(team.score ?? 0)}
-        </span>
-      </td>
-      <td className="py-3 px-4">
-        <div className="flex items-center justify-center gap-1">
-          {statusActionMap[team.status] ?? (
-            <button onClick={onStart} className="btn-icon btn-primary" title="Start team">
-              <BureauIcons.Play className="bureau-icon w-4 h-4" />
-            </button>
-          )}
+        <TeamStatusBadge status={team.status} showDot />
+      </div>
+
+      <dl className="mt-3 grid grid-cols-2 gap-x-4 border-y border-nexus-borderSubtle py-2 text-[0.6rem] sm:grid-cols-4">
+        <div>
+          <dt className="text-[0.48rem] uppercase tracking-[0.14em] text-nexus-textSubtle">Personnel</dt>
+          <dd className="mt-0.5 font-bold text-nexus-text">{team.playerCount ?? 0} ASSIGNED</dd>
+        </div>
+        <div>
+          <dt className="text-[0.48rem] uppercase tracking-[0.14em] text-nexus-textSubtle">Current node</dt>
+          <dd className="mt-0.5 truncate font-bold text-nexus-text">{team.currentNodeCode ?? 'POSITION UNREPORTED'}</dd>
+        </div>
+        <div>
+          <dt className="text-[0.48rem] uppercase tracking-[0.14em] text-nexus-textSubtle">Nodes verified</dt>
+          <dd className="mt-0.5 font-bold text-nexus-text">{team.solvedCount ?? 0}</dd>
+        </div>
+        <div>
+          <dt className="text-[0.48rem] uppercase tracking-[0.14em] text-nexus-textSubtle">Case score</dt>
+          <dd className="mt-0.5 font-bold text-nexus-text">{formatNumber(team.score ?? 0)}</dd>
+        </div>
+      </dl>
+
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
           <button
+            type="button"
+            onClick={onCopyCode}
+            className="flex min-h-9 items-center gap-1.5 border border-nexus-border px-2 text-[0.56rem] text-nexus-textSubtle hover:border-nexus-accent hover:text-nexus-accent"
+            title="Copy unit identifier"
+            aria-label={`Copy identifier for ${team.name}`}
+          >
+            <BureauIcons.Copy className="bureau-icon h-3 w-3" />
+            IDENTIFIER
+          </button>
+          <button
+            type="button"
             onClick={onShowCodes}
-            className="btn-icon btn-secondary"
-            title="Show team codes"
+            className="min-h-9 border border-nexus-border px-2 text-[0.56rem] text-nexus-text hover:border-nexus-accent hover:text-nexus-accent"
             aria-label={`Show login codes for ${team.name}`}
           >
-            <BureauIcons.Key className="bureau-icon w-4 h-4" />
+            ACCESS CODES
           </button>
           <button
+            type="button"
             onClick={onNotify}
-            className="btn-icon btn-secondary"
-            title="Send notification"
+            className="min-h-9 border border-nexus-border px-2 text-[0.56rem] text-nexus-textSubtle hover:border-nexus-text hover:text-nexus-text"
+            aria-label={`Transmit directive to ${team.name}`}
           >
-            <BureauIcons.Send className="bureau-icon w-4 h-4" />
+            TRANSMIT
           </button>
         </div>
-      </td>
-    </tr>
+        {statusAction()}
+      </div>
+    </article>
   )
 }
-
-

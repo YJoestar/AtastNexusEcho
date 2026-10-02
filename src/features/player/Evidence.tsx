@@ -38,7 +38,6 @@ type EvidenceItem =
 interface EvidenceTypeOption {
   value: string
   label: string
-  Icon: React.ComponentType<{ className?: string }>
 }
 
 const EVIDENCE_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -52,13 +51,13 @@ const EVIDENCE_ICONS: Record<string, React.ComponentType<{ className?: string }>
 }
 
 const EVIDENCE_TYPES: EvidenceTypeOption[] = [
-  { value: 'all', label: 'All Evidence', Icon: BureauIcons.File },
-  { value: 'DOCUMENT', label: 'Documents', Icon: BureauIcons.File },
-  { value: 'IMAGE', label: 'Images', Icon: BureauIcons.Image },
-  { value: 'AUDIO', label: 'Audio', Icon: BureauIcons.Music },
-  { value: 'VIDEO', label: 'Videos', Icon: BureauIcons.Video },
-  { value: 'DATA', label: 'Data', Icon: BureauIcons.Database },
-  { value: 'PHYSICAL', label: 'Physical', Icon: BureauIcons.Box },
+  { value: 'all', label: 'ALL RECORDS' },
+  { value: 'DOCUMENT', label: 'DOCUMENT' },
+  { value: 'IMAGE', label: 'IMAGE' },
+  { value: 'AUDIO', label: 'AUDIO' },
+  { value: 'VIDEO', label: 'VIDEO' },
+  { value: 'DATA', label: 'DATA' },
+  { value: 'PHYSICAL', label: 'PHYSICAL' },
 ]
 
 type EvidenceFilter = (typeof EVIDENCE_TYPES)[number]['value']
@@ -99,10 +98,10 @@ export function PlayerEvidence() {
       <div className="page">
         <div className="page-content max-w-2xl mx-auto py-12">
           <DocumentShell
-            reference="Evidence Board"
-            title="Loading…"
+            reference="ARCHIVE QUERY / CASE 037"
+            title="INDEXING RECOVERED MATERIAL"
             stock="digital"
-            footer={<Stamp variant="incomplete">In progress</Stamp>}
+            footer={<Stamp variant="incomplete">Retrieval pending</Stamp>}
           >
             <div className="space-y-3">
               <div className="skeleton h-4 w-full" />
@@ -122,58 +121,57 @@ export function PlayerEvidence() {
           <Link
             to={ROUTES.PLAYER_GAME}
             className="p-2 border border-nexus-borderSubtle text-nexus-textMuted hover:text-nexus-text hover:bg-nexus-surfaceElevated touch-target-primary"
-            aria-label="Back to game"
+            aria-label="RETURN TO FIELD"
           >
             <BureauIcons.Back className="bureau-icon w-5 h-5" />
           </Link>
           <div className="flex-1 min-w-0">
-            <h1 className="heading-3">Evidence Board</h1>
-            <p className="text-nexus-textMuted text-sm">
-              {evidence.length} items collected
+            <h1 className="heading-3">RECOVERED MATERIAL</h1>
+            <p className="font-mono text-[0.56rem] uppercase tracking-[0.14em] text-nexus-textMuted">
+              CASE FILE / {evidence.length.toString().padStart(2, '0')} RECORDS FILED
             </p>
           </div>
           <button
             onClick={() => fetchInventory()}
             className="p-2 border border-nexus-borderSubtle text-nexus-textMuted hover:text-nexus-text hover:bg-nexus-surfaceElevated transition-colors touch-target-primary"
-            aria-label="Refresh evidence"
-            title="Refresh"
+            aria-label="Re-query evidence archive"
+            title="Re-query archive"
           >
             <BureauIcons.Refresh className="bureau-icon w-4 h-4" />
           </button>
         </div>
 
         {/* Search & Filter */}
-        <RegisterColumn heading="Filter evidence">
+        <RegisterColumn heading="ARCHIVE QUERY / FILTER BY RECORD CLASS">
           <div className="relative">
             <BureauIcons.Search className="absolute left-3 top-1/2 -translate-y-1/2 bureau-icon w-5 h-5 text-nexus-textSubtle" aria-hidden="true" />
             <input
               type="search"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Search evidence by title…"
+               placeholder="QUERY CODE OR RECORD TITLE…"
               className="input pl-10"
               autoComplete="off"
             />
           </div>
 
-          <div className="flex flex-wrap gap-2 mt-3">
+          <div className="mt-3 flex overflow-x-auto border border-nexus-borderSubtle" role="group" aria-label="Filter recovered material by class">
             {EVIDENCE_TYPES.map(type => {
-              const Icon = type.Icon
               const isActive = filter === type.value
               return (
                 <button
                   key={type.value}
                   onClick={() => setFilter(type.value)}
+                  aria-pressed={isActive}
                   className={cn(
-                    'inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium whitespace-nowrap border transition-colors duration-fast',
+                    'min-h-10 shrink-0 px-3 font-mono text-[0.56rem] uppercase tracking-[0.1em] transition-colors duration-fast',
                     isActive
-                      ? 'border-nexus-accent text-nexus-accent'
-                      : 'border-nexus-borderSubtle text-nexus-textMuted hover:text-nexus-text hover:bg-nexus-surfaceElevated',
+                      ? 'bg-nexus-accentBg/30 text-nexus-accent'
+                      : 'text-nexus-textMuted hover:bg-nexus-surfaceElevated hover:text-nexus-text',
                   )}
                   type="button"
                 >
-                  <Icon className="bureau-icon w-4 h-4" />
-                  <span>{type.label}</span>
+                  {type.label}
                 </button>
               )
             })}
@@ -182,24 +180,22 @@ export function PlayerEvidence() {
 
         {evidence.length === 0 ? (
           <DocumentShell
-            reference="Evidence Board"
-            title="Board empty"
+            reference="ARCHIVE QUERY / CASE 037"
+            title="NO VERIFIED MATERIAL"
             stock="paper"
-            footer={<Stamp variant="incomplete">No items</Stamp>}
+            footer={<Stamp variant="incomplete">Index present / content absent</Stamp>}
           >
-            <div className="text-center py-8">
-              <BureauIcons.Package className="bureau-icon w-12 h-12 text-nexus-textSubtle mx-auto mb-4" aria-hidden="true" />
-              <h3 className="heading-4 mb-2">Evidence Board Empty</h3>
-              <p className="text-nexus-textMuted max-w-sm mx-auto">
-                As you solve puzzles, evidence will appear here. Connect the dots
-                between your findings to unlock new investigation paths.
-              </p>
+            <div className="grid grid-cols-[100px_1fr] border-y border-nexus-borderSubtle font-mono text-[0.625rem] uppercase tracking-[0.12em]">
+              <span className="border-r border-nexus-borderSubtle px-3 py-3 text-nexus-textSubtle">RESULT</span>
+              <span className="px-3 py-3 text-nexus-warning">NO RECORDS ASSOCIATED WITH THIS CASE</span>
+              <span className="border-r border-t border-nexus-borderSubtle px-3 py-3 text-nexus-textSubtle">INDEX</span>
+              <span className="border-t border-nexus-borderSubtle px-3 py-3 text-nexus-text">ACTIVE / AWAITING RECOVERY</span>
             </div>
           </DocumentShell>
         ) : filteredEvidence.length === 0 ? (
           <div className="text-center py-8 border border-nexus-borderSubtle">
             <BureauIcons.File className="bureau-icon w-8 h-8 text-nexus-textSubtle mx-auto mb-3" aria-hidden="true" />
-            <p className="text-nexus-textMuted">No evidence matches your search or filter.</p>
+            <p className="font-mono text-[0.625rem] uppercase tracking-[0.12em] text-nexus-textMuted">QUERY RETURNED NO MATCHING RECORDS</p>
           </div>
         ) : (
           <RegisterList>
@@ -210,7 +206,7 @@ export function PlayerEvidence() {
               const description = isString ? 'Recovered investigation evidence' : item.description
               const typeStr = isString ? 'DOCUMENT' : item.type
               const classification = classificationFor(item)
-              const IconComponent = isString ? BureauIcons.File : (EVIDENCE_ICONS[code as string] || BureauIcons.File)
+              const IconComponent = isString ? BureauIcons.File : (EVIDENCE_ICONS[typeStr.toUpperCase()] || BureauIcons.File)
 
               const content = !isString ? item.content : null
               const audioUrl = content?.audio_url ? String(content.audio_url) : null

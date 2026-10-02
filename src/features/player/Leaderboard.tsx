@@ -14,8 +14,8 @@ import { useState, useEffect } from 'react'
 import { BureauIcons } from '@/components/bureau'
 import {
   DocumentShell,
-  FieldGrid,
   RegisterColumn,
+  RegisterList,
   RegisterRow,
   StateMarker,
   Stamp,
@@ -23,9 +23,9 @@ import {
 } from '@/components/bureau'
 
 const RANK_MARK: Record<number, string> = {
-  1: '★',
-  2: '●',
-  3: '■',
+  1: 'V',
+  2: '◆',
+  3: '▲',
 }
 
 export function PlayerLeaderboard() {
@@ -59,12 +59,12 @@ export function PlayerLeaderboard() {
           <Link
             to={ROUTES.PLAYER_GAME}
             className="p-2 border border-nexus-borderSubtle text-nexus-textMuted hover:text-nexus-text hover:bg-nexus-surfaceElevated touch-target-primary"
-            aria-label="Back to game"
+             aria-label="RETURN TO FIELD"
           >
             <BureauIcons.Back className="bureau-icon w-5 h-5" />
           </Link>
           <div className="flex-1 min-w-0">
-            <h1 className="heading-3">Leaderboard</h1>
+            <h1 className="heading-3">FIELD OPERATIONS RECORD</h1>
             <p className="text-nexus-textMuted text-sm">
               {lastRefresh.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </p>
@@ -103,88 +103,45 @@ export function PlayerLeaderboard() {
           </DocumentShell>
         )}
 
-        {/* Leaderboard Table */}
+        {/* Ranked field records */}
         {leaderboard && leaderboard.length > 0 ? (
-          <RegisterColumn heading="Team Standings">
-            <div className="overflow-x-auto">
-              <table className="nexus-register w-full text-left">
-                <thead>
-                  <tr className="border-b border-nexus-borderSubtle">
-                    <th className="p-3 text-xs font-semibold text-nexus-textSubtle uppercase tracking-wider w-12">
-                      #
-                    </th>
-                    <th className="p-3 text-xs font-semibold text-nexus-textSubtle uppercase tracking-wider">
-                      Team
-                    </th>
-                    <th className="p-3 text-xs font-semibold text-nexus-textSubtle uppercase tracking-wider text-right w-24">
-                      Score
-                    </th>
-                    <th className="p-3 text-xs font-semibold text-nexus-textSubtle uppercase tracking-wider text-right w-24">
-                      Time
-                    </th>
-                    <th className="p-3 text-xs font-semibold text-nexus-textSubtle uppercase tracking-wider text-right w-16">
-                      Status
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {leaderboard.map(entry => {
-                    const isCurrentTeam = entry.teamCode === team?.code
-                    const isCompleted = entry.status === 'COMPLETED'
-                    const rankMark = RANK_MARK[entry.rank] ?? entry.rank
-                    return (
-                      <tr
-                        key={entry.teamCode}
-                        className={cn(
-                          'border-b border-nexus-borderSubtle/50 last:border-0',
-                          isCurrentTeam && 'bg-nexus-accentBg/20',
-                        )}
-                      >
-                        <td className="p-3">
-                          {entry.rank <= 3 ? (
-                            <span className={cn(
-                              'font-display text-lg',
-                              entry.rank === 1 ? 'text-nexus-warning' :
-                              entry.rank === 2 ? 'text-nexus-textMuted' :
-                              'text-nexus-textSubtle',
-                            )}>
-                              {rankMark}
-                            </span>
-                          ) : (
-                            <span className="text-nexus-textMuted font-mono">#{entry.rank}</span>
-                          )}
-                        </td>
-                        <td className="p-3">
-                          <RegisterRow
-                            id={entry.teamCode}
-                            label={entry.teamName}
-                            meta={isCompleted ? 'Complete' : 'Active'}
-                            trailing={
-                              <StateMarker
-                                glyph={isCompleted ? '✓' : '◦'}
-                                tone={isCompleted ? 'active' : 'neutral'}
-                                label={isCompleted ? 'Complete' : 'Active'}
-                              />
-                            }
-                          />
-                        </td>
-                        <td className="p-3 text-right font-mono font-medium text-nexus-text">
-                          {entry.score.toLocaleString()}
-                        </td>
-                        <td className="p-3 text-right text-nexus-textMuted font-mono">
-                          {formatTime(entry.elapsedMinutes)}
-                        </td>
-                        <td className="p-3 text-right">
-                          <span className="text-xs text-nexus-textSubtle">
-                            {isCompleted ? 'Complete' : 'Active'}
-                          </span>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
+          <RegisterColumn heading="UNIT PERFORMANCE / SERVER RECORD">
+            <RegisterList>
+              {leaderboard.map(entry => {
+                const isCurrentTeam = entry.teamCode === team?.code
+                const isCompleted = entry.status === 'COMPLETED'
+                const rankMark = RANK_MARK[entry.rank] ?? String(entry.rank).padStart(2, '0')
+                return (
+                  <RegisterRow
+                    key={entry.teamCode}
+                    id={`RANK ${entry.rank}`}
+                    label={
+                      <div className={cn('min-w-0 border-l-2 pl-3', isCurrentTeam ? 'border-nexus-accent' : 'border-transparent')}>
+                        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                          <span className="font-mono text-xs font-bold text-nexus-accent">{rankMark}</span>
+                          <span className="font-mono text-[0.56rem] text-nexus-textSubtle">{entry.teamCode}</span>
+                          <span className="break-words font-medium text-nexus-text">{entry.teamName}</span>
+                          {isCurrentTeam && <Stamp variant="verified">YOUR UNIT</Stamp>}
+                        </div>
+                        <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 border-t border-nexus-borderSubtle pt-2 font-mono text-[0.56rem] sm:grid-cols-3">
+                          <span className="text-nexus-textMuted">SCORE / <b className="text-nexus-text">{entry.score.toLocaleString()}</b></span>
+                          <span className="text-nexus-textMuted">ELAPSED / <b className="text-nexus-text">{formatTime(entry.elapsedMinutes)}</b></span>
+                          <span className="text-nexus-textMuted">CASE / <b className="text-nexus-text">{isCompleted ? 'CLOSED' : 'ACTIVE'}</b></span>
+                        </div>
+                      </div>
+                    }
+                    trailing={
+                      <StateMarker
+                        glyph={isCompleted ? 'V' : '—'}
+                        tone={isCompleted ? 'active' : 'neutral'}
+                        label={isCompleted ? 'Verified' : 'Pending'}
+                      />
+                    }
+                    className={isCurrentTeam ? 'bg-nexus-accentBg/10' : undefined}
+                  />
+                )
+              })}
+            </RegisterList>
           </RegisterColumn>
         ) : (
           <DocumentShell
@@ -195,41 +152,23 @@ export function PlayerLeaderboard() {
           >
             <div className="text-center py-8">
               <BureauIcons.Trophy className="bureau-icon w-12 h-12 text-nexus-textSubtle mx-auto mb-4" aria-hidden="true" />
-              <h3 className="heading-4 mb-2">No Rankings Available</h3>
-              <p className="text-nexus-textMuted">
-                Rankings update as teams begin the investigation.
-              </p>
+             <h1 className="heading-4 mb-2">NO RANKINGS ON RECORD</h1>
+             <p className="text-nexus-textMuted">
+               Rankings will appear as units begin the investigation.
+             </p>
             </div>
           </DocumentShell>
         )}
 
-        {/* Stats Summary — filed as a 3-column register */}
+        {/* Case summary */}
         {leaderboard && (
-          <RegisterColumn heading="Investigation Summary">
-            <FieldGrid columns={3}>
-              <div className="text-center">
-                <BureauIcons.Trophy className="bureau-icon w-5 h-5 text-nexus-accent mx-auto mb-1" />
-                <p className="text-2xl font-mono font-bold text-nexus-accent">
-                  {leaderboard.length}
-                </p>
-                <p className="text-xs text-nexus-textMuted">Teams Ranked</p>
-              </div>
-              <div className="text-center">
-                <BureauIcons.Check className="bureau-icon w-5 h-5 text-nexus-success mx-auto mb-1" />
-                <p className="text-2xl font-mono font-bold text-nexus-success">
-                  {leaderboard.filter(t => t.status === 'COMPLETED').length}
-                </p>
-                <p className="text-xs text-nexus-textMuted">Completed</p>
-              </div>
-              <div className="text-center">
-                <BureauIcons.TrendingUp className="bureau-icon w-5 h-5 text-nexus-info mx-auto mb-1" />
-                <p className="text-2xl font-mono font-bold text-nexus-info">
-                  {teamProgress ? Math.round((solvedCount / totalNodes) * 100) : 0}%
-                </p>
-                <p className="text-xs text-nexus-textMuted">Your Progress</p>
-              </div>
-            </FieldGrid>
-          </RegisterColumn>
+           <RegisterColumn heading="CASE RECORD SUMMARY">
+             <RegisterList>
+               <RegisterRow id="units-listed" label="UNITS LISTED" trailing={<span className="font-mono font-bold">{leaderboard.length}</span>} />
+               <RegisterRow id="cases-closed" label="CASES CLOSED" trailing={<span className="font-mono font-bold">{leaderboard.filter(t => t.status === 'COMPLETED').length}</span>} />
+               <RegisterRow id="case-progress" label="YOUR VERIFIED NODES" meta={`CASE ${team?.code ?? 'UNASSIGNED'}`} trailing={<span className="font-mono font-bold">{solvedCount} / {totalNodes}</span>} />
+             </RegisterList>
+           </RegisterColumn>
         )}
       </div>
     </div>

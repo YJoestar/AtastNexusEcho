@@ -11,7 +11,7 @@
  */
 
 import { useEffect, useMemo, useState } from 'react'
-import { BureauIcons } from '@/components/bureau'
+import { BureauIcons, TerminalFrame } from '@/components/bureau'
 import { cn } from '@/lib/utils'
 import { adminAPI } from '@/lib/admin'
 import type { PuzzleQAEntry } from '@/lib/admin'
@@ -101,43 +101,48 @@ export function AdminQAViewer() {
 
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        <div className="skeleton h-8 w-48 rounded" />
-        <div className="skeleton h-64 w-full rounded" />
-      </div>
+      <TerminalFrame title="FIELD CONTENT AUDIT" reference="ARCHIVE QUERY" variant="system">
+        <div className="space-y-3 p-4 font-mono text-xs uppercase tracking-[0.14em] text-nexus-textMuted" role="status" aria-live="polite">
+          <p>INDEXING CONTENT RECORDS…</p>
+          <div className="h-px w-full bg-nexus-border"><div className="h-px w-1/3 bg-nexus-accent animate-pulse" /></div>
+          <p className="text-[0.56rem] text-nexus-textSubtle">VERIFYING MEDIA REFERENCES / NODE METADATA</p>
+        </div>
+      </TerminalFrame>
     )
   }
 
   if (error) {
     return (
-      <div className="panel p-6 text-center">
-        <BureauIcons.Alert className="w-12 h-12 text-nexus-danger mx-auto mb-4" />
-        <h3 className="heading-4 mb-2">Error Loading QA Data</h3>
-        <p className="text-nexus-textMuted">{error}</p>
-        <button onClick={() => void fetchQA()} className="btn-primary mt-4">
-          Retry
-        </button>
-      </div>
+      <TerminalFrame title="FIELD CONTENT AUDIT" reference="RETRIEVAL FAILED" variant="system">
+        <div className="space-y-3 p-5 font-mono">
+          <p className="text-sm font-bold uppercase tracking-[0.14em] text-nexus-danger">INDEX PRESENT / CONTENT UNAVAILABLE</p>
+          <p className="text-xs text-nexus-textMuted">{error}</p>
+          <button onClick={() => void fetchQA()} className="nexus-btn-secondary min-h-10">
+            [ RE-QUERY CONTENT ARCHIVE ]
+          </button>
+        </div>
+      </TerminalFrame>
     )
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 font-mono">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="heading-2">Puzzle QA Viewer</h1>
-          <p className="text-nexus-textMuted mt-1">
+          <p className="text-[0.56rem] uppercase tracking-[0.2em] text-nexus-textSubtle">NEXUS ECHO / CONTENT INTEGRITY OFFICE</p>
+          <h1 className="mt-1 text-xl font-bold text-nexus-text">FIELD CONTENT VERIFICATION</h1>
+          <p className="mt-1 text-xs text-nexus-textMuted">
             {totalAudio === 0
-              ? 'No audio evidence found'
-              : `${okAudio}/${totalAudio} audio files OK · ${brokenAudio} ${brokenAudio === 1 ? 'missing' : 'missing'}`}
+              ? 'NO AUDIO RECORDS INDEXED'
+              : `${okAudio}/${totalAudio} MEDIA REFERENCES PRESENT / ${brokenAudio} UNAVAILABLE`}
           </p>
         </div>
         <button
           onClick={() => void fetchQA()}
-          className="btn-secondary"
+          className="nexus-btn-secondary min-h-10 px-3 text-xs"
           disabled={isLoading}
-          aria-label="Refresh"
+          aria-label="POLL CHANNEL"
         >
           <BureauIcons.Refresh className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
         </button>
@@ -152,7 +157,7 @@ export function AdminQAViewer() {
               type="search"
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              placeholder="Search puzzles by code or name..."
+              placeholder="FILTER BY NODE CODE OR NAME…"
               className="input pl-10"
               autoComplete="off"
             />
@@ -170,150 +175,103 @@ export function AdminQAViewer() {
 
       {/* Summary */}
       {brokenAudio > 0 && (
-        <div className="panel border-l-4 border-nexus-danger">
+        <div className="border-l-2 border-nexus-danger bg-nexus-dangerBg/20 px-4 py-3">
           <div className="flex items-start gap-3">
             <BureauIcons.Alert className="bureau-icon w-5 h-5 text-nexus-danger mt-0.5 flex-shrink-0" />
             <div>
-              <p className="font-medium text-nexus-danger">
-                {brokenAudio} audio file{brokenAudio !== 1 ? 's' : ''} missing or broken
+              <p className="font-mono text-xs font-bold uppercase tracking-[0.12em] text-nexus-danger">
+                {brokenAudio} MEDIA REFERENCE{brokenAudio !== 1 ? 'S' : ''} UNAVAILABLE
               </p>
-              <p className="text-sm text-nexus-textMuted mt-1">
-                Puzzles with missing audio evidence will not play correctly for players.
+              <p className="mt-1 text-xs text-nexus-textMuted">
+                Affected field records may be incomplete during player playback.
               </p>
             </div>
           </div>
         </div>
       )}
 
-      {/* Puzzle table */}
-      <div className="panel overflow-hidden">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-nexus-borderSubtle">
-              <th className="text-left py-3 px-4 font-medium text-nexus-textMuted">Code</th>
-              <th className="text-left py-3 px-4 font-medium text-nexus-textMuted">Title</th>
-              <th className="text-left py-3 px-4 font-medium text-nexus-textMuted">Type</th>
-              <th className="text-center py-3 px-4 font-medium text-nexus-textMuted">Audio Evidence</th>
-              <th className="text-center py-3 px-4 font-medium text-nexus-textMuted">Evidence Items</th>
-              <th className="text-center py-3 px-4 font-medium text-nexus-textMuted">Answer</th>
-              <th className="w-[40px]" />
-            </tr>
-          </thead>
-          <tbody>
-            {filteredPuzzles.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="text-center py-8 text-nexus-textMuted">
-                  No puzzles found matching your search.
-                </td>
-              </tr>
-            ) : (
-              filteredPuzzles.map(puzzle => {
-                const hasMissingAudio = puzzle.audioEvidence.some(a => !a.audioExists)
-                const audioStatus: 'ok' | 'broken' | 'missing' = puzzle.audioEvidence.length === 0
-                  ? 'missing'
-                  : hasMissingAudio
-                    ? 'broken'
-                    : 'ok'
+      <TerminalFrame title="FIELD VERIFICATION SHEETS" reference={`${filteredPuzzles.length} / ${puzzles.length} NODES`} variant="register">
+        {filteredPuzzles.length === 0 ? (
+          <div className="grid min-h-24 grid-cols-[100px_1fr] items-center gap-3 px-4 font-mono text-[0.625rem] uppercase tracking-[0.12em]">
+            <span className="border-r border-nexus-border py-3 text-nexus-warning">NO RECORD</span>
+            <span className="text-nexus-textSubtle">QUERY RETURNED NO MATCHING NODE SHEETS</span>
+          </div>
+        ) : (
+          <ol className="divide-y divide-nexus-borderSubtle">
+            {filteredPuzzles.map(puzzle => {
+              const hasMissingAudio = puzzle.audioEvidence.some(audio => !audio.audioExists)
+              const audioStatus: 'ok' | 'broken' | 'missing' = puzzle.audioEvidence.length === 0
+                ? 'missing'
+                : hasMissingAudio ? 'broken' : 'ok'
+              const isExpanded = expandedPuzzle === puzzle.id
+              const acceptedAnswer = (puzzle.answerMetadata as Record<string, unknown> | null)?.acceptedAnswer
 
-                return (
-                  <tr
-                    key={puzzle.id}
-                    className={cn(
-                      'border-b border-nexus-borderSubtle/50 hover:bg-nexus-surfaceElevated/50',
-                      hasMissingAudio && 'bg-nexus-dangerBg/20'
-                    )}
+              return (
+                <li key={puzzle.id} className={cn(hasMissingAudio && 'bg-nexus-dangerBg/10')}>
+                  <button
+                    type="button"
+                    onClick={() => setExpandedPuzzle(isExpanded ? null : puzzle.id)}
+                    aria-expanded={isExpanded}
+                    className="grid w-full grid-cols-[56px_minmax(0,1fr)_auto] items-center gap-3 px-3 py-3 text-left hover:bg-nexus-surfaceElevated"
                   >
-                    <td className="py-3 px-4">
-                      <code className="font-mono text-sm font-medium text-nexus-text">
-                        {puzzle.code}
-                      </code>
-                    </td>
-                    <td className="py-3 px-4">{puzzle.title}</td>
-                    <td className="py-3 px-4 text-nexus-textMuted">{puzzle.type}</td>
-                    <td className="py-3 px-4 text-center">
-                      <div className="flex items-center justify-center gap-2">
-                        <AudioStatusIcon status={audioStatus} />
-                        <span className="text-xs text-nexus-textMuted">
-                          {puzzle.audioEvidence.length === 0
-                            ? 'No audio evidence'
-                            : `${puzzle.audioEvidence.filter(a => a.audioExists).length}/${puzzle.audioEvidence.length} OK`}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      <div className="flex items-center justify-center gap-1">
-                        {puzzle.evidence.length === 0 ? (
-                          <span className="text-xs text-nexus-textSubtle">None</span>
-                        ) : (
-                          puzzle.evidence.map(ev => {
-                            const Icon = ev.type === 'AUDIO' ? BureauIcons.Music : BureauIcons.File
-                            return (
-                              <div
-                                key={ev.id}
-                                className="flex items-center justify-center w-7 h-7 rounded bg-nexus-bg"
-                                title={`${ev.type}: ${ev.title}`}
-                              >
-                                <Icon className="w-3.5 h-3.5 text-nexus-textSubtle" />
-                              </div>
-                            )
-                          })
-                        )}
-                      </div>
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      {puzzle.answerMetadata ? (
-                        <code className="text-xs font-mono text-nexus-accent">
-                          {(puzzle.answerMetadata as Record<string, unknown>)?.acceptedAnswer as string}
-                        </code>
-                      ) : (
-                        <span className="text-xs text-nexus-textSubtle">—</span>
-                      )}
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      <button
-                        onClick={() => setExpandedPuzzle(expandedPuzzle === puzzle.id ? null : puzzle.id)}
-                        className="text-nexus-textMuted hover:text-nexus-text"
-                      >
-                        {expandedPuzzle === puzzle.id ? '▼' : '▶'}
-                      </button>
-                    </td>
-                  </tr>
-                )
-              })
-            )}
-          </tbody>
-        </table>
-      </div>
+                    <span className="border-r border-nexus-border pr-2 font-mono text-xs font-bold text-nexus-accent">{puzzle.code}</span>
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-bold text-nexus-text">{puzzle.title}</span>
+                      <span className="mt-1 block font-mono text-[0.52rem] uppercase tracking-[0.1em] text-nexus-textSubtle">
+                        {puzzle.type} / {puzzle.evidence.length} EVIDENCE OBJECTS
+                      </span>
+                    </span>
+                    <span className="flex items-center gap-2">
+                      <AudioStatusIcon status={audioStatus} />
+                      <span className="font-mono text-[0.56rem] uppercase text-nexus-textMuted">
+                        {puzzle.audioEvidence.length === 0 ? 'NO AUDIO' : `${puzzle.audioEvidence.filter(audio => audio.audioExists).length}/${puzzle.audioEvidence.length} MEDIA`}
+                      </span>
+                      <span aria-hidden="true" className="font-mono text-xs text-nexus-textSubtle">{isExpanded ? '−' : '+'}</span>
+                    </span>
+                  </button>
 
-      {/* Expanded audio playback */}
-      {expandedPuzzle && (
-        <div className="panel">
-          {(() => {
-            const puzzle = puzzles.find(p => p.id === expandedPuzzle)
-            if (!puzzle) return null
-            return (
-              <div className="space-y-3">
-                <h3 className="font-medium text-nexus-text">
-                  {puzzle.code} — {puzzle.title} — Audio Playback
-                </h3>
-                {puzzle.audioEvidence.length === 0 ? (
-                  <p className="text-sm text-nexus-textMuted">No audio evidence for this puzzle.</p>
-                ) : (
-                  <div className="space-y-2">
-                    {puzzle.audioEvidence.map(ev => (
-                      <AudioPlayer
-                        key={ev.id}
-                        url={ev.audioUrl ?? ''}
-                        label={ev.title}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-            )
-          })()}
-        </div>
-      )}
+                  {isExpanded && (
+                    <div className="border-t border-nexus-borderSubtle bg-nexus-bg px-3 py-3">
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <div>
+                          <p className="mb-2 font-mono text-[0.52rem] uppercase tracking-[0.14em] text-nexus-textSubtle">EVIDENCE OBJECTS</p>
+                          {puzzle.evidence.length === 0 ? (
+                            <p className="font-mono text-xs text-nexus-textMuted">NO EVIDENCE OBJECTS ATTACHED</p>
+                          ) : (
+                            <ul className="space-y-1">
+                              {puzzle.evidence.map(item => (
+                                <li key={item.id} className="border-b border-nexus-borderSubtle py-1 font-mono text-xs text-nexus-text">
+                                  {item.type} / {item.title}
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                          <p className="mt-3 font-mono text-[0.52rem] uppercase tracking-[0.14em] text-nexus-textSubtle">ANSWER METADATA</p>
+                          <code className="mt-1 block break-all text-xs text-nexus-accent">
+                            {typeof acceptedAnswer === 'string' ? acceptedAnswer : 'NOT INDEXED'}
+                          </code>
+                        </div>
+                        <div>
+                          <p className="mb-2 font-mono text-[0.52rem] uppercase tracking-[0.14em] text-nexus-textSubtle">AUDIO REFERENCE CHECK</p>
+                          {puzzle.audioEvidence.length === 0 ? (
+                            <p className="font-mono text-xs text-nexus-textMuted">NO AUDIO MATERIAL ASSOCIATED</p>
+                          ) : (
+                            <div className="space-y-2">
+                              {puzzle.audioEvidence.map(audio => (
+                                <AudioPlayer key={audio.id} url={audio.audioUrl ?? ''} label={audio.title} />
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </li>
+              )
+            })}
+          </ol>
+        )}
+      </TerminalFrame>
     </div>
   )
 }

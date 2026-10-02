@@ -8,7 +8,7 @@
  */
 
 import { useCallback, useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useApp } from '@/app/providers'
 import { ROUTES } from '@/app/config'
 import { cn } from '@/lib/utils'
@@ -24,6 +24,7 @@ const PRIORITY_STAMP: Record<string, { variant: StampVariant; label: string }> =
 }
 
 export function PlayerNotifications() {
+  const navigate = useNavigate()
   const { notifications, unreadCount, markNotificationRead, markAllNotificationsRead, refreshNotifications } = useApp()
   const [isRefreshing, setIsRefreshing] = useState(false)
 
@@ -33,8 +34,11 @@ export function PlayerNotifications() {
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true)
-    await refreshNotifications()
-    setIsRefreshing(false)
+    try {
+      await refreshNotifications()
+    } finally {
+      setIsRefreshing(false)
+    }
   }, [refreshNotifications])
 
   const handleOpen = useCallback(
@@ -42,26 +46,27 @@ export function PlayerNotifications() {
       if (!isRead) markNotificationRead(id)
       if (actionUrl) {
         if (actionUrl.startsWith('/player/')) {
-          window.location.assign(actionUrl)
+          navigate(actionUrl)
         }
       }
     },
-    [markNotificationRead],
+    [markNotificationRead, navigate],
   )
 
   return (
     <div className="page">
       <div className="page-content max-w-2xl mx-auto">
         <div className="flex items-center justify-between mb-6">
-          <Link to={ROUTES.PLAYER_GAME} className="nexus-btn nexus-btn-ghost touch-target-primary" aria-label="Back to game">
+          <Link to={ROUTES.PLAYER_GAME} className="nexus-btn nexus-btn-ghost touch-target-primary" aria-label="RETURN TO FIELD">
             <BureauIcons.Back className="bureau-icon w-4 h-4" />
             BACK
           </Link>
-          <h1 className="heading-2">Notifications</h1>
+          <h1 className="heading-2">FIELD COMMUNICATIONS</h1>
           <button
             onClick={handleRefresh}
             className="p-2 border border-nexus-borderSubtle text-nexus-textSubtle hover:text-nexus-text touch-target-primary"
-            aria-label="Refresh notifications"
+            aria-label="Re-query field channel"
+            title="Re-query channel"
             disabled={isRefreshing}
             type="button"
           >
@@ -76,23 +81,20 @@ export function PlayerNotifications() {
             type="button"
           >
             <BureauIcons.Check className="bureau-icon w-4 h-4" />
-            MARK ALL AS READ ({unreadCount})
+            ACKNOWLEDGE ALL DISPATCHES ({unreadCount})
           </button>
         )}
 
         {notifications.length === 0 ? (
           <DocumentShell
-            reference="Notifications"
-            title="No transmissions"
+            reference="FIELD CHANNEL / CASE 037"
+            title="NO DISPATCH RECEIVED"
             stock="paper"
-            footer={<Stamp variant="archived">Empty</Stamp>}
+            footer={<Stamp variant="archived">Channel listening</Stamp>}
           >
-            <div className="text-center py-8">
-              <BureauIcons.BellOff className="bureau-icon w-8 h-8 text-nexus-textSubtle mx-auto mb-3" aria-hidden="true" />
-              <p className="text-nexus-textMuted">No transmissions for your team.</p>
-              <p className="text-sm text-nexus-textSubtle mt-1">
-                Objective updates and Bureau notices appear here.
-              </p>
+            <div className="grid grid-cols-[100px_1fr] border-y border-nexus-borderSubtle font-mono text-[0.6rem] uppercase tracking-[0.12em]">
+              <span className="border-r border-nexus-borderSubtle px-3 py-3 text-nexus-textSubtle">BUFFER</span>
+              <span className="px-3 py-3 text-nexus-textMuted">NO INBOUND DISPATCHES IN LOCAL RECORD</span>
             </div>
           </DocumentShell>
         ) : (
@@ -106,7 +108,7 @@ export function PlayerNotifications() {
                   label={
                     <div className="flex items-start gap-2">
                       {!n.isRead && (
-                        <StateMarker glyph="●" tone="active" label="Unread" />
+                        <StateMarker glyph="●" tone="active" label="UNREAD" />
                       )}
                       <span className="font-medium text-nexus-text">{n.title}</span>
                     </div>
@@ -128,7 +130,7 @@ export function PlayerNotifications() {
                       aria-label={`Open ${n.title}`}
                       type="button"
                     >
-                      OPEN
+                      [ REVIEW ]
                     </button>
                   }
                   className={cn(
@@ -142,8 +144,9 @@ export function PlayerNotifications() {
         )}
 
         <div className="mt-6 flex items-center justify-center gap-2 text-xs text-nexus-textSubtle">
-          <BureauIcons.Bell className="bureau-icon w-3 h-3" aria-hidden="true" />
-          Team-wide. Individual player data is never shown here.
+          <span className="font-mono text-[0.52rem] uppercase tracking-[0.12em]">
+            DISTRIBUTION / TEAM CHANNEL ONLY / PLAYER RECORDS WITHHELD
+          </span>
         </div>
       </div>
     </div>

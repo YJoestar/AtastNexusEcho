@@ -8,16 +8,20 @@
  */
 
 import { useEffect, useMemo, useState } from 'react'
+import { TerminalFrame } from '@/components/bureau'
 import { BureauIcons } from '@/components/bureau'
-import { cn, getAvatarInitials } from '@/lib/utils'
+import { cn } from '@/lib/utils'
 import { useBureau } from '@/hooks/useBureau'
-import { ALL_PUZZLES } from '@/content/puzzles'
+import { ALL_POIS } from '@/content/campus'
+import { useCampusMapState } from '@/hooks/useCampusMap'
+import { CampusMap } from '@/components/player/map/CampusMap'
 import { LocationEditor } from '@/components/admin/LocationEditor'
 import { adminAPI } from '@/lib/admin'
 import { generateQRCodeSheet } from '@/lib/qr-download'
 import type { LocationEntry } from '@/lib/admin'
 import type { NodeIndexEntry } from '@/content/puzzles'
 import { PUZZLE_TYPE_LABELS } from '@/app/config'
+import { ALL_PUZZLES } from '@/content/puzzles'
 
 export function AdminLocations() {
   const {
@@ -25,11 +29,13 @@ export function AdminLocations() {
     isLoading,
     error,
     fetchLocations,
+    teams,
   } = useBureau()
 
   const [isEditorOpen, setIsEditorOpen] = useState(false)
   const [editorNode, setEditorNode] = useState<NodeIndexEntry | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
+  const [selectedNodeCode, setSelectedNodeCode] = useState<string | null>(null)
   const [isDownloading, setIsDownloading] = useState(false)
   const [downloadError, setDownloadError] = useState<string | null>(null)
 
@@ -57,6 +63,27 @@ export function AdminLocations() {
     )
   }, [searchTerm])
 
+  const solvedCodes = useMemo(() => {
+    const set = new Set<string>()
+    for (const t of teams) {
+      // @ts-expect-error – solvedNodes shape is internal
+      const solved = t.solvedNodes ?? {}
+      for (const code of Object.keys(solved)) set.add(code)
+    }
+    return set
+  }, [teams])
+
+  const availableNodeIds = useMemo(() => {
+    return teams.flatMap(t => t.solvedCount ? [] : [])
+  }, [teams])
+
+  const mapNodes = useCampusMapState({
+    solvedCodes,
+    currentNodeId: selectedNodeCode,
+    availableNodeIds,
+    narrativeLevel: 0,
+  })
+
   const openEditor = (node: NodeIndexEntry) => {
     setEditorNode(node)
     setIsEditorOpen(true)
@@ -71,175 +98,209 @@ export function AdminLocations() {
     await fetchLocations()
   }
 
+  const handleNodeSelect = (code: string) => {
+    setSelectedNodeCode(code)
+    const puzzle = ALL_POIS.find(p => p.code === code)
+    if (puzzle) {
+      // Find the full puzzle entry by code to open the editor
+      const puzzleEntry = ALL_PUZZLES.find(p => p.code === code)
+      if (puzzleEntry) openEditor(puzzleEntry)
+    }
+  }
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="heading-2">Location Management</h1>
-          <p className="text-nexus-textMuted mt-1">
-            Override physical locations for puzzle nodes without regenerating QR codes.
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={async () => {
-              setIsDownloading(true)
-              setDownloadError(null)
-              try {
-                const qrCodes = await adminAPI.listQRCodes()
-                const result = await generateQRCodeSheet(qrCodes)
-                if (!result.success) {
-                  setDownloadError(result.error ?? 'Failed to generate QR sheet')
+    <div className="space-y-4 font-mono">
+      {/* Header Banner */}
+      <div className="border border-nexus-border bg-nexus-surfaceElevated p-3">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="w-1.5 h-1.5 bg-nexus-accent" />
+              <span className="text-[0.625rem] tracking-[0.24em] uppercase text-nexus-textSubtle">
+                NEXUS ECHO // CAMPUS INVESTIGATION ARCHIVE
+              </span>
+            </div>
+            <h1 className="font-mono text-xl font-bold tracking-tight text-nexus-text mt-1">
+              FIELD NODE REGISTER
+            </h1>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={async () => {
+                setIsDownloading(true)
+                setDownloadError(null)
+                try {
+                  const qrCodes = await adminAPI.listQRCodes()
+                  const result = await generateQRCodeSheet(qrCodes)
+                  if (!result.success) {
+                    setDownloadError(result.error ?? 'FAILED TO GENERATE QR SHEET')
+                  }
+                } catch (err: unknown) {
+                  setDownloadError(err instanceof Error ? err.message : 'FAILED TO GENERATE QR SHEET')
+                } finally {
+                  setIsDownloading(false)
                 }
-              } catch (err: unknown) {
-                setDownloadError(err instanceof Error ? err.message : 'Failed to generate QR sheet')
-              } finally {
-                setIsDownloading(false)
-              }
-            }}
-            disabled={isDownloading}
-            className="btn-primary text-xs py-1.5"
-          >
-            {isDownloading ? (
-              <>
-                <BureauIcons.Spinner className="bureau-icon w-4 h-4 animate-spin" />
-                <span>Generating…</span>
-              </>
-            ) : (
-              <>
-                <BureauIcons.Download className="bureau-icon w-4 h-4" />
-                <span>⬇️ Download All QR Codes</span>
-              </>
-            )}
-          </button>
-          <button
-            onClick={() => void fetchLocations()}
-            disabled={isLoading}
-            className="btn-secondary text-xs py-1.5"
-          >
-            <BureauIcons.Refresh className={cn('bureau-icon w- h-4', isLoading && 'animate-spin')} />
-            <span>Refresh</span>
-          </button>
-        </div>
-      </div>
+              }}
+              disabled={isDownloading}
+              className="nexus-btn-primary text-xs px-3 py-1.5 min-h-[36px]"
+            >
+              <BureauIcons.Download className="bureau-icon w-3.5 h-3.5" aria-hidden="true" />
+              <span>[ FIELD MARKER SHEET ]</span>
+            </button>
 
-      {/* Error */}
-      {(error || downloadError) && (
-        <div className="p-3 rounded-xl bg-nexus-dangerBg/20 border border-nexus-danger/30 text-nexus-danger text-sm flex items-start gap-2">
-          <BureauIcons.Alert className="bureau-icon w-4 h-4 mt-0.5 flex-shrink-0" />
-          <span>{error || downloadError}</span>
-        </div>
-      )}
-
-      {/* Search */}
-      <div className="relative">
-        <BureauIcons.Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-nexus-textSubtle" />
-        <input
-          type="text"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Search by node code, name, location, or type..."
-          className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-nexus-surfaceElevated border border-nexus-border text-nexus-text text-sm focus:outline-none focus:ring-2 focus:ring-nexus-accent"
-        />
-      </div>
-
-      {/* Locations Table */}
-      {isLoading ? (
-        <div className="text-center py-12 text-nexus-textSubtle">
-          <BureauIcons.Refresh className="bureau-icon w-6 h-6 animate-spin mx-auto mb-2" />
-          Loading locations…
-        </div>
-      ) : (
-        <div className="panel overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-nexus-borderSubtle">
-                  <th className="text-left py-3 px-4 text-xs font-medium text-nexus-textSubtle uppercase">Node</th>
-                  <th className="text-left py-3 px-4 text-xs font-medium text-nexus-textSubtle uppercase">Location</th>
-                  <th className="text-left py-3 px-4 text-xs font-medium text-nexus-textSubtle uppercase">Status</th>
-                  <th className="text-left py-3 px-4 text-xs font-medium text-nexus-textSubtle uppercase">Stage</th>
-                  <th className="text-right py-3 px-4 text-xs font-medium text-nexus-textSubtle uppercase">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredNodes.map(node => {
-                  const loc = locationMap.get(node.id)
-                  const displayLocation = loc?.name ?? node.location
-                  const displayStatus = loc?.status ?? 'ACTIVE'
-                  const hasOverride = !!loc
-
-                  return (
-                    <tr
-                      key={node.id}
-                      className="border-b border-nexus-borderSubtle/50 hover:bg-nexus-bg/50"
-                    >
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-3">
-                          <div className="bureau-icon w-8 h-8 rounded-lg bg-nexus-surfaceElevated flex items-center justify-center">
-                            <span className="font-display font-bold text-sm text-nexus-danger">
-                              {getAvatarInitials(node.code)}
-                            </span>
-                          </div>
-                          <div>
-                            <span className="font-medium text-nexus-text">{node.code}</span>
-                            <div className="text-xs text-nexus-textSubtle font-mono">
-                              {PUZZLE_TYPE_LABELS[node.type as keyof typeof PUZZLE_TYPE_LABELS] ?? node.type}
-                            </div>
-                          </div>
-                          <span className="text-sm text-nexus-text">{node.name}</span>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-start gap-2">
-                          <BureauIcons.MapPin className="bureau-icon w-4 h-4 text-nexus-textSubtle mt-0.5 flex-shrink-0" />
-                          <span className={cn(
-                            'text-sm',
-                            hasOverride ? 'text-nexus-accent font-medium' : 'text-nexus-textSubtle',
-                          )}>
-                            {displayLocation || 'No location set'}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className={cn(
-                          'inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium',
-                          displayStatus === 'ACTIVE'
-                            ? 'bg-nexus-accentBg/20 text-nexus-accent'
-                            : 'bg-nexus-warningBg/20 text-nexus-warning',
-                        )}>
-                          {hasOverride ? (displayStatus === 'ACTIVE' ? 'Overridden' : 'Overridden (Inactive)') : 'Default'}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-sm text-nexus-textMuted">
-                        Stage {node.stage}
-                      </td>
-                      <td className="py-3 px-4 text-right">
-                        <button
-                          onClick={() => openEditor(node)}
-                          className="btn-icon btn-secondary"
-                          title={hasOverride ? 'Edit location override' : 'Set location override'}
-                        >
-                          <BureauIcons.Edit className="bureau-icon w-4 h-4" />
-                        </button>
-                      </td>
-                    </tr>
-                  )
-                })}
-
-                {filteredNodes.length === 0 && (
-                  <tr>
-                    <td colSpan={5} className="py-8 text-center text-nexus-textSubtle">
-                      No nodes match your search.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+            <button
+              type="button"
+              onClick={() => void fetchLocations()}
+              disabled={isLoading}
+              className="nexus-btn-secondary text-xs px-3 py-1.5 min-h-[36px]"
+            >
+              <BureauIcons.RotateCcw className={cn('bureau-icon w-3.5 h-3.5', isLoading && 'animate-spin')} />
+              <span>[ POLL STATUS ]</span>
+            </button>
           </div>
         </div>
+
+        <div className="mt-3 pt-3 border-t border-nexus-borderSubtle flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+          <div className="relative flex-1 max-w-md">
+            <BureauIcons.Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-nexus-textSubtle" aria-hidden="true" />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              placeholder="FILTER BY NODE CODE, NAME, OR LOCATION…"
+              className="w-full bg-nexus-bg border border-nexus-border text-nexus-text pl-8 pr-3 py-1.5 text-xs placeholder:text-nexus-textSubtle focus:outline-none focus:border-nexus-accent font-mono"
+            />
+          </div>
+
+          <div className="text-[0.56rem] uppercase tracking-[0.16em] text-nexus-textSubtle">
+            {filteredNodes.length} NODES CATALOGUED
+          </div>
+        </div>
+      </div>
+
+      {/* Error Alert */}
+      {(error || downloadError) && (
+        <div className="p-3 bg-nexus-dangerBg/30 border border-nexus-danger text-nexus-danger text-xs flex items-center gap-2">
+          <BureauIcons.AlertTriangle className="bureau-icon w-4 h-4 shrink-0" />
+          <span>ARCHIVE ERROR: {error || downloadError}</span>
+        </div>
       )}
+
+      {/* Spatial Telemetry & Node Register */}
+      <div className="grid gap-4 xl:grid-cols-[480px_minmax(0,1fr)]">
+        {/* Campus Map as Primary Interface */}
+        <TerminalFrame title="CAMPUS CARTOGRAPHY" reference="SECTOR MAP" variant="monitor">
+          <div className="p-2">
+            <div className="border border-nexus-border bg-nexus-bg h-80">
+              <CampusMap
+                nodes={mapNodes}
+                showFog={true}
+                onNodeSelect={handleNodeSelect}
+                onNodeHover={() => {}}
+              />
+            </div>
+            <div className="mt-2 text-[0.56rem] font-mono uppercase tracking-[0.14em] text-nexus-textSubtle flex justify-between">
+              <span>LEGEND</span>
+              <span>CLICK MARKER TO INSPECT</span>
+            </div>
+            <div className="mt-1 flex gap-3 text-[0.625rem]">
+              <span className="flex items-center gap-1">
+                <span className="w-2 h-2 bg-nexus-accent" />
+                <span className="text-nexus-textSubtle">VERIFIED</span>
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="w-2 h-2 bg-nexus-textMuted" />
+                <span className="text-nexus-textSubtle">UNKNOWN</span>
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="w-2 h-2 border border-nexus-warning" />
+                <span className="text-nexus-textSubtle">ACTIVE</span>
+              </span>
+            </div>
+          </div>
+        </TerminalFrame>
+
+        {/* Node Register */}
+        <TerminalFrame
+          title="FIELD NODE REGISTER"
+          reference={`${filteredNodes.length} OF ${ALL_PUZZLES.length} NODES`}
+          variant="register"
+        >
+          {isLoading ? (
+            <div className="py-12 text-center text-nexus-textSubtle font-mono text-xs">
+              <BureauIcons.Spinner className="bureau-icon w-6 h-6 animate-spin mx-auto mb-2 text-nexus-accent" />
+              <span>SYNCHRONIZING FIELD NODE REGISTERS…</span>
+            </div>
+          ) : filteredNodes.length === 0 ? (
+            <div className="py-12 text-center text-nexus-textSubtle font-mono text-xs">
+              <p>NO FIELD NODES MATCH FILTER</p>
+              <p className="text-[0.625rem] mt-1 text-nexus-textMuted">ADJUST FILTER PARAMETERS OR CATALOG A NEW NODE</p>
+            </div>
+          ) : (
+            <div className="space-y-1">
+              <div className="grid grid-cols-[100px_140px_1fr_100px_80px] gap-2 px-3 py-1.5 text-[0.56rem] uppercase tracking-[0.18em] text-nexus-textSubtle border-b border-nexus-border">
+                <span>MARKER</span>
+                <span>CLASSIFICATION</span>
+                <span>LOCATION</span>
+                <span>STAGE</span>
+                <span className="text-right">STATUS</span>
+              </div>
+
+              {filteredNodes.map(node => {
+                const loc = locationMap.get(node.id)
+                const displayLocation = loc?.name ?? node.location
+                const displayStatus = loc?.status ?? 'ACTIVE'
+                const hasOverride = !!loc
+                const statusText = hasOverride
+                  ? displayStatus === 'ACTIVE'
+                    ? 'OVERRIDDEN'
+                    : 'INACTIVE'
+                  : 'DEFAULT'
+
+                return (
+                  <button
+                    key={node.id}
+                    type="button"
+                    onClick={() => openEditor(node)}
+                    className="w-full grid grid-cols-[100px_140px_1fr_100px_80px] gap-2 px-3 py-2 text-xs items-center border-b border-nexus-borderSubtle/50 hover:bg-nexus-surfaceElevated transition-colors font-mono text-left"
+                  >
+                    <span className="font-bold text-nexus-accent">{node.code}</span>
+                    <span className="text-nexus-textMuted truncate">
+                      {PUZZLE_TYPE_LABELS[node.type as keyof typeof PUZZLE_TYPE_LABELS] ?? node.type}
+                    </span>
+                    <span
+                      className={cn(
+                        'truncate',
+                        hasOverride ? 'text-nexus-accent font-medium' : 'text-nexus-textMuted',
+                      )}
+                      title={displayLocation}
+                    >
+                      {displayLocation || 'NO LOCATION SET'}
+                    </span>
+                    <span className="text-nexus-textMuted">
+                      Stage {node.stage}
+                    </span>
+                    <div className="text-right">
+                      <span
+                        className={cn(
+                          'inline-block text-[0.56rem] font-mono px-1 py-0.5 border uppercase tracking-[0.12em]',
+                          statusText === 'OVERRIDDEN' && 'border-nexus-accent text-nexus-accent',
+                          statusText === 'INACTIVE' && 'border-nexus-warning text-nexus-warning',
+                          statusText === 'DEFAULT' && 'border-nexus-borderSubtle text-nexus-textSubtle',
+                        )}
+                      >
+                        {statusText}
+                      </span>
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+          )}
+        </TerminalFrame>
+      </div>
 
       {/* Location Editor Modal */}
       {isEditorOpen && editorNode && (

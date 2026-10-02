@@ -270,8 +270,17 @@ export function useBureauRealtime() {
     return 'LIVE'
   }
 
+  const getSignalStrength = (): number => {
+    if (!isConnected || !lastSync) return 0
+    const ageMs = Date.now() - lastSync.getTime()
+    const maxAge = 30000
+    const strength = Math.max(0, Math.min(100, 100 - (ageMs / maxAge) * 100))
+    return Math.round(strength / 10) * 10
+  }
+
   const getConnectionInfo = () => ({
     status: getConnectedStatus(),
+    signalStrength: getSignalStrength(),
     lastSync,
     isConnected,
   })
@@ -281,6 +290,7 @@ export function useBureauRealtime() {
     lastSync,
     connectionStatus: getConnectedStatus(),
     connectionInfo: getConnectionInfo(),
+    signalStrength: getSignalStrength(),
     subscribe,
     unsubscribe,
     unsubscribeAll,

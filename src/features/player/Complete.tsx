@@ -10,13 +10,13 @@ import { useGameEngine } from '@/hooks/useGameEngine'
 import { useApp } from '@/app/providers'
 import { ROUTES, ROLE_LABELS } from '@/app/config'
 import { BureauIcons } from '@/components/bureau'
-import { DocumentShell, Field, FieldGrid, StateMarker, Stamp } from '@/components/bureau'
+import { DocumentShell, RegisterList, RegisterRow, StateMarker, Stamp } from '@/components/bureau'
 import { useState } from 'react'
 
 export function PlayerComplete() {
   const { player, team, teamProgress, gameState, solvedCount, totalNodes } = useGameEngine()
   const { logout } = useApp()
-  const [showShareAck, setShowShareAck] = useState(false)
+  const [shareMessage, setShareMessage] = useState<string | null>(null)
 
   const finalScore = teamProgress?.score ?? 0
   const timeElapsed = gameState?.startedAt
@@ -30,13 +30,13 @@ export function PlayerComplete() {
   const hintsUsed = teamProgress?.hintsUsed ?? 0
   const roleLabel = player?.role && ROLE_LABELS[player.role]
 
-  const statCards: { label: string; value: string; glyph: string; tone: 'active' | 'warning' | 'neutral' | 'inactive' }[] = [
-    { label: 'Final Score', value: finalScore.toLocaleString(), glyph: '#', tone: 'active' },
-    { label: 'Puzzles Solved', value: `${solvedCount}/${totalNodes}`, glyph: '✓', tone: 'warning' },
-    { label: 'Time Elapsed', value: timeElapsed, glyph: '⌚', tone: 'neutral' },
-    { label: 'Hints Used', value: String(hintsUsed), glyph: '?', tone: 'inactive' },
-    { label: 'Evidence Found', value: String(evidenceCount), glyph: '□', tone: 'inactive' },
-    { label: 'Items Collected', value: String(inventoryCount), glyph: '♦', tone: 'inactive' },
+  const debriefEntries: { label: string; value: string; tone: 'active' | 'warning' | 'neutral' | 'inactive' }[] = [
+    { label: 'FINAL SCORE', value: finalScore.toLocaleString(), tone: 'active' },
+    { label: 'EVIDENCE VERIFIED', value: `${solvedCount}/${totalNodes}`, tone: 'warning' },
+    { label: 'MISSION TIME', value: timeElapsed, tone: 'neutral' },
+    { label: 'DECRYPTION AIDS', value: String(hintsUsed), tone: 'inactive' },
+    { label: 'ARTIFACTS RECOVERED', value: String(evidenceCount), tone: 'inactive' },
+    { label: 'ITEMS COLLECTED', value: String(inventoryCount), tone: 'inactive' },
   ]
 
   const handleShare = () => {
@@ -47,15 +47,21 @@ export function PlayerComplete() {
       `Score: ${team?.score ?? 0}\n` +
       `Time: ${team?.startedAt ? formatElapsedTime(team.startedAt) : '—'}`
     const url = `${window.location.origin}${ROUTES.PLAYER_COMPLETE}`
-    if (navigator.share) {
-      void navigator.share({ title: 'NEXUS — Mission Complete', text: shareText, url }).catch(() => {
-        void navigator.clipboard?.writeText(`${shareText}\n${url}`)
-      })
-    } else {
-      void navigator.clipboard?.writeText(`${shareText}\n${url}`)
+    const acknowledge = (message: string) => {
+      setShareMessage(message)
+      setTimeout(() => setShareMessage(null), 3000)
     }
-    setShowShareAck(true)
-    setTimeout(() => setShowShareAck(false), 3000)
+    const copyReport = () => {
+      void navigator.clipboard?.writeText(`${shareText}\n${url}`)
+      acknowledge('REPORT COPIED TO DEVICE BUFFER')
+    }
+    if (navigator.share) {
+      void navigator.share({ title: 'NEXUS — Mission Complete', text: shareText, url })
+        .then(() => acknowledge('REPORT TRANSMITTED'))
+        .catch(copyReport)
+    } else {
+      copyReport()
+    }
   }
 
   return (
@@ -73,14 +79,14 @@ export function PlayerComplete() {
             </Stamp>
           }
         >
-          <div className="text-center py-6">
-            <div className="w-20 h-20 border-2 border-nexus-borderSubtle flex items-center justify-center mx-auto mb-4">
-              <span className="font-display text-3xl text-nexus-accent">✓</span>
-            </div>
-            <p className="text-nexus-textMuted">
-              Team {team?.name} has successfully completed NEXUS
-            </p>
-          </div>
+           <div className="text-center py-6">
+             <div className="w-20 h-20 border-2 border-nexus-borderSubtle flex items-center justify-center mx-auto mb-4">
+               <BureauIcons.Check className="bureau-icon w-8 h-8 text-nexus-accent" aria-hidden="true" />
+             </div>
+             <p className="text-nexus-textMuted">
+               Unit {team?.name} has successfully completed NEXUS
+             </p>
+           </div>
         </DocumentShell>
 
         {/* Role Summary */}
@@ -116,28 +122,25 @@ export function PlayerComplete() {
         {/* Final Stats — as a field grid */}
         <DocumentShell
           reference="After Action Report"
-          title="Final Statistics"
+          title="AFTER-ACTION REGISTER"
           stock="digital"
           footer={<Stamp variant="verified">Filed</Stamp>}
         >
-          <FieldGrid columns={2}>
-            {statCards.map(stat => (
-              <Field
-                key={stat.label}
-                label={stat.label}
-                value={
-                  <div className="flex items-center gap-2">
-                    <span className="font-display text-base" aria-hidden="true">
-                      {stat.glyph}
-                    </span>
-                    <span className="font-mono text-lg font-bold text-nexus-text">
-                      {stat.value}
-                    </span>
-                  </div>
+          <RegisterList>
+            {debriefEntries.map(entry => (
+              <RegisterRow
+                key={entry.label}
+                id={entry.label}
+                label={entry.label}
+                meta="CASE 037 / VERIFIED DEBRIEF"
+                trailing={
+                  <span className="font-mono text-sm font-bold tabular-nums text-nexus-text">
+                    {entry.value}
+                  </span>
                 }
               />
             ))}
-          </FieldGrid>
+          </RegisterList>
         </DocumentShell>
 
         {/* Actions */}
@@ -147,33 +150,33 @@ export function PlayerComplete() {
             className="nexus-btn nexus-btn-primary touch-target-comfortable"
           >
             <BureauIcons.Trophy className="bureau-icon w-5 h-5" />
-            <span>View Final Leaderboard</span>
+            <span>ACCESS FINAL RECORD</span>
           </Link>
           <button
             onClick={handleShare}
             className="nexus-btn nexus-btn-secondary touch-target-comfortable"
           >
             <BureauIcons.Share className="bureau-icon w-5 h-5" />
-            <span>Share Results</span>
+            <span>TRANSMIT REPORT</span>
           </button>
           <button
             onClick={() => { void logout() }}
             className="nexus-btn nexus-btn-ghost touch-target-comfortable"
           >
             <BureauIcons.Back className="bureau-icon w-5 h-5 rotate-180" />
-            <span>Exit to Login</span>
+            <span>RETURN TO LOGIN</span>
           </button>
         </div>
 
-        {showShareAck && (
-          <p className="text-center text-xs text-nexus-textMuted">
-            Results copied to clipboard.
+        {shareMessage && (
+          <p className="border-l-2 border-nexus-accent px-3 py-2 text-center font-mono text-[0.6rem] uppercase tracking-[0.14em] text-nexus-textMuted" role="status" aria-live="polite">
+            {shareMessage}
           </p>
         )}
 
         {/* Footer */}
         <p className="text-center text-xs text-nexus-textSubtle">
-          NEXUS — ATAST Event • ISIMM Monastir • 30/09/2026
+          NEXUS ECHO / CASE 037 / FIELD RECOVERY RECORD
         </p>
       </div>
     </div>

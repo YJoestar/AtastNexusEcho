@@ -103,7 +103,7 @@ export function PlayerInventory() {
         <div className="page-content max-w-2xl mx-auto py-12">
           <DocumentShell
             reference="Inventory"
-            title="Loading…"
+            title="SYNCHRONIZING…"
             stock="digital"
             footer={<Stamp variant="incomplete">In progress</Stamp>}
           >
@@ -125,12 +125,12 @@ export function PlayerInventory() {
           <Link
             to={ROUTES.PLAYER_GAME}
             className="p-2 border border-nexus-borderSubtle text-nexus-textMuted hover:text-nexus-text hover:bg-nexus-surfaceElevated touch-target-primary"
-            aria-label="Back to game"
+            aria-label="RETURN TO FIELD"
           >
             <BureauIcons.Back className="bureau-icon w-5 h-5" />
           </Link>
           <div className="flex-1 min-w-0">
-            <h1 className="heading-3">Inventory</h1>
+            <h1 className="heading-3">FIELD INVENTORY</h1>
             <p className="text-nexus-textMuted text-sm">
               {filteredItems.length} items · {fragments.length} fragments
             </p>
@@ -153,7 +153,7 @@ export function PlayerInventory() {
               type="search"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Search items…"
+              placeholder="SEARCH BY ITEM CODE…"
               className="input pl-10"
               autoComplete="off"
             />

@@ -9,7 +9,7 @@
 
 import { useState, useRef, useEffect, useCallback, useContext } from 'react'
 import { Link } from 'react-router-dom'
-import { BureauIcons } from '@/components/bureau'
+import { BureauIcons, Stamp } from '@/components/bureau'
 import { useGameEngine, type QRScanResult } from '@/hooks/useGameEngine'
 import { useConnection } from '@/hooks/useConnection'
 import { QASimulatorContext } from '@/contexts/QASimulatorContext'
@@ -47,53 +47,53 @@ type CameraState =
 
 const CAMERA_STATE_LABELS: Record<CameraState, { title: string; description: string; icon: ReactNode }> = {
   IDLE: {
-    title: 'Ready to Scan',
-    description: 'Point your camera at a NEXUS QR marker to unlock puzzles, evidence, or navigation points.',
+    title: 'OPTICAL READER / STANDBY',
+    description: 'Arm the reader, then hold a Bureau field marker inside the acquisition frame.',
     icon: <BureauIcons.QrCode className="bureau-icon w-12 h-12 text-nexus-accent" />,
   },
   REQUESTING_CAMERA: {
-    title: 'Requesting Camera',
-    description: 'Waiting for camera access…',
+    title: 'REQUESTING OPTICAL INPUT',
+    description: 'Waiting for device camera authorization…',
     icon: <BureauIcons.Camera className="bureau-icon w-12 h-12 text-nexus-textSubtle animate-pulse" />,
   },
   CAMERA_READY: {
-    title: 'Camera Ready',
-    description: 'Position a QR marker within the frame.',
+    title: 'OPTICAL INPUT READY',
+    description: 'Align the field marker with the acquisition frame.',
     icon: <BureauIcons.Camera className="bureau-icon w-12 h-12 text-nexus-accent" />,
   },
   SCANNING: {
-    title: 'Scanning…',
-    description: 'Position QR code within frame',
+    title: 'ACQUIRING FIELD MARKER',
+    description: 'Hold marker steady inside the frame.',
     icon: <BureauIcons.ScanLine className="bureau-icon w-12 h-12 text-nexus-accent animate-pulse" />,
   },
   UNSUPPORTED: {
-    title: 'Camera Not Supported',
-    description: 'Your browser does not support the APIs required for camera-based scanning.',
+    title: 'OPTICAL INPUT UNAVAILABLE',
+    description: 'This device does not expose the camera interface required for optical acquisition.',
     icon: <BureauIcons.AlertTriangle className="bureau-icon w-16 h-16 text-nexus-danger mx-auto" />,
   },
   PERMISSION_DENIED: {
-    title: 'Camera Access Denied',
-    description: 'Please enable camera permissions in your browser settings to scan QR codes.',
+    title: 'OPTICAL ACCESS REFUSED',
+    description: 'Camera permission was denied. Enable device access or use the manual service port.',
     icon: <BureauIcons.ShieldQuestion className="bureau-icon w-16 h-16 text-nexus-warning mx-auto" />,
   },
   NO_CAMERA: {
-    title: 'No Camera Found',
-    description: 'No camera device was detected. Try connecting a webcam or use manual entry.',
+    title: 'NO OPTICAL SENSOR FOUND',
+    description: 'No camera was detected. Use the manual service port to enter a field code.',
     icon: <BureauIcons.Video className="bureau-icon w-16 h-16 text-nexus-danger mx-auto" />,
   },
   INSECURE_CONTEXT: {
-    title: 'Insecure Context',
-    description: 'Camera access requires an HTTPS connection. Manual entry is available below.',
+    title: 'SECURE CHANNEL REQUIRED',
+    description: 'Optical input requires a secure connection. Manual acquisition remains available.',
     icon: <BureauIcons.Shield className="bureau-icon w-16 h-16 text-nexus-danger mx-auto" />,
   },
   STREAM_FAILED: {
-    title: 'Camera Stream Failed',
-    description: 'The camera stream could not be started. Try again or use manual entry.',
+    title: 'OPTICAL CHANNEL FAILED',
+    description: 'The camera stream did not initialize. Retry acquisition or use manual entry.',
     icon: <BureauIcons.WifiOff className="bureau-icon w-16 h-16 text-nexus-danger mx-auto" />,
   },
   DETECTION_UNAVAILABLE: {
-    title: 'Decoder Unavailable',
-    description: 'The QR decoder failed to load. Try again or use manual entry.',
+    title: 'MARKER DECODER UNAVAILABLE',
+    description: 'The optical decoder did not initialize. Retry or use manual entry.',
     icon: <BureauIcons.AlertTriangle className="bureau-icon w-16 h-16 text-nexus-warning mx-auto" />,
   },
 }
@@ -355,37 +355,43 @@ export function PlayerQR() {
           <Link
             to={ROUTES.PLAYER_GAME}
             className="p-2 border border-nexus-borderSubtle text-nexus-textMuted hover:text-nexus-text touch-target-primary"
-            aria-label="Back to game"
+            aria-label="RETURN TO FIELD"
           >
             <BureauIcons.Back className="bureau-icon w-5 h-5" />
           </Link>
           <div>
-            <h1 className="heading-3">QR Scanner</h1>
-            <p className="text-nexus-textMuted text-sm">
-              Scan markers to unlock puzzles and locations
+            <h1 className="heading-3">FIELD SCANNER</h1>
+            <p className="font-mono text-[0.56rem] uppercase tracking-[0.14em] text-nexus-textMuted">
+              FH-037 / Optical acquisition module
             </p>
           </div>
         </div>
 
         {/* Scanner View */}
-        <div className="nexus-document-sm relative aspect-square min-h-[320px] overflow-hidden">
+        <div className="relative aspect-square min-h-[320px] overflow-hidden border border-nexus-border bg-nexus-bg" data-device="field-scanner">
+          <div className="pointer-events-none absolute inset-3 border border-nexus-borderSubtle/60" aria-hidden="true" />
           {cameraState === 'IDLE' ? (
             <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
-              <div className="w-24 h-24 rounded-2xl bg-nexus-accentBg flex items-center justify-center mb-6">
-                <BureauIcons.QrCode className="bureau-icon w-12 h-12 text-nexus-accent" />
+              <div className="relative mb-5 flex h-28 w-28 items-center justify-center border border-nexus-accent/60" aria-hidden="true">
+                <span className="absolute left-0 top-0 h-4 w-4 border-l-2 border-t-2 border-nexus-accent" />
+                <span className="absolute right-0 top-0 h-4 w-4 border-r-2 border-t-2 border-nexus-accent" />
+                <span className="absolute bottom-0 left-0 h-4 w-4 border-b-2 border-l-2 border-nexus-accent" />
+                <span className="absolute bottom-0 right-0 h-4 w-4 border-b-2 border-r-2 border-nexus-accent" />
+                <BureauIcons.QrCode className="bureau-icon h-10 w-10 text-nexus-accent" />
               </div>
-              <h3 className="heading-4 mb-2">Ready to Scan</h3>
-              <p className="text-nexus-textMuted mb-6 max-w-xs">
-                Point your camera at a NEXUS QR marker to unlock puzzles,
-                evidence, or navigation points.
+              <p className="mb-2 font-mono text-[0.56rem] uppercase tracking-[0.18em] text-nexus-accent">
+                {CAMERA_STATE_LABELS[cameraState].title}
+              </p>
+              <p className="mb-6 max-w-xs text-sm text-nexus-textMuted">
+                {CAMERA_STATE_LABELS[cameraState].description}
               </p>
               <button
                 onClick={startScan}
-                className="btn-primary touch-target-comfortable w-full max-w-xs"
+                className="nexus-btn-primary min-h-11 w-full max-w-xs font-mono text-xs uppercase tracking-[0.12em]"
                 disabled={isOffline}
               >
-                <BureauIcons.ScanLine className="bureau-icon w-5 h-5" />
-                <span>Start Scanning</span>
+                <BureauIcons.ScanLine className="bureau-icon h-4 w-4" />
+                <span>[ ARM OPTICAL READER ]</span>
               </button>
               {isQASimulation && (
                 <p className="mt-4 text-xs text-nexus-textSubtle">
@@ -396,7 +402,7 @@ export function PlayerQR() {
               {isOffline && (
                 <p className="mt-3 text-sm text-nexus-danger flex items-center justify-center gap-1.5">
                   <BureauIcons.AlertTriangle className="bureau-icon w-4 h-4" />
-                  Camera unavailable while offline
+                  OPTICAL ACQUISITION UNAVAILABLE / OFFLINE
                 </p>
               )}
             </div>
@@ -427,21 +433,24 @@ export function PlayerQR() {
               {cameraState === 'SCANNING' && (
                 <>
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className="relative w-64 h-64">
+                    <div className="relative h-64 w-64">
                       <div className="absolute inset-0 border-2 border-nexus-accent/50">
                         <div className="absolute -top-2 -left-2 w-8 h-8 border-t-4 border-l-4 border-nexus-accent" />
                         <div className="absolute -top-2 -right-2 w-8 h-8 border-t-4 border-r-4 border-nexus-accent" />
                         <div className="absolute -bottom-2 -left-2 w-8 h-8 border-b-4 border-l-4 border-nexus-accent" />
                         <div className="absolute -bottom-2 -right-2 w-8 h-8 border-b-4 border-r-4 border-nexus-accent" />
                       </div>
-                      <div className="absolute left-4 right-4 h-1 bg-nexus-accent" />
+                      <div className="absolute left-4 right-4 top-1/2 h-px bg-nexus-accent animate-scanner-pulse" />
+                      <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-mono text-[0.5rem] uppercase tracking-[0.16em] text-nexus-accent/80">
+                        {isResolving ? 'VERIFY' : 'ACQUIRE'}
+                      </span>
                     </div>
                   </div>
 
                   <div className="absolute bottom-4 left-4 right-4">
-                    <div className="bg-nexus-bg/90 rounded border border-nexus-border px-4 py-3 text-center">
-                      <p className="text-sm text-nexus-textMuted">
-                        {isResolving ? 'Verifying marker…' : 'Scanning…'}
+                    <div className="border border-nexus-border bg-nexus-bg/95 px-4 py-3 text-center">
+                      <p className="font-mono text-[0.6rem] uppercase tracking-[0.14em] text-nexus-textMuted" aria-live="polite">
+                        {isResolving ? 'VERIFYING MARKER WITH BUREAU' : 'READING OPTICAL FIELD'}
                       </p>
                     </div>
                   </div>
@@ -463,60 +472,26 @@ export function PlayerQR() {
           )}
         </div>
 
-        {/* Camera Controls (below scanner) */}
-        {cameraState === 'IDLE' && (
-          <div className="flex gap-2">
-            <button
-              onClick={startScan}
-              className="btn-primary flex-1 touch-target-comfortable"
-              disabled={isOffline}
-            >
-              <BureauIcons.ScanLine className="bureau-icon w-5 h-5" />
-              <span>Start Scanning</span>
-            </button>
-          </div>
-        )}
-
         {/* Last Scan Result */}
         {lastResult && (
           <div
             className={cn(
-              'panel animate-slide-up',
+              'border p-4 animate-slide-up',
               lastResult.discovered
-                ? 'bg-nexus-accentBg/30 border-nexus-accent/30'
-                : 'bg-nexus-dangerBg/30 border-nexus-danger/30',
+                ? 'bg-nexus-accentBg/20 border-nexus-accent/50'
+                : 'bg-nexus-dangerBg/20 border-nexus-danger/50',
             )}
+            role="status"
+            aria-live="polite"
           >
             <div className="flex items-start gap-3">
-              <div
-                className={cn(
-                  'w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0',
-                  lastResult.discovered ? 'bg-nexus-accentBg' : 'bg-nexus-warningBg',
-                )}
-              >
-                {lastResult.discovered ? (
-                  <BureauIcons.Success className="bureau-icon w-5 h-5 text-nexus-accent" />
-                ) : (
-                  <BureauIcons.AlertTriangle className="bureau-icon w-5 h-5 text-nexus-warning" />
-                )}
-              </div>
               <div className="flex-1 min-w-0">
-                <p
-                  className={cn(
-                    'font-medium',
-                    lastResult.discovered ? 'text-nexus-accent' : 'text-nexus-warning',
-                  )}
-                >
-                  {isResolving
-                    ? 'Contacting bureau…'
-                    : lastResult.alreadyClaimed
-                      ? 'Already Claimed'
-                      : lastResult.discovered
-                        ? 'Marker Recognized'
-                        : lastResult.error
-                          ? 'Access Denied'
-                          : 'Access Denied'}
-                </p>
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <p className="font-mono text-[0.6rem] uppercase tracking-[0.16em] text-nexus-textSubtle">ACQUISITION RESULT</p>
+                  <Stamp variant={lastResult.discovered ? 'verified' : 'restricted'} impressed>
+                    {isResolving ? 'VERIFYING' : lastResult.alreadyClaimed ? 'ALREADY FILED' : lastResult.discovered ? 'IDENTIFIED' : 'UNRESOLVED'}
+                  </Stamp>
+                </div>
                 {lastResult.qrLabel && (
                   <p className="text-sm text-nexus-textMuted font-mono break-all">
                     {lastResult.qrLabel}
@@ -525,9 +500,9 @@ export function PlayerQR() {
                 {lastResult.nodeTitle && (
                   <p className="text-sm text-nexus-textMuted">{lastResult.nodeTitle}</p>
                 )}
-                <p className="text-sm text-nexus-textMuted mt-1">
-                  {lastResult.error
-                    ? lastResult.error
+                <p className="mt-1 text-sm text-nexus-textMuted">
+                  {lastResult.message
+                    ? lastResult.message
                     : lastResult.alreadyClaimed
                       ? 'This marker has already been claimed by your team.'
                       : lastResult.discovered
@@ -542,7 +517,7 @@ export function PlayerQR() {
                 to={ROUTES.PLAYER_GAME}
                 className="btn-primary w-full mt-4 touch-target-comfortable"
               >
-                <span>Return to current puzzle</span>
+                <span>[ RETURN TO ACTIVE NODE ]</span>
               </Link>
             )}
             {lastResult.discovered && !lastResult.nodeCode && (
@@ -551,14 +526,14 @@ export function PlayerQR() {
                 className="btn-primary w-full mt-4 touch-target-comfortable"
               >
                 <BureauIcons.Forward className="bureau-icon w-4 h-4 rotate-180" />
-                <span>Go to Location</span>
+                <span>[ OPEN FIELD CARTOGRAPHY ]</span>
               </Link>
             )}
           </div>
         )}
 
         {/* Manual entry fallback */}
-        <div className="panel">
+        <div className="border border-nexus-border bg-nexus-surfaceElevated">
           <button
             type="button"
             onClick={() => setShowManualEntry(v => !v)}
@@ -568,14 +543,14 @@ export function PlayerQR() {
             <span className="flex items-center gap-3">
               <BureauIcons.Keyboard className="bureau-icon w-5 h-5 text-nexus-textMuted" />
               <span>
-                <span className="block font-medium">Enter marker code manually</span>
-                <span className="block text-sm text-nexus-textMuted">
-                  Use this if the camera cannot read the marker
+                <span className="block font-mono text-xs font-bold uppercase tracking-[0.12em]">SERVICE PORT / MANUAL ENTRY</span>
+                <span className="block text-xs text-nexus-textMuted">
+                  Use when optical acquisition is unavailable.
                 </span>
               </span>
             </span>
             <span className="text-nexus-textMuted text-sm">
-              {showManualEntry ? 'Hide' : 'Show'}
+              {showManualEntry ? '[ CLOSE ]' : '[ OPEN ]'}
             </span>
           </button>
 
@@ -617,12 +592,9 @@ export function PlayerQR() {
           <div className="flex items-start gap-3">
             <BureauIcons.AlertTriangle className="bureau-icon w-5 h-5 text-nexus-info flex-shrink-0 mt-0.5" aria-hidden="true" />
             <div>
-              <h4 className="font-medium text-nexus-info mb-1">Scanner Guide</h4>
-              <p className="text-sm text-nexus-textMuted">
-                NEXUS markers appear at physical locations throughout the campus.
-                Enter a manual code if the camera cannot read the marker, or use
-                the test code <code className="font-mono">NX-TEST-ENTRY</code> if
-                you do not have access to physical markers.
+              <h4 className="mb-1 font-mono text-xs font-bold uppercase tracking-[0.14em] text-nexus-info">FIELD MARKER PROCEDURE</h4>
+              <p className="text-xs leading-relaxed text-nexus-textMuted">
+                Markers are fixed at campus locations. Manual codes use the same verification channel. In simulation, use <code className="font-mono">NX-TEST-ENTRY</code>.
               </p>
             </div>
           </div>

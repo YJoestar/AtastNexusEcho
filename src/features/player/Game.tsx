@@ -10,12 +10,12 @@
  */
 
 import { useMemo } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { BureauIcons } from '@/components/bureau'
 import { useGameEngine } from '@/hooks/useGameEngine'
 import { useGameTimer } from '@/hooks/useGameTimer'
 import { useNarrative } from '@/hooks/useNarrative'
-import { useCampusMapState, useTeamMemberPositions } from '@/hooks/useCampusMap'
+import { useCampusMapState } from '@/hooks/useCampusMap'
 import { ROUTES, ROLE_LABELS, ROLE_THEMES } from '@/app/config'
 import { cn } from '@/lib/utils'
 import {
@@ -30,9 +30,10 @@ import {
   StatusMark,
   type StatusTone,
 } from '@/components/bureau'
-import { DynamicMinimap } from '@/components/player/map'
+import { CampusMap } from '@/components/player/map/CampusMap'
 
 export function PlayerGame() {
+  const navigate = useNavigate()
   const {
     player,
     team,
@@ -80,17 +81,6 @@ export function PlayerGame() {
     narrativeLevel: narrative.level,
   })
 
-  const teamMembers = useTeamMemberPositions(
-    teamProgress?.currentNodeId ?? null,
-    teamProgress?.availableNodeIds ?? [],
-    solvedSet,
-  )
-
-  const currentPlayerPos = useMemo(() => {
-    const mapNode = mapNodes.find(n => n.isCurrent)
-    return mapNode ? mapNode.position : [500, 550] as [number, number]
-  }, [mapNodes])
-
   const availableNodes = useMemo(
     () => allNodesForMap.filter(n => n.available && !n.solved && n.code !== currentNodeId),
     [allNodesForMap, currentNodeId]
@@ -114,21 +104,21 @@ export function PlayerGame() {
   const quickActions = [
     {
       path: currentNodeId ? ROUTES.PLAYER_NODE.replace(':nodeId', currentNodeId) : ROUTES.PLAYER_GAME,
-      label: 'Current Puzzle',
+      label: 'ACTIVE NODE',
       icon: BureauIcons.Target,
       count: undefined,
       disabled: !currentNodeId,
     },
     {
       path: ROUTES.PLAYER_EVIDENCE,
-      label: 'Evidence',
+      label: 'EVIDENCE REGISTER',
       icon: BureauIcons.Package,
       count: teamProgress?.evidenceOwned.length ?? 0,
     },
-    { path: ROUTES.PLAYER_INVENTORY, label: 'Inventory', icon: BureauIcons.Key, count: inventoryCount },
-    { path: ROUTES.PLAYER_NAVIGATION, label: 'Navigation', icon: BureauIcons.MapPin, count: undefined },
-    { path: ROUTES.PLAYER_QR, label: 'QR Scanner', icon: BureauIcons.QrCode, count: undefined },
-    { path: ROUTES.PLAYER_LEADERBOARD, label: 'Ranking', icon: BureauIcons.Trophy, count: undefined },
+    { path: ROUTES.PLAYER_INVENTORY, label: 'RECOVERED INVENTORY', icon: BureauIcons.Key, count: inventoryCount },
+    { path: ROUTES.PLAYER_NAVIGATION, label: 'CAMPUS MAP', icon: BureauIcons.MapPin, count: undefined },
+    { path: ROUTES.PLAYER_QR, label: 'FIELD SCANNER', icon: BureauIcons.QrCode, count: undefined },
+    { path: ROUTES.PLAYER_LEADERBOARD, label: 'FIELD RECORD', icon: BureauIcons.Trophy, count: undefined },
   ]
 
   const caseTone: StatusTone =
@@ -235,37 +225,37 @@ export function PlayerGame() {
           )}
         </section>
 
-        {/* Field position — a live minimap showing where the team stands */}
-        {currentPlayerPos && (
-          <section className="panel">
-            <div className="mb-3 flex items-baseline justify-between gap-3">
-              <h2 className="heading-4 flex items-center gap-2">
-                <BureauIcons.Compass className="bureau-icon w-4 h-4 text-nexus-textMuted" aria-hidden="true" />
-                Field Position
+        {/* Field cartography: canonical geometry with fog lifted only by case progress. */}
+        <section className="overflow-hidden border border-nexus-border bg-nexus-surfaceElevated">
+          <div className="flex items-center justify-between gap-3 border-b border-nexus-border px-3 py-2">
+            <div>
+              <h2 className="font-mono text-[0.625rem] font-bold uppercase tracking-[0.18em] text-nexus-text">
+                FIELD CARTOGRAPHY
               </h2>
-              <span className="font-mono text-sm tabular-nums text-nexus-textMuted">
-                {teamMembers.filter(m => m.isConnected).length} / {teamMembers.length + 1} active
-              </span>
+              <p className="mt-1 font-mono text-[0.52rem] uppercase tracking-[0.14em] text-nexus-textSubtle">
+                CASE {team.code} / NORTH CAMPUS
+              </p>
             </div>
-            <div className="flex items-center justify-center">
-              <DynamicMinimap
-                playerPosition={currentPlayerPos}
-                teamMembers={teamMembers}
-                nodes={mapNodes}
-                orientation="north"
-                playerCentered={true}
-                viewRadius={300}
-                size={180}
-                onNodeSelect={code => {
-                  window.location.href = ROUTES.PLAYER_NODE.replace(':nodeId', code)
-                }}
-              />
-            </div>
-            <p className="meta mt-3">
-              {teamMembers.filter(m => m.isConnected).length} team contacts on scope
-            </p>
-          </section>
-        )}
+            <span className="border-l border-nexus-border pl-3 text-right font-mono text-[0.56rem] uppercase tracking-[0.12em] text-nexus-textSubtle">
+              {solvedCount.toString().padStart(2, '0')} VERIFIED
+              <br />
+              {availableNodes.length.toString().padStart(2, '0')} ACCESSIBLE
+            </span>
+          </div>
+          <div className="h-[min(42vh,360px)] min-h-[260px]">
+            <CampusMap
+              nodes={mapNodes}
+              showFog
+              onNodeSelect={code => navigate(ROUTES.PLAYER_NODE.replace(':nodeId', code))}
+            />
+          </div>
+          <div className="flex items-center justify-between gap-2 border-t border-nexus-border px-3 py-2 font-mono text-[0.52rem] uppercase tracking-[0.12em] text-nexus-textSubtle">
+            <span>OPEN MARKERS ONLY</span>
+            <Link to={ROUTES.PLAYER_NAVIGATION} className="text-nexus-accent hover:underline">
+              ENTER MAP MODE →
+            </Link>
+          </div>
+        </section>
 
         {/* Assigned item */}
         {currentNode && (

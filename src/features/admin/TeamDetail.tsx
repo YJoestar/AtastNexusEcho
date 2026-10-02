@@ -8,7 +8,7 @@
 
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
-import { BureauIcons } from '@/components/bureau'
+import { BureauIcons, TerminalFrame } from '@/components/bureau'
 import { ROUTES } from '@/app/config'
 import { cn, formatNumber, getAvatarInitials } from '@/lib/utils'
 import { formatDateTime, formatDuration } from '@/lib/time'
@@ -65,14 +65,14 @@ export function AdminTeamDetail() {
   }, [teamId, fetchTeamDetail])
 
   if (!teamId) {
-    return <div className="py-12 text-center text-nexus-textMuted">No team ID specified</div>
+    return <div className="py-12 text-center font-mono text-xs uppercase tracking-[0.14em] text-nexus-warning">PERSONNEL DOSSIER / NO RECORD IDENTIFIER</div>
   }
 
   if (!teamDetail && isLoading) {
     return (
       <div className="py-12 text-center text-nexus-textSubtle">
         <BureauIcons.Spinner className="bureau-icon w-8 h-8 animate-spin mx-auto mb-4 text-nexus-info" />
-        <p>Loading team data…</p>
+        <p className="font-mono text-xs uppercase tracking-[0.14em]">RETRIEVING FIELD PERSONNEL DOSSIER…</p>
       </div>
     )
   }
@@ -81,15 +81,15 @@ export function AdminTeamDetail() {
     return (
       <div className="py-12 text-center">
         <BureauIcons.AlertTriangle className="bureau-icon w-8 h-8 mx-auto mb-4 text-nexus-danger" />
-        <p className="text-nexus-danger">{error}</p>
-        <button onClick={() => void fetchTeamDetail(teamId)} className="btn-primary mt-3">
-          Retry
+        <p className="font-mono text-sm text-nexus-danger">DOSSIER RETRIEVAL FAILED / {error}</p>
+        <button onClick={() => void fetchTeamDetail(teamId)} className="nexus-btn-secondary mt-3">
+          [ RE-QUERY PERSONNEL FILE ]
         </button>
       </div>
     )
   }
   if (!teamDetail) {
-    return <div className="py-12 text-center text-nexus-textMuted">Team not found</div>
+    return <div className="py-12 text-center font-mono text-xs uppercase tracking-[0.14em] text-nexus-textMuted">PERSONNEL FILE / ABSENT</div>
   }
 
   const { team, players, progress, nodeProgress } = teamDetail
@@ -156,48 +156,57 @@ export function AdminTeamDetail() {
   const config = getStatusConfig(team.status)
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 font-mono">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <button
             onClick={() => navigate(ROUTES.ADMIN_TEAMS)}
-            className="text-nexus-textSubtle hover:text-nexus-text"
+            className="min-h-10 border-r border-nexus-border pr-4 font-mono text-[0.6rem] uppercase tracking-[0.12em] text-nexus-textSubtle hover:text-nexus-text"
           >
-            ← Teams
+            ← PERSONNEL REGISTER
           </button>
           <div className="flex items-center gap-3">
             {config.icon}
-            <h1 className="heading-2">{team.name}</h1>
+            <h1 className="font-mono text-xl font-bold text-nexus-text">{team.name}</h1>
             <TeamStatusBadge status={team.status} showDot />
           </div>
         </div>
         <TeamCodeBadge code={team.code} onCopy={() => navigator.clipboard.writeText(team.code)} />
       </div>
 
-      {/* Team Identity & Quick Stats */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="panel">
-          <p className="text-xs text-nexus-textSubtle uppercase mb-2">Score</p>
-          <p className="font-display font-bold text-3xl text-nexus-warning">{formatNumber(team.score)}</p>
-          <p className="text-xs text-nexus-textSubtle mt-1">Current node: {team.currentNodeCode ?? 'None'}</p>
-        </div>
-        <div className="panel">
-          <p className="text-xs text-nexus-textSubtle uppercase mb-2">Progress</p>
-          <p className="font-display font-bold text-3xl text-nexus-accent">{team.solvedCount ?? 0}</p>
-          <p className="text-xs text-nexus-textSubtle mt-1">Nodes solved</p>
-        </div>
-        <div className="panel">
-          <p className="text-xs text-nexus-textSubtle uppercase mb-2">Hints Used</p>
-          <p className="font-display font-bold text-3xl text-nexus-info">{team.hintsUsed ?? 0}</p>
-          <p className="text-xs text-nexus-textSubtle mt-1">Total across nodes</p>
-        </div>
-      </div>
+      <TerminalFrame title="FIELD UNIT DOSSIER" reference={`CASE 037 / ${team.code}`} variant="register">
+        <dl className="grid grid-cols-2 divide-x divide-y divide-nexus-borderSubtle sm:grid-cols-3 sm:divide-y-0">
+          <div className="px-3 py-3">
+            <dt className="text-[0.52rem] uppercase tracking-[0.16em] text-nexus-textSubtle">CASE ASSIGNMENT</dt>
+            <dd className="mt-1 text-sm font-bold text-nexus-text">CASE 037</dd>
+          </div>
+          <div className="px-3 py-3">
+            <dt className="text-[0.52rem] uppercase tracking-[0.16em] text-nexus-textSubtle">CURRENT NODE</dt>
+            <dd className="mt-1 text-sm font-bold text-nexus-text">{team.currentNodeCode ?? 'POSITION UNREPORTED'}</dd>
+          </div>
+          <div className="px-3 py-3">
+            <dt className="text-[0.52rem] uppercase tracking-[0.16em] text-nexus-textSubtle">PERSONNEL</dt>
+            <dd className="mt-1 text-sm font-bold text-nexus-text">{team.playerCount} ASSIGNED</dd>
+          </div>
+          <div className="px-3 py-3">
+            <dt className="text-[0.52rem] uppercase tracking-[0.16em] text-nexus-textSubtle">NODES VERIFIED</dt>
+            <dd className="mt-1 text-sm font-bold text-nexus-text">{team.solvedCount ?? 0}</dd>
+          </div>
+          <div className="px-3 py-3">
+            <dt className="text-[0.52rem] uppercase tracking-[0.16em] text-nexus-textSubtle">HINTS ISSUED</dt>
+            <dd className="mt-1 text-sm font-bold text-nexus-text">{team.hintsUsed ?? 0}</dd>
+          </div>
+          <div className="px-3 py-3">
+            <dt className="text-[0.52rem] uppercase tracking-[0.16em] text-nexus-textSubtle">CASE SCORE</dt>
+            <dd className="mt-1 text-sm font-bold text-nexus-warning">{formatNumber(team.score)}</dd>
+          </div>
+        </dl>
+      </TerminalFrame>
 
       {/* Team Status Actions */}
-      <div className="panel">
-        <h2 className="heading-3 mb-4">Team Lifecycle</h2>
-        <div className="flex flex-wrap gap-3">
+      <TerminalFrame title="UNIT OPERATIONS INTERLOCK" reference={`STATE / ${team.status}`} variant="monitor">
+        <div className="flex flex-wrap gap-2 p-3">
           {config.canStart && (
             <button
               onClick={() => setPendingAction({
@@ -206,10 +215,10 @@ export function AdminTeamDetail() {
                 variant: 'primary',
                 execute: () => adminAPI.startTeam(team.id),
               })}
-              className="btn-primary"
+              className="nexus-btn-primary"
             >
-              <BureauIcons.Play className="bureau-icon w-4 h-4" />
-              Start Team
+              <BureauIcons.Play className="bureau-icon h-4 w-4" />
+              [ DEPLOY UNIT ]
             </button>
           )}
           {config.canPause && (
@@ -220,10 +229,10 @@ export function AdminTeamDetail() {
                 variant: 'warning',
                 execute: () => adminAPI.pauseTeam(team.id, 'Paused from detail page'),
               })}
-              className="btn-warning"
+              className="nexus-btn-secondary border-nexus-warning text-nexus-warning"
             >
-              <BureauIcons.Pause className="bureau-icon w-4 h-4" />
-              Pause Team
+              <BureauIcons.Pause className="bureau-icon h-4 w-4" />
+              [ HOLD UNIT ]
             </button>
           )}
           {config.canResume && (
@@ -234,10 +243,10 @@ export function AdminTeamDetail() {
                 variant: 'primary',
                 execute: () => adminAPI.resumeTeam(team.id),
               })}
-              className="btn-primary"
+              className="nexus-btn-primary"
             >
-              <BureauIcons.Play className="bureau-icon w-4 h-4" />
-              Resume Team
+              <BureauIcons.Play className="bureau-icon h-4 w-4" />
+              [ RESTORE LINK ]
             </button>
           )}
           {config.canComplete && (
@@ -248,19 +257,19 @@ export function AdminTeamDetail() {
                 variant: 'danger',
                 execute: () => adminAPI.completeTeam(team.id),
               })}
-              className="btn-secondary"
+              className="nexus-btn-secondary"
             >
-              <BureauIcons.Check className="bureau-icon w-4 h-4" />
-              Mark Complete
+              <BureauIcons.Check className="bureau-icon h-4 w-4" />
+              [ CLOSE CASE FILE ]
             </button>
           )}
           {team.status === 'ACTIVE' && (
             <button
               onClick={() => setShowNotifyDialog(true)}
-              className="btn-secondary"
+              className="nexus-btn-secondary"
             >
-              <BureauIcons.Send className="bureau-icon w-4 h-4" />
-              Send Notification
+              <BureauIcons.Send className="bureau-icon h-4 w-4" />
+              [ TRANSMIT DIRECTIVE ]
             </button>
           )}
           <button
@@ -270,10 +279,10 @@ export function AdminTeamDetail() {
               variant: 'danger',
               execute: () => adminAPI.disqualifyTeam(team.id, 'Disqualified from detail page'),
             })}
-            className="btn-secondary"
+            className="nexus-btn-secondary border-nexus-danger text-nexus-danger"
           >
-            <BureauIcons.AlertTriangle className="bureau-icon w-4 h-4" />
-            Disqualify
+            <BureauIcons.AlertTriangle className="bureau-icon h-4 w-4" />
+            [ DISQUALIFY UNIT ]
           </button>
           {(team.status === 'COMPLETED' || team.status === 'DISQUALIFIED') && (
             <button
@@ -283,14 +292,14 @@ export function AdminTeamDetail() {
                 variant: 'warning',
                 execute: () => adminAPI.resetTeam(team.id, 'Reset from detail page'),
               })}
-              className="btn-secondary"
+              className="nexus-btn-secondary border-nexus-warning text-nexus-warning"
             >
-              <BureauIcons.RotateCcw className="bureau-icon w-4 h-4" />
-              Reset Team
+              <BureauIcons.RotateCcw className="bureau-icon h-4 w-4" />
+              [ RESET UNIT ]
             </button>
           )}
         </div>
-      </div>
+      </TerminalFrame>
 
       {/* Players List */}
       <div className="panel">

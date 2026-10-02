@@ -81,9 +81,9 @@ export function PlayerFinal() {
   }
 
   const requirements = [
-    { label: 'Evidence Found', count: evidenceCount, required: 5, glyph: '□' },
-    { label: 'Inventory Items', count: inventoryCount, required: 3, glyph: '♦' },
-    { label: 'Decoded Fragments', count: fragmentsCount, required: 7, glyph: '□' },
+    { label: 'Evidence Verified', count: evidenceCount, required: 5 },
+    { label: 'Inventory Items', count: inventoryCount, required: 3 },
+    { label: 'Decoded Fragments', count: fragmentsCount, required: 7 },
   ]
 
   return (
@@ -94,7 +94,7 @@ export function PlayerFinal() {
           <Link
             to={ROUTES.PLAYER_GAME}
             className="p-2 border border-nexus-borderSubtle text-nexus-textMuted hover:text-nexus-text touch-target-primary"
-            aria-label="Back to game"
+            aria-label="RETURN TO FIELD"
           >
             <BureauIcons.Back className="bureau-icon w-5 h-5" />
           </Link>
@@ -117,18 +117,20 @@ export function PlayerFinal() {
               : <Stamp variant="incomplete" impressed>{isCompleted ? 'COMPLETED' : 'LOCKED'}</Stamp>
           }
         >
-          <div className="flex items-center justify-center py-6">
-            <div className={cn(
-              'w-16 h-16 flex items-center justify-center border-2',
-              isCompleted || unlocked
-                ? 'border-nexus-accent/30 bg-nexus-accentBg'
-                : 'border-nexus-danger/30 bg-nexus-dangerBg',
-            )}>
-              <span className="font-display text-3xl" aria-hidden="true">
-                {isCompleted || unlocked ? '✓' : '✗'}
-              </span>
-            </div>
-          </div>
+           <div className="flex items-center justify-center py-6">
+             <div className={cn(
+               'w-16 h-16 flex items-center justify-center border-2',
+               isCompleted || unlocked
+                 ? 'border-nexus-accent/30 bg-nexus-accentBg'
+                 : 'border-nexus-danger/30 bg-nexus-dangerBg',
+             )}>
+               {isCompleted || unlocked ? (
+                 <BureauIcons.Check className="bureau-icon w-8 h-8 text-nexus-accent" aria-hidden="true" />
+               ) : (
+                 <BureauIcons.Lock className="bureau-icon w-8 h-8 text-nexus-danger" aria-hidden="true" />
+               )}
+             </div>
+           </div>
         </DocumentShell>
 
         {/* Locked State */}
@@ -160,13 +162,13 @@ export function PlayerFinal() {
                 </p>
               </div>
 
-              <Link
-                to={ROUTES.PLAYER_GAME}
-                className="nexus-btn nexus-btn-secondary touch-target-comfortable w-full"
-              >
-                <BureauIcons.Back className="bureau-icon w-4 h-4" />
-                <span>Return to Game</span>
-              </Link>
+            <Link
+              to={ROUTES.PLAYER_GAME}
+              className="nexus-btn nexus-btn-secondary touch-target-comfortable w-full"
+            >
+              <BureauIcons.Back className="bureau-icon w-4 h-4" />
+              <span>RETURN TO FIELD</span>
+            </Link>
             </div>
           </DocumentShell>
         )}
@@ -176,11 +178,11 @@ export function PlayerFinal() {
           <div className="space-y-6">
             <DocumentShell reference="Briefing" title="Final Protocol Briefing" stock="paper">
               <div className="space-y-3">
-                <p className="text-nexus-textMuted">
-                  This is the culminating challenge. All evidence, inventory items,
-                  and fragments converge here. The solution requires synthesis of
-                  everything your team has uncovered through coordinated investigation.
-                </p>
+            <p className="text-nexus-textMuted">
+              The culminating investigation challenge. All evidence, inventory items,
+              and fragments converge here. The solution requires synthesis of
+              everything your team has uncovered through coordinated investigation.
+            </p>
               </div>
             </DocumentShell>
 
@@ -200,9 +202,6 @@ export function PlayerFinal() {
                       )}
                     >
                       <div className="flex items-center gap-2">
-                        <span className="font-display text-lg" aria-hidden="true">
-                          {item.glyph}
-                        </span>
                         <span className="text-sm font-medium">{item.label}</span>
                       </div>
                       <div className="flex items-center gap-2">
@@ -212,7 +211,7 @@ export function PlayerFinal() {
                         <StateMarker
                           glyph={met ? '✓' : '✗'}
                           tone={met ? 'active' : 'inactive'}
-                          label={met ? 'Met' : 'Unmet'}
+                          label={met ? 'VERIFIED' : 'UNVERIFIED'}
                         />
                       </div>
                     </div>
@@ -233,7 +232,7 @@ export function PlayerFinal() {
                         type="text"
                         value={answer}
                         onChange={e => setAnswer(e.target.value)}
-                        placeholder="Enter the combined investigation result"
+                         placeholder="ENTER RESOLVED CASE CODE"
                         className="input font-mono text-center tracking-wider text-lg"
                         autoComplete="off"
                         disabled={isSubmitting || isOffline}
@@ -257,12 +256,12 @@ export function PlayerFinal() {
                   {isSubmitting ? (
                     <>
                       <BureauIcons.Spinner className="bureau-icon w-5 h-5 animate-spin" />
-                      <span>Validating…</span>
+                      <span>VERIFYING SOLUTION…</span>
                     </>
                   ) : (
                     <>
                       <BureauIcons.Unlock className="bureau-icon w-5 h-5" />
-                      <span>Initiate Protocol</span>
+                      <span>SUBMIT SOLUTION</span>
                     </>
                   )}
                 </button>
@@ -306,9 +305,9 @@ export function PlayerFinal() {
                 footer={<Stamp variant="verified" impressed>Closed</Stamp>}
               >
                 <div className="text-center py-6">
-                  <div className="w-16 h-16 border-2 border-nexus-accent/30 bg-nexus-accentBg flex items-center justify-center mx-auto mb-4">
-                    <span className="font-display text-3xl text-nexus-accent" aria-hidden="true">✓</span>
-                  </div>
+                 <div className="w-16 h-16 border-2 border-nexus-accent/30 bg-nexus-accentBg flex items-center justify-center mx-auto mb-4">
+                   <BureauIcons.Check className="bureau-icon w-8 h-8 text-nexus-accent" aria-hidden="true" />
+                 </div>
                   <p className="text-nexus-textMuted mb-4">
                     The Final Protocol has been successfully executed.
                   </p>
@@ -317,7 +316,7 @@ export function PlayerFinal() {
                     className="nexus-btn nexus-btn-primary touch-target-comfortable"
                   >
                     <BureauIcons.Flag className="bureau-icon w-4 h-4" />
-                    <span>View Completion Report</span>
+                    <span>ACCESS COMPLETION REPORT</span>
                   </Link>
                 </div>
               </DocumentShell>

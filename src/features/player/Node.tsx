@@ -97,7 +97,7 @@ export function PlayerNode() {
         if (result.nextNodeId) {
           refreshGameState()
           refreshTeamProgress()
-          showToast(`Node ${nodeId} solved! Next: ${result.nextNodeId}`, 'evidence')
+          showToast(`Node ${nodeId} verified. Next: ${result.nextNodeId}`, 'evidence')
         } else {
           showToast(`Node ${nodeId} solved!`, 'evidence')
           refreshGameState()
@@ -156,7 +156,7 @@ export function PlayerNode() {
       <div className="page">
         <div className="page-content max-w-md mx-auto text-center py-12">
           <BureauIcons.Spinner className="bureau-icon w-8 h-8 text-nexus-accent animate-spin mx-auto mb-4" aria-hidden="true" />
-          <p className="text-nexus-textMuted">Loading investigation node…</p>
+          <p className="text-nexus-textMuted">LOADING INVESTIGATION NODE…</p>
         </div>
       </div>
     )
@@ -170,7 +170,7 @@ export function PlayerNode() {
           <h3 className="heading-4 mb-2">Error</h3>
           <p className="text-nexus-textMuted mb-4">{error}</p>
           <Link to={ROUTES.PLAYER_GAME} className="nexus-btn nexus-btn-secondary w-full touch-target-comfortable">
-            Back to Game
+RETURN TO FIELD
           </Link>
         </div>
       </div>
@@ -195,7 +195,7 @@ export function PlayerNode() {
           <Link
             to={ROUTES.PLAYER_GAME}
             className="p-2 border border-nexus-borderSubtle text-nexus-textMuted hover:text-nexus-text touch-target-primary"
-            aria-label="Back to game"
+            aria-label="RETURN TO FIELD"
           >
             <BureauIcons.Back className="bureau-icon w-5 h-5" />
           </Link>
@@ -377,7 +377,7 @@ export function PlayerNode() {
                   className="nexus-btn nexus-btn-primary touch-target-comfortable"
                 >
                   <BureauIcons.Back className="bureau-icon w-4 h-4" />
-                  <span>Back to Game Hub</span>
+                    <span>RETURN TO FIELD HUB</span>
                 </Link>
               </div>
             </div>
@@ -388,7 +388,7 @@ export function PlayerNode() {
         {!isSolved && node.unlocked && (
           <DocumentShell
             reference={`Node ${node.code}`}
-            title="Submit Answer"
+            title="SOLUTION TRANSMISSION"
             stock="paper"
             footer={
               <Stamp variant={isOffline ? 'anomalous' : 'verified'}>
@@ -398,15 +398,15 @@ export function PlayerNode() {
           >
             <form onSubmit={handleSubmit} className="space-y-3">
               <div>
-                <label htmlFor="answer" className="label">Answer</label>
+                <label htmlFor="answer" className="label">SOLUTION</label>
                 <input
                   id="answer"
                   type="text"
                   value={answer}
                   onChange={e => setAnswer(e.target.value)}
-                  placeholder={
-                    isOperator ? 'Enter the combined solution…' : 'Enter your answer…'
-                  }
+                   placeholder={
+                     isOperator ? 'ENTER THE COMBINED SOLUTION…' : 'ENTER YOUR ANSWER…'
+                   }
                   className="input font-mono text-lg text-center"
                   autoComplete="off"
                   disabled={isSubmitting}
@@ -427,12 +427,12 @@ export function PlayerNode() {
                 {isSubmitting ? (
                   <>
                     <BureauIcons.Spinner className="bureau-icon w-5 h-5 animate-spin" />
-                    <span>Submitting…</span>
+                    <span>TRANSMITTING…</span>
                   </>
                 ) : (
                   <>
                     <BureauIcons.Send className="bureau-icon w-5 h-5" />
-                    <span>{isOffline ? 'Queue Answer' : 'Submit'}</span>
+                    <span>{isOffline ? 'QUEUE SOLUTION' : 'TRANSMIT'}</span>
                   </>
                 )}
               </button>
