@@ -10,8 +10,8 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useGameEngine } from '@/hooks/useGameEngine'
 import { ROUTES } from '@/app/config'
-import { cn } from '@/lib/utils'
-import { BureauIcons } from '@/components/bureau'
+import { useInvestigationWorkspace } from '@/hooks/useInvestigationWorkspace'
+import { BureauIcons, FileTabs } from '@/components/bureau'
 import {
   DocumentShell,
   RegisterColumn,
@@ -38,6 +38,16 @@ const RARITY_TONE: Record<string, StatusTone> = {
   LEGENDARY: 'active',
 }
 
+const INVENTORY_TABS = [
+  { id: 'all', label: 'ALL OBJECTS' },
+  { id: 'TOOL', label: 'TOOLS' },
+  { id: 'KEY', label: 'KEYS' },
+  { id: 'CODE', label: 'CODES' },
+  { id: 'DEVICE', label: 'DEVICES' },
+  { id: 'CONSUMABLE', label: 'CONSUMABLES' },
+  { id: 'ARTIFACT', label: 'ARTIFACTS' },
+]
+
 function rarityGlyph(rarity: string): string {
   switch (rarity) {
     case 'COMMON':
@@ -56,10 +66,10 @@ function rarityGlyph(rarity: string): string {
 }
 
 export function PlayerInventory() {
-  const { inventory, isLoading, fetchInventory, teamProgress } = useGameEngine()
+  const { inventory, isLoading, fetchInventory, teamProgress, team } = useGameEngine()
+  const { workspace, updateWorkspace } = useInvestigationWorkspace(team?.id)
   const [filter, setFilter] = useState<string>('all')
   const [search, setSearch] = useState('')
-  const [inspected, setInspected] = useState<InventoryItemWithQty | null>(null)
 
   useEffect(() => {
     void fetchInventory()
@@ -86,6 +96,28 @@ export function PlayerInventory() {
       }))
 
   const fragments = inventory?.fragments ?? []
+
+  const placeItemOnTable = (code: string, source: 'inventory' | 'fragment' = 'inventory') => {
+    const id = `${source}:${code}`
+    updateWorkspace(current => {
+      if (current.placements[id]) return current
+      const count = Object.keys(current.placements).length
+      const order = Math.max(0, ...Object.values(current.placements).map(position => position.order)) + 1
+      return {
+        ...current,
+        placements: {
+          ...current.placements,
+          [id]: {
+            x: 18 + (count % 4) * 21,
+            y: 20 + (Math.floor(count / 4) % 4) * 20,
+            rotation: count % 2 === 0 ? -1 : 1,
+            order,
+            pinned: false,
+          },
+        },
+      }
+    })
+  }
 
   const filteredItems = items.filter(item => {
     if (filter !== 'all' && item.type !== filter) return false
@@ -130,11 +162,14 @@ export function PlayerInventory() {
             <BureauIcons.Back className="bureau-icon w-5 h-5" />
           </Link>
           <div className="flex-1 min-w-0">
-            <h1 className="heading-3">FIELD INVENTORY</h1>
-            <p className="text-nexus-textMuted text-sm">
-              {filteredItems.length} items · {fragments.length} fragments
+            <h1 className="heading-3">RECOVERED OBJECT REGISTER</h1>
+            <p className="font-mono text-[0.56rem] uppercase tracking-[0.12em] text-nexus-textMuted">
+              {filteredItems.length.toString().padStart(2, '0')} OBJECTS / {fragments.length.toString().padStart(2, '0')} FRAGMENTS
             </p>
           </div>
+          <Link to={ROUTES.PLAYER_EVIDENCE} className="min-h-10 border border-nexus-accent px-2 py-2 font-mono text-[0.5rem] uppercase text-nexus-accent">
+            CASE ARCHIVE
+          </Link>
           <button
             onClick={() => fetchInventory()}
             className="p-2 border border-nexus-borderSubtle text-nexus-textMuted hover:text-nexus-text hover:bg-nexus-surfaceElevated touch-target-primary"
@@ -146,7 +181,7 @@ export function PlayerInventory() {
         </div>
 
         {/* Search & Filter */}
-        <RegisterColumn heading="Filter items">
+        <RegisterColumn heading="ARCHIVE QUERY / OBJECT CLASS">
           <div className="relative">
             <BureauIcons.Search className="absolute left-3 top-1/2 -translate-y-1/2 bureau-icon w-5 h-5 text-nexus-textSubtle" aria-hidden="true" />
             <input
@@ -159,35 +194,7 @@ export function PlayerInventory() {
             />
           </div>
 
-          <div className="flex flex-wrap gap-2 mt-3">
-            {['all', 'TOOL', 'KEY', 'CODE', 'DEVICE', 'CONSUMABLE', 'ARTIFACT'].map(typeVal => {
-              const labels: Record<string, string> = {
-                all: 'All Items',
-                TOOL: 'Tools',
-                KEY: 'Keys',
-                CODE: 'Codes',
-                DEVICE: 'Devices',
-                CONSUMABLE: 'Consumables',
-                ARTIFACT: 'Artifacts',
-              }
-              const isActive = filter === typeVal
-              return (
-                <button
-                  key={typeVal}
-                  type="button"
-                  onClick={() => setFilter(typeVal)}
-                  className={cn(
-                    'inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium whitespace-nowrap border transition-colors duration-fast',
-                    isActive
-                      ? 'border-nexus-accent text-nexus-accent'
-                      : 'border-nexus-borderSubtle text-nexus-textMuted hover:text-nexus-text hover:bg-nexus-surfaceElevated',
-                  )}
-                >
-                  <span>{labels[typeVal]}</span>
-                </button>
-              )
-            })}
-          </div>
+          <FileTabs tabs={INVENTORY_TABS} activeId={filter} onSelect={setFilter} className="mt-3 border-t border-nexus-borderSubtle pt-2" />
         </RegisterColumn>
 
         {/* Archival Fragments */}
@@ -200,7 +207,15 @@ export function PlayerInventory() {
                   id={frag.code}
                   label={frag.label || frag.code}
                   meta={frag.content}
-                  trailing={frag.type && <Stamp variant="anomalous" impressed>{frag.type}</Stamp>}
+                  trailing={
+                    <div className="flex flex-wrap items-center justify-end gap-1">
+                      {frag.type && <Stamp variant="anomalous" impressed>{frag.type}</Stamp>}
+                      <Link to={`${ROUTES.PLAYER_EVIDENCE}?artifact=${encodeURIComponent(`fragment:${frag.code}`)}`} className="min-h-9 border border-nexus-accent px-2 py-2 font-mono text-[0.5rem] uppercase text-nexus-accent">EXAMINE</Link>
+                      <button type="button" onClick={() => placeItemOnTable(frag.code, 'fragment')} disabled={!!workspace.placements[`fragment:${frag.code}`]} className="min-h-9 border border-nexus-border px-2 font-mono text-[0.5rem] uppercase text-nexus-textSubtle disabled:opacity-45">
+                        {workspace.placements[`fragment:${frag.code}`] ? 'ON TABLE' : 'PLACE'}
+                      </button>
+                    </div>
+                  }
                 />
               ))}
             </div>
@@ -210,14 +225,9 @@ export function PlayerInventory() {
         {/* Inventory Items */}
         <div className="register">
           {filteredItems.length === 0 ? (
-            <div className="text-center py-12 border border-nexus-borderSubtle">
-              <BureauIcons.Package className="bureau-icon w-12 h-12 text-nexus-textSubtle mx-auto mb-4" aria-hidden="true" />
-              <h3 className="heading-4 mb-2">Inventory Empty</h3>
-              <p className="text-nexus-textMuted max-w-sm mx-auto">
-                {search || filter !== 'all'
-                  ? 'Try adjusting your search or filter'
-                  : 'Items acquired during the investigation will appear here. Use them to unlock new paths.'}
-              </p>
+            <div className="grid min-h-28 grid-cols-[110px_1fr] items-center gap-3 border-y border-nexus-borderSubtle px-4 font-mono text-[0.6rem] uppercase tracking-[0.12em]">
+              <span className="border-r border-nexus-borderSubtle py-4 text-nexus-warning">NO RECORD</span>
+              <span className="text-nexus-textMuted">{search || filter !== 'all' ? 'OBJECT QUERY RETURNED NO MATCH' : 'NO RECOVERED OBJECTS IN TEAM CUSTODY'}</span>
             </div>
           ) : (
             <div className="space-y-3">
@@ -243,22 +253,20 @@ export function PlayerInventory() {
                         </span>
                       )}
                       <button
-                        onClick={() =>
-                          setInspected({
-                            code: item.code,
-                            name: item.name,
-                            description: item.description,
-                            type: item.type,
-                            rarity: item.rarity,
-                            quantity: item.quantity,
-                          })
-                        }
-                        className="p-1 border border-nexus-borderSubtle text-nexus-textSubtle hover:text-nexus-text touch-target-primary"
-                        aria-label={`Inspect ${item.name}`}
+                        className="min-h-9 border border-nexus-borderSubtle px-2 font-mono text-[0.5rem] uppercase text-nexus-textSubtle hover:text-nexus-text"
                         type="button"
+                        onClick={() => placeItemOnTable(item.code)}
+                        disabled={!!workspace.placements[`inventory:${item.code}`]}
+                        aria-label={`Place ${item.name} on the investigation table`}
                       >
-                        <BureauIcons.Eye className="bureau-icon w-4 h-4" />
+                        {workspace.placements[`inventory:${item.code}`] ? 'ON TABLE' : 'PLACE ON TABLE'}
                       </button>
+                      <Link
+                        to={`${ROUTES.PLAYER_EVIDENCE}?artifact=${encodeURIComponent(`inventory:${item.code}`)}`}
+                        className="min-h-9 border border-nexus-accent px-2 py-2 font-mono text-[0.5rem] uppercase text-nexus-accent"
+                      >
+                        EXAMINE
+                      </Link>
                     </div>
                   }
                 />
@@ -268,47 +276,6 @@ export function PlayerInventory() {
         </div>
       </div>
 
-      {/* Inspect dialog — always reachable, never hover-only (phones have no hover) */}
-      {inspected && (
-        <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-nexus-bg/90 backdrop-blur-sm p-4"
-          role="dialog"
-          aria-modal="true"
-          aria-label={inspected.name}
-          onClick={() => setInspected(null)}
-        >
-          <div
-            className="bg-nexus-surfaceElevated border border-nexus-borderSubtle p-6 max-w-md w-full max-h-[80vh] overflow-y-auto"
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="flex items-start justify-between gap-3 mb-4">
-              <div>
-                <h3 className="heading-3">{inspected.name}</h3>
-                <p className="text-xs uppercase tracking-wider text-nexus-textSubtle mt-1 font-mono">
-                  {inspected.type} · {inspected.rarity}
-                </p>
-              </div>
-              <button
-                onClick={() => setInspected(null)}
-                className="p-1 -m-1 border border-nexus-borderSubtle text-nexus-textSubtle hover:text-nexus-text"
-                aria-label="Dismiss"
-                type="button"
-              >
-                <BureauIcons.Close className="bureau-icon w-5 h-5" />
-              </button>
-            </div>
-            <p className="text-nexus-textMuted whitespace-pre-wrap">{inspected.description}</p>
-            <p className="text-xs text-nexus-textSubtle mt-4 font-mono">REF {inspected.code}</p>
-            <button
-              onClick={() => setInspected(null)}
-              className="nexus-btn nexus-btn-primary w-full mt-4 touch-target-comfortable"
-              type="button"
-            >
-              CLOSE
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

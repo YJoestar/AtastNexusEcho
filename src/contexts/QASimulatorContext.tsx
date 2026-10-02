@@ -81,6 +81,9 @@ export interface QASimulatorControls {
   toggleOffline: () => void
   toggleLock: () => void
   setCustomProgress: (patch: Partial<QASimulatorState>) => void
+  revealAnswer: (nodeId?: string) => string | null
+  forceSolve: (nodeId?: string) => void
+  revealQR: (nodeId?: string) => string | null
 }
 
 export interface QAContextValue extends QASimulatorState, QASimulatorControls {
@@ -289,34 +292,109 @@ function generateLeaderboard(_solvedCount: number, score: number): LeaderboardEn
   ]
 }
 
+const EVIDENCE_EVOLUTION: Record<string, Array<{ solvedAt: number; content: Record<string, unknown> }>> = {
+  'EVID-001': [
+    {
+      solvedAt: 1,
+      content: {
+        source: 'P01',
+        detail: 'Entry timestamp discrepancy noted.',
+      },
+    },
+    {
+      solvedAt: 5,
+      content: { timestamp: '2026-10-02T17:22:03Z' },
+    },
+    {
+      solvedAt: 8,
+      content: { location: 'ADMIN BUILDING / WEST WING' },
+    },
+    {
+      solvedAt: 10,
+      content: { device: 'LOG-SERVER-A', integrity: 'CORRUPTED' },
+    },
+  ],
+  'EVID-002': [
+    {
+      solvedAt: 3,
+      content: {
+        source: 'P02',
+        detail: 'Mechanism behind the clock face.',
+      },
+    },
+    {
+      solvedAt: 7,
+      content: { location: 'CLOCK TOWER' },
+    },
+  ],
+  'EVID-003': [
+    {
+      solvedAt: 9,
+      content: {
+        source: 'P05',
+        detail: 'Unidentified figure visible in reflection.',
+        image_url: 'https://images.unsplash.com/photo-1581090700227-1cbcb5a2a9ed?w=800&h=600',
+      },
+    },
+    {
+      solvedAt: 11,
+      content: { timestamp: '2026-10-02T05:13:41Z', location: 'NORTH ENTRANCE / LOBBY', device: 'FIELD-CAM-02' },
+    },
+  ],
+  'EVID-004': [
+    {
+      solvedAt: 13,
+      content: {
+        source: 'P06',
+        detail: 'Scheduled at 03:00, but anomalies noted.',
+      },
+    },
+    {
+      solvedAt: 15,
+      content: { location: 'SECTOR C / MAINTENANCE' },
+    },
+  ],
+}
+
 function generateInventory(solvedCount: number): { evidence: EvidenceItem[]; inventory: InventoryItem[]; fragments: FragmentItem[] } {
   const evidence: EvidenceItem[] = []
   const inventory: InventoryItem[] = []
   const fragments: FragmentItem[] = []
 
-  if (solvedCount > 0) {
+  const evidenceBase: Record<string, { title: string; description: string; type: string }> = {
+    'EVID-001': { title: 'Security Log Excerpt', description: 'Fragment of a security log from the admin building.', type: 'DOCUMENT' },
+    'EVID-002': { title: 'Clock Tower Blueprint', description: 'Blueprints showing hidden compartments.', type: 'DOCUMENT' },
+    'EVID-003': { title: 'Field Camera Photo', description: 'Security photograph from the north entrance.', type: 'IMAGE' },
+    'EVID-004': { title: 'Maintenance Log', description: 'Routine maintenance log for sector C.', type: 'DOCUMENT' },
+  }
+
+  for (const [code, stages] of Object.entries(EVIDENCE_EVOLUTION)) {
+    const base = evidenceBase[code]
+    if (!base) continue
+
+    const isAcquired = stages[0].solvedAt <= solvedCount
+    if (!isAcquired) continue
+
+    const content: Record<string, unknown> = {}
+    for (const stage of stages) {
+      if (stage.solvedAt <= solvedCount) {
+        Object.assign(content, stage.content)
+      }
+    }
     evidence.push({
-      code: 'EVID-001',
-      title: 'Security Log Excerpt',
-      description: 'Fragment of a security log from the admin building',
-      type: 'DOCUMENT',
-      content: { source: 'P01', detail: 'Entry timestamp discrepancy noted.' },
+      code,
+      title: base.title,
+      description: base.description,
+      type: base.type,
+      content,
     })
   }
-  if (solvedCount > 2) {
-    evidence.push({
-      code: 'EVID-002',
-      title: 'Clock Tower Blueprint',
-      description: 'Blueprints showing hidden compartments',
-      type: 'DOCUMENT',
-      content: { source: 'P02', detail: 'Mechanism behind the clock face.' },
-    })
-  }
+
   if (solvedCount > 5) {
     inventory.push({
       code: 'ITEM-001',
       name: 'Digital Lockpick',
-      description: 'A tool for bypassing electronic locks',
+      description: 'A tool for bypassing electronic locks.',
       type: 'DEVICE',
       rarity: 'RARE',
     })
@@ -334,7 +412,7 @@ function generateInventory(solvedCount: number): { evidence: EvidenceItem[]; inv
     fragments.push({
       code: 'FRAG-002',
       label: 'Fragment Beta',
-      content: 'Coordinates converge at the NEXUS CORE',
+      content: 'Coordinates converge at the NEXUS CORE.',
       type: 'TEXT',
       role: 'OPERATOR',
     })
@@ -576,7 +654,7 @@ export function QASimulatorProvider({ children }: { children: ReactNode }) {
   )
 
   const submitAnswer = useCallback(
-    async (nodeId: string, _answer: string): Promise<SubmissionResult> => {
+    async (nodeId: string, answer: string): Promise<SubmissionResult> => {
       const puzzle = PUZZLES_BY_CODE[nodeId]
       if (!puzzle || isLocked) {
         return {
@@ -599,24 +677,47 @@ export function QASimulatorProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      const isCorrect = true
-      const pointsAwarded = puzzle.points
+      const qaEntry = puzzleQAData[nodeId]
+      const accepted = qaEntry?.answerMetadata?.acceptedAnswer as string | undefined
+      const method = (qaEntry?.answerMetadata?.validationMethod as string | undefined) ?? 'case_insensitive'
+
+      let isCorrect = false
+      if (accepted && accepted.length > 0) {
+        if (method === 'exact') {
+          isCorrect = answer === accepted
+        } else {
+          isCorrect = answer.toUpperCase().trim() === accepted.toUpperCase().trim()
+        }
+      }
+
+      const attemptNumber = solvedNodes.has(nodeId) ? 1 : 1
+
+      const pointsAwarded = isCorrect ? puzzle.points : 0
 
       if (isCorrect && !solvedNodes.has(nodeId)) {
         setSolvedNodes(prev => new Set([...prev, nodeId]))
         setScore(prev => prev + pointsAwarded)
-        setHintsUsed(prev => Math.max(0, prev - 1))
+
+        const nextCode = puzzle.nextNodes?.[0] ?? null
+        if (nextCode && PUZZLES_BY_CODE[nextCode]) {
+          setCurrentNodeId(nextCode)
+        }
       }
 
       const nextId = puzzle.nextNodes?.[0] ?? null
       return {
         isCorrect,
         pointsAwarded,
-        attemptNumber: 1,
+        attemptNumber,
         nextNodeId: nextId,
+        ...(isCorrect
+          ? {}
+          : {
+              error: 'Incorrect answer',
+            }),
       }
     },
-    [solvedNodes, isLocked, isOffline],
+    [solvedNodes, isLocked, isOffline, puzzleQAData],
   )
 
   const requestHint = useCallback(
@@ -749,6 +850,40 @@ export function QASimulatorProvider({ children }: { children: ReactNode }) {
     setSolvedNodes(prev => new Set([...prev, nodeId]))
   }, [])
 
+  const revealAnswer = useCallback((nodeId?: string): string | null => {
+    const targetId = nodeId ?? currentNodeId
+    if (!targetId) return null
+    const entry = puzzleQAData[targetId]
+    return entry?.answerMetadata?.acceptedAnswer as string | null ?? null
+  }, [currentNodeId, puzzleQAData])
+
+  const forceSolve = useCallback((nodeId?: string) => {
+    const targetId = nodeId ?? currentNodeId
+    if (!targetId) return
+    const puzzle = PUZZLES_BY_CODE[targetId]
+    if (!puzzle) return
+
+    setSolvedNodes(prev => new Set([...prev, targetId]))
+    setScore(prev => prev + puzzle.points)
+
+    const nextCode = puzzle.nextNodes?.[0] ?? null
+    if (nextCode && PUZZLES_BY_CODE[nextCode]) {
+      setCurrentNodeId(nextCode)
+    }
+  }, [currentNodeId])
+
+  const revealQR = useCallback((nodeId?: string): string | null => {
+    const targetId = nodeId ?? currentNodeId
+    if (!targetId) return null
+    const puzzle = PUZZLES_BY_CODE[targetId]
+    if (!puzzle) return null
+    const num = parseInt(puzzle.code.replace(/\D/g, ''), 10)
+    if (!Number.isNaN(num) && num > 0) {
+      return `QR-NODE-${String(num + 1).padStart(2, '0')}`
+    }
+    return null
+  }, [currentNodeId])
+
   const toggleOffline = useCallback(() => setIsOffline(prev => !prev), [])
   const toggleLock = useCallback(() => setIsLocked(prev => !prev), [])
 
@@ -814,6 +949,9 @@ export function QASimulatorProvider({ children }: { children: ReactNode }) {
       toggleOffline,
       toggleLock,
       setCustomProgress,
+      revealAnswer,
+      forceSolve,
+      revealQR,
       player,
       team,
       simulatedPlayers,
