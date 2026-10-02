@@ -44,7 +44,7 @@ export function AdminLocations() {
   const [isQrLoading, setIsQrLoading] = useState(false)
   const [qrError, setQrError] = useState<string | null>(null)
   const [showDeploymentTool, setShowDeploymentTool] = useState(false)
-  const [selectedBatchName, setSelectedBatchName] = useState('BATCH-01')
+  const [selectedBatchName, setSelectedBatchName] = useState('ALL')
 
   useEffect(() => {
     void fetchLocations()
@@ -89,7 +89,22 @@ export function AdminLocations() {
     return dups
   }, [qrCodes])
 
+  const filteredQRCodes = useMemo(() => {
+    if (selectedBatchName === 'ALL') return qrCodes
+    const batchCodes = qrCodes.filter(q => q.deploymentBatch === selectedBatchName)
+    return batchCodes.length > 0 ? batchCodes : qrCodes
+  }, [qrCodes, selectedBatchName])
+
   const batchSummary = useMemo(() => {
+    if (selectedBatchName === 'ALL') {
+      return {
+        totalMarkers: qrCodes.length,
+        pages: Math.ceil(qrCodes.length / 4),
+        duplicates: [...new Set([...duplicateManualCodes, ...duplicateMarkerIds])].length,
+        deployed: qrCodes.filter(q => q.deploymentStatus === 'DEPLOYED').length,
+        active: qrCodes.filter(q => q.deploymentStatus === 'ACTIVE').length,
+      }
+    }
     const batchCodes = qrCodes.filter(q => q.deploymentBatch === selectedBatchName)
     const set = batchCodes.length > 0 ? batchCodes : qrCodes
     return {
@@ -100,11 +115,6 @@ export function AdminLocations() {
       active: set.filter(q => q.deploymentStatus === 'ACTIVE').length,
     }
   }, [qrCodes, duplicateManualCodes, duplicateMarkerIds, selectedBatchName])
-
-  const filteredQRCodes = useMemo(() => {
-    const batchCodes = qrCodes.filter(q => q.deploymentBatch === selectedBatchName)
-    return batchCodes.length > 0 ? batchCodes : qrCodes
-  }, [qrCodes, selectedBatchName])
 
   const locationMap = useMemo(() => {
     const map = new Map<string, LocationEntry>()
@@ -467,12 +477,15 @@ function DeploymentTool({
               <label className="block font-mono text-[0.56rem] uppercase tracking-[0.14em] text-nexus-textSubtle mb-1">
                 DEPLOYMENT BATCH
               </label>
-              <input
-                type="text"
+              <select
                 value={batchName}
                 onChange={e => onBatchNameChange(e.target.value)}
                 className="input w-full font-mono text-xs"
-              />
+              >
+                <option value="ALL">ALL BATCHES ({qrCodes.length})</option>
+                <option value="BATCH-01">BATCH-01 (36)</option>
+                <option value="BATCH-02">BATCH-02 (11)</option>
+              </select>
             </div>
             <button
               onClick={onReload}
