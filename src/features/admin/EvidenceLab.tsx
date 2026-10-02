@@ -34,13 +34,89 @@ function matchesFilter(artifact: CaseArtifact, filter: LabFilter): boolean {
   return !contentString(artifact.content, ['image_url', 'imageUrl', 'audio_url', 'audioUrl', 'video_url', 'videoUrl', 'document_url', 'file_url'])
 }
 
+function buildDevelopmentCatalog(): EvidenceLabCatalog {
+  return {
+    evidence: [
+      {
+        id: 'dev-ev-001', code: 'EVID-001', title: 'Security Log Excerpt', description: 'Fragment of a security log from the admin building.',
+        type: 'DOCUMENT', classification: 'RESTRICTED',
+        content: { detail: 'Entry timestamp discrepancy noted.', timestamp: '2026-10-02T17:22:03Z', location: 'ADMIN BUILDING / WEST WING', device: 'LOG-SERVER-A', integrity: 'CORRUPTED' },
+        metadata: { source: 'P01', case: '037' },
+      },
+      {
+        id: 'dev-ev-002', code: 'EVID-002', title: 'Clock Tower Blueprint', description: 'Blueprints showing hidden compartments.',
+        type: 'DOCUMENT', classification: 'RESTRICTED',
+        content: { detail: 'Mechanism behind the clock face.', location: 'CLOCK TOWER' },
+        metadata: { source: 'P02', case: '037' },
+      },
+      {
+        id: 'dev-ev-003', code: 'EVID-003', title: 'Field Camera Photo', description: 'Security photograph from the north entrance.',
+        type: 'IMAGE', classification: 'RESTRICTED',
+        content: {
+          detail: 'Unidentified figure visible in reflection.',
+          image_url: 'https://images.unsplash.com/photo-1581090700227-1cbcb5a2a9ed?w=800&h=600',
+          timestamp: '2026-10-02T05:13:41Z', location: 'NORTH ENTRANCE / LOBBY', device: 'FIELD-CAM-02',
+        },
+        metadata: { source: 'P05', case: '037' },
+      },
+      {
+        id: 'dev-ev-004', code: 'EVID-004', title: 'Maintenance Log', description: 'Routine maintenance log for sector C.',
+        type: 'DOCUMENT', classification: 'RESTRICTED',
+        content: { detail: 'Scheduled at 03:00, but anomalies noted.', location: 'SECTOR C / MAINTENANCE' },
+        metadata: { source: 'P06', case: '037' },
+      },
+      {
+        id: 'dev-ev-005', code: 'EVID-005', title: 'Surveillance Feed — Lobby', description: 'Static-timestamp feed from the main lobby camera.',
+        type: 'SURVEILLANCE', classification: 'CONFIDENTIAL',
+        content: { timestamp: '2026-10-02T08:47:00Z', camera_id: 'CAM-LOBBY-01', location: 'ADMIN BUILDING LOBBY', device: 'CAM-LOBBY-01', integrity: 'STABLE' },
+        metadata: { source: 'CAM-LOBBY-01', case: '037' },
+      },
+      {
+        id: 'dev-ev-006', code: 'EVID-006', title: 'Audio Recording — Figure', description: 'Low-fidelity recording from a recovered field device.',
+        type: 'AUDIO', classification: 'CONFIDENTIAL',
+        content: { recording_id: 'AUDIO-006', duration: '00:47', source: 'FIELD-DEVICE-A', acquired: '2026-10-02T09:00:00Z', signal_state: 'DEGRADED' },
+        metadata: { source: 'FIELD-DEVICE-A', case: '037' },
+      },
+    ],
+    inventoryItems: [
+      {
+        id: 'dev-inv-001', code: 'ITEM-001', name: 'Digital Lockpick', description: 'A tool for bypassing electronic locks.',
+        type: 'DEVICE', rarity: 'RARE', properties: { weight: 0.2, uses_remaining: 3 }, uses: [], metadata: { source: 'P03' },
+      },
+      {
+        id: 'dev-inv-002', code: 'ITEM-002', name: 'Evidence Marker', description: 'Physical tag for marking evidence items on the table.',
+        type: 'TOOL', rarity: 'COMMON', properties: { color: 'RED', qty: 12 }, uses: [], metadata: {},
+      },
+    ],
+    fragments: [
+      {
+        id: 'dev-frag-001', code: 'FRAG-001', label: 'Fragment Alpha', content: 'The signal originates from the old comms array...',
+        type: 'AUDIO', role: 'ANALYST', node_id: 'node-p05', position: 1, metadata: { source: 'P05' },
+      },
+      {
+        id: 'dev-frag-002', code: 'FRAG-002', label: 'Fragment Beta', content: 'Coordinates converge at the NEXUS CORE.',
+        type: 'TEXT', role: 'OPERATOR', node_id: 'node-p07b', position: 2, metadata: { source: 'P07b' },
+      },
+    ],
+    nodes: [
+      { id: 'node-p01', code: 'P01', title: 'The Facade', location: '[ADMIN BUILDING] — Main Entrance Facade' },
+      { id: 'node-p02', code: 'P02', title: 'The Clock', location: '[ADMIN BUILDING] — Lobby Clock Tower' },
+      { id: 'node-p03', code: 'P03', title: 'The Facade Pin', location: '[ADMIN BUILDING] — Facade Base Terminal' },
+      { id: 'node-p05', code: 'P05', title: 'The Third Figure', location: '[ADMIN BUILDING] — Archive Figure Display' },
+      { id: 'node-p07b', code: 'P07b', title: 'The Network', location: '[SCIENCE BUILDING] — Lab Network Diagram' },
+      { id: 'node-m01', code: 'M01', title: 'The First Lock', location: '[ADMIN BUILDING] — Central Archive' },
+    ],
+  }
+}
+
 export function AdminEvidenceLab() {
   const { admin } = useAdmin()
   const simulationKey = `admin-evidence-lab:${admin?.id ?? 'operator'}`
   const { workspace, updateWorkspace, clearWorkspace } = useInvestigationWorkspace(simulationKey)
   const [catalog, setCatalog] = useState<EvidenceLabCatalog | null>(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [apiError, setApiError] = useState<string | null>(null)
+  const [usingDevFallback, setUsingDevFallback] = useState(false)
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<LabFilter>('ALL')
   const [mode, setMode] = useState<LabMode>('REGISTER')
@@ -54,11 +130,16 @@ export function AdminEvidenceLab() {
       .then(result => {
         if (active) {
           setCatalog(result)
-          setError(null)
+          setApiError(null)
+          setUsingDevFallback(false)
         }
       })
       .catch(cause => {
-        if (active) setError(cause instanceof Error ? cause.message : 'Evidence index unavailable')
+        if (active) {
+          setCatalog(buildDevelopmentCatalog())
+          setUsingDevFallback(true)
+          setApiError(cause instanceof Error ? cause.message : 'Evidence index unavailable')
+        }
       })
       .finally(() => {
         if (active) setLoading(false)
@@ -244,9 +325,6 @@ export function AdminEvidenceLab() {
   if (loading) {
     return <TerminalFrame title="EVIDENCE REGISTER / SIMULATION" reference="FULL CATALOG RETRIEVAL" variant="system"><p className="p-4 font-mono text-xs uppercase tracking-[0.14em] text-nexus-textMuted">INDEXING ALL EVIDENCE RECORDS…</p></TerminalFrame>
   }
-  if (error) {
-    return <TerminalFrame title="EVIDENCE REGISTER / SIMULATION" reference="RETRIEVAL FAILED" variant="system"><div className="space-y-3 p-4"><p className="font-mono text-sm uppercase text-nexus-danger">FULL EVIDENCE INDEX UNAVAILABLE</p><p className="text-sm text-nexus-textMuted">{error}</p><button type="button" onClick={() => { setError(null); setLoading(true); void adminAPI.listEvidenceLabCatalog().then(setCatalog).catch(cause => setError(cause instanceof Error ? cause.message : 'Evidence index unavailable')).finally(() => setLoading(false)) }} className="nexus-btn-secondary">[ RE-QUERY EVIDENCE INDEX ]</button></div></TerminalFrame>
-  }
 
   return (
     <div className="space-y-3 font-mono">
@@ -261,6 +339,12 @@ export function AdminEvidenceLab() {
           <button type="button" onClick={resetSimulation} className="min-h-9 border border-nexus-danger px-2 font-mono text-[0.5rem] uppercase text-nexus-danger">[ RESET SIMULATION ]</button>
         </div>
       </header>
+
+      {usingDevFallback && (
+        <div className="border border-nexus-warning/40 bg-nexus-warningBg/10 px-3 py-2 font-mono text-[0.5rem] uppercase">
+          DEVELOPMENT FALLBACK DATA — LIVE INDEX UNAVAILABLE: {apiError}
+        </div>
+      )}
 
       <div className="grid gap-3 2xl:grid-cols-[230px_minmax(0,1fr)_270px]">
         <aside className="min-w-0 border-r border-nexus-borderSubtle pr-3">
