@@ -1078,6 +1078,7 @@ export interface EvidenceLabCatalog {
     description: string
     type: string
     classification: string
+    condition?: string
     content: Record<string, unknown>
     metadata: Record<string, unknown>
   }>

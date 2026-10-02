@@ -53,6 +53,7 @@ import type { NodeIndexEntry } from '@/content/puzzles'
 import { validateAnyCode, toQRScanResult } from '@/lib/qr'
 import { adminAPI } from '@/lib/admin'
 import type { PuzzleQAEntry } from '@/lib/admin'
+import { buildDevelopmentCatalog } from '@/features/admin/EvidenceLab'
 
 export type SimulationType = 'FRESH' | 'PARTIAL' | 'COMPLETE' | 'CUSTOM'
 
@@ -368,6 +369,38 @@ function generateInventory(
   const evidence: EvidenceItem[] = []
   const inventory: InventoryItem[] = []
   const fragments: FragmentItem[] = []
+
+  if (fullUnlock) {
+    const catalog = buildDevelopmentCatalog()
+    for (const item of catalog.evidence) {
+      evidence.push({
+        code: item.code,
+        title: item.title,
+        description: item.description,
+        type: item.type,
+        content: { ...item.content, condition: item.condition, classification: item.classification },
+      })
+    }
+    for (const item of catalog.inventoryItems) {
+      inventory.push({
+        code: item.code,
+        name: item.name,
+        description: item.description,
+        type: item.type,
+        rarity: item.rarity,
+      })
+    }
+    for (const f of catalog.fragments) {
+      fragments.push({
+        code: f.code,
+        label: f.label,
+        content: f.content,
+        type: f.type,
+        role: f.role,
+      })
+    }
+    return { evidence, inventory, fragments }
+  }
 
   const evidenceBase: Record<string, { title: string; description: string; type: string }> = {
     'EVID-001': { title: 'Security Log Excerpt', description: 'Fragment of a security log from the admin building.', type: 'DOCUMENT' },

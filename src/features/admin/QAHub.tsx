@@ -65,9 +65,8 @@ function QAHubInner() {
   const totalNodes = ALL_PUZZLES.length
 
   const handleStart = () => {
-    qa.setSimulationType(qa.simulationType)
+    qa.setCustomProgress({ simulationType: qa.simulationType })
     if (qa.simulationType === 'FRESH') {
-      qa.resetSimulation()
       qa.jumpToNode('P01')
     }
     setIsStarted(true)
@@ -702,15 +701,32 @@ function QAHubInner() {
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="font-medium text-nexus-text">EVIDENCE REGISTER</h3>
-                    <p className="mt-1 font-mono text-[0.5rem] uppercase text-nexus-textSubtle">SIMULATION LAB / ALL CATALOGED EVIDENCE UNLOCKED</p>
+                    <p className="mt-1 font-mono text-[0.5rem] uppercase text-nexus-textSubtle">
+                      {qa.evidenceLabMode
+                        ? 'SANDBOX MODE / ALL CATALOGED EVIDENCE VISIBLE'
+                        : 'SIMULATION LAB / PROGRESSION-LIMITED EVIDENCE'}
+                    </p>
                   </div>
-                  <Link to={ROUTES.ADMIN_EVIDENCE_REGISTER} className="min-h-9 border border-nexus-accent px-2 py-2 font-mono text-[0.5rem] uppercase text-nexus-accent">
-                    [ OPEN FULL EVIDENCE LAB ]
-                  </Link>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => qa.setEvidenceLabMode(!qa.evidenceLabMode)}
+                      className={cn(
+                        'min-h-9 border px-2 font-mono text-[0.5rem] uppercase transition-colors',
+                        qa.evidenceLabMode
+                          ? 'border-nexus-accent bg-nexus-accentBg/20 text-nexus-accent'
+                          : 'border-nexus-border bg-nexus-surfaceElevated text-nexus-textSubtle hover:text-nexus-text',
+                      )}
+                    >
+                      {qa.evidenceLabMode ? '[ SANDBOX: ON ]' : '[ SANDBOX: OFF ]'}
+                    </button>
+                    <Link to={ROUTES.ADMIN_EVIDENCE_REGISTER} className="min-h-9 border border-nexus-accent px-2 py-2 font-mono text-[0.5rem] uppercase text-nexus-accent">
+                      [ OPEN FULL EVIDENCE LAB ]
+                    </Link>
+                  </div>
                 </div>
 
                 <div className="border border-nexus-borderSubtle bg-nexus-bg px-3 py-2 font-mono text-[0.52rem] uppercase text-nexus-textSubtle">
-                  CASE {qa.team?.code ?? 'QA001'} / SIMULATION — {qa.inventory?.evidence.length ?? 0} EVIDENCE ITEMS AVAILABLE AT CURRENT PROGRESSION
+                  CASE {qa.team?.code ?? 'QA001'} / SIMULATION — {qa.inventory?.evidence.length ?? 0} EVIDENCE ITEMS / {qa.inventory?.fragments.length ?? 0} FRAGMENTS / {qa.inventory?.inventory.length ?? 0} INVENTORY
                 </div>
 
                 <AppContext.Provider value={{ ...DUMMY_APP_CONTEXT, team: qa.team ?? null }}>
