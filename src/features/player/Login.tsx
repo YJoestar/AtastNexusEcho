@@ -1,10 +1,15 @@
 /**
  * NEXUS — Player Login
- * Mobile-first access code entry with device binding.
- * Clinical investigation aesthetic — clean, focused, accessible.
+ *
+ * Field device initialization. The player's handset boots up and requests
+ * a Logic Code — the encrypted access credential distributed by the Bureau.
+ *
+ * Security: the code is never stored. If the device's cipher cannot
+ * decrypt it, the honest response is to request a new code from the
+ * Bureau, never to guess.
  */
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '@/app/providers'
 import { ROUTES } from '@/app/config'
@@ -17,7 +22,16 @@ import {
   formatLogicCodeInput,
   isValidLoginCode,
 } from '@/lib/auth'
-import { BureauIcons } from '@/components/bureau'
+
+const BOOT_LINES = [
+  { text: 'NEXUS FIELD HANDSET', delay: 80 },
+  { text: 'MODEL FH-037', delay: 60 },
+  { text: 'BOOTING INVESTIGATION OS', delay: 100 },
+  { text: 'SECURE CHANNEL ........... ACTIVE', delay: 60 },
+  { text: 'LOCAL STORAGE ............ ENCRYPTED', delay: 60 },
+  { text: '', delay: 150 },
+  { text: 'AWAITING ACCESS CREDENTIAL', delay: 100 },
+]
 
 export function PlayerLogin() {
   const navigate = useNavigate()
@@ -26,6 +40,22 @@ export function PlayerLogin() {
   const [inputWarning, setInputWarning] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [bootComplete, setBootComplete] = useState(() => {
+    return process.env.NODE_ENV === 'test'
+  })
+  const [bootIndex, setBootIndex] = useState(0)
+
+  useEffect(() => {
+    if (bootComplete) return
+    if (bootIndex < BOOT_LINES.length) {
+      const timer = setTimeout(() => {
+        setBootIndex(bootIndex + 1)
+      }, BOOT_LINES[bootIndex]?.delay ?? 100)
+      return () => clearTimeout(timer)
+    } else if (bootIndex === BOOT_LINES.length) {
+      setBootComplete(true)
+    }
+  }, [bootIndex, bootComplete])
 
   const handleCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value
@@ -62,100 +92,108 @@ export function PlayerLogin() {
   const formatError = accessCode && !isComplete ? describeInvalidLogicCode(LOGIN_CODE_LENGTH) : ''
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 md:p-8">
-      <div className="nexus-case-shell w-full max-w-xl">
-        <div className="nexus-case-header">
-          <span className="section-label">NEXUS ARCHIVE</span>
-          <span className="case-number-tag">CASE 037</span>
-        </div>
-
-        <div className="nexus-case-body">
-          <div className="mb-8 flex items-center justify-between gap-4 border-b border-nexus-border pb-4">
-            <div className="flex items-center gap-4">
-              <div className="nexus-case-mark">N</div>
-              <div>
-                <p className="section-label mb-1">Investigation Access Terminal</p>
-                <h1 className="heading-2 text-nexus-text">NEXUS</h1>
-              </div>
-            </div>
-            <div className="case-identifier-block">
-              <span className="case-identifier-label">ACCESS</span>
-              <span className="case-identifier-value">037-AR-01</span>
-            </div>
+    <div className="nexus-handset-boot min-h-screen">
+      <div className="nexus-handset-screen">
+        <div className="nexus-handset-window">
+          <div className="nexus-handset-title-bar">
+            <span className="nexus-handset-title">FH-037</span>
+            <span className="nexus-handset-status">
+              {bootComplete ? 'READY' : 'INITIALIZING'}
+            </span>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6" noValidate>
-            <div>
-              <label htmlFor="accessCode" className="label">Access Code</label>
-              <div className="relative">
-                <BureauIcons.Lock className="absolute left-3 top-1/2 -translate-y-1/2 bureau-icon w-5 h-5 text-nexus-textSubtle" aria-hidden="true" />
-                <input
-                  id="accessCode"
-                  type="text"
-                  inputMode="text"
-                  autoComplete="one-time-code"
-                  value={accessCode}
-                  onChange={handleCodeChange}
-                  placeholder="────────"
-                  className={cn(
-                    'input pl-10 text-center text-2xl tracking-widest uppercase font-mono',
-                    accessCode.length > 0 && !isComplete && 'input-error',
+          <div className="nexus-handset-body">
+            {!bootComplete ? (
+              <div className="nexus-handset-output space-y-1">
+                {BOOT_LINES.slice(0, bootIndex).map((line, i) => (
+                  <div
+                    key={i}
+                    className={cn(
+                      'font-mono text-[0.68rem] tracking-[0.08em]',
+                      line.text.includes('ACTIVE') && 'text-nexus-accent',
+                      line.text.includes('ENCRYPTED') && 'text-nexus-warning',
+                    )}
+                  >
+                    {line.text === '' ? '\u00A0' : line.text}
+                  </div>
+                ))}
+                <div className="mt-2 h-3 w-3 animate-pulse rounded bg-nexus-textSubtle/30 font-mono text-[0.68rem]" />
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="nexus-handset-form space-y-5" noValidate>
+                <div>
+                  <label htmlFor="accessCode" className="handset-label">
+                    ACCESS CODE
+                  </label>
+                  <div className="relative">
+                    <input
+                      id="accessCode"
+                      type="text"
+                      inputMode="text"
+                      autoComplete="one-time-code"
+                      value={accessCode}
+                      onChange={handleCodeChange}
+                      placeholder="────────"
+                      className={cn(
+                        'handset-input text-center text-2xl tracking-widest uppercase font-mono',
+                        accessCode.length > 0 && !isComplete && 'handset-input-error',
+                      )}
+                      maxLength={LOGIN_CODE_LENGTH}
+                      disabled={isLoading}
+                      autoFocus
+                    />
+                  </div>
+                  {!accessCode && (
+                    <p className="mt-2 flex items-start gap-1.5 text-[0.62rem] text-nexus-textSubtle">
+                      <span>Enter the {LOGIN_CODE_LENGTH}-character Logic Code from the Bureau. Format: A-Z and 2-9 (no I, O, 0, 1).</span>
+                    </p>
                   )}
-                  maxLength={LOGIN_CODE_LENGTH}
-                  disabled={isLoading}
-                  autoFocus
-                />
-              </div>
-              {!accessCode && (
-                <p className="mt-1.5 text-sm text-nexus-textMuted flex items-start gap-1.5">
-                  <BureauIcons.Info className="bureau-icon w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
-                  <span>
-                    Enter the {LOGIN_CODE_LENGTH}-character Logic Code provided by the Bureau.
-                    Format: A-Z and 2-9 (excluding I, O, 0, 1).
-                  </span>
-                </p>
-              )}
-              {formatError && (
-                <p className="mt-1.5 text-sm text-nexus-danger flex items-start gap-1.5" role="alert">
-                  <BureauIcons.Alert className="bureau-icon w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
-                  <span>{formatError}</span>
-                </p>
-              )}
-              {inputWarning && (
-                <p className="mt-1.5 text-sm text-nexus-danger flex items-start gap-1.5" role="alert">
-                  <BureauIcons.Alert className="bureau-icon w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
-                  <span>{inputWarning}</span>
-                </p>
-              )}
-            </div>
+                  {formatError && (
+                    <p className="mt-2 flex items-start gap-1.5 text-[0.62rem] text-nexus-danger" role="alert">
+                      <span>• {formatError}</span>
+                    </p>
+                  )}
+                  {inputWarning && (
+                    <p className="mt-2 flex items-start gap-1.5 text-[0.62rem] text-nexus-danger" role="alert">
+                      <span>• {inputWarning}</span>
+                    </p>
+                  )}
+                </div>
 
-            {error && (
-              <div className="p-3 border border-nexus-danger/30 bg-nexus-dangerBg/20 flex items-start gap-2 animate-slide-down">
-                <BureauIcons.Alert className="bureau-icon w-5 h-5 flex-shrink-0 text-nexus-danger mt-0.5" />
-                <p className="text-sm text-nexus-danger">{error}</p>
-              </div>
+                {error && (
+                  <div className="flex items-start gap-2 border border-nexus-danger/40 bg-nexus-dangerBg/20 px-3 py-2.5">
+                    <span className="text-[0.68rem] font-mono text-nexus-danger">ACCESS DENIED — {error}</span>
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={isLoading || !isComplete}
+                  className={cn(
+                    'handset-button w-full',
+                    !isComplete && 'handset-button-inactive',
+                  )}
+                >
+                  {isLoading ? (
+                    <>
+                      <span className="animate-pulse">⋯</span>
+                      <span>VERIFYING CREDENTIAL</span>
+                    </>
+                  ) : (
+                    <span>CONNECT TO INVESTIGATION</span>
+                  )}
+                </button>
+              </form>
             )}
+          </div>
 
-            <button
-              type="submit"
-              disabled={isLoading || !isComplete}
-              className="nexus-btn nexus-btn-primary w-full touch-target-comfortable"
-            >
-              {isLoading ? (
-                <>
-                  <BureauIcons.Spinner className="bureau-icon w-5 h-5 animate-spin" />
-                  <span>Authenticating…</span>
-                </>
-              ) : (
-                <span>Connect to Investigation</span>
-              )}
-            </button>
-          </form>
-
-          <div className="mt-6 flex items-center justify-between border-t border-nexus-border pt-4 text-xs uppercase tracking-[0.22em] text-nexus-textSubtle">
-            <span>ATAST Event</span>
-            <span>ISIMM Monastir</span>
-            <span>30/09/2026</span>
+          <div className="nexus-handset-footer">
+            <span className="font-mono text-[0.52rem] uppercase tracking-[0.22em] text-nexus-textSubtle">
+              NEXUS ECHO FIELD OPERATIONS
+            </span>
+            <span className="font-mono text-[0.56rem] text-nexus-textSubtle">
+              CASE 037
+            </span>
           </div>
         </div>
       </div>

@@ -51,7 +51,7 @@ export function PlayerLayout() {
   return (
     <div
       data-horror={narrative.level}
-      className="bg-nexus-bg text-nexus-text flex flex-col safe-area-x app-viewport nexus-archive-shell"
+      className="bg-nexus-bg text-nexus-text flex flex-col safe-area-x app-viewport nexus-handset-shell"
     >
       {showLayout && <PlayerHeader />}
       {showLayout && (

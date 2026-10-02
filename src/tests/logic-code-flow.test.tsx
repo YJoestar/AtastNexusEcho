@@ -220,7 +220,7 @@ async function provisionThroughWizard(): Promise<PlayerCredential[]> {
 }
 
 function typeCode(code: string) {
-  const input = screen.getByLabelText('Access Code') as HTMLInputElement
+  const input = screen.getByLabelText(/Access Code/i) as HTMLInputElement
   fireEvent.change(input, { target: { value: code } })
   return input
 }

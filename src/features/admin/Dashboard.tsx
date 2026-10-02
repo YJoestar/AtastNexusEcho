@@ -8,20 +8,13 @@ import { Link, useNavigate } from 'react-router-dom'
 import { BureauIcons } from '@/components/bureau'
 import { TerminalFrame } from '@/components/bureau'
 import { ROUTES } from '@/app/config'
-import { cn, formatNumber, formatPercent } from '@/lib/utils'
-import { formatDateTime, formatTimeRemaining } from '@/lib/time'
+import { cn } from '@/lib/utils'
+import { formatDateTime } from '@/lib/time'
 import { useBureau } from '@/hooks/useBureau'
 import { TeamCreationWizard } from '@/components/admin/TeamCreationWizard'
 import { TeamStatusBadge } from '@/components/admin/StatusBadge'
 import { ConnectionStatus } from '@/components/admin/ConnectionStatus'
 import { CustomNotificationModal } from '@/components/admin/CustomNotificationModal'
-import type { TeamStatus } from '@/types'
-
-const TEAM_STATUS_GROUPS: Record<string, TeamStatus[]> = {
-  'Pending Start': ['REGISTERED', 'FORMING', 'READY', 'WAITING'],
-  'In Progress': ['ACTIVE', 'PAUSED'],
-  'Finished': ['COMPLETED', 'DISQUALIFIED', 'ABANDONED', 'RESET'],
-}
 
 export function AdminDashboard() {
   const navigate = useNavigate()
@@ -68,13 +61,6 @@ export function AdminDashboard() {
     }
   }, [teams])
 
-  const teamsByGroup = useMemo(() => {
-    return Object.entries(TEAM_STATUS_GROUPS).map(([group, statuses]) => ({
-      group,
-      teams: teams.filter(t => statuses.includes(t.status)),
-    }))
-  }, [teams])
-
   const recentActivity = useMemo(() => {
     const adminEvents = gameEvents
       .filter(e => e.type?.startsWith('TEAM_') || e.type === 'ADMIN_ACTION')
@@ -97,37 +83,37 @@ export function AdminDashboard() {
     navigate(`${ROUTES.ADMIN_TEAMS}/${teamId}`)
   }
 
-  const getEventIcon = (type: string) => {
-    if (type.includes('STARTED')) return <BureauIcons.Play className="bureau-icon w-4 h-4 text-nexus-accent" />
-    if (type.includes('PAUSED')) return <BureauIcons.Pause className="bureau-icon w-4 h-4 text-nexus-warning" />
-    if (type.includes('COMPLETED')) return <BureauIcons.Target className="bureau-icon w-4 h-4 text-nexus-accent" />
-    if (type.includes('DISQUALIFIED')) return <BureauIcons.AlertTriangle className="bureau-icon w-4 h-4 text-nexus-danger" />
-    if (type.includes('NODE_UNLOCKED')) return <BureauIcons.Unlock className="bureau-icon w-4 h-4 text-nexus-info" />
-    if (type.includes('HINT')) return <BureauIcons.Lightbulb className="bureau-icon w-4 h-4 text-nexus-info" />
-    return <BureauIcons.TrendingUp className="bureau-icon w-4 h-4 text-nexus-textSubtle" />
-  }
-
   return (
     <>
       <div className="space-y-6">
         <div className="nexus-case-shell">
           <div className="nexus-ops-header">
             <div>
-              <span className="nexus-ops-label">Nexus Investigations Bureau</span>
-              <h1 className="heading-2 mt-2">Operations Room</h1>
+              <span className="nexus-ops-label">NEXUS INTERNAL // FIELD OPERATIONS</span>
+              <h1 className="heading-2 mt-2">CASE 037 / NORTH CAMPUS</h1>
             </div>
-            <div className="case-identifier-block">
-              <span className="case-identifier-label">SHIFT</span>
-              <span className="case-identifier-value">NIGHT 07</span>
+            <div className="flex items-center gap-2 md:gap-3">
+              <div className="case-identifier-block">
+                <span className="case-identifier-label">NODE</span>
+                <span className="case-identifier-value">02</span>
+              </div>
+              <div className="case-identifier-block">
+                <span className="case-identifier-label">SHIFT</span>
+                <span className="case-identifier-value">07</span>
+              </div>
+              <div className="case-identifier-block">
+                <span className="case-identifier-label">TIME</span>
+                <span className="case-identifier-value">01:47:32</span>
+              </div>
             </div>
           </div>
 
           <div className="nexus-case-body space-y-6">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
               <div>
                 <p className="section-label mb-2">Active case board</p>
                 <p className="text-nexus-textMuted">
-                  {gameState?.totalTeams ?? teams.length} field teams • {stats.totalPlayers} personnel identified
+                  {gameState?.totalTeams ?? teams.length} field teams • {stats.totalPlayers} personnel identified • evidence queue active
                 </p>
               </div>
 
@@ -138,7 +124,7 @@ export function AdminDashboard() {
                   disabled={isLoading}
                   className="btn-secondary text-xs py-1.5"
                 >
-                  <BureauIcons.Refresh className={cn('bureau-icon w- h-4', isLoading && 'animate-spin')} />
+                  <BureauIcons.Refresh className={cn('bureau-icon w-4 h-4', isLoading && 'animate-spin')} />
                   <span>Refresh</span>
                 </button>
                 <button
@@ -146,68 +132,231 @@ export function AdminDashboard() {
                   className="btn-primary"
                 >
                   <BureauIcons.Add className="bureau-icon w-4 h-4" />
-                  <span>Create Team</span>
+                  <span>Dispatch unit</span>
                 </button>
                 <button
                   onClick={() => setIsNotificationsOpen(true)}
                   className="btn-secondary"
                 >
                   <BureauIcons.Bell className="bureau-icon w-4 h-4" />
-                  <span>Send Notification</span>
+                  <span>Open channel</span>
                 </button>
               </div>
             </div>
 
-            {gameState && <GameTimer gameState={gameState} />}
+            <div className="grid gap-4 xl:grid-cols-[220px_minmax(0,1fr)_290px]">
+              <TerminalFrame title="Case index" reference="Archive" variant="system">
+                <div className="space-y-2">
+                  {[
+                    { id: '037', label: 'North campus', status: 'Active' },
+                    { id: '036', label: 'Concierge desk', status: 'Archived' },
+                    { id: '035', label: 'Maintenance tunnel', status: 'Flagged' },
+                    { id: '034', label: 'Signal drift', status: 'Open' },
+                  ].map((item, index) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className={cn(
+                        'w-full border border-nexus-border bg-nexus-bg px-2.5 py-2 text-left transition-colors',
+                        index === 0 && 'border-nexus-text/40 bg-nexus-surfaceElevated',
+                      )}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-mono text-[0.7rem] tracking-[0.22em] text-nexus-text">{item.id}</span>
+                        <span className="text-[0.56rem] uppercase tracking-[0.18em] text-nexus-textSubtle">{item.status}</span>
+                      </div>
+                      <p className="mt-1 text-sm text-nexus-textMuted">{item.label}</p>
+                    </button>
+                  ))}
+                </div>
+              </TerminalFrame>
 
-            <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
-              <StatCard title="Total Teams" value={stats.totalTeams} icon={BureauIcons.Users} variant="system" subtitle={`${stats.activeTeams} active • ${stats.completedTeams} done`} />
-              <StatCard title="Active Players" value={stats.totalPlayers} icon={BureauIcons.Users} variant="system" subtitle={`${stats.waitingTeams} teams waiting`} />
-              <StatCard title="Avg Score" value={formatNumber(stats.avgScore)} icon={BureauIcons.TrendingUp} variant="system" subtitle="Across all field units" />
-              <StatCard title="Completion" value={formatPercent(stats.completionRate)} icon={BureauIcons.Target} variant="system" subtitle={`${stats.completedTeams} of ${stats.totalTeams} teams`} />
+              <div className="space-y-4">
+                <TerminalFrame title="Active case board" reference="Classification / restricted" variant="monitor">
+                  <div className="space-y-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-nexus-border pb-3">
+                      <div>
+                        <p className="text-[0.56rem] uppercase tracking-[0.24em] text-nexus-textSubtle">Subject</p>
+                        <p className="mt-1 text-xl font-medium text-nexus-text">CASE 037 / ATTEMPTED RECOVERY</p>
+                      </div>
+                      <span className="stamp stamp-contradicted">Contradicted</span>
+                    </div>
+
+                    <div className="grid gap-3 md:grid-cols-4">
+                      <div className="border border-nexus-border bg-nexus-bg p-2.5">
+                        <p className="text-[0.52rem] uppercase tracking-[0.2em] text-nexus-textSubtle">Field units</p>
+                        <p className="mt-2 font-mono text-lg text-nexus-text">{stats.totalTeams || 0}</p>
+                      </div>
+                      <div className="border border-nexus-border bg-nexus-bg p-2.5">
+                        <p className="text-[0.52rem] uppercase tracking-[0.2em] text-nexus-textSubtle">Signal</p>
+                        <p className="mt-2 font-mono text-lg text-nexus-accent">82%</p>
+                      </div>
+                      <div className="border border-nexus-border bg-nexus-bg p-2.5">
+                        <p className="text-[0.52rem] uppercase tracking-[0.2em] text-nexus-textSubtle">Evidence</p>
+                        <p className="mt-2 font-mono text-lg text-nexus-text">07</p>
+                      </div>
+                      <div className="border border-nexus-border bg-nexus-bg p-2.5">
+                        <p className="text-[0.52rem] uppercase tracking-[0.2em] text-nexus-textSubtle">Last contact</p>
+                        <p className="mt-2 font-mono text-[0.72rem] text-nexus-warning">01:47:32</p>
+                      </div>
+                    </div>
+
+                    <div className="grid gap-3 lg:grid-cols-[1.2fr_0.8fr]">
+                      <div className="border border-nexus-border bg-nexus-bg p-3">
+                        <div className="flex items-center justify-between border-b border-nexus-border pb-2">
+                          <p className="text-[0.56rem] uppercase tracking-[0.2em] text-nexus-textSubtle">Current area</p>
+                          <span className="text-[0.56rem] uppercase tracking-[0.2em] text-nexus-accent">Live</span>
+                        </div>
+                        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                          <div className="border border-nexus-border bg-nexus-surfaceElevated p-2">
+                            <p className="text-[0.52rem] uppercase tracking-[0.2em] text-nexus-textSubtle">Location</p>
+                            <p className="mt-2 font-mono text-sm text-nexus-text">NX-019</p>
+                          </div>
+                          <div className="border border-nexus-border bg-nexus-surfaceElevated p-2">
+                            <p className="text-[0.52rem] uppercase tracking-[0.2em] text-nexus-textSubtle">Status</p>
+                            <p className="mt-2 font-mono text-sm text-nexus-warning">Unresolved</p>
+                          </div>
+                        </div>
+                        <div className="mt-3 relative h-28 overflow-hidden border border-nexus-border bg-nexus-surfaceSubtle">
+                          <div className="absolute inset-0 opacity-70" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+                          <div className="absolute left-10 top-7 h-3 w-3 border border-nexus-accent bg-nexus-accent/20" />
+                          <div className="absolute left-20 top-16 h-3 w-3 border border-nexus-warning bg-nexus-warning/20" />
+                          <div className="absolute right-14 top-12 h-3 w-3 border border-nexus-text bg-nexus-surfaceElevated" />
+                          <div className="absolute right-20 bottom-8 h-3 w-3 border border-nexus-danger bg-nexus-danger/20" />
+                          <div className="absolute inset-x-0 bottom-0 h-px bg-nexus-border" />
+                        </div>
+                      </div>
+
+                      <div className="border border-nexus-border bg-nexus-bg p-3">
+                        <p className="text-[0.56rem] uppercase tracking-[0.2em] text-nexus-textSubtle">Unresolved</p>
+                        <ul className="mt-3 space-y-3 text-sm text-nexus-textMuted">
+                          <li>• Timestamp conflict [A-203]</li>
+                          <li>• Location trace incomplete</li>
+                          <li>• Observer mismatch [OBS-02]</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </TerminalFrame>
+
+                <TerminalFrame title="Field units" reference={`${teams.length} linked`} variant="register">
+                  <div className="space-y-2">
+                    {teams.slice(0, 4).map(team => (
+                      <button
+                        key={team.id}
+                        type="button"
+                        onClick={() => handleTeamClick(team.id)}
+                        className="w-full border border-nexus-border bg-nexus-bg px-2.5 py-2 text-left transition-colors hover:bg-nexus-surfaceElevated"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-mono text-[0.68rem] uppercase tracking-[0.2em] text-nexus-text">{team.code}</span>
+                          <TeamStatusBadge status={team.status} showDot />
+                        </div>
+                        <div className="mt-2 flex items-center justify-between gap-2">
+                          <span className="font-medium text-nexus-text">{team.name}</span>
+                          <span className="text-[0.58rem] uppercase tracking-[0.18em] text-nexus-textSubtle">{team.playerCount ?? 0} personnel</span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </TerminalFrame>
+              </div>
+
+              <div className="space-y-4">
+                <TerminalFrame title="Observation" reference="Camera / zone 04" variant="monitor">
+                  <div className="border border-nexus-border bg-nexus-bg p-2">
+                    <div className="mb-2 flex items-center justify-between text-[0.56rem] uppercase tracking-[0.18em] text-nexus-textSubtle">
+                      <span>Live feed</span>
+                      <span className="text-nexus-accent">REC</span>
+                    </div>
+                    <div className="surveillance-frame h-44">
+                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(111,179,196,0.18),transparent_35%),linear-gradient(180deg,#0f1214,#0b0c0d)]" />
+                      <div className="absolute inset-0 opacity-70" style={{ backgroundImage: 'repeating-linear-gradient(180deg, transparent 0, transparent 2px, rgba(255,255,255,0.03) 2px, rgba(255,255,255,0.03) 4px)' }} />
+                      <div className="absolute left-3 top-3 text-[0.56rem] uppercase tracking-[0.18em] text-nexus-textMuted">CAM-04</div>
+                      <div className="absolute right-3 top-3 text-[0.56rem] uppercase tracking-[0.18em] text-nexus-textMuted">01:47:32</div>
+                      <div className="absolute inset-x-6 bottom-4 h-1 bg-nexus-accent/60" />
+                      <div className="absolute left-8 top-12 h-12 w-12 border border-nexus-border bg-nexus-surfaceElevated/70" />
+                      <div className="absolute right-10 top-12 h-16 w-20 border border-nexus-accent/40 bg-nexus-accent/10" />
+                      <div className="absolute left-1/2 top-1/2 h-14 w-14 -translate-x-1/2 -translate-y-1/2 rounded-full border border-nexus-warning/60 bg-nexus-warning/10" />
+                    </div>
+                  </div>
+                </TerminalFrame>
+
+                <TerminalFrame title="Signal lattice" reference="Integrity 82%" variant="system">
+                  <div className="space-y-3">
+                    <div>
+                      <div className="mb-1 flex justify-between text-[0.52rem] uppercase tracking-[0.18em] text-nexus-textSubtle">
+                        <span>Channel 04</span>
+                        <span>82%</span>
+                      </div>
+                      <div className="signal-track"><div className="signal-fill" style={{ width: '82%' }} /><span className="signal-ticks" /></div>
+                    </div>
+                    <div>
+                      <div className="mb-1 flex justify-between text-[0.52rem] uppercase tracking-[0.18em] text-nexus-textSubtle">
+                        <span>Noise floor</span>
+                        <span>17%</span>
+                      </div>
+                      <div className="signal-track"><div className="signal-fill-warning" style={{ width: '17%' }} /><span className="signal-ticks" /></div>
+                    </div>
+                    <div className="flex items-center justify-between gap-3 border-t border-nexus-border pt-2 text-[0.58rem] uppercase tracking-[0.2em] text-nexus-textSubtle">
+                      <span>Transmission</span>
+                      <span className="flex items-center gap-2 text-nexus-accent"><span className="rec-lamp" />SYNC</span>
+                    </div>
+                  </div>
+                </TerminalFrame>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-              {teamsByGroup.map(({ group, teams: groupTeams }) => (
-                <TeamStatusCard key={group} title={group} teams={groupTeams} onTeamClick={handleTeamClick} />
-              ))}
-            </div>
+            <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
+              <TerminalFrame title="Evidence register" reference="Recovered items" variant="register">
+                <div className="space-y-2">
+                  {[
+                    ['037-A', 'Photograph', 'Verified'],
+                    ['037-B', 'Audio log', 'Unverified'],
+                    ['037-C', 'Campus map', 'Contradicted'],
+                    ['037-D', 'Signal fragment', 'Restricted'],
+                  ].map(([id, type, state]) => (
+                    <div key={id} className="flex items-center justify-between gap-3 border border-nexus-border bg-nexus-bg px-2.5 py-2">
+                      <div>
+                        <p className="font-mono text-[0.7rem] uppercase tracking-[0.2em] text-nexus-text">{id}</p>
+                        <p className="mt-1 text-sm text-nexus-textMuted">{type}</p>
+                      </div>
+                      <span className={cn(
+                        'text-[0.52rem] uppercase tracking-[0.18em]',
+                        state === 'Verified' && 'text-nexus-accent',
+                        state === 'Unverified' && 'text-nexus-warning',
+                        state === 'Contradicted' && 'text-nexus-danger',
+                        state === 'Restricted' && 'text-nexus-textSubtle',
+                      )}>{state}</span>
+                    </div>
+                  ))}
+                </div>
+              </TerminalFrame>
 
-            <TerminalFrame
-              title="Incident log"
-              reference="Recent activity"
-              variant="system"
-              footer={
+              <TerminalFrame title="Incident chronology" reference="Recent activity" variant="system" footer={
                 <Link to={ROUTES.ADMIN_AUDIT} className="text-xs text-nexus-accent hover:underline">
                   View audit log →
                 </Link>
-              }
-            >
-              <div className="space-y-2">
-                {isLoading && recentActivity.length === 0 ? (
-                  <div className="text-center py-8 text-nexus-textMuted">Loading activity…</div>
-                ) : recentActivity.length === 0 ? (
-                  <div className="text-center py-8 text-nexus-textMuted">No recent activity</div>
-                ) : (
-                  recentActivity.map(action => (
-                    <div key={action.id} className="flex items-center justify-between border border-nexus-border bg-nexus-bg px-3 py-2.5">
-                      <div className="flex items-center gap-3">
-                        <div className="bureau-icon w-8 h-8 flex items-center justify-center border border-nexus-border bg-nexus-surfaceElevated">
-                          {getEventIcon(action.type)}
+              }>
+                <div className="space-y-2">
+                  {isLoading && recentActivity.length === 0 ? (
+                    <div className="text-center py-8 text-nexus-textMuted">Loading activity…</div>
+                  ) : recentActivity.length === 0 ? (
+                    <div className="text-center py-8 text-nexus-textMuted">No recent activity</div>
+                  ) : (
+                    recentActivity.slice(0, 6).map(action => (
+                      <div key={action.id} className="border-b border-nexus-border pb-2 last:border-b-0 last:pb-0">
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="font-mono text-[0.58rem] uppercase tracking-[0.2em] text-nexus-textSubtle">{formatDateTime(action.timestamp)}</span>
+                          <span className="text-[0.52rem] uppercase tracking-[0.18em] text-nexus-accent">{action.team}</span>
                         </div>
-                        <div>
-                          <p className="font-medium text-nexus-text">{action.team}</p>
-                          <p className="text-xs text-nexus-textMuted">{action.type.replace(/_/g, ' ')}</p>
-                        </div>
+                        <p className="mt-1 text-sm text-nexus-textMuted">{action.type.replace(/_/g, ' ')}</p>
                       </div>
-                      <div className="text-right">
-                        <p className="text-sm text-nexus-textSubtle">{formatDateTime(action.timestamp)}</p>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </TerminalFrame>
+                    ))
+                  )}
+                </div>
+              </TerminalFrame>
+            </div>
           </div>
         </div>
 
@@ -231,117 +380,6 @@ export function AdminDashboard() {
         }}
       />
     </>
-  )
-}
-
-function GameTimer({ gameState }: { gameState: NonNullable<ReturnType<typeof useBureau>['gameState']> }) {
-  const { gameStatus, config } = gameState
-  const deadline = gameState.config?.game_deadline as string | null
-
-  const statusColor = useMemo(() => {
-    if (gameStatus === 'RUNNING') return 'text-nexus-accent'
-    if (gameStatus === 'PAUSED') return 'text-nexus-warning'
-    if (gameStatus === 'ENDED') return 'text-nexus-textMuted'
-    return 'text-nexus-info'
-  }, [gameStatus])
-
-  return (
-    <TerminalFrame
-      title={gameStatus}
-      icon={<BureauIcons.Clock className={cn('bureau-icon w-6 h-6', statusColor)} />}
-      variant={gameStatus === 'RUNNING' ? 'monitor' : 'register'}
-    >
-      <div className="terminal-grid flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div>
-            <p className="text-xs text-nexus-textSubtle">Game Status</p>
-            <p className={cn('font-display font-bold text-xl', statusColor)}>
-              {gameStatus}
-            </p>
-          </div>
-        </div>
-        <div className="text-right terminal-data">
-          <p className="text-xs text-nexus-textSubtle">Shift duration</p>
-          <p className="font-mono text-sm text-nexus-text">
-            {Number(config?.game_duration_minutes ?? 180)} minutes
-          </p>
-          {deadline && gameStatus === 'RUNNING' && (
-            <p className="text-xs text-nexus-warning mt-1">
-              Ends: {formatTimeRemaining(deadline)}
-            </p>
-          )}
-        </div>
-      </div>
-    </TerminalFrame>
-  )
-}
-
-function TeamStatusCard({
-  title,
-  teams,
-  onTeamClick,
-}: {
-  title: string
-  teams: ReturnType<typeof useBureau>['teams']
-  onTeamClick: (id: string) => void
-}) {
-  return (
-    <TerminalFrame
-      title={title}
-      reference={`${teams.length} teams`}
-      icon={<BureauIcons.Users className="bureau-icon w-4 h-4 text-nexus-textSubtle" />}
-      variant="system"
-      className="h-full"
-    >
-      {teams.length === 0 ? (
-        <div className="text-center py-6 text-nexus-textSubtle text-sm">
-          No teams in this status
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {teams.map(team => (
-            <button
-              key={team.id}
-              onClick={() => onTeamClick(team.id)}
-              className="w-full flex items-center gap-3 p-2.5 text-left border border-nexus-border bg-nexus-bg hover:bg-nexus-surfaceElevated transition-colors"
-            >
-              <TeamStatusBadge status={team.status} showDot />
-              <span className="font-medium flex-1 truncate">{team.name}</span>
-              <span className="text-xs text-nexus-textSubtle font-mono">{team.code}</span>
-            </button>
-          ))}
-        </div>
-      )}
-    </TerminalFrame>
-  )
-}
-
-function StatCard({
-  title,
-  value,
-  icon: Icon,
-  variant = 'system',
-  subtitle,
-}: {
-  title: string
-  value: number | string
-  icon: React.ComponentType<{ className?: string }>
-  variant?: 'system' | 'monitor' | 'register'
-  subtitle: string
-}) {
-  return (
-    <TerminalFrame
-      title={title}
-      icon={<Icon className="bureau-icon w-5 h-5 text-nexus-text" />}
-      variant={variant}
-    >
-      <div className="text-center py-2">
-        <p className="font-display font-bold text-3xl text-nexus-text leading-tight">
-          {value}
-        </p>
-        <p className="text-xs text-nexus-textSubtle mt-1.5">{subtitle}</p>
-      </div>
-    </TerminalFrame>
   )
 }
 

@@ -32,12 +32,10 @@ const CONNECTION_INDICATOR: Record<
 }
 
 export function PlayerHeader() {
-  const { player, team, gameState, isInitializing, notifications } = useApp()
+  const { player, team, gameState, isInitializing } = useApp()
   const connection = useConnection()
   const { count: queuedCount } = useSubmissionQueue()
   const timer = useGameTimer(gameState?.endsAt)
-
-  const unreadCount = notifications?.filter(n => !n.isRead).length ?? 0
 
   if (!player || !team || isInitializing) {
     return null
@@ -49,79 +47,45 @@ export function PlayerHeader() {
   const ConnectionIcon = indicator.Icon
 
   return (
-    <header className="sticky top-0 z-40 safe-area-top nexus-header-shell">
-      <div className="flex items-center justify-between px-4 py-3">
+    <header className="sticky top-0 z-40 nexus-handset-header safe-area-top">
+      <div className="nexus-handset-title-bar">
         <div className="flex items-center gap-3 min-w-0">
           <Link to={ROUTES.PLAYER_GAME} className="flex items-center gap-2 shrink-0">
-            <div className="case-badge-mark">N</div>
+            <div className="handset-badge-mark">N</div>
             <div className="min-w-0">
               <div className="font-display text-[0.62rem] uppercase tracking-[0.32em] text-nexus-textSubtle">NEXUS</div>
               <div className="font-mono text-[0.6rem] uppercase tracking-[0.2em] text-nexus-textMuted">Case 037</div>
             </div>
           </Link>
-          <span className="hidden sm:block text-nexus-textMuted font-mono text-[0.62rem] uppercase tracking-[0.18em]">Team {team.name}</span>
+          <span className="font-mono text-[0.62rem] uppercase tracking-[0.18em] text-nexus-textMuted hidden sm:block">
+            Team {team.name}
+          </span>
         </div>
 
         <div className="flex items-center gap-3">
-          <div
-            className="flex items-center gap-1.5 border border-nexus-borderSubtle bg-nexus-surface px-2 py-1"
-            role="timer"
-            aria-live="off"
-            aria-label={timer.isArmed ? `${timeRemaining} remaining` : 'Timer not started'}
-          >
-            <BureauIcons.Clock
-              className={cn(
-                'bureau-icon w-3.5 h-3.5',
-                timer.urgency === 'normal' ? 'text-nexus-textSubtle' : TIMER_TONE[timer.urgency],
-              )}
-              aria-hidden="true"
-            />
-            <span className={cn('font-mono text-[0.64rem] uppercase tracking-[0.18em]', TIMER_TONE[timer.urgency])}>
-              {timeRemaining}
-            </span>
-          </div>
-
-          <Link
-            to={ROUTES.PLAYER_NOTIFICATIONS}
-            className="relative p-1.5 border border-nexus-borderSubtle bg-nexus-surface text-nexus-textSubtle hover:text-nexus-text"
-            aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'}
-          >
-            <BureauIcons.Bell className="bureau-icon w-4 h-4" aria-hidden="true" />
-            {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 min-w-[16px] h-4 px-1 flex items-center justify-center border border-nexus-danger text-nexus-danger text-[10px] font-bold bg-nexus-bg">
-                {unreadCount > 9 ? '9+' : unreadCount}
-              </span>
-            )}
-          </Link>
-
-          <button
-            type="button"
-            onClick={() => void connection.probe()}
-            title={
-              queuedCount > 0
-                ? `${indicator.label} — ${queuedCount} submission${queuedCount === 1 ? '' : 's'} queued`
-                : indicator.label
-            }
-            aria-label={
-              queuedCount > 0
-                ? `${indicator.label}, ${queuedCount} submissions queued`
-                : indicator.label
-            }
-            className="p-1.5 border border-nexus-borderSubtle bg-nexus-surface text-nexus-textSubtle hover:text-nexus-text"
-          >
+          <div className="flex items-center justify-center w-6 h-6">
             <ConnectionIcon
               className={cn(
-                'bureau-icon w-4 h-4',
+                'bureau-icon w-3.5 h-3.5',
                 indicator.className,
                 connection.status !== 'online' && 'animate-pulse',
               )}
               aria-hidden="true"
             />
-          </button>
+          </div>
+          <span
+            className={cn(
+              'font-mono text-[0.56rem] uppercase tracking-[0.18em]',
+              connection.status !== 'online' ? 'text-nexus-warning' : 'text-nexus-accent',
+            )}
+            aria-label={`Signal ${connection.status}`}
+          >
+            {connection.status.toUpperCase()}
+          </span>
           {queuedCount > 0 && (
             <span
               className="min-w-[18px] h-[18px] px-1 border border-nexus-warning text-nexus-warning text-[10px] font-bold flex items-center justify-center bg-nexus-bg"
-              aria-hidden="true"
+              aria-label={`${queuedCount} submissions queued`}
             >
               {queuedCount}
             </span>
@@ -129,16 +93,11 @@ export function PlayerHeader() {
         </div>
       </div>
 
-      <div
-        className={cn(
-          'flex items-center justify-between px-4 py-2.5 border-t border-nexus-borderSubtle/70 archive-strip',
-          roleTheme?.bg,
-        )}
-      >
+      <div className="nexus-handset-subheader border-t border-nexus-borderSubtle/60">
         <div className="flex items-center gap-3 min-w-0">
           <span
             className={cn(
-              'px-2 py-1 text-[0.58rem] font-medium uppercase tracking-[0.22en] border border-current bg-transparent',
+              'px-2 py-1 text-[0.58rem] font-medium uppercase tracking-[0.22em] border border-current bg-transparent',
               roleTheme?.badge,
             )}
           >
@@ -148,9 +107,33 @@ export function PlayerHeader() {
             {player.role && ROLE_SUBTITLES[player.role]}
           </span>
         </div>
-        <span className="font-mono text-[0.62rem] uppercase tracking-[0.18em] text-nexus-textSubtle">
-          {player.displayName}
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="font-mono text-[0.62rem] uppercase tracking-[0.18em] text-nexus-textSubtle">
+            {player.displayName}
+          </span>
+          <div
+            className="handset-badge-mark"
+            aria-label={`Timer: ${timer.isArmed ? timeRemaining : 'not started'}`}
+            role="timer"
+          >
+            <BureauIcons.Clock
+              className={cn(
+                'bureau-icon w-3 h-3',
+                timer.urgency === 'normal' ? 'text-nexus-textSubtle' : TIMER_TONE[timer.urgency],
+              )}
+              aria-hidden="true"
+            />
+          </div>
+          <span
+            className={cn(
+              'font-mono text-[0.64rem] uppercase tracking-[0.18em]',
+              TIMER_TONE[timer.urgency],
+            )}
+            aria-live="off"
+          >
+            {timeRemaining}
+          </span>
+        </div>
       </div>
     </header>
   )
