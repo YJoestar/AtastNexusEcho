@@ -262,7 +262,7 @@ export function ShieldQuestionIcon(props: Props) {
 export function EyeIcon(props: Props) {
   return (
     <Icon {...props}>
-      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11z" />
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
       <circle cx="12" cy="12" r="3" />
     </Icon>
   )
@@ -828,7 +828,7 @@ export function RotateCcwIcon(props: Props) {
 export function SkipForwardIcon(props: Props) {
   return (
     <Icon {...props}>
-      <polygon points="14 12 22 6 22 18 14 12z" />
+      <polygon points="14 12 22 6 22 18 14 12" />
       <line x1="6" y1="4" x2="6" y2="20" />
     </Icon>
   )

@@ -1,7 +1,52 @@
-import { useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
-import { Waveform } from '@/components/bureau'
-import type { BoardPlacement, EvidenceHypothesis, InvestigationWorkspace } from '@/lib/investigationWorkspace'
-import { artifactMediaUrl, type CaseArtifact } from './types'
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type PointerEvent as ReactPointerEvent,
+} from 'react'
+import {
+  BOARD_HEIGHT,
+  BOARD_WIDTH,
+  DEFAULT_CAMERA,
+  clampCamera,
+  contentBounds,
+  fitCamera,
+  focusCamera,
+  freeSlot,
+  gridSlots,
+  percentToWorld,
+  pinchCamera,
+  screenToWorld,
+  worldToPercent,
+  zoomAt,
+  type Camera,
+  type Point,
+  type Size,
+} from '@/lib/boardGeometry'
+import {
+  addAnnotation,
+  addLinks,
+  deleteAnnotation,
+  editAnnotation,
+  findLink,
+  isLinkLive,
+  linkAnnotationKey,
+  pruneWorkspace,
+  removeLink,
+  updateLink,
+  type AnnotationKind,
+  type BoardPlacement,
+  type InvestigationWorkspace,
+  type LinkKind,
+} from '@/lib/investigationWorkspace'
+import { artifactType, type CaseArtifact } from './types'
+import { BoardCard } from './board/BoardCard'
+import { BoardLinks } from './board/BoardLinks'
+import { BoardInspector } from './board/BoardInspector'
 
 interface InvestigationTableProps {
   artifacts: CaseArtifact[]
@@ -10,30 +55,67 @@ interface InvestigationTableProps {
   onInspect: (artifactId: string) => void
 }
 
-const BOARD_WIDTH = 1280
-const BOARD_HEIGHT = 900
+interface UndoEntry {
+  label: string
+  undo: () => void
+}
 
-function nextPlacement(count: number, order: number): BoardPlacement {
-  const column = count % 4
-  const row = Math.floor(count / 4) % 4
-  return {
-    x: 17 + column * 22 + (row % 2) * 3,
-    y: 19 + row * 21 + (column % 2) * 2,
-    rotation: column % 2 === 0 ? -1.5 : 1.25,
-    order,
-    pinned: false,
-  }
+const TAP_SLOP = 5
+const PAN_STEP = 80
+const TYPE_FILTERS = ['ALL', 'PHOTOGRAPH', 'SURVEILLANCE', 'DOCUMENT', 'NOTE', 'AUDIO', 'MAP', 'PERSONNEL', 'FRAGMENT'] as const
+
+function newId(): string {
+  return typeof crypto !== 'undefined' && 'randomUUID' in crypto
+    ? crypto.randomUUID()
+    : `id-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
+}
+
+function nextOrder(workspace: InvestigationWorkspace): number {
+  return Math.max(0, ...Object.values(workspace.placements).map(placement => placement.order)) + 1
 }
 
 export function InvestigationTable({ artifacts, workspace, onUpdate, onInspect }: InvestigationTableProps) {
-  const boardRef = useRef<HTMLDivElement>(null)
-  const dragId = useRef<string | null>(null)
+  const surfaceRef = useRef<HTMLDivElement>(null)
+  const worldRef = useRef<HTMLDivElement>(null)
+  const inspectorRef = useRef<HTMLDivElement>(null)
+  const sectionRef = useRef<HTMLElement>(null)
+  const [wide, setWide] = useState(false)
+  const [toolsOpen, setToolsOpen] = useState(() => Object.keys(workspace.placements).length === 0)
+
+  const cameraRef = useRef<Camera>(workspace.view ?? DEFAULT_CAMERA)
+  const viewportRef = useRef<Size>({ width: 0, height: 0 })
+  const initialisedRef = useRef(false)
+  const persistTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const workspaceRef = useRef(workspace)
+  const onUpdateRef = useRef(onUpdate)
+  useEffect(() => {
+    workspaceRef.current = workspace
+    onUpdateRef.current = onUpdate
+  })
+
+  const pointers = useRef(new Map<number, Point>())
+  const pan = useRef<{ start: Point; camera: Camera; moved: boolean } | null>(null)
+  const pinch = useRef<{ camera: Camera; from: [Point, Point] } | null>(null)
+  const drag = useRef<{
+    id: string
+    pointerId: number
+    startClient: Point
+    originWorld: Point
+    moved: boolean
+  } | null>(null)
   const previewRef = useRef<{ id: string; x: number; y: number } | null>(null)
-  const [scale, setScale] = useState(0.8)
+
+  const [zoomLabel, setZoomLabel] = useState(Math.round(cameraRef.current.zoom * 100))
   const [preview, setPreview] = useState<{ id: string; x: number; y: number } | null>(null)
+  const [panning, setPanning] = useState(false)
   const [selected, setSelected] = useState<string[]>([])
-  const [hypothesisNote, setHypothesisNote] = useState('')
+  const [selectedLinkId, setSelectedLinkId] = useState<string | null>(null)
+  const [freshLinkId, setFreshLinkId] = useState<string | null>(null)
   const [placeCode, setPlaceCode] = useState('')
+  const [search, setSearch] = useState('')
+  const [typeFilter, setTypeFilter] = useState<(typeof TYPE_FILTERS)[number]>('ALL')
+  const [undoEntry, setUndoEntry] = useState<UndoEntry | null>(null)
+  const [announce, setAnnounce] = useState('')
 
   const artifactById = useMemo(() => new Map(artifacts.map(artifact => [artifact.id, artifact])), [artifacts])
   const placed = useMemo(() => Object.entries(workspace.placements)
@@ -42,119 +124,465 @@ export function InvestigationTable({ artifacts, workspace, onUpdate, onInspect }
   [artifactById, workspace.placements])
   const unplaced = artifacts.filter(artifact => !workspace.placements[artifact.id])
 
-  const placeArtifact = (id: string) => {
-    const order = Math.max(0, ...Object.values(workspace.placements).map(placement => placement.order)) + 1
-    onUpdate(current => ({
-      ...current,
-      placements: {
-        ...current.placements,
-        [id]: nextPlacement(Object.keys(current.placements).length, order),
-      },
-    }))
-    setPlaceCode('')
-  }
+  // A link is live when both objects are on the table AND still in the case file.
+  const liveLinks = useMemo(() => workspace.hypotheses.filter(link =>
+    isLinkLive(link, workspace) && artifactById.has(link.from) && artifactById.has(link.to)),
+  [workspace, artifactById])
+  const dormantLinks = useMemo(() => workspace.hypotheses.filter(link =>
+    artifactById.has(link.from) && artifactById.has(link.to) && !isLinkLive(link, workspace)),
+  [workspace, artifactById])
+  const staleCount = workspace.hypotheses.length - liveLinks.length - dormantLinks.length
 
-  const moveArtifact = (id: string, x: number, y: number) => {
-    const position = { id, x, y }
-    previewRef.current = position
-    setPreview(position)
-  }
-
-  const handlePointerDown = (event: ReactPointerEvent<HTMLElement>, id: string, pinned: boolean) => {
-    if (pinned || (event.target as HTMLElement).closest('button')) return
-    event.preventDefault()
-    event.currentTarget.setPointerCapture(event.pointerId)
-    dragId.current = id
-    setSelected(current => current.includes(id) ? current : [...current.slice(-1), id])
-  }
-
-  const handlePointerMove = (event: ReactPointerEvent<HTMLElement>) => {
-    if (!dragId.current || !boardRef.current) return
-    const rect = boardRef.current.getBoundingClientRect()
-    const x = Math.max(4, Math.min(96, (event.clientX - rect.left) / rect.width * 100))
-    const y = Math.max(5, Math.min(95, (event.clientY - rect.top) / rect.height * 100))
-    moveArtifact(dragId.current, x, y)
-  }
-
-  const handlePointerUp = () => {
-    if (!dragId.current) return
-    const id = dragId.current
-    dragId.current = null
-    const finalPosition = previewRef.current
-    previewRef.current = null
-    setPreview(null)
-    if (finalPosition?.id === id) {
-      onUpdate(workspaceCurrent => ({
-        ...workspaceCurrent,
-        placements: {
-          ...workspaceCurrent.placements,
-          [id]: { ...workspaceCurrent.placements[id], x: finalPosition.x, y: finalPosition.y },
-        },
-      }))
+  const linkCounts = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const link of liveLinks) {
+      counts.set(link.from, (counts.get(link.from) ?? 0) + 1)
+      counts.set(link.to, (counts.get(link.to) ?? 0) + 1)
     }
-  }
+    return counts
+  }, [liveLinks])
 
-  const togglePin = (id: string) => onUpdate(current => ({
+  const matches = useCallback((artifact: CaseArtifact) => {
+    if (typeFilter !== 'ALL' && artifactType(artifact) !== typeFilter) return false
+    const query = search.trim().toLowerCase()
+    if (!query) return true
+    const notes = (workspace.annotations[artifact.id] ?? []).map(note => note.text).join(' ')
+    return `${artifact.code} ${artifact.title} ${artifact.description} ${artifact.location ?? ''} ${notes}`
+      .toLowerCase().includes(query)
+  }, [search, typeFilter, workspace.annotations])
+  const filtering = search.trim() !== '' || typeFilter !== 'ALL'
+  const matchCount = placed.filter(entry => matches(entry.artifact)).length
+
+  const selectedLink = selectedLinkId ? workspace.hypotheses.find(link => link.id === selectedLinkId) ?? null : null
+  const selectedArtifacts = selected
+    .map(id => artifactById.get(id))
+    .filter((artifact): artifact is CaseArtifact => !!artifact)
+
+  /* ───────────────────────────── camera ───────────────────────────── */
+
+  const persistCamera = useCallback(() => {
+    if (persistTimer.current) clearTimeout(persistTimer.current)
+    persistTimer.current = setTimeout(() => {
+      const view = cameraRef.current
+      onUpdateRef.current(current => ({ ...current, view: { x: view.x, y: view.y, zoom: view.zoom } }))
+    }, 500)
+  }, [])
+
+  useEffect(() => () => { if (persistTimer.current) clearTimeout(persistTimer.current) }, [])
+
+  const applyCamera = useCallback((next: Camera, persist = true) => {
+    const viewport = viewportRef.current
+    const camera = viewport.width > 0 ? clampCamera(next, viewport) : next
+    cameraRef.current = camera
+    if (worldRef.current) {
+      worldRef.current.style.transform = `translate3d(${camera.x}px, ${camera.y}px, 0) scale(${camera.zoom})`
+    }
+    const label = Math.round(camera.zoom * 100)
+    setZoomLabel(current => (current === label ? current : label))
+    if (persist) persistCamera()
+  }, [persistCamera])
+
+  useLayoutEffect(() => {
+    applyCamera(cameraRef.current, false)
+  }, [applyCamera])
+
+  const fit = useCallback(() => {
+    const bounds = contentBounds(Object.values(workspaceRef.current.placements))
+    applyCamera(fitCamera(bounds, viewportRef.current))
+  }, [applyCamera])
+
+  useEffect(() => {
+    const surface = surfaceRef.current
+    if (!surface) return
+    const measure = () => {
+      const rect = surface.getBoundingClientRect()
+      viewportRef.current = { width: rect.width, height: rect.height }
+      if (rect.width > 0 && !initialisedRef.current) {
+        initialisedRef.current = true
+        if (workspaceRef.current.view) applyCamera(workspaceRef.current.view, false)
+        else if (Object.keys(workspaceRef.current.placements).length > 0) {
+          applyCamera(fitCamera(contentBounds(Object.values(workspaceRef.current.placements)), viewportRef.current), false)
+        }
+      } else if (rect.width > 0) {
+        applyCamera(cameraRef.current, false)
+      }
+    }
+    measure()
+    if (typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver(measure)
+    observer.observe(surface)
+    return () => observer.disconnect()
+  }, [applyCamera])
+
+  // Layout follows the room the table actually has, not the window: the
+  // simulator embeds this screen in a narrow frame on a wide monitor.
+  useEffect(() => {
+    const section = sectionRef.current
+    if (!section || typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver(entries => {
+      const width = entries[0]?.contentRect.width ?? 0
+      setWide(current => (current === width >= 900 ? current : width >= 900))
+    })
+    observer.observe(section)
+    return () => observer.disconnect()
+  }, [])
+
+  // Wheel: ctrl/pinch-on-trackpad and a physical wheel zoom; two-finger scroll pans.
+  useEffect(() => {
+    const surface = surfaceRef.current
+    if (!surface) return
+    const onWheel = (event: WheelEvent) => {
+      event.preventDefault()
+      const rect = surface.getBoundingClientRect()
+      const anchor = { x: event.clientX - rect.left, y: event.clientY - rect.top }
+      const physicalWheel = event.deltaMode !== 0 || (event.deltaX === 0 && Math.abs(event.deltaY) >= 50)
+      if (event.ctrlKey || physicalWheel) {
+        const factor = Math.exp(-event.deltaY * (event.ctrlKey ? 0.01 : 0.0016))
+        applyCamera(zoomAt(cameraRef.current, factor, anchor))
+      } else {
+        const camera = cameraRef.current
+        applyCamera({ ...camera, x: camera.x - event.deltaX, y: camera.y - event.deltaY })
+      }
+    }
+    surface.addEventListener('wheel', onWheel, { passive: false })
+    return () => surface.removeEventListener('wheel', onWheel)
+  }, [applyCamera])
+
+  const zoomBy = useCallback((factor: number) => {
+    const { width, height } = viewportRef.current
+    applyCamera(zoomAt(cameraRef.current, factor, { x: width / 2, y: height / 2 }))
+  }, [applyCamera])
+
+  const focusArtifact = useCallback((id: string) => {
+    const placement = workspaceRef.current.placements[id]
+    if (!placement) return
+    applyCamera(focusCamera(cameraRef.current, percentToWorld(placement.x, placement.y), viewportRef.current))
+  }, [applyCamera])
+
+  /* ─────────────────────────── board mutations ─────────────────────────── */
+
+  const update = useCallback((fn: (current: InvestigationWorkspace) => InvestigationWorkspace) => {
+    onUpdateRef.current(fn)
+  }, [])
+
+  const remember = useCallback((label: string, undo: () => void) => {
+    setUndoEntry({ label, undo })
+    setAnnounce(label)
+  }, [])
+
+  useEffect(() => {
+    if (!undoEntry) return
+    const timer = setTimeout(() => setUndoEntry(null), 10000)
+    return () => clearTimeout(timer)
+  }, [undoEntry])
+
+  useEffect(() => {
+    if (!freshLinkId) return
+    const timer = setTimeout(() => setFreshLinkId(null), 700)
+    return () => clearTimeout(timer)
+  }, [freshLinkId])
+
+  const viewCentre = useCallback((): Point => {
+    const { width, height } = viewportRef.current
+    return screenToWorld(cameraRef.current, { x: width / 2 || 400, y: height / 2 || 300 })
+  }, [])
+
+  const placeArtifacts = useCallback((ids: string[]) => {
+    const centre = viewCentre()
+    update(current => {
+      const fresh = ids.filter(id => !current.placements[id])
+      const slots = gridSlots(fresh.length, centre, fresh.length === 1 ? 1 : undefined)
+      const occupied = Object.values(current.placements)
+      const placements = { ...current.placements }
+      let order = nextOrder(current)
+      fresh.forEach((id, index) => {
+        const slot = slots[index]
+        // A single object lands at the centre of what the player is looking at.
+        const spot = fresh.length === 1 ? freeSlot(centre, occupied) : slot
+        placements[id] = { x: spot.x, y: spot.y, rotation: index % 2 === 0 ? -1.5 : 1.25, order: order++, pinned: false }
+      })
+      return { ...current, placements }
+    })
+    setPlaceCode('')
+  }, [update, viewCentre])
+
+  const togglePin = useCallback((id: string) => update(current => ({
     ...current,
-    placements: {
-      ...current.placements,
-      [id]: { ...current.placements[id], pinned: !current.placements[id]?.pinned },
-    },
-  }))
+    placements: { ...current.placements, [id]: { ...current.placements[id], pinned: !current.placements[id]?.pinned } },
+  })), [update])
 
-  const rotate = (id: string) => onUpdate(current => ({
-    ...current,
-    placements: {
-      ...current.placements,
-      [id]: { ...current.placements[id], rotation: ((current.placements[id]?.rotation ?? 0) + 3) % 360 },
-    },
-  }))
+  const rotate = useCallback((id: string) => update(current => {
+    const rotation = current.placements[id]?.rotation ?? 0
+    return {
+      ...current,
+      placements: { ...current.placements, [id]: { ...current.placements[id], rotation: rotation + 3 > 12 ? -12 : rotation + 3 } },
+    }
+  }), [update])
 
-  const removeFromTable = (id: string) => {
-    onUpdate(current => {
+  const removeFromTable = useCallback((id: string) => {
+    const previous = workspaceRef.current.placements[id]
+    if (!previous) return
+    update(current => {
       const placements = { ...current.placements }
       delete placements[id]
       return { ...current, placements }
     })
     setSelected(current => current.filter(item => item !== id))
-  }
+    remember('OBJECT REMOVED FROM TABLE / ARCHIVE INTACT', () => update(current => ({
+      ...current,
+      placements: { ...current.placements, [id]: previous },
+    })))
+  }, [remember, update])
 
-  const toggleSelected = (id: string) => setSelected(current =>
-    current.includes(id) ? current.filter(item => item !== id) : [...current.slice(-1), id],
-  )
+  const toggleSelected = useCallback((id: string) => {
+    setSelectedLinkId(null)
+    setSelected(current => current.includes(id) ? current.filter(item => item !== id) : [...current, id])
+  }, [])
 
-  const addHypothesis = () => {
-    if (selected.length !== 2) return
-    const hypothesis: EvidenceHypothesis = {
-      id: crypto.randomUUID(),
-      from: selected[0],
-      to: selected[1],
-      note: hypothesisNote.trim() || 'UNRESOLVED RELATIONSHIP',
-      createdAt: new Date().toISOString(),
-    }
-    onUpdate(current => ({ ...current, hypotheses: [...current.hypotheses, hypothesis] }))
+  const createLink = useCallback((kind: LinkKind, note: string) => {
+    const ids = selected
+    if (ids.length < 2) return
+    // Ids are minted up front: the update below may run more than once.
+    const linkIds = ids.slice(1).map(() => newId())
+    const isNew = !!ids.slice(1).find(other => !findLink(workspaceRef.current, ids[0], other))
+    update(current => addLinks(current, ids, kind, note, index => linkIds[index]))
     setSelected([])
-    setHypothesisNote('')
+    if (isNew) {
+      setFreshLinkId(linkIds[0])
+      setAnnounce(`${kind} link filed`)
+    } else {
+      setAnnounce('Those objects are already linked')
+    }
+  }, [selected, update])
+
+  const removeLinkWithUndo = useCallback((linkId: string) => {
+    const link = workspaceRef.current.hypotheses.find(entry => entry.id === linkId)
+    if (!link) return
+    const key = linkAnnotationKey(linkId)
+    const notes = workspaceRef.current.annotations[key]
+    update(current => removeLink(current, linkId))
+    setSelectedLinkId(null)
+    remember('RELATIONSHIP DISCONNECTED', () => update(current => ({
+      ...current,
+      hypotheses: [...current.hypotheses, link],
+      annotations: notes ? { ...current.annotations, [key]: notes } : current.annotations,
+    })))
+  }, [remember, update])
+
+  /* ───────────────────────────── gestures ───────────────────────────── */
+
+  const relative = (event: { clientX: number; clientY: number }): Point => {
+    const rect = surfaceRef.current?.getBoundingClientRect()
+    return { x: event.clientX - (rect?.left ?? 0), y: event.clientY - (rect?.top ?? 0) }
   }
 
-  const getPosition = (id: string, position: BoardPlacement) =>
-    preview?.id === id ? { ...position, x: preview.x, y: preview.y } : position
+  const capture = (pointerId: number) => {
+    try { surfaceRef.current?.setPointerCapture(pointerId) } catch { /* pointer already gone */ }
+  }
+
+  const handleCardPointerDown = useCallback((event: ReactPointerEvent<HTMLElement>, id: string, pinned: boolean) => {
+    const control = (event.target as HTMLElement).closest('button')
+    if (control && !control.hasAttribute('data-drag-handle')) return
+    if (event.pointerType === 'mouse' && event.button !== 0) return
+    if (pointers.current.size > 1) return
+    const placement = workspaceRef.current.placements[id]
+    if (!placement) return
+    drag.current = {
+      id,
+      pointerId: event.pointerId,
+      startClient: { x: event.clientX, y: event.clientY },
+      originWorld: percentToWorld(placement.x, placement.y),
+      moved: false,
+    }
+    if (pinned) drag.current.moved = false
+    event.stopPropagation()
+  }, [])
+
+  // Capture phase: every finger counts, wherever it lands — even on a card
+  // button — so a second touch always turns the gesture into a pinch.
+  const handleSurfaceDownCapture = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (event.pointerType === 'mouse') pointers.current.clear()
+    pointers.current.set(event.pointerId, relative(event))
+    if (pointers.current.size === 2) {
+      drag.current = null
+      previewRef.current = null
+      setPreview(null)
+      pan.current = null
+      const [a, b] = Array.from(pointers.current.values())
+      pinch.current = { camera: cameraRef.current, from: [a, b] }
+      setPanning(true)
+    }
+  }
+
+  const handleSurfaceDown = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (event.pointerType === 'mouse' && event.button !== 0) return
+    // Controls on a card or a link are plain buttons: they must not start a pan,
+    // and a tap on one must not look like a tap on bare table.
+    if ((event.target as HTMLElement).closest('button, [data-link-id]')) return
+    if (pinch.current || drag.current || pointers.current.size !== 1) return
+    pan.current = { start: relative(event), camera: cameraRef.current, moved: false }
+  }
+
+  const handleSurfaceMove = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (!pointers.current.has(event.pointerId)) return
+    pointers.current.set(event.pointerId, relative(event))
+
+    if (pinch.current && pointers.current.size >= 2) {
+      const [a, b] = Array.from(pointers.current.values())
+      applyCamera(pinchCamera(pinch.current.camera, pinch.current.from, [a, b]))
+      return
+    }
+
+    const activeDrag = drag.current
+    if (activeDrag && activeDrag.pointerId === event.pointerId) {
+      const dx = event.clientX - activeDrag.startClient.x
+      const dy = event.clientY - activeDrag.startClient.y
+      if (!activeDrag.moved && Math.hypot(dx, dy) < TAP_SLOP) return
+      const pinned = workspaceRef.current.placements[activeDrag.id]?.pinned
+      if (pinned) return
+      if (!activeDrag.moved) {
+        activeDrag.moved = true
+        capture(event.pointerId)
+      }
+      const zoom = cameraRef.current.zoom
+      const percent = worldToPercent({
+        x: activeDrag.originWorld.x + dx / zoom,
+        y: activeDrag.originWorld.y + dy / zoom,
+      })
+      const next = { id: activeDrag.id, x: percent.x, y: percent.y }
+      previewRef.current = next
+      setPreview(next)
+      return
+    }
+
+    const activePan = pan.current
+    if (activePan) {
+      const point = relative(event)
+      const dx = point.x - activePan.start.x
+      const dy = point.y - activePan.start.y
+      if (!activePan.moved && Math.hypot(dx, dy) < TAP_SLOP) return
+      if (!activePan.moved) {
+        activePan.moved = true
+        capture(event.pointerId)
+        setPanning(true)
+      }
+      applyCamera({ ...activePan.camera, x: activePan.camera.x + dx, y: activePan.camera.y + dy })
+    }
+  }
+
+  const endGesture = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const wasPointer = pointers.current.delete(event.pointerId)
+    if (!wasPointer) return
+    try { surfaceRef.current?.releasePointerCapture(event.pointerId) } catch { /* not captured */ }
+
+    if (pinch.current) {
+      if (pointers.current.size < 2) {
+        pinch.current = null
+        pan.current = null
+        setPanning(false)
+      }
+      return
+    }
+
+    const activeDrag = drag.current
+    if (activeDrag && activeDrag.pointerId === event.pointerId) {
+      drag.current = null
+      const final = previewRef.current
+      previewRef.current = null
+      setPreview(null)
+      if (activeDrag.moved && final?.id === activeDrag.id) {
+        update(current => current.placements[activeDrag.id]
+          ? {
+              ...current,
+              placements: {
+                ...current.placements,
+                [activeDrag.id]: { ...current.placements[activeDrag.id], x: final.x, y: final.y, order: nextOrder(current) },
+              },
+            }
+          : current)
+      } else if (!activeDrag.moved && event.type === 'pointerup') {
+        toggleSelected(activeDrag.id)
+      }
+      return
+    }
+
+    const activePan = pan.current
+    pan.current = null
+    setPanning(false)
+    if (activePan && !activePan.moved && event.type === 'pointerup') {
+      // A tap on bare table lets go of everything.
+      setSelected([])
+      setSelectedLinkId(null)
+    }
+  }
+
+  const handleSurfaceKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (event.target !== event.currentTarget) return
+    const camera = cameraRef.current
+    switch (event.key) {
+      case 'ArrowLeft': applyCamera({ ...camera, x: camera.x + PAN_STEP }); break
+      case 'ArrowRight': applyCamera({ ...camera, x: camera.x - PAN_STEP }); break
+      case 'ArrowUp': applyCamera({ ...camera, y: camera.y + PAN_STEP }); break
+      case 'ArrowDown': applyCamera({ ...camera, y: camera.y - PAN_STEP }); break
+      case '+': case '=': zoomBy(1.2); break
+      case '-': case '_': zoomBy(1 / 1.2); break
+      case '0': fit(); break
+      case 'Escape': setSelected([]); setSelectedLinkId(null); break
+      case 'Delete': case 'Backspace':
+        if (selectedLinkId) removeLinkWithUndo(selectedLinkId)
+        break
+      default: return
+    }
+    event.preventDefault()
+  }
+
+  const getPosition = (id: string, placement: BoardPlacement) =>
+    preview?.id === id ? { ...placement, x: preview.x, y: preview.y } : placement
+
+  const noteCountFor = (id: string) => workspace.annotations[id]?.length ?? 0
+
+  const handleOpen = useCallback((id: string) => onInspect(id), [onInspect])
+  const clearSelection = useCallback(() => { setSelected([]); setSelectedLinkId(null) }, [])
+  const selectLink = useCallback((id: string) => { setSelected([]); setSelectedLinkId(id) }, [])
 
   return (
-    <section className="space-y-3" aria-label="Persistent investigation table">
+    <section ref={sectionRef} className="space-y-3" aria-label="Persistent investigation table">
       <header className="flex flex-wrap items-end justify-between gap-3 border-b border-nexus-border pb-2">
         <div>
           <h2 className="font-mono text-xs font-bold uppercase tracking-[0.16em] text-nexus-text">INVESTIGATION TABLE</h2>
           <p className="mt-1 font-mono text-[0.52rem] uppercase tracking-[0.12em] text-nexus-textSubtle">
-            {placed.length.toString().padStart(2, '0')} PLACED / {artifacts.length.toString().padStart(2, '0')} CASE OBJECTS / POSITIONS SAVED ON THIS DEVICE
+            {placed.length.toString().padStart(2, '0')} PLACED / {artifacts.length.toString().padStart(2, '0')} CASE OBJECTS / {liveLinks.length.toString().padStart(2, '0')} LINKS / SAVED ON THIS DEVICE
           </p>
         </div>
-        <label className="flex items-center gap-2 font-mono text-[0.52rem] uppercase text-nexus-textSubtle">
-          SCALE
-          <input type="range" min="0.55" max="1" step="0.05" value={scale} onChange={event => setScale(Number(event.target.value))} aria-label="Investigation table scale" />
-          <span className="w-8 text-right tabular-nums">{Math.round(scale * 100)}%</span>
-        </label>
       </header>
+
+      {!wide && (
+        <button
+          type="button"
+          onClick={() => setToolsOpen(open => !open)}
+          aria-expanded={toolsOpen}
+          className="min-h-10 w-full border border-nexus-border px-3 text-left font-mono text-[0.58rem] uppercase tracking-[0.12em] text-nexus-textMuted"
+        >
+          {toolsOpen ? '[ − ] HIDE TABLE TOOLS' : `[ + ] TABLE TOOLS / SEARCH / ADD OBJECTS / ${unplaced.length} IN ARCHIVE`}
+        </button>
+      )}
+
+      <div className={`${wide || toolsOpen ? '' : 'hidden'} space-y-3`}>
+      <div className="flex flex-wrap items-center gap-2">
+        <label htmlFor="table-search" className="sr-only">Search the table</label>
+        <input
+          id="table-search"
+          value={search}
+          onChange={event => setSearch(event.target.value)}
+          placeholder="SEARCH TABLE / CODE, TITLE, NOTE…"
+          className="min-h-10 min-w-0 flex-1 border border-nexus-border bg-nexus-bg px-2 font-mono text-xs text-nexus-text"
+        />
+        <label htmlFor="table-type" className="sr-only">Filter by object type</label>
+        <select id="table-type" value={typeFilter} onChange={event => setTypeFilter(event.target.value as typeof typeFilter)} className="min-h-10 border border-nexus-border bg-nexus-bg px-2 font-mono text-xs text-nexus-text">
+          {TYPE_FILTERS.map(option => <option key={option} value={option}>{option === 'ALL' ? 'ALL OBJECTS' : option}</option>)}
+        </select>
+        {filtering && <span className="font-mono text-[0.55rem] uppercase text-nexus-textMuted">{matchCount} / {placed.length} MATCH</span>}
+      </div>
 
       {unplaced.length > 0 && (
         <div className="flex flex-wrap items-center gap-2 border-b border-nexus-borderSubtle pb-3">
@@ -163,119 +591,149 @@ export function InvestigationTable({ artifacts, workspace, onUpdate, onInspect }
             <option value="">SELECT FROM CASE ARCHIVE</option>
             {unplaced.map(artifact => <option key={artifact.id} value={artifact.id}>{artifact.code} / {artifact.title}</option>)}
           </select>
-          <button type="button" disabled={!placeCode} onClick={() => placeArtifact(placeCode)} className="min-h-10 border border-nexus-accent px-3 font-mono text-[0.55rem] uppercase text-nexus-accent disabled:opacity-40">[ PLACE ]</button>
+          <button type="button" disabled={!placeCode} onClick={() => placeArtifacts([placeCode])} className="min-h-10 border border-nexus-accent px-3 font-mono text-[0.55rem] uppercase text-nexus-accent disabled:opacity-40">[ PLACE ]</button>
+          <button type="button" onClick={() => placeArtifacts(unplaced.map(artifact => artifact.id))} className="min-h-10 border border-nexus-border px-3 font-mono text-[0.55rem] uppercase text-nexus-textMuted">[ PLACE ALL / {unplaced.length} ]</button>
         </div>
       )}
+      </div>
 
-      <div className="border border-nexus-border bg-[#22221f] p-2">
-        <div className="max-h-[68vh] overflow-auto overscroll-contain" aria-label="Scrollable evidence table">
+      <div className={wide ? 'grid grid-cols-[minmax(0,1fr)_21rem] gap-3' : 'grid gap-3'}>
+        <div className="relative border border-nexus-border bg-[#22221f] p-1.5">
+          <div className="absolute right-3 top-3 z-10 flex items-center gap-1 border border-nexus-border bg-[#17160f]/90 p-1" role="group" aria-label="Table view controls">
+            <button type="button" onClick={() => zoomBy(1 / 1.25)} aria-label="Zoom out" className="min-h-10 min-w-10 border border-nexus-border font-mono text-sm text-nexus-text">−</button>
+            <output aria-label="Zoom level" className="w-11 text-center font-mono text-[0.6rem] tabular-nums text-nexus-textMuted">{zoomLabel}%</output>
+            <button type="button" onClick={() => zoomBy(1.25)} aria-label="Zoom in" className="min-h-10 min-w-10 border border-nexus-border font-mono text-sm text-nexus-text">+</button>
+            <button type="button" onClick={fit} className="min-h-10 border border-nexus-border px-2.5 font-mono text-[0.55rem] uppercase text-nexus-text">FIT</button>
+            <button type="button" onClick={() => applyCamera(DEFAULT_CAMERA)} className="min-h-10 border border-nexus-border px-2.5 font-mono text-[0.55rem] uppercase text-nexus-textMuted">RESET VIEW</button>
+          </div>
+
           <div
-            ref={boardRef}
-            className="relative overflow-hidden border border-[#5d5a50] bg-[#35342e]"
-            style={{ width: `${BOARD_WIDTH * scale}px`, height: `${BOARD_HEIGHT * scale}px`, minWidth: `${Math.min(BOARD_WIDTH * scale, 100)}px` }}
-            onPointerMove={handlePointerMove}
-            onPointerUp={handlePointerUp}
-            onPointerCancel={handlePointerUp}
+            ref={surfaceRef}
+            role="application"
+            aria-label="Investigation table. Arrow keys pan, plus and minus zoom, zero fits all objects, Escape clears the selection."
+            tabIndex={0}
+            data-panning={panning}
+            className={`nx-board-surface relative overflow-hidden border border-[#5d5a50] ${wide ? 'h-[calc(100dvh-17rem)] min-h-[30rem]' : 'h-[62dvh] min-h-[22rem]'}`}
+            onPointerDownCapture={handleSurfaceDownCapture}
+            onPointerDown={handleSurfaceDown}
+            onPointerMove={handleSurfaceMove}
+            onPointerUp={endGesture}
+            onPointerCancel={endGesture}
+            onKeyDown={handleSurfaceKeyDown}
           >
-            <div className="pointer-events-none absolute inset-0 opacity-25" style={{ backgroundImage: 'repeating-linear-gradient(0deg, transparent 0px, transparent 31px, rgba(207,197,164,0.18) 32px)' }} />
-            <div className="pointer-events-none absolute left-4 top-3 font-mono text-[0.5rem] uppercase tracking-[0.18em] text-[#b5ae96]">CASE 037 / WORK SURFACE / PRIVATE HYPOTHESES</div>
+            <div
+              ref={worldRef}
+              className="absolute left-0 top-0 will-change-transform"
+              style={{ width: BOARD_WIDTH, height: BOARD_HEIGHT, transformOrigin: '0 0' }}
+            >
+              <div className="pointer-events-none absolute left-6 top-4 font-mono text-[0.62rem] uppercase tracking-[0.18em] text-[#b5ae96]">CASE 037 / WORK SURFACE / PRIVATE HYPOTHESES</div>
 
-            <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-              {workspace.hypotheses.map(hypothesis => {
-                const from = workspace.placements[hypothesis.from]
-                const to = workspace.placements[hypothesis.to]
-                if (!from || !to) return null
+              <BoardLinks
+                links={liveLinks}
+                placements={workspace.placements}
+                preview={preview}
+                selectedLinkId={selectedLinkId}
+                freshLinkId={freshLinkId}
+                onSelect={selectLink}
+              />
+
+              {placed.map(({ artifact, id, position }) => {
+                const current = getPosition(id, position)
+                const world = percentToWorld(current.x, current.y)
                 return (
-                  <g key={hypothesis.id}>
-                    <line x1={from.x} y1={from.y} x2={to.x} y2={to.y} stroke="rgba(211,184,123,.8)" strokeWidth="0.22" strokeDasharray="0.8 0.5" />
-                    <circle cx={(from.x + to.x) / 2} cy={(from.y + to.y) / 2} r="0.7" fill="#d3b87b" />
-                  </g>
+                  <BoardCard
+                    key={id}
+                    artifact={artifact}
+                    placement={current}
+                    worldX={world.x}
+                    worldY={world.y}
+                    selectedIndex={selected.indexOf(id)}
+                    dim={filtering && !matches(artifact)}
+                    dragging={preview?.id === id}
+                    hasNewInfo={workspace.revelations[id]?.hasNewInfo ?? false}
+                    noteCount={noteCountFor(id)}
+                    linkCount={linkCounts.get(id) ?? 0}
+                    onPointerDown={handleCardPointerDown}
+                    onToggleSelect={toggleSelected}
+                    onOpen={handleOpen}
+                    onTogglePin={togglePin}
+                    onRotate={rotate}
+                    onRemove={removeFromTable}
+                  />
                 )
               })}
-            </svg>
-
-            {placed.map(({ artifact, id, position }) => {
-              const current = getPosition(id, position)
-              const imageUrl = artifactMediaUrl(artifact, 'IMAGE')
-              const isSelected = selected.includes(id)
-              const hasNewInfo = workspace.revelations[id]?.hasNewInfo ?? false
-              return (
-                <article
-                  key={id}
-                  onPointerDown={event => handlePointerDown(event, id, current.pinned)}
-                  onLostPointerCapture={handlePointerUp}
-                  className={`absolute w-[210px] touch-none border p-2 shadow-[4px_5px_7px_rgba(0,0,0,0.28)] ${artifact.type.toUpperCase().includes('IMAGE') || artifact.type.toUpperCase().includes('PHOTO') ? 'border-[#b8b1a0] bg-[#d0cabc] text-[#282720]' : 'border-nexus-border bg-nexus-surface text-nexus-text'} ${isSelected ? 'outline outline-1 outline-nexus-warning' : ''} ${current.pinned ? 'cursor-default' : 'cursor-grab active:cursor-grabbing'}`}
-                  style={{ left: `${current.x}%`, top: `${current.y}%`, zIndex: current.order, transform: `translate(-50%, -50%) rotate(${current.rotation}deg)` }}
-                  aria-label={`Table artifact ${artifact.code}`}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <button type="button" onClick={() => toggleSelected(id)} className="min-w-0 flex-1 text-left" aria-pressed={isSelected}>
-                      <span className="block font-mono text-[0.5rem] uppercase tracking-[0.14em] opacity-70">{artifact.type} / {artifact.code}</span>
-                      <span className="mt-1 block break-words font-document text-sm font-semibold">{artifact.title}</span>
-                    </button>
-                    <div className="flex items-center gap-1">
-                      {hasNewInfo && <span className="font-mono text-[0.45rem] uppercase text-nexus-warning">NEW</span>}
-                      <button type="button" onClick={() => togglePin(id)} className="min-h-8 min-w-8 border border-current/30 p-1" aria-label={current.pinned ? `Unpin ${artifact.code}` : `Pin ${artifact.code}`} aria-pressed={current.pinned} title={current.pinned ? 'UNPIN' : 'PIN'}>
-                        <span className="font-mono text-[0.45rem] uppercase">{current.pinned ? 'FIXED' : 'PIN'}</span>
-                      </button>
-                    </div>
-                  </div>
-                  {imageUrl ? (
-                    <img src={imageUrl} alt="" loading="lazy" draggable={false} className="mt-2 max-h-24 w-full object-cover" />
-                  ) : artifact.type.toUpperCase() === 'AUDIO' ? (
-                    <Waveform seed={artifact.id} height={32} tone="normal" />
-                  ) : (
-                    <p className="mt-2 line-clamp-3 font-document text-[0.68rem] leading-relaxed opacity-75">{artifact.description || artifact.code}</p>
-                  )}
-                  <div className="mt-2 flex items-center justify-between gap-1 border-t border-current/20 pt-1">
-                    <button type="button" onClick={() => onInspect(id)} className="min-h-8 px-1 font-mono text-[0.48rem] uppercase">OPEN</button>
-                    <button type="button" onClick={() => rotate(id)} className="min-h-8 px-1 font-mono text-[0.48rem] uppercase" aria-label={`Rotate ${artifact.code}`}>ROTATE</button>
-                    <button type="button" onClick={() => removeFromTable(id)} className="min-h-8 px-1 font-mono text-[0.48rem] uppercase text-nexus-warning">REMOVE</button>
-                  </div>
-                </article>
-              )
-            })}
+            </div>
 
             {placed.length === 0 && (
-              <div className="absolute left-1/2 top-1/2 w-64 -translate-x-1/2 -translate-y-1/2 border-l border-[#b5ae96] pl-4 font-mono">
+              <div className="pointer-events-none absolute left-1/2 top-1/2 w-72 -translate-x-1/2 -translate-y-1/2 border-l border-[#b5ae96] pl-4 font-mono">
                 <p className="text-[0.56rem] uppercase tracking-[0.16em] text-[#d3b87b]">TABLE / UNSET</p>
                 <p className="mt-2 text-xs text-[#c0bcaf]">No objects placed. The archive remains intact.</p>
+                <p className="mt-1 text-[0.6rem] text-[#9a9684]">Place recovered objects above, then arrange and connect them here.</p>
               </div>
             )}
           </div>
+
+          {(selected.length > 0 || selectedLink) && (
+            <div className={`absolute inset-x-3 bottom-3 flex items-center justify-between gap-2 border border-[#d3b87b]/60 bg-[#17160f]/95 px-3 py-2 font-mono text-[0.58rem] uppercase text-[#e0d6b8] ${wide ? 'hidden' : ''}`}>
+              <span>{selectedLink ? 'LINK SELECTED' : `${selected.length} SELECTED`}</span>
+              <span className="flex gap-1">
+                <button type="button" className="min-h-10 border border-[#d3b87b]/50 px-3" onClick={() => inspectorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
+                  {selected.length >= 2 ? 'LINK' : 'DETAILS'}
+                </button>
+                {selected.length === 1 && <button type="button" className="min-h-10 border border-[#d3b87b]/50 px-3" onClick={() => focusArtifact(selected[0])}>FOCUS</button>}
+                <button type="button" className="min-h-10 border border-[#d3b87b]/50 px-3" onClick={clearSelection}>CLEAR</button>
+              </span>
+            </div>
+          )}
+
+          <div className="mt-1.5 flex justify-between gap-2 font-mono text-[0.48rem] uppercase tracking-[0.12em] text-[#b5ae96]">
+            <span>DRAG TO ARRANGE / DRAG TABLE TO PAN / PINCH OR SCROLL TO ZOOM / REMOVE NEVER DELETES CASE EVIDENCE</span>
+            <span>{placed.length.toString().padStart(2, '0')} OBJECTS ON SURFACE</span>
+          </div>
         </div>
-        <div className="mt-2 flex justify-between gap-2 font-mono text-[0.48rem] uppercase tracking-[0.12em] text-[#b5ae96]">
-          <span>DRAG TO ARRANGE / REMOVE NEVER DELETES CASE EVIDENCE</span>
-          <span>{placed.length.toString().padStart(2, '0')} OBJECTS ON SURFACE</span>
+
+        <div ref={inspectorRef} className="min-w-0 scroll-mt-4">
+          <BoardInspector
+            workspace={workspace}
+            artifactById={artifactById}
+            selectedArtifacts={selectedArtifacts}
+            selectedLink={selectedLink}
+            liveLinks={liveLinks}
+            dormantLinks={dormantLinks}
+            onCreateLink={createLink}
+            onUpdateLink={(id, patch) => update(current => updateLink(current, id, patch))}
+            onRemoveLink={removeLinkWithUndo}
+            onSelectLink={selectLink}
+            onAddNote={(key, kind: AnnotationKind, text) => update(current => addAnnotation(current, key, kind, text, newId()))}
+            onEditNote={(key, id, text) => update(current => editAnnotation(current, key, id, { text }))}
+            onDeleteNote={(key, id) => update(current => deleteAnnotation(current, key, id))}
+            onOpen={handleOpen}
+            onFocus={focusArtifact}
+            onClear={clearSelection}
+          />
+          {staleCount > 0 && (
+            <div className="mt-2 flex items-center justify-between gap-2 border border-nexus-border p-2 font-mono text-[0.52rem] uppercase text-nexus-textSubtle">
+              <span>{staleCount} LINK{staleCount > 1 ? 'S' : ''} POINT AT OBJECTS NOT IN THIS CASE FILE</span>
+              <button
+                type="button"
+                className="min-h-8 border border-nexus-border px-2 text-nexus-textMuted"
+                onClick={() => update(current => pruneWorkspace(current, new Set(artifacts.map(artifact => artifact.id))))}
+              >
+                PURGE
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
-      {selected.length === 2 && (
-        <section className="grid gap-2 border-y border-nexus-borderSubtle py-3 sm:grid-cols-[1fr_auto] sm:items-end">
-          <label className="block font-mono text-[0.52rem] uppercase tracking-[0.12em] text-nexus-textSubtle">
-            PLAYER HYPOTHESIS / {selected.map(id => artifactById.get(id)?.code ?? id).join(' ↔ ')}
-            <input value={hypothesisNote} onChange={event => setHypothesisNote(event.target.value)} maxLength={300} placeholder="RECORD A SUSPECTED RELATION…" className="mt-1 min-h-10 w-full border border-nexus-border bg-nexus-bg px-2 font-sans text-sm normal-case tracking-normal text-nexus-text" />
-          </label>
-          <button type="button" onClick={addHypothesis} className="min-h-10 border border-nexus-warning px-3 font-mono text-[0.55rem] uppercase text-nexus-warning">[ FILE UNVERIFIED LINK ]</button>
-        </section>
+      {undoEntry && (
+        <div role="status" className="flex items-center justify-between gap-3 border border-nexus-borderStrong bg-nexus-surfaceElevated px-3 py-2 font-mono text-[0.58rem] uppercase text-nexus-textMuted">
+          <span>{undoEntry.label}</span>
+          <button type="button" className="min-h-8 border border-nexus-accent px-3 text-nexus-accent" onClick={() => { undoEntry.undo(); setUndoEntry(null) }}>UNDO</button>
+        </div>
       )}
-
-      {workspace.hypotheses.length > 0 && (
-        <section className="border-t border-nexus-borderSubtle pt-2">
-          <h3 className="font-mono text-[0.52rem] uppercase tracking-[0.14em] text-nexus-textSubtle">PLAYER-FILED HYPOTHESES / NOT SYSTEM-VERIFIED</h3>
-          <ul className="mt-1 divide-y divide-nexus-borderSubtle">
-            {workspace.hypotheses.map(hypothesis => (
-              <li key={hypothesis.id} className="grid grid-cols-[1fr_auto] gap-2 py-2 font-mono text-[0.6rem]">
-                <span className="min-w-0 text-nexus-textMuted">
-                  <b className="text-nexus-text">{artifactById.get(hypothesis.from)?.code ?? hypothesis.from} ↔ {artifactById.get(hypothesis.to)?.code ?? hypothesis.to}</b>
-                  <span className="ml-2">{hypothesis.note}</span>
-                </span>
-                <button type="button" onClick={() => onUpdate(current => ({ ...current, hypotheses: current.hypotheses.filter(entry => entry.id !== hypothesis.id) }))} className="min-h-8 px-2 text-[0.5rem] uppercase text-nexus-textSubtle hover:text-nexus-warning">REMOVE LINK</button>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+      <p className="sr-only" role="status" aria-live="polite">{announce}</p>
     </section>
   )
 }
+

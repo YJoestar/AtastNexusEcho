@@ -196,7 +196,7 @@ export const TacticalOverlay: FC<TacticalOverlayProps> = ({
 
       {/* North indicator */}
       <g
-        transform={`translate(${CAMPUS_SIZE.width - 24}, 24)}`}
+        transform={`translate(${CAMPUS_SIZE.width - 24}, 24)`}
         fill="none"
         stroke="rgba(216, 214, 208, 0.4)"
         strokeWidth="0.75"
