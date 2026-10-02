@@ -338,7 +338,7 @@ const EVIDENCE_EVOLUTION: Record<string, Array<{ solvedAt: number; content: Reco
       content: {
         source: 'P05',
         detail: 'Unidentified figure visible in reflection.',
-        image_url: 'https://images.unsplash.com/photo-1581090700227-1cbcb5a2a9ed?w=800&h=600',
+        image_url: '/evidence/photographs/photo_nx037_b_06.jpg',
       },
     },
     {

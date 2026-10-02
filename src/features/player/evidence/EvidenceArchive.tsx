@@ -12,7 +12,8 @@ import {
 } from '@/lib/investigationWorkspace'
 import { ArtifactInspection } from './ArtifactInspection'
 import { InvestigationTable } from './InvestigationTable'
-import { contentString, type CaseArtifact } from './types'
+import { contentString, artifactType, artifactCondition, artifactState, artifactThumbUrl, type CaseArtifact } from './types'
+import { showcaseCatalog, showcaseEnabled } from '@/lib/evidence/showcaseCatalog'
 import { cn } from '@/lib/utils'
 
 type ArchiveClass = 'ALL' | 'PHOTOGRAPHS' | 'DOCUMENTS' | 'AUDIO' | 'SURVEILLANCE' | 'FRAGMENTS' | 'NOTES' | 'VERIFIED' | 'UNRESOLVED' | 'ANOMALOUS'
@@ -197,7 +198,14 @@ export function PlayerEvidenceArchive() {
         acquiredAt: null,
       }))
 
-    return [...recovered, ...fallbackEvidence, ...recoveredItems, ...fragments, ...fallbackFragments]
+            // Development showcase: the generated CASE NX-037 register, so the archive
+    // can be judged against finished artifacts. Records are flagged
+    // `simulation` and are absent from every production build.
+    const showcase = showcaseEnabled() ? showcaseCatalog() : []
+    const serverCodes = new Set([...recovered, ...fallbackEvidence, ...recoveredItems, ...fragments, ...fallbackFragments].map(a => a.code))
+    const showcaseOnly = showcase.filter(item => !serverCodes.has(item.code))
+
+    return [...recovered, ...fallbackEvidence, ...recoveredItems, ...fragments, ...fallbackFragments, ...showcaseOnly]
   }, [inventory, teamProgress?.evidenceOwned, teamProgress?.fragmentsOwned])
 
   const activeId = searchParams.get('artifact')
@@ -211,20 +219,21 @@ export function PlayerEvidenceArchive() {
 
   const filteredArtifacts = useMemo(() => {
     const term = search.trim().toLowerCase()
-    return artifacts.filter(artifact => {
+        return artifacts.filter(artifact => {
       const mark = workspace.marks[artifact.id] ?? 'UNMARKED'
+      const type = artifactType(artifact)
       const matchesClass = archiveClass === 'ALL'
-        || (archiveClass === 'PHOTOGRAPHS' && /IMAGE|PHOTO|PHOTOGRAPH/i.test(artifact.type))
-        || (archiveClass === 'DOCUMENTS' && /DOCUMENT|REPORT|TEXT/i.test(artifact.type))
-        || (archiveClass === 'AUDIO' && /AUDIO|RECORDING/i.test(artifact.type))
-        || (archiveClass === 'SURVEILLANCE' && /VIDEO|SURVEILLANCE|CAMERA/i.test(artifact.type))
-        || (archiveClass === 'FRAGMENTS' && artifact.source === 'FRAGMENT')
-        || (archiveClass === 'NOTES' && (workspace.annotations[artifact.id]?.length ?? 0) > 0)
+        || (archiveClass === 'PHOTOGRAPHS' && type === 'PHOTOGRAPH')
+        || (archiveClass === 'DOCUMENTS' && (type === 'DOCUMENT' || type === 'MAP' || type === 'PERSONNEL'))
+        || (archiveClass === 'AUDIO' && type === 'AUDIO')
+        || (archiveClass === 'SURVEILLANCE' && type === 'SURVEILLANCE')
+        || (archiveClass === 'FRAGMENTS' && (type === 'FRAGMENT' || artifact.source === 'FRAGMENT'))
+        || (archiveClass === 'NOTES' && (type === 'NOTE' || (workspace.annotations[artifact.id]?.length ?? 0) > 0))
         || (archiveClass === 'VERIFIED' && mark === 'VERIFIED')
         || (archiveClass === 'UNRESOLVED' && mark === 'UNRESOLVED')
-        || (archiveClass === 'ANOMALOUS' && mark === 'CONTRADICTION')
+        || (archiveClass === 'ANOMALOUS' && (mark === 'CONTRADICTION' || artifactState(artifact) === 'CONTRADICTED' || artifactState(artifact) === 'ANOMALOUS'))
       if (!matchesClass) return false
-      return !term || `${artifact.code} ${artifact.title} ${artifact.type} ${artifact.description}`.toLowerCase().includes(term)
+      return !term || `${artifact.code} ${artifact.title} ${artifact.type} ${artifact.description} ${artifact.location ?? ''}`.toLowerCase().includes(term)
     })
   }, [artifacts, archiveClass, search, workspace.annotations, workspace.marks])
 
@@ -357,19 +366,52 @@ export function PlayerEvidenceArchive() {
                     const revelation = workspace.revelations[artifact.id]
                     const hasNewInfo = revelation?.hasNewInfo ?? false
                     const lastInspected = workspace.lastInspected[artifact.id] ?? revelation?.lastInspectedAt ?? null
+                    const thumb = artifactThumbUrl(artifact)
+                    const condition = artifactCondition(artifact)
+                    const state = artifactState(artifact)
                     return (
-                      <div key={artifact.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 py-2">
+                      <div key={artifact.id} className="grid grid-cols-[44px_minmax(0,1fr)_auto] items-center gap-2 py-2">
+                        {thumb ? (
+                          <div className="relative h-11 w-11 overflow-hidden border border-nexus-borderSubtle bg-nexus-surface">
+                            <img
+                              src={thumb}
+                              alt=""
+                              loading="lazy"
+                              className="h-full w-full object-cover"
+                            />
+                            {condition !== 'NORMAL' && (
+                              <span
+                                className="absolute inset-x-0 bottom-0 h-1"
+                                style={{ background: 'var(--nx-warning)', opacity: 0.75 }}
+                                aria-hidden="true"
+                              />
+                            )}
+                          </div>
+                        ) : (
+                          <div className="flex h-11 w-11 items-center justify-center border border-nexus-borderSubtle font-mono text-[0.45rem] text-nexus-textSubtle" aria-hidden="true">
+                            {artifactType(artifact).slice(0, 3)}
+                          </div>
+                        )}
                         <FileRow
                           reference={artifact.code}
                           title={
                             <span className="inline-flex items-center gap-1">
                               {artifact.title}
+                              {condition !== 'NORMAL' && (
+                                <span className="font-mono text-[0.45rem] uppercase tracking-[0.12em] text-nexus-warning">{condition}</span>
+                              )}
+                              {state === 'CONTRADICTED' || state === 'ANOMALOUS' ? (
+                                <span className="font-mono text-[0.45rem] uppercase tracking-[0.12em] text-nexus-danger">{state}</span>
+                              ) : null}
+                              {artifact.simulation && (
+                                <span className="font-mono text-[0.45rem] uppercase tracking-[0.12em] text-nexus-textSubtle">SIM</span>
+                              )}
                               {hasNewInfo && (
                                 <span className="font-mono text-[0.45rem] uppercase tracking-[0.12em] text-nexus-warning">NEW</span>
                               )}
                             </span>
                           }
-                          meta={`${artifact.type} / ${artifact.location ?? 'LOCATION UNKNOWN'} / ${MARK_LABEL[mark]}${noteCount ? ` / ${noteCount} NOTES` : ''}${position ? ' / ON TABLE' : ''}`}
+                          meta={`${artifactType(artifact)} / ${artifact.location ?? 'LOCATION UNKNOWN'} / ${MARK_LABEL[mark]}${noteCount ? ` / ${noteCount} NOTES` : ''}${position ? ' / ON TABLE' : ''}`}
                           selected={activeId === artifact.id}
                           onSelect={() => openArtifact(artifact.id, artifact)}
                           trailing={

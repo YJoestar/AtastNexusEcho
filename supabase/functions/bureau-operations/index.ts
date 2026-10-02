@@ -1973,7 +1973,6 @@ Deno.serve(async (req: Request) => {
             const nodeId = q.puzzle_node_id as string | null
             const nodeInfo = nodeId ? nodeMap.get(nodeId) : null
 
-            const position = q.position as Record<string, unknown> | undefined
             const metadata = q.metadata as Record<string, unknown> | undefined
             const puzzleCode = (metadata?.puzzleCode as string) ?? (nodeInfo?.code as string) ?? ''
             const stage = (metadata?.stage as number) ?? nodeInfo?.stage ?? 1

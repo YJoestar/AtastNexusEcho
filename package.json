@@ -11,7 +11,15 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:ui": "vitest --ui",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "evidence:build": "node scripts/evidence-gen/build.mjs",
+    "evidence:verify": "node scripts/evidence-gen/verify-determinism.mjs",
+    "evidence:refs": "node scripts/evidence-gen/verify-references.mjs",
+    "evidence:preview": "node scripts/evidence-gen/preview.mjs",
+    "evidence:ink": "node scripts/evidence-gen/ink-check.mjs",
+    "evidence:build": "node scripts/evidence-gen/build.mjs",
+    "evidence:verify": "node scripts/evidence-gen/verify-determinism.mjs",
+    "evidence:preview": "node scripts/evidence-gen/preview.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",
@@ -45,6 +53,7 @@
     "jsdom": "^25.0.0",
     "postcss": "^8.4.41",
     "puppeteer": "^25.12.0",
+    "sharp": "^0.35.5",
     "source-map": "^0.8.0",
     "tailwindcss": "^3.4.19",
     "typescript": "^5.5.3",

@@ -7,7 +7,8 @@ import { buildEvidenceCatalog } from '@/lib/evidenceCatalog'
 import { cn } from '@/lib/utils'
 import { ArtifactInspection } from '@/features/player/evidence/ArtifactInspection'
 import { InvestigationTable } from '@/features/player/evidence/InvestigationTable'
-import { contentString, type CaseArtifact } from '@/features/player/evidence/types'
+import { contentString, artifactType, artifactCondition, artifactState, artifactThumbUrl, type CaseArtifact } from '@/features/player/evidence/types'
+import { showcaseCatalog, showcaseEnabled, SHOWCASE_LABEL, SHOWCASE_CASE } from '@/lib/evidence/showcaseCatalog'
 import { type EvidenceMark } from '@/lib/investigationWorkspace'
 
 type LabMode = 'REGISTER' | 'INSPECT' | 'COMPARE' | 'TABLE'
@@ -46,6 +47,20 @@ export function matchesFilter(artifact: CaseArtifact, filter: LabFilter): boolea
 
 export type LabFilter = 'ALL' | 'PHOTOGRAPHS' | 'SURVEILLANCE' | 'DOCUMENTS' | 'AUDIO' | 'FRAGMENTS' | 'MAPS' | 'PERSONNEL' | 'NOTES' | 'DAMAGED' | 'UNAVAILABLE'
 
+/**
+ * Development and QA fixtures point at media rendered locally by
+ * scripts/evidence-gen. Nothing in the app may reference a remote image or
+ * sample media file: the artifacts have to look the same offline as they do in
+ * CI, and a hot-linked photo is both a broken image and a licensing problem.
+ */
+const SHOWCASE_MEDIA = {
+  entrance: '/evidence/photographs/photo_nx037_b_11.jpg',
+  tower: '/evidence/photographs/photo_nx037_b_03.jpg',
+  lobbyFeed: '/evidence/surveillance/surv_cam01_015203.jpg',
+  surveillance: '/evidence/surveillance/surv_cam07_031711.jpg',
+  audio: '/evidence/audio/audio_rec16_reinterpretation.jpg',
+} as const
+
 export function buildDevelopmentCatalog(): EvidenceLabCatalog {
   return {
     evidence: [
@@ -66,7 +81,7 @@ export function buildDevelopmentCatalog(): EvidenceLabCatalog {
         type: 'PHOTO', classification: 'RESTRICTED', condition: 'NORMAL',
         content: {
           detail: 'Unidentified figure visible in reflection.',
-          image_url: 'https://images.unsplash.com/photo-1581090700227-1cbcb5a2a9ed?w=800&h=600',
+          image_url: SHOWCASE_MEDIA.entrance,
           timestamp: '2026-10-02T05:13:41Z', location: 'NORTH ENTRANCE / LOBBY', device: 'FIELD-CAM-02',
         },
         metadata: { source: 'P05', case: '037' },
@@ -80,13 +95,13 @@ export function buildDevelopmentCatalog(): EvidenceLabCatalog {
       {
         id: 'dev-ev-005', code: 'EVID-005', title: 'Lobby Surveillance Feed', description: 'Static-timestamp feed from the main lobby camera.',
         type: 'SURVEILLANCE', classification: 'CONFIDENTIAL', condition: 'NORMAL',
-        content: { timestamp: '2026-10-02T08:47:00Z', camera_id: 'CAM-LOBBY-01', location: 'ADMIN BUILDING LOBBY', device: 'CAM-LOBBY-01', integrity: 'STABLE', video_url: 'https://sample-videos.com/video.mp4' },
+        content: { timestamp: '2026-10-02T08:47:00Z', camera_id: 'CAM-LOBBY-01', location: 'ADMIN BUILDING LOBBY', device: 'CAM-LOBBY-01', integrity: 'STABLE', video_url: SHOWCASE_MEDIA.lobbyFeed },
         metadata: { source: 'CAM-LOBBY-01', case: '037' },
       },
       {
         id: 'dev-ev-006', code: 'EVID-006', title: 'Audio Recording — Figure', description: 'Low-fidelity recording from a recovered field device.',
         type: 'AUDIO', classification: 'CONFIDENTIAL', condition: 'NORMAL',
-        content: { recording_id: 'AUDIO-006', duration: '00:47', source: 'FIELD-DEVICE-A', acquired: '2026-10-02T09:00:00Z', signal_state: 'DEGRADED', audio_url: 'https://assets.mixkit.io/sample.mp3' },
+        content: { recording_id: 'AUDIO-006', duration: '00:47', source: 'FIELD-DEVICE-A', acquired: '2026-10-02T09:00:00Z', signal_state: 'DEGRADED', audio_url: SHOWCASE_MEDIA.audio },
         metadata: { source: 'FIELD-DEVICE-A', case: '037' },
       },
       {
@@ -94,7 +109,7 @@ export function buildDevelopmentCatalog(): EvidenceLabCatalog {
         type: 'PHOTO', classification: 'RESTRICTED', condition: 'DAMAGED',
         content: {
           detail: 'Partially burned corner. Right edge torn.',
-          image_url: 'https://images.unsplash.com/photo-1581090700227-1cbcb5a2a9ed?w=800&h=600',
+          image_url: SHOWCASE_MEDIA.tower,
           timestamp: '2026-10-02T05:1__',
           location: 'CLOCK TOWER / BASEMENT',
           device: 'FIELD-CAM-01',
@@ -105,7 +120,7 @@ export function buildDevelopmentCatalog(): EvidenceLabCatalog {
       {
         id: 'dev-ev-008', code: 'EVID-008', title: 'CAM-07 Surveillance — Figure', description: 'Security footage from corridor camera.',
         type: 'SURVEILLANCE', classification: 'CONFIDENTIAL', condition: 'PARTIAL',
-        content: { timestamp: '2026-10-02T03:17:11Z', camera_id: 'CAM-07', location: 'ADMIN BUILDING / EAST CORRIDOR', device: 'CAM-07', integrity: 'INTERRUPTED', video_url: 'https://sample-videos.com/video.mp4', recording_state: 'INTERRUPTED / 03:17:05–03:17:18 FRAME DROP' },
+        content: { timestamp: '2026-10-02T03:17:11Z', camera_id: 'CAM-07', location: 'ADMIN BUILDING / EAST CORRIDOR', device: 'CAM-07', integrity: 'INTERRUPTED', video_url: SHOWCASE_MEDIA.surveillance, recording_state: 'INTERRUPTED / 03:17:05–03:17:18 FRAME DROP' },
         metadata: { source: 'CAM-07', case: '037' },
       },
       {
@@ -185,6 +200,7 @@ export function AdminEvidenceLab() {
   const [mode, setMode] = useState<LabMode>('REGISTER')
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [compareIds, setCompareIds] = useState<string[]>([])
+  const [showcaseLoaded, setShowcaseLoaded] = useState(false)
 
   useEffect(() => {
     let active = true
@@ -211,13 +227,24 @@ export function AdminEvidenceLab() {
   }, [])
 
   const artifacts = useMemo(() => buildEvidenceCatalog(catalog ?? { evidence: [], inventoryItems: [], fragments: [], nodes: [] }), [catalog])
+
+  // The generated CASE NX-037 register is loaded explicitly rather than folded
+  // in silently: the live index is the source of truth, and mixing the two would
+  // make it impossible to tell a production record from a simulation record.
+  const showcaseArtifacts = useMemo(() => (showcaseEnabled() ? showcaseCatalog() : []), [])
+  const visibleArtifacts = useMemo(() => {
+    if (!showcaseLoaded || showcaseArtifacts.length === 0) return artifacts
+    const known = new Set(artifacts.map(item => item.code))
+    return [...artifacts, ...showcaseArtifacts.filter(item => !known.has(item.code))]
+  }, [artifacts, showcaseArtifacts, showcaseLoaded])
+
   const filteredArtifacts = useMemo(() => {
     const query = search.trim().toLowerCase()
-    return artifacts.filter(artifact => matchesFilter(artifact, filter)
+    return visibleArtifacts.filter(artifact => matchesFilter(artifact, filter)
       && (!query || `${artifact.code} ${artifact.title} ${artifact.type} ${artifact.location ?? ''} ${artifact.description}`.toLowerCase().includes(query)))
-  }, [artifacts, filter, search])
-  const selectedArtifact = artifacts.find(artifact => artifact.id === selectedId) ?? null
-  const comparedArtifacts = compareIds.map(id => artifacts.find(artifact => artifact.id === id)).filter((item): item is CaseArtifact => !!item)
+  }, [visibleArtifacts, filter, search])
+  const selectedArtifact = visibleArtifacts.find(artifact => artifact.id === selectedId) ?? null
+  const comparedArtifacts = compareIds.map(id => visibleArtifacts.find(artifact => artifact.id === id)).filter((item): item is CaseArtifact => !!item)
   const annotationsCount = Object.values(workspace.annotations).reduce((total, entries) => total + entries.length, 0)
 
   const openArtifact = (id: string) => {
@@ -398,9 +425,20 @@ export function AdminEvidenceLab() {
           <p className="mt-1 text-[0.55rem] uppercase tracking-[0.14em] text-nexus-warning">CASE 037 / FULL SIMULATION / ALL CATALOGED MATERIAL ACCESSIBLE</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <span className="border border-nexus-accent px-2 py-1 text-[0.5rem] uppercase text-nexus-accent">SANDBOX / NO LIVE PROGRESSION</span>
-          <button type="button" onClick={resetSimulation} className="min-h-9 border border-nexus-danger px-2 font-mono text-[0.5rem] uppercase text-nexus-danger">[ RESET SIMULATION ]</button>
-        </div>
+            {showcaseEnabled() && (
+              <button
+                type="button"
+                onClick={() => setShowcaseLoaded(current => !current)}
+                aria-pressed={showcaseLoaded}
+                className={cn(
+                  'min-h-9 border px-2 py-1 font-mono text-[0.5rem] uppercase',
+                  showcaseLoaded ? 'border-nexus-info text-nexus-info' : 'border-nexus-border text-nexus-textMuted',
+                )}
+              >[ SHOWCASE {SHOWCASE_CASE.id} / {showcaseArtifacts.length} {SHOWCASE_LABEL} ]</button>
+            )}
+            <span className="border border-nexus-accent px-2 py-1 text-[0.5rem] uppercase text-nexus-accent">SANDBOX / NO LIVE PROGRESSION</span>
+            <button type="button" onClick={resetSimulation} className="min-h-9 border border-nexus-danger px-2 font-mono text-[0.5rem] uppercase text-nexus-danger">[ RESET SIMULATION ]</button>
+          </div>
       </header>
 
       {usingDevFallback && (
@@ -421,17 +459,37 @@ export function AdminEvidenceLab() {
               const currentMark = workspace.marks[artifact.id] ?? 'UNMARKED'
               const onTable = !!workspace.placements[artifact.id]
               const isSelectedForCompare = compareIds.includes(artifact.id)
+              const thumb = artifactThumbUrl(artifact)
+              const condition = artifactCondition(artifact)
+              const state = artifactState(artifact)
               return (
                 <div key={artifact.id} className={cn('border-b border-nexus-borderSubtle/50', selectedId === artifact.id && 'border-l-2 border-l-nexus-accent bg-nexus-surfaceElevated')}>
-                  <FileRow
-                    reference={artifact.code}
-                    title={artifact.title}
-                    meta={`${artifact.type} / ${artifact.location ?? 'LOCATION UNKNOWN'}`}
-                    selected={selectedId === artifact.id}
-                    onSelect={() => openArtifact(artifact.id)}
-                  />
+                  <div className="grid grid-cols-[38px_minmax(0,1fr)] items-start gap-2 px-2 pt-1.5">
+                    {thumb ? (
+                      <div className="relative h-[38px] w-[38px] overflow-hidden border border-nexus-borderSubtle bg-nexus-bg">
+                        <img src={thumb} alt="" loading="lazy" className="h-full w-full object-cover" />
+                        {condition !== 'NORMAL' && <span className="absolute inset-x-0 bottom-0 h-0.5 bg-nexus-warning" aria-hidden="true" />}
+                      </div>
+                    ) : (
+                      <div className="flex h-[38px] w-[38px] items-center justify-center border border-nexus-borderSubtle font-mono text-[0.4rem] text-nexus-textSubtle" aria-hidden="true">
+                        {artifactType(artifact).slice(0, 3)}
+                      </div>
+                    )}
+                    <FileRow
+                      reference={artifact.code}
+                      title={artifact.title}
+                      meta={`${artifactType(artifact)} / ${artifact.location ?? 'LOCATION UNKNOWN'}`}
+                      selected={selectedId === artifact.id}
+                      onSelect={() => openArtifact(artifact.id)}
+                    />
+                  </div>
                   <div className="flex items-center justify-between gap-1 px-2 pb-1.5 text-[0.46rem] uppercase text-nexus-textSubtle">
-                    <span className="truncate">{currentMark}{onTable ? ' / PLACED' : ''}</span>
+                    <span className="truncate">
+                      {condition !== 'NORMAL' && <span className="text-nexus-warning">{condition} / </span>}
+                      {(state === 'CONTRADICTED' || state === 'ANOMALOUS') && <span className="text-nexus-danger">{state} / </span>}
+                      {artifact.simulation && <span className="text-nexus-info">{SHOWCASE_LABEL} / </span>}
+                      {currentMark}{onTable ? ' / PLACED' : ''}
+                    </span>
                     <button type="button" onClick={() => setCompareIds(current => current.includes(artifact.id) ? current.filter(id => id !== artifact.id) : [...current.slice(-1), artifact.id])} aria-pressed={isSelectedForCompare} className={cn('shrink-0 border px-1.5 py-1', isSelectedForCompare ? 'border-nexus-warning text-nexus-warning' : 'border-nexus-border')}>COMPARE</button>
                   </div>
                 </div>
@@ -506,7 +564,7 @@ export function AdminEvidenceLab() {
           <p className="border-b border-nexus-borderSubtle pb-1 text-[0.52rem] uppercase tracking-[0.14em] text-nexus-textSubtle">SIMULATION INTERLOCKS</p>
           <p className="py-2 font-mono text-[0.5rem] uppercase leading-relaxed text-nexus-accent">ISOLATED LOCAL STATE / LIVE EVIDENCE READ-ONLY</p>
           <div className="space-y-1 border-y border-nexus-borderSubtle py-2">
-            <StateReadout label="CATALOG RECORDS" value={artifacts.length} />
+            <StateReadout label="CATALOG RECORDS" value={visibleArtifacts.length} />
             <StateReadout label="PLACED" value={Object.keys(workspace.placements).length} />
             <StateReadout label="ANNOTATIONS" value={annotationsCount} />
             <StateReadout label="HYPOTHESES" value={workspace.hypotheses.length} />
@@ -553,8 +611,10 @@ export function AdminEvidenceLab() {
               <div className="mt-4 space-y-2 border-t border-nexus-borderSubtle pt-2">
                 <p className="font-mono text-[0.52rem] uppercase tracking-[0.12em] text-nexus-textSubtle">STATE INSPECTOR</p>
                 <StateLine label="ID" value={selectedArtifact.code} />
-                <StateLine label="TYPE" value={selectedArtifact.type} />
-                <StateLine label="CASE" value="037 / SIMULATION" />
+                <StateLine label="TYPE" value={artifactType(selectedArtifact)} />
+                <StateLine label="COND" value={artifactCondition(selectedArtifact)} />
+                <StateLine label="STATE" value={artifactState(selectedArtifact)} />
+                <StateLine label="CASE" value={selectedArtifact.simulation ? `${SHOWCASE_CASE.id} / ${SHOWCASE_LABEL}` : '037 / SIMULATION'} />
                 <StateLine label="SOURCE" value={selectedArtifact.content.source ? String(selectedArtifact.content.source) : 'UNKNOWN'} />
                 <StateLine label="LOCATION" value={selectedArtifact.location ?? 'UNKNOWN'} />
                 <StateLine label="MARK" value={workspace.marks[selectedArtifact.id] ?? 'UNMARKED'} />
@@ -562,11 +622,40 @@ export function AdminEvidenceLab() {
                 <StateLine label="NOTES" value={workspace.annotations[selectedArtifact.id]?.length ?? 0} />
                 <StateLine label="LINKS" value={workspace.hypotheses.filter(item => item.from === selectedArtifact.id || item.to === selectedArtifact.id).length} />
               </div>
+
+              <RelationList artifact={selectedArtifact} onOpen={openArtifact} />
             </>
           )}
           <p className="mt-4 border-t border-nexus-borderSubtle pt-2 text-[0.48rem] uppercase leading-relaxed text-nexus-textSubtle">RESET CLEARS ONLY THIS OPERATOR’S LOCAL SIMULATION. PRODUCTION INVENTORY IS NEVER MUTATED.</p>
         </aside>
       </div>
+    </div>
+  )
+}
+
+/**
+ * Relations are the point of the case: the generated register links every
+ * artifact to the ones that corroborate or contradict it. Showing them turns a
+ * pile of files into a graph an operator can walk.
+ */
+function RelationList({ artifact, onOpen }: { artifact: CaseArtifact; onOpen: (id: string) => void }) {
+  const relations = artifact.relationships ?? []
+  if (relations.length === 0) return null
+  return (
+    <div className="mt-3 border-t border-nexus-borderSubtle pt-2">
+      <p className="font-mono text-[0.52rem] uppercase tracking-[0.12em] text-nexus-textSubtle">RELATIONS / {relations.length}</p>
+      <ul className="mt-1 space-y-1">
+        {relations.map(relation => (
+          <li key={`${relation.kind}-${relation.to}`} className="border-l border-nexus-border pl-2">
+            <button
+              type="button"
+              onClick={() => onOpen(`evidence:${relation.to}`)}
+              className="text-left font-mono text-[0.5rem] uppercase text-nexus-info hover:underline"
+            >{relation.kind} → {relation.to}</button>
+            <p className="text-[0.48rem] leading-snug text-nexus-textSubtle">{relation.note}</p>
+          </li>
+        ))}
+      </ul>
     </div>
   )
 }
