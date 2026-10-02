@@ -1310,6 +1310,43 @@ Deno.serve(async (req: Request) => {
         return jsonResponse(200, { success: true, puzzles })
       }
 
+      case 'list-evidence-lab-catalog': {
+        const [evidenceResult, inventoryResult, fragmentsResult, nodesResult] = await Promise.all([
+          supabaseAdmin
+            .from('evidence')
+            .select('id, code, title, description, type, classification, content, metadata')
+            .order('code'),
+          supabaseAdmin
+            .from('inventory_items')
+            .select('id, code, name, description, type, rarity, properties, uses, metadata')
+            .order('code'),
+          supabaseAdmin
+            .from('fragments')
+            .select('id, code, label, content, type, role, node_id, position, metadata')
+            .order('code'),
+          supabaseAdmin
+            .from('puzzle_nodes')
+            .select('id, code, title, location')
+            .order('code'),
+        ])
+
+        const catalogError = evidenceResult.error
+          ?? inventoryResult.error
+          ?? fragmentsResult.error
+          ?? nodesResult.error
+        if (catalogError) return jsonResponse(400, { error: catalogError.message })
+
+        return jsonResponse(200, {
+          success: true,
+          catalog: {
+            evidence: evidenceResult.data ?? [],
+            inventoryItems: inventoryResult.data ?? [],
+            fragments: fragmentsResult.data ?? [],
+            nodes: nodesResult.data ?? [],
+          },
+        })
+      }
+
       case 'send-notification': {
         const { target, teamIds, title, message, type: notifType, priority, targetRoles, reason } = params as {
           target: 'single' | 'multiple' | 'all'

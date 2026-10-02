@@ -37,6 +37,7 @@ import { AdminGameControl } from '@/features/admin/GameControl'
 import { AdminAudit } from '@/features/admin/Audit'
 import { AdminLocations } from '@/features/admin/Locations'
 import { AdminQAViewer } from '@/features/admin/QAViewer'
+import { AdminEvidenceLab } from '@/features/admin/EvidenceLab'
 import { QAHub } from '@/features/admin/QAHub'
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -211,6 +212,14 @@ export const router = createBrowserRouter([
             element: (
               <ProtectedAdminRoute>
                 <AdminGameControl />
+              </ProtectedAdminRoute>
+            ),
+          },
+          {
+            path: 'evidence-register',
+            element: (
+              <ProtectedAdminRoute>
+                <AdminEvidenceLab />
               </ProtectedAdminRoute>
             ),
           },

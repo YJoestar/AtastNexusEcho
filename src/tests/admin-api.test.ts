@@ -386,6 +386,21 @@ describe('listPuzzleQA', () => {
   })
 })
 
+describe('listEvidenceLabCatalog', () => {
+  it('calls the read-only all-inventory action and returns all catalog categories', async () => {
+    const catalog = { evidence: [], inventoryItems: [], fragments: [], nodes: [] }
+    invoke.mockResolvedValue({
+      data: { success: true, catalog },
+      error: null,
+    })
+
+    const result = await adminAPI.listEvidenceLabCatalog()
+
+    expect(lastRequestBody().action).toBe('list-evidence-lab-catalog')
+    expect(result).toEqual(catalog)
+  })
+})
+
 describe('formatTeamWithStats camelCase', () => {
   it('reads camelCase fields returned by list-teams edge function', async () => {
     invoke.mockResolvedValue({

@@ -68,6 +68,7 @@ export interface QASimulatorState {
   elapsedMinutes: number
   isOffline: boolean
   isLocked: boolean
+  evidenceLabMode: boolean
 }
 
 export interface QASimulatorControls {
@@ -84,6 +85,9 @@ export interface QASimulatorControls {
   revealAnswer: (nodeId?: string) => string | null
   forceSolve: (nodeId?: string) => void
   revealQR: (nodeId?: string) => string | null
+  setEvidenceLabMode: (mode: boolean) => void
+  simulateEvidenceUpdate: (code: string, newFields: Record<string, unknown>) => void
+  clearWorkspace: () => void
 }
 
 export interface QAContextValue extends QASimulatorState, QASimulatorControls {
@@ -356,7 +360,11 @@ const EVIDENCE_EVOLUTION: Record<string, Array<{ solvedAt: number; content: Reco
   ],
 }
 
-function generateInventory(solvedCount: number): { evidence: EvidenceItem[]; inventory: InventoryItem[]; fragments: FragmentItem[] } {
+function generateInventory(
+  solvedCount: number,
+  fullUnlock = false,
+  evidenceOverrides: Record<string, Array<{ solvedAt: number; content: Record<string, unknown> }>> = {},
+): { evidence: EvidenceItem[]; inventory: InventoryItem[]; fragments: FragmentItem[] } {
   const evidence: EvidenceItem[] = []
   const inventory: InventoryItem[] = []
   const fragments: FragmentItem[] = []
@@ -372,12 +380,14 @@ function generateInventory(solvedCount: number): { evidence: EvidenceItem[]; inv
     const base = evidenceBase[code]
     if (!base) continue
 
-    const isAcquired = stages[0].solvedAt <= solvedCount
+    const effectiveSolvedCount = fullUnlock ? Infinity : solvedCount
+    const isAcquired = stages[0].solvedAt <= effectiveSolvedCount
     if (!isAcquired) continue
 
+    const effectiveStages = evidenceOverrides[code] ? [...stages, ...evidenceOverrides[code]] : stages
     const content: Record<string, unknown> = {}
-    for (const stage of stages) {
-      if (stage.solvedAt <= solvedCount) {
+    for (const stage of effectiveStages) {
+      if (stage.solvedAt <= effectiveSolvedCount) {
         Object.assign(content, stage.content)
       }
     }
@@ -465,6 +475,8 @@ export function QASimulatorProvider({ children }: { children: ReactNode }) {
   const [elapsedMinutes, setElapsedMinutes] = useState(0)
   const [isOffline, setIsOffline] = useState(false)
   const [isLocked, setIsLocked] = useState(false)
+  const [evidenceLabMode, setEvidenceLabMode] = useState(false)
+  const [localEvidenceOverrides, setLocalEvidenceOverrides] = useState<Record<string, Array<{ solvedAt: number; content: Record<string, unknown> }>>>({})
   const [puzzleQAData, setPuzzleQAData] = useState<Record<string, PuzzleQAEntry>>({})
   const [isQALoaded, setIsQALoaded] = useState(false)
 
@@ -630,8 +642,8 @@ export function QASimulatorProvider({ children }: { children: ReactNode }) {
 
   const inventory = useMemo(() => {
     if (!teamProgress) return null
-    return generateInventory(solvedCount)
-  }, [teamProgress, solvedCount])
+    return generateInventory(solvedCount, evidenceLabMode, localEvidenceOverrides)
+  }, [teamProgress, solvedCount, evidenceLabMode, localEvidenceOverrides])
 
   const notifications = useMemo(() => generateNotifications(solvedCount, role), [solvedCount, role])
 
@@ -815,6 +827,8 @@ export function QASimulatorProvider({ children }: { children: ReactNode }) {
     setElapsedMinutes(0)
     setIsOffline(false)
     setIsLocked(false)
+    setEvidenceLabMode(false)
+    setLocalEvidenceOverrides({})
     setSimulationType('FRESH')
   }, [])
 
@@ -926,6 +940,28 @@ export function QASimulatorProvider({ children }: { children: ReactNode }) {
     [],
   )
 
+  const handleSetEvidenceLabMode = useCallback((mode: boolean) => {
+    setEvidenceLabMode(mode)
+  }, [])
+
+  const simulateEvidenceUpdate = useCallback((code: string, newFields: Record<string, unknown>) => {
+    const existingKey = Object.keys(EVIDENCE_EVOLUTION).find(k => k.startsWith(code))
+    if (!existingKey) return
+    const stages = [...EVIDENCE_EVOLUTION[existingKey]]
+    stages.push({ solvedAt: 999, content: newFields })
+    setLocalEvidenceOverrides(prev => ({ ...prev, [existingKey]: stages }))
+  }, [])
+
+  const clearWorkspace = useCallback(() => {
+    const key = `nexus_case_workspace_v1:qa-team`
+    try {
+      if (typeof window !== 'undefined') window.localStorage.removeItem(key)
+      if (typeof window !== 'undefined') window.dispatchEvent(new StorageEvent('storage', { key }))
+    } catch {
+      // noop
+    }
+  }, [])
+
   const value = useMemo(
     (): QAContextValue => ({
       isActive,
@@ -938,8 +974,12 @@ export function QASimulatorProvider({ children }: { children: ReactNode }) {
       score,
       elapsedMinutes,
       isOffline,
-      isLocked,
-      setRole,
+    isLocked,
+    evidenceLabMode,
+    setEvidenceLabMode: handleSetEvidenceLabMode,
+    simulateEvidenceUpdate,
+    clearWorkspace,
+    setRole,
       setSimulationType,
       jumpToNode,
       markSolved,
@@ -989,8 +1029,9 @@ export function QASimulatorProvider({ children }: { children: ReactNode }) {
       score,
       elapsedMinutes,
       isOffline,
-      isLocked,
-       player,
+       isLocked,
+       evidenceLabMode,
+        player,
        team,
        simulatedPlayers,
        gameState,

@@ -489,6 +489,13 @@ export const adminAPI = {
     return result.puzzles ?? []
   },
 
+  async listEvidenceLabCatalog(): Promise<EvidenceLabCatalog> {
+    const result = await callBureau<{ catalog?: EvidenceLabCatalog }>({
+      action: 'list-evidence-lab-catalog',
+    })
+    return result.catalog ?? { evidence: [], inventoryItems: [], fragments: [], nodes: [] }
+  },
+
   async getGameState(): Promise<GameStateAdmin> {
     const result = await callBureau<{
       gameState: GameStateAdmin
@@ -1042,13 +1049,13 @@ export interface EvidenceQAEntry {
   id: string
   type: string
   title: string
-  content: {
+  content: Record<string, unknown> & {
     text?: string
     source?: string
     state?: string
     audio_url?: string
   }
-  metadata: {
+  metadata: Record<string, unknown> & {
     nodeCode?: string
     source?: string
   }
@@ -1061,6 +1068,47 @@ export interface AudioEvidenceQAEntry {
   audioUrl: string | null
   audioExists: boolean
   nodeCode: string | null
+}
+
+export interface EvidenceLabCatalog {
+  evidence: Array<{
+    id: string
+    code: string
+    title: string
+    description: string
+    type: string
+    classification: string
+    content: Record<string, unknown>
+    metadata: Record<string, unknown>
+  }>
+  inventoryItems: Array<{
+    id: string
+    code: string
+    name: string
+    description: string
+    type: string
+    rarity: string
+    properties: Record<string, unknown>
+    uses: unknown[]
+    metadata: Record<string, unknown>
+  }>
+  fragments: Array<{
+    id: string
+    code: string
+    label: string
+    content: string
+    type: string
+    role: string
+    node_id: string
+    position: number
+    metadata: Record<string, unknown>
+  }>
+  nodes: Array<{
+    id: string
+    code: string
+    title: string
+    location: string
+  }>
 }
 
 export { AdminAPIError }

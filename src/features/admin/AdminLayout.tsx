@@ -33,6 +33,7 @@ const FIELD_INDEX = [
 ]
 
 const SYSTEM_INDEX = [
+  { path: ROUTES.ADMIN_EVIDENCE_REGISTER, label: 'EVIDENCE REGISTER', sub: 'Full Inventory Simulation', icon: BureauIcons.File },
   { path: ROUTES.ADMIN_QA_HUB, label: 'FIELD SIMULATOR', sub: 'Handset Emulation', icon: BureauIcons.Smartphone },
   { path: ROUTES.ADMIN_AUDIT, label: 'SYSTEM ACCESS RECORD', sub: 'Chrono-Audit', icon: BureauIcons.File },
   { path: ROUTES.ADMIN_QA_VIEWER, label: 'QA MONITOR', sub: 'Content Inspection', icon: BureauIcons.ShieldQuestion },

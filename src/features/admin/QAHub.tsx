@@ -13,16 +13,17 @@
  */
 
 import { useState, useEffect, useRef } from 'react'
+import { Link } from 'react-router-dom'
 import { BureauIcons } from '@/components/bureau'
-import { ROLE_LABELS, ROLE_DESCRIPTIONS, ROLES } from '@/app/config'
+import { ROLE_LABELS, ROLE_DESCRIPTIONS, ROLES, ROUTES } from '@/app/config'
 import { ALL_PUZZLES, PUZZLES_BY_CODE } from '@/content/puzzles'
 import { cn } from '@/lib/utils'
 import { QASimulatorProvider, useQA } from '@/contexts/QASimulatorContext'
 import type { Role, SimulationType } from '@/contexts/QASimulatorContext'
+import type { NodeDetailPlayerView } from '@/types/game-engine'
 import { QAPlayerShell, DUMMY_APP_CONTEXT } from '@/features/admin/QAPlayerShell'
 import { SCAN_LOCATIONS, TEST_CODE, type ScanLocation } from '@/lib/qr'
 import { PlayerEvidenceArchive } from '@/features/player/evidence/EvidenceArchive'
-import { useInvestigationWorkspace } from '@/hooks/useInvestigationWorkspace'
 import { AppContext } from '@/app/providers/AppProvider'
 const SIMULATION_TYPES: { value: SimulationType; label: string; description: string }[] = [
   { value: 'FRESH', label: 'Fresh Start', description: 'No nodes solved — walk the progression from scratch' },
@@ -45,7 +46,6 @@ const ROLE_ICONS = {
 
 function QAHubInner() {
   const qa = useQA()
-  const { clearWorkspace } = useInvestigationWorkspace(qa.team?.id)
   const [isStarted, setIsStarted] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [activeTab, setActiveTab] = useState<'evidence' | 'players' | 'qr' | 'nodes' | 'controls' | 'inspector'>('controls')
@@ -700,23 +700,21 @@ function QAHubInner() {
             {activeTab === 'evidence' && (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-medium text-nexus-text">Evidence Register</h3>
-                  <div className="flex items-center gap-4 text-xs font-mono text-nexus-textSubtle">
-                    <span>{qa.inventory?.evidence.length ?? 0} EVIDENCE ITEMS</span>
-                    <button
-                      onClick={clearWorkspace}
-                      className="text-nexus-warning hover:text-nexus-warning/80 underline"
-                    >
-                      CLEAR LOCAL NOTES
-                    </button>
+                  <div>
+                    <h3 className="font-medium text-nexus-text">EVIDENCE REGISTER</h3>
+                    <p className="mt-1 font-mono text-[0.5rem] uppercase text-nexus-textSubtle">SIMULATION LAB / ALL CATALOGED EVIDENCE UNLOCKED</p>
                   </div>
+                  <Link to={ROUTES.ADMIN_EVIDENCE_REGISTER} className="min-h-9 border border-nexus-accent px-2 py-2 font-mono text-[0.5rem] uppercase text-nexus-accent">
+                    [ OPEN FULL EVIDENCE LAB ]
+                  </Link>
+                </div>
+
+                <div className="border border-nexus-borderSubtle bg-nexus-bg px-3 py-2 font-mono text-[0.52rem] uppercase text-nexus-textSubtle">
+                  CASE {qa.team?.code ?? 'QA001'} / SIMULATION — {qa.inventory?.evidence.length ?? 0} EVIDENCE ITEMS AVAILABLE AT CURRENT PROGRESSION
                 </div>
 
                 <AppContext.Provider value={{ ...DUMMY_APP_CONTEXT, team: qa.team ?? null }}>
-                  <div className="border border-nexus-borderSubtle bg-nexus-bg p-2 text-xs text-nexus-textSubtle">
-                    CASE {qa.team?.code ?? 'QA001'} / LOCAL INVESTIGATION WORKSPACE — PERSONAL ANNOTATIONS SAVED ON THIS DEVICE
-                  </div>
-                  <div className="-mx-2 -mb-2 max-h-[600px]">
+                  <div className="-mx-2 -mb-2 max-h-[500px] overflow-y-auto">
                     <PlayerEvidenceArchive />
                   </div>
                 </AppContext.Provider>
@@ -783,11 +781,11 @@ function KeyboardShortcuts({
 interface PuzzleDetailViewerProps {
   nodeId: string
   role: Role
-  getNode: (nodeId: string, role?: Role) => Promise<unknown>
+  getNode: (nodeId: string, role?: Role) => Promise<NodeDetailPlayerView | null>
 }
 
 function PuzzleDetailViewer({ nodeId, role, getNode }: PuzzleDetailViewerProps) {
-  const [detail, setDetail] = useState<any>(null)
+  const [detail, setDetail] = useState<NodeDetailPlayerView | null>(null)
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
@@ -950,7 +948,7 @@ function PuzzleDetailViewer({ nodeId, role, getNode }: PuzzleDetailViewerProps) 
           </h5>
           <div className="text-xs bg-nexus-surfaceElevated p-2 rounded border border-nexus-borderSubtle">
             <div className="font-medium text-nexus-text">{detail.evidenceUnlocked.title}</div>
-            <div className="text-nexus-textMuted mt-1">{detail.evidenceUnlocked.content?.text ? String(detail.evidenceUnlocked.content.text).substring(0, 200) + '...' : ''}</div>
+            <div className="text-nexus-textMuted mt-1">{detail.evidenceUnlocked.content ? String(detail.evidenceUnlocked.content).substring(0, 200) + '...' : ''}</div>
           </div>
         </div>
       )}
