@@ -1906,20 +1906,20 @@ Deno.serve(async (req: Request) => {
         return jsonResponse(200, { success: true })
       }
 
-       case 'list-qr-codes': {
-         const { data: qrNodes, error: qrError } = await supabaseAdmin
-           .from('qr_nodes')
-           .select('id, code, label, type, puzzle_node_id, position, metadata, marker_id, manual_code, deployment_status, deployment_batch')
+        case 'list-qr-codes': {
+          const { data: qrNodes, error: qrError } = await supabaseAdmin
+            .from('qr_nodes')
+            .select('*')
 
-         if (qrError) {
-           return jsonResponse(400, { error: qrError.message })
-         }
+          if (qrError) {
+            return jsonResponse(400, { error: qrError.message })
+          }
 
-         const nodeIds = (qrNodes ?? []).map((q: { puzzle_node_id: string | null }) => q.puzzle_node_id).filter(Boolean)
-         const { data: puzzleNodes } = await supabaseAdmin
-           .from('puzzle_nodes')
-           .select('id, code, title, type, stage, location')
-           .in('id', nodeIds)
+          const nodeIds = (qrNodes ?? []).map((q: Record<string, unknown>) => q.puzzle_node_id as string | null).filter(Boolean)
+          const { data: puzzleNodes } = await supabaseAdmin
+            .from('puzzle_nodes')
+            .select('id, code, title, type, stage, location')
+            .in('id', nodeIds)
 
          const nodeMap = new Map<string, { code: string; title: string; type: string; stage: number; location: string }>()
          for (const node of puzzleNodes ?? []) {
