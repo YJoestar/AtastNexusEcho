@@ -19,6 +19,7 @@ import {
   useState,
   useCallback,
   useMemo,
+  useEffect,
   ReactNode,
 } from 'react'
 import type {
@@ -50,6 +51,8 @@ import type { NodeProgress } from '@/types'
 import { ALL_PUZZLES, PUZZLES_BY_CODE, PUZZLE_COUNT } from '@/content/puzzles'
 import type { NodeIndexEntry } from '@/content/puzzles'
 import { validateAnyCode, toQRScanResult } from '@/lib/qr'
+import { adminAPI } from '@/lib/admin'
+import type { PuzzleQAEntry } from '@/lib/admin'
 
 export type SimulationType = 'FRESH' | 'PARTIAL' | 'COMPLETE' | 'CUSTOM'
 
@@ -85,6 +88,8 @@ export interface QAContextValue extends QASimulatorState, QASimulatorControls {
   player: Player
   /** Simulated team object (mirrors useApp.team) */
   team: Team
+  /** All three simulated players with real role info */
+  simulatedPlayers: { id: string; teamId: string; role: Role; displayName: string; status: string; joinedAt: string }[]
   /** Simulated game state */
   gameState: GameState | null
   teamProgress: TeamProgress | null
@@ -158,8 +163,9 @@ function generateNodeDetail(
   puzzle: NodeIndexEntry,
   role: Role,
   solved: boolean,
+  qaData?: PuzzleQAEntry,
 ): NodeDetailPlayerView {
-  const roleContent = solved ? null : generateRoleContent(puzzle, role)
+  const roleContent: RoleContent = qaData?.content?.[role.toLowerCase()] as RoleContent | undefined ?? generateRoleContent(puzzle, role)
 
   const coordinationChain: CoordinationChain = {
     observerProduces: `Observer reports visual data from ${puzzle.location}`,
@@ -381,10 +387,32 @@ export function QASimulatorProvider({ children }: { children: ReactNode }) {
   const [elapsedMinutes, setElapsedMinutes] = useState(0)
   const [isOffline, setIsOffline] = useState(false)
   const [isLocked, setIsLocked] = useState(false)
+  const [puzzleQAData, setPuzzleQAData] = useState<Record<string, PuzzleQAEntry>>({})
+  const [isQALoaded, setIsQALoaded] = useState(false)
 
   const isActive = true
   const isAuthenticated = true
   const isInitializing = false
+
+  const loadPuzzleQA = useCallback(async () => {
+    if (isQALoaded) return
+    try {
+      const data = await adminAPI.listPuzzleQA()
+      const map: Record<string, PuzzleQAEntry> = {}
+      for (const entry of data) {
+        map[entry.code] = entry
+      }
+      setPuzzleQAData(map)
+    } catch (_err) {
+      // QA data is optional — simulator falls back to generated content
+    } finally {
+      setIsQALoaded(true)
+    }
+  }, [isQALoaded])
+
+  useEffect(() => {
+    void loadPuzzleQA()
+  }, [loadPuzzleQA])
 
   const player: Player = useMemo(
     () => ({
@@ -420,6 +448,15 @@ export function QASimulatorProvider({ children }: { children: ReactNode }) {
       metadata: { registeredBy: 'ADMIN', assignedRoles: true },
     }),
     [currentNodeId, score],
+  )
+
+  const simulatedPlayers = useMemo(
+    () => [
+      { id: 'qa-player-obs', teamId: 'qa-team', role: 'OBSERVER' as Role, displayName: 'Alex Chen (OBSERVER)', joinedAt: new Date().toISOString(), isConnected: true, lastSeenAt: new Date().toISOString(), status: 'ACTIVE' as const, createdAt: new Date().toISOString() },
+      { id: 'qa-player-ana', teamId: 'qa-team', role: 'ANALYST' as Role, displayName: 'Sam Rivera (ANALYST)', joinedAt: new Date().toISOString(), isConnected: true, lastSeenAt: new Date().toISOString(), status: 'ACTIVE' as const, createdAt: new Date().toISOString() },
+      { id: 'qa-player-op', teamId: 'qa-team', role: 'OPERATOR' as Role, displayName: 'Morgan Taylor (OPERATOR)', joinedAt: new Date().toISOString(), isConnected: true, lastSeenAt: new Date().toISOString(), status: 'ACTIVE' as const, createdAt: new Date().toISOString() },
+    ],
+    [],
   )
 
   const availableNodeIds = useMemo(
@@ -528,13 +565,14 @@ export function QASimulatorProvider({ children }: { children: ReactNode }) {
       const activeRole = (nodeRole as Role) ?? role
       const isSolved = solvedNodes.has(nodeId)
 
-      return generateNodeDetail(
-        puzzle,
-        activeRole,
-        isSolved,
-      )
+       return generateNodeDetail(
+         puzzle,
+         activeRole,
+         isSolved,
+         puzzleQAData[nodeId],
+       )
     },
-     [role, solvedNodes],
+      [role, solvedNodes, puzzleQAData],
   )
 
   const submitAnswer = useCallback(
@@ -778,6 +816,7 @@ export function QASimulatorProvider({ children }: { children: ReactNode }) {
       setCustomProgress,
       player,
       team,
+      simulatedPlayers,
       gameState,
       teamProgress,
       notifications,
@@ -813,9 +852,10 @@ export function QASimulatorProvider({ children }: { children: ReactNode }) {
       elapsedMinutes,
       isOffline,
       isLocked,
-      player,
-      team,
-      gameState,
+       player,
+       team,
+       simulatedPlayers,
+       gameState,
       teamProgress,
       notifications,
       nodeProgress,

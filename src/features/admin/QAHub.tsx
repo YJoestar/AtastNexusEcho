@@ -45,7 +45,7 @@ function QAHubInner() {
   const qa = useQA()
   const [isStarted, setIsStarted] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
-  const [activeTab, setActiveTab] = useState<'controls' | 'inspector' | 'nodes' | 'qr'>('controls')
+  const [activeTab, setActiveTab] = useState<'controls' | 'inspector' | 'nodes' | 'qr' | 'players'>('controls')
   const [devicePreset, setDevicePreset] = useState('desktop')
   const [nodeJumpInput, setNodeJumpInput] = useState('')
 
@@ -65,6 +65,7 @@ function QAHubInner() {
     qa.setSimulationType(qa.simulationType)
     if (qa.simulationType === 'FRESH') {
       qa.resetSimulation()
+      qa.jumpToNode('P01')
     }
     setIsStarted(true)
   }
@@ -316,7 +317,18 @@ function QAHubInner() {
                     : 'border-transparent text-nexus-textMuted hover:text-nexus-text',
                 )}
               >
-                QR Inventory
+                 QR Inventory
+              </button>
+              <button
+                onClick={() => setActiveTab('players')}
+                className={cn(
+                  'px-4 py-2 text-sm font-medium border-b-2 transition-colors',
+                  activeTab === 'players'
+                    ? 'border-nexus-accent text-nexus-accent'
+                    : 'border-transparent text-nexus-textMuted hover:text-nexus-text',
+                )}
+              >
+                PLAYERS
               </button>
             </nav>
 
@@ -598,6 +610,67 @@ function QAHubInner() {
                       ))}
                     </tbody>
                   </table>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'players' && (
+              <div className="panel space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-medium text-nexus-text">Team Roster — QA Simulation Team</h3>
+                  <span className="font-mono text-xs text-nexus-textSubtle">{qa.simulatedPlayers.length} players</span>
+                </div>
+                <div className="space-y-2">
+                  {qa.simulatedPlayers.map((p, idx) => {
+                    const Icon = ROLE_ICONS[p.role]
+                    return (
+                      <div key={p.id} className="flex items-center gap-3 p-3 rounded-lg border border-nexus-border bg-nexus-surfaceElevated">
+                        <div className="flex-shrink-0">
+                          <Icon className="bureau-icon w-5 h-5 text-nexus-accent" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="font-medium text-nexus-text">{p.displayName}</div>
+                          <div className="text-xs text-nexus-textSubtle">ID: {p.id} — Joined: {new Date(p.joinedAt).toLocaleTimeString()}</div>
+                        </div>
+                        <div className="flex-shrink-0">
+                          <span className={cn(
+                            'text-xs px-2 py-0.5 rounded',
+                            p.status === 'ACTIVE'
+                              ? 'bg-nexus-accentBg/20 text-nexus-accent'
+                              : 'bg-nexus-textMuted/20 text-nexus-textMuted',
+                          )}>
+                            {p.status}
+                          </span>
+                        </div>
+                        {idx === 0 && p.role === qa.role && (
+                          <div className="text-[0.56rem] uppercase tracking-[0.14em] text-nexus-info">YOU</div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+
+                <div className="border-t border-nexus-border pt-4 space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-nexus-textMuted">Current Role:</span>
+                    <span className="text-nexus-text font-medium">{ROLE_LABELS[qa.role]}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-nexus-textMuted">Current Node:</span>
+                    <span className="text-nexus-text font-mono">{qa.currentNodeId ?? '—'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-nexus-textMuted">Available Nodes:</span>
+                    <span className="text-nexus-text font-mono">{qa.availableNodeIds.length}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-nexus-textMuted">Solved:</span>
+                    <span className="text-nexus-text font-mono">{solvedCount}/{totalNodes}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-nexus-textMuted">Score:</span>
+                    <span className="text-nexus-text font-mono">{qa.score.toLocaleString()}</span>
+                  </div>
                 </div>
               </div>
             )}
