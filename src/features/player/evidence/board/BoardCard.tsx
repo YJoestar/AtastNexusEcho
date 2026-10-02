@@ -3,6 +3,7 @@ import { Waveform } from '@/components/bureau'
 import type { BoardPlacement } from '@/lib/investigationWorkspace'
 import {
   artifactCondition,
+  artifactImageUrl,
   artifactThumbUrl,
   artifactType,
   contentString,
@@ -21,6 +22,8 @@ export interface BoardCardProps {
   hasNewInfo: boolean
   noteCount: number
   linkCount: number
+  /** Zoomed in far enough that the 220px thumbnail would be soft. */
+  detail: boolean
   onPointerDown: (event: ReactPointerEvent<HTMLElement>, id: string, pinned: boolean) => void
   onToggleSelect: (id: string) => void
   onOpen: (id: string) => void
@@ -43,12 +46,12 @@ const MEDIUM_LABEL: Record<string, string> = {
 function BoardCardImpl(props: BoardCardProps) {
   const {
     artifact, placement, worldX, worldY, selectedIndex, dim, dragging,
-    hasNewInfo, noteCount, linkCount,
+    hasNewInfo, noteCount, linkCount, detail,
     onPointerDown, onToggleSelect, onOpen, onTogglePin, onRotate, onRemove,
   } = props
   const medium = artifactType(artifact)
   const condition = artifactCondition(artifact)
-  const imageUrl = artifactThumbUrl(artifact)
+  const imageUrl = detail ? artifactImageUrl(artifact) : artifactThumbUrl(artifact)
   const isSelected = selectedIndex >= 0
   const camera = contentString(artifact.content, ['camera_id', 'camera', 'cam'])
   const stamp = contentString(artifact.content, ['timestamp', 'recorded_at', 'time'])

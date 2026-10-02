@@ -54,6 +54,30 @@ export function project(camera, point) {
   }
 }
 
+const NEAR = 0.08
+
+/**
+ * Clip a world-space polygon against the camera's near plane (Sutherland-
+ * Hodgman). Walls, floors and ceilings in a corridor routinely run behind the
+ * camera; dropping the whole polygon when one vertex is behind it (the old
+ * behaviour) deleted most of the room.
+ */
+export function clipNear(camera, points) {
+  const out = []
+  for (let i = 0; i < points.length; i++) {
+    const a = points[i]
+    const b = points[(i + 1) % points.length]
+    const da = dot(sub(a, camera.position), camera.forward) - NEAR
+    const db = dot(sub(b, camera.position), camera.forward) - NEAR
+    if (da >= 0) out.push(a)
+    if ((da >= 0) !== (db >= 0)) {
+      const t = da / (da - db)
+      out.push({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, z: a.z + (b.z - a.z) * t })
+    }
+  }
+  return out
+}
+
 /**
  * A shaded polygon. `points` are world-space, `color` is the albedo, `emissive`
  * marks self-lit surfaces (ceiling fixtures, signage, monitors) which ignore
@@ -151,31 +175,29 @@ export function renderScene(scene, camera, buffer, options = {}) {
     data[i * 3 + 2] = background[2] / 255
   }
 
-  // Clip, project and depth-sort.
+  // Clip, project, triangulate and depth-sort.
   const prepared = []
   for (const polygon of scene.faces) {
-    const screen = []
-    let ok = true
-    let avgDepth = 0
-    for (const point of polygon.points) {
-      const p = project(camera, point)
-      if (!p) { ok = false; break }
-      screen.push(p)
-      avgDepth += p.depth
-    }
-    if (!ok) continue
-    avgDepth /= screen.length
-
     const normal = faceNormal(polygon.points)
     const toCamera = normalize(sub(camera.position, polygon.points[0]))
     const facing = dot(normal, toCamera)
     if (facing < 0 && !polygon.doubleSided) continue
 
+    const clipped = clipNear(camera, polygon.points)
+    if (clipped.length < 3) continue
+    const screen = clipped.map(point => project(camera, point)).filter(Boolean)
+    if (screen.length < 3) continue
+
     // A double-sided surface is lit by whichever face the camera can see, which
     // is how thin material — door leaves, signage, glass, paper — behaves.
     const shadingNormal = facing < 0 ? { x: -normal.x, y: -normal.y, z: -normal.z } : normal
 
-    prepared.push({ polygon, screen, avgDepth, normal: shadingNormal, facing: Math.abs(facing) })
+    // Fan-triangulate: every vertex of a quad takes part, not just the first three.
+    for (let i = 1; i < screen.length - 1; i++) {
+      const tri = [screen[0], screen[i], screen[i + 1]]
+      const avgDepth = (tri[0].depth + tri[1].depth + tri[2].depth) / 3
+      prepared.push({ polygon, screen: tri, avgDepth, normal: shadingNormal, facing: Math.abs(facing) })
+    }
   }
   prepared.sort((a, b) => b.avgDepth - a.avgDepth)
 
@@ -216,12 +238,7 @@ function rasterPolygon(item, camera, buffer, env) {
   const y1 = Math.min(height - 1, Math.ceil(maxY))
   if (x1 < x0 || y1 < y0) return
 
-  const p0 = projected[0]
-  const p1 = projected[1]
-  const p2 = projected[2]
-  const [b0, b1, b2] = projected.length >= 4
-    ? [p0, p1, p2, projected[3]]
-    : [p0, p1, p2, p2]
+  const [b0, b1, b2] = projected
 
   // Lights are evaluated per fragment: a 26-metre corridor wall and a 0.3-metre
   // door leaf must not share one shading direction.

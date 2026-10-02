@@ -72,25 +72,34 @@ export function wallSign(x, y, z, w, h, rotY, color, emissive = 0) {
   )
 }
 
-export function addDoor(faces, { x, y, z, width, height, frame = [126, 118, 104], panel = [92, 84, 72], open = 0, kick = true }) {
-  const d = open
-  const hingeX = x
-  const endX = x + width * Math.cos(d)
-  const endZ = z + width * Math.sin(d)
+/**
+ * A door in a wall. By default the wall faces +Z (an end wall) and the leaf
+ * runs along X. For a corridor's side walls pass `wall: 'side'` and `inward`
+ * (+1 or -1, the direction into the room): the leaf then runs along Z in the
+ * wall plane, and `open` swings it into the room. Side-wall doors used to be
+ * built along X, which stood every door across the corridor like a slab.
+ */
+export function addDoor(faces, { x, y, z, width, height, frame = [126, 118, 104], panel = [92, 84, 72], open = 0, kick = true, wall = 'end', inward = 1 }) {
+  const side = wall === 'side'
+  const along = (t, lift) => (side
+    ? v3(x + inward * t * Math.sin(open), y + lift, z + t * Math.cos(open))
+    : v3(x + t * Math.cos(open), y + lift, z + t * Math.sin(open)))
+  const at = (t, lift, push = 0) => {
+    const p = along(t, lift)
+    return side ? v3(p.x + inward * push, p.y, p.z) : v3(p.x, p.y, p.z + push)
+  }
   faces.push(
     face(
-      [v3(hingeX, y, z), v3(endX, y, endZ), v3(endX, y + height, endZ), v3(hingeX, y + height, z)],
+      [at(0, 0), at(width, 0), at(width, height), at(0, height)],
       { color: panel, roughness: 0.75, doubleSided: true, texture: brushedMetal(7, 1), tag: 'door' },
     ),
   )
-  faces.push(...box(x + width / 2, y + height / 2 + 0.06, z + 0.06, width + 0.14, height + 0.12, 0.12, {
-    color: frame,
-    sideColor: frame,
-    topColor: frame,
-  }))
+  faces.push(...(side
+    ? box(x + inward * 0.06, y + height / 2 + 0.06, z + width / 2, 0.12, height + 0.12, width + 0.14, { color: frame, sideColor: frame, topColor: frame })
+    : box(x + width / 2, y + height / 2 + 0.06, z + 0.06, width + 0.14, height + 0.12, 0.12, { color: frame, sideColor: frame, topColor: frame })))
   if (kick) {
     faces.push(face(
-      [v3(hingeX + 0.04 * Math.cos(d), y + 0.02, z + 0.04 * Math.sin(d) + 0.07), v3(endX, y + 0.02, endZ + 0.07), v3(endX, y + 0.32, endZ + 0.07), v3(hingeX + 0.04 * Math.cos(d), y + 0.32, z + 0.04 * Math.sin(d) + 0.07)],
+      [at(0.04, 0.02, 0.07), at(width, 0.02, 0.07), at(width, 0.32, 0.07), at(0.04, 0.32, 0.07)],
       { color: [70, 68, 64], roughness: 0.5, doubleSided: true, tag: 'kick' },
     ))
   }
@@ -410,11 +419,11 @@ export function corridorScene(options = {}) {
   for (let z = 3.4; z < length - 2; z += doorEvery) {
     const side = doorSide === 'right' ? 1 : -1
     if ((doorSide === 'alternate' || doorSide === 'both') && ((Math.round(z / doorEvery) % 2) === 1)) {
-      addDoor(faces, { x: side * (hw - 0.06), y: 0, z, width: 0.92, height: 2.06, open: 0 })
+      addDoor(faces, { x: side * (hw - 0.06), y: 0, z, width: 0.92, height: 2.06, open: 0, wall: 'side', inward: -side })
     } else {
-      addDoor(faces, { x: side * (hw - 0.06), y: 0, z, width: 0.92, height: 2.06, open: 0 })
+      addDoor(faces, { x: side * (hw - 0.06), y: 0, z, width: 0.92, height: 2.06, open: 0, wall: 'side', inward: -side })
     }
-    addDoor(faces, { x: -side * (hw - 0.06), y: 0, z: z + doorEvery * 0.5, width: 0.92, height: 2.06, open: 0.32 })
+    addDoor(faces, { x: -side * (hw - 0.06), y: 0, z: z + doorEvery * 0.5, width: 0.92, height: 2.06, open: 0.32, wall: 'side', inward: side })
   }
 
   if (endDoor) {

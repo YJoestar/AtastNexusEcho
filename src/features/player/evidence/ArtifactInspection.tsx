@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type WheelEvent as ReactWheelEvent } from 'react'
 import { BureauIcons, Waveform } from '@/components/bureau'
 import type { EvidenceAnnotation, EvidenceMark, AnnotationKind } from '@/lib/investigationWorkspace'
-import { artifactCondition, artifactImageUrl, artifactMediaUrl, artifactType, contentString, visibleArtifactFields, type CaseArtifact } from './types'
+import { artifactCondition, artifactImageUrl, artifactMediaUrl, artifactThumbUrl, artifactType, contentString, visibleArtifactFields, type CaseArtifact } from './types'
 import { glitch, glitchForCondition, glitchForMedium } from '@/lib/vfx/glitch'
 import { cn } from '@/lib/utils'
 
@@ -75,6 +75,7 @@ export function ArtifactInspection({
 
   // Generated media first, then whatever the server put in the record.
   const imageUrl = artifactImageUrl(artifact)
+  const thumbUrl = artifactThumbUrl(artifact)
   const audioUrl = artifactMediaUrl(artifact, 'AUDIO')
   const videoUrl = artifactMediaUrl(artifact, 'VIDEO')
   const isAudio = artifact.type.toUpperCase() === 'AUDIO' || !!audioUrl
@@ -233,7 +234,16 @@ export function ArtifactInspection({
             </div>
           ) : isImage ? (
             imageUrl ? (
-              <img src={imageUrl} alt={artifact.title} draggable={false} loading="lazy" className="absolute inset-0 h-full w-full object-contain bg-black" />
+              // The 220px thumbnail is already cached by the archive list: show it at
+              // once behind the full frame so opening a record never starts on black.
+              <img
+                src={imageUrl}
+                alt={artifact.title}
+                draggable={false}
+                decoding="async"
+                className="absolute inset-0 h-full w-full bg-black bg-contain bg-center bg-no-repeat object-contain"
+                style={thumbUrl && thumbUrl !== imageUrl ? { backgroundImage: `url(${thumbUrl})` } : undefined}
+              />
             ) : (
               <div className="absolute inset-0 flex flex-col items-center justify-center border border-nexus-border bg-nexus-surfaceElevated p-6 text-center">
                 <BureauIcons.Image className="bureau-icon mb-4 h-8 w-8 text-nexus-textSubtle" aria-hidden="true" />
@@ -328,6 +338,10 @@ export function ArtifactInspection({
             value={artifact.acquiredAt ?? 'UNKNOWN'}
             isNew={newKeys?.some(key => ['acquired_at', 'acquiredat', 'timestamp', 'captured_at'].includes(key.toLowerCase()))}
           />
+          <MetaField label="CONDITION" value={artifactCondition(artifact)} />
+          {contentString(artifact.content, ['captured_at', 'capturedAt']) && (
+            <MetaField label="CAPTURED" value={contentString(artifact.content, ['captured_at', 'capturedAt']) ?? ''} />
+          )}
           <MetaField
             label="LOCATION"
             value={artifact.location ?? 'UNKNOWN'}

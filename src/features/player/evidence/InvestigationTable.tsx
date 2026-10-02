@@ -653,6 +653,7 @@ export function InvestigationTable({ artifacts, workspace, onUpdate, onInspect }
                     hasNewInfo={workspace.revelations[id]?.hasNewInfo ?? false}
                     noteCount={noteCountFor(id)}
                     linkCount={linkCounts.get(id) ?? 0}
+                    detail={zoomLabel >= 110}
                     onPointerDown={handleCardPointerDown}
                     onToggleSelect={toggleSelected}
                     onOpen={handleOpen}

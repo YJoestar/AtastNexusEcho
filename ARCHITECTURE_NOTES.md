@@ -52,9 +52,26 @@ Removing an object from the table never deletes its links: they go *dormant* and
 - `package.json` had duplicate `evidence:*` script keys.
 - 5 `useConnection` tests failed without a local `.env`; the test config now supplies Supabase env.
 
+## Evidence render fix (presentation only)
+
+The procedural renderer (`scripts/evidence-gen/lib/render3d.mjs`) had two bugs that made every photograph and CCTV frame read as abstract triangles:
+
+1. **Quads were rasterised as one triangle** (only the first three vertices were used).
+2. **No near-plane clipping**: any polygon with a vertex behind the camera was dropped whole, deleting most walls, floors and ceilings.
+
+Both are fixed (Sutherland-Hodgman clip + fan triangulation). Corridor side-wall doors were also built across the corridor instead of in the wall plane (`addDoor` now takes `wall: 'side'`). Exposure on three bright rooms (B-05, B-11, CAM-05) was lowered, because they had only ever been tuned against the broken render.
+
+**Content is untouched.** `public/evidence/manifest.json` and `src/lib/evidence/assetLibrary.generated.ts` are byte-identical before and after; only the JPEG pixels changed. `npm run evidence:verify` (determinism) and `evidence:refs` (138 paths) pass.
+
+Inspection view: shows the thumbnail instantly behind the full frame, and now lists CONDITION and CAPTURED from fields that already existed. The board swaps to the full-size image above 110 % zoom (thumbnails are 220 px).
+
+Gotcha: `build.mjs --only <codes>` deletes every other artifact's files and truncates the catalog. Always run the full build (about 50 s).
+
 ## Evidence audit (CASE NX-037, 66 generated artifacts)
 
 All 138 referenced media paths exist (`npm run evidence:refs`). Mix: 12 photographs, 9 surveillance, 9 documents, 9 notes, 10 fragments, 6 personnel, 6 audio, 5 maps; 38 normal, 28 degraded in 9 conditions; 98 declared relationships (9 contradictions). 
+
+**Not in the data, so not touched:** there are no posters and no emails. Documents, notes and personnel files already have physical paper treatment (typed forms, carbon copies, stamps, redaction bars, tears, burns). Nothing was invented to fill the gap.
 
 **Gaps against the brief**, left unfilled on purpose because evidence must carry story, not decorate the UI: no posters / public notices, newspaper clippings, phone or message records, receipts/tickets, lab/DNA/medical reports. Adding them is a content task for `scripts/evidence-gen/library.mjs` and needs the case writer's facts.
 
