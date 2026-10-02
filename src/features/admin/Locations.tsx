@@ -89,13 +89,21 @@ export function AdminLocations() {
     return dups
   }, [qrCodes])
 
-  const batchSummary = useMemo(() => ({
-    totalMarkers: qrCodes.length,
-    pages: Math.ceil(qrCodes.length / 4),
-    duplicates: [...new Set([...duplicateManualCodes, ...duplicateMarkerIds])].length,
-    deployed: qrCodes.filter(q => q.deploymentStatus === 'DEPLOYED').length,
-    active: qrCodes.filter(q => q.deploymentStatus === 'ACTIVE').length,
-  }), [qrCodes, duplicateManualCodes, duplicateMarkerIds])
+  const batchSummary = useMemo(() => {
+    const batchCodes = qrCodes.filter(q => q.deploymentBatch === selectedBatchName)
+    const set = batchCodes.length > 0 ? batchCodes : qrCodes
+    return {
+      totalMarkers: set.length,
+      pages: Math.ceil(set.length / 4),
+      duplicates: [...new Set([...duplicateManualCodes, ...duplicateMarkerIds])].length,
+      deployed: set.filter(q => q.deploymentStatus === 'DEPLOYED').length,
+      active: set.filter(q => q.deploymentStatus === 'ACTIVE').length,
+    }
+  }, [qrCodes, duplicateManualCodes, duplicateMarkerIds, selectedBatchName])
+
+  const filteredQRCodes = useMemo(() => {
+    return qrCodes.filter(q => q.deploymentBatch === selectedBatchName)
+  }, [qrCodes, selectedBatchName])
 
   const locationMap = useMemo(() => {
     const map = new Map<string, LocationEntry>()
@@ -360,7 +368,7 @@ export function AdminLocations() {
       {/* Deployment Tool Modal */}
       {showDeploymentTool && (
         <DeploymentTool
-          qrCodes={qrCodes}
+          qrCodes={filteredQRCodes}
           isLoading={isQrLoading}
           error={qrError}
           batchName={selectedBatchName}
@@ -371,7 +379,7 @@ export function AdminLocations() {
             setIsDownloading(true)
             setDownloadError(null)
             try {
-              const result = await generateQRCodeSheet(qrCodes, { batchName: selectedBatchName })
+              const result = await generateQRCodeSheet(filteredQRCodes, { batchName: selectedBatchName })
               if (!result.success) {
                 setDownloadError(result.error ?? 'FAILED TO GENERATE QR SHEET')
               }

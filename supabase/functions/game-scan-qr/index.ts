@@ -41,6 +41,25 @@ Deno.serve(async (req: Request) => {
       return errorResponse(500, 'Failed to scan QR code')
     }
 
+    if (data && typeof data === 'object' && data.error === 'Invalid QR code') {
+      const { data: nodeData, error: nodeError } = await supabaseUser
+        .from('qr_nodes')
+        .select('code')
+        .or(`marker_id.eq.${qrCode},manual_code.eq.${qrCode}`)
+        .maybeSingle()
+
+      if (nodeError) {
+        console.error('qr_nodes fallback lookup error:', nodeError)
+      }
+
+      if (nodeData) {
+        const retry = await supabaseUser.rpc('scan_qr_code', {
+          p_qr_code: nodeData.code,
+        })
+        return jsonResponse(200, { success: true, result: retry.data })
+      }
+    }
+
     return jsonResponse(200, { success: true, result: data })
   } catch (err: unknown) {
     console.error('Unhandled error in game-scan-qr:', err)

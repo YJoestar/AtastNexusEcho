@@ -45,13 +45,13 @@ function makeQRCodes(count: number): QRCodeEntry[] {
 
 describe('QR code marker data', () => {
   it('produces unique marker IDs', () => {
-    const codes = makeQRCodes(36)
+    const codes = makeQRCodes(47)
     const ids = codes.map(c => c.markerId)
     expect(new Set(ids).size).toBe(ids.length)
   })
 
   it('produces unique manual codes', () => {
-    const codes = makeQRCodes(36)
+    const codes = makeQRCodes(47)
     const manuals = codes.map(c => c.manualCode)
     expect(new Set(manuals).size).toBe(manuals.length)
   })

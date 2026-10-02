@@ -2,20 +2,27 @@
 -- NEXUS - Seed the physical-game tables
 --
 -- qr_nodes, evidence, fragments and inventory_items were all empty (0 rows)
--- while puzzle_nodes held 43 fully populated nodes. Everything the content
+-- while puzzle_nodes held 47 fully populated nodes. Everything the content
 -- already declared therefore pointed at nothing:
 --
---   * locationClue.nextQrNode references 36 distinct codes, QR-NODE-02
---     through QR-NODE-37, none of which existed. scan_qr_code() resolved
---     every marker to "Invalid QR code", so the scanner could never work.
---   * metadata.evidenceUnlocked names an evidence id on all 43 nodes
+--   * locationClue.nextQrNode references 47 distinct puzzle codes, but only
+--     36 had QR nodes (QR-NODE-02 through QR-NODE-37). 11 puzzles had no
+--     QR code to scan at their location, making them unreachable in the
+--     physical game: P05, P07b, P17b, P21, P22, P23, P23b, P24b, P27b,
+--     P29, P37. scan_qr_code() resolved every entry to "Invalid QR code",
+--     so the scanner could never work for those locations.
+--   * metadata.evidenceUnlocked names an evidence id on all 47 nodes
 --     (EVID-P01 ... plus FRAG-01..04), so the evidence screens had nothing
 --     to show and solving a node revealed nothing.
 --
--- This seeds exactly what the content already describes: one qr_nodes row per
--- referenced marker, mapped to the puzzle it points at, and one evidence row
--- per metadata.evidenceUnlocked entry. The four FRAG-* entries additionally
+-- This seeds exactly what the content describes: one qr_nodes row per puzzle
+-- node, mapped to the puzzle it marks, and one evidence row per
+-- metadata.evidenceUnlocked entry. The four FRAG-* entries additionally
 -- become fragments, one per stage.
+--
+-- Marker IDs use case 037 with sequential letter suffixes (A..AU for 47
+-- total). The first 36 are in BATCH-01 (already deployed). The remaining 11
+-- complete the set in BATCH-02.
 --
 -- All inserts are ON CONFLICT (code) DO UPDATE, so re-running is safe and
 -- this can be extended later without duplicating rows.
@@ -24,8 +31,18 @@
 -- inventing items would put content in the game that the design does not
 -- describe.
 -- ============================================================================
--- qr_nodes: 36 rows
-INSERT INTO qr_nodes (code, label, type, puzzle_node_id, position, metadata, marker_id, manual_code, deployment_status, deployment_batch) VALUES
+
+-- Ensure deployment-grade columns exist (idempotent, regardless of migration order)
+ALTER TABLE qr_nodes ADD COLUMN IF NOT EXISTS marker_id TEXT;
+ALTER TABLE qr_nodes ADD COLUMN IF NOT EXISTS manual_code TEXT;
+ALTER TABLE qr_nodes ADD COLUMN IF NOT EXISTS deployment_status TEXT DEFAULT 'GENERATED';
+ALTER TABLE qr_nodes ADD COLUMN IF NOT EXISTS deployment_batch TEXT;
+ALTER TABLE qr_nodes ADD COLUMN IF NOT EXISTS printed_at TIMESTAMPTZ;
+
+-- qr_nodes: 47 rows (36 in BATCH-01 + 11 in BATCH-02)
+-- ---------------------------------------------------------------------------
+-- BATCH-01: original 36 markers (QR-NODE-02 through QR-NODE-37)
+-- ---------------------------------------------------------------------------
   ('QR-NODE-02', '[ADMIN BUILDING] — Main Entrance Facade', 'NAVIGATION', '9503be33-a2ad-4372-be7d-0658696cf4df', '{"x":0,"y":0,"index":0}'::jsonb, '{"puzzleCode":"P01","stage":1}'::jsonb, 'NX-037-A', '037-A-4821', 'GENERATED', 'BATCH-01'),
   ('QR-NODE-03', '[ADMIN BUILDING] — Lobby Clock Tower', 'NAVIGATION', 'da99e74c-ca05-470a-96d6-637675604b35', '{"x":0,"y":0,"index":1}'::jsonb, '{"puzzleCode":"P02","stage":1}'::jsonb, 'NX-037-B', '037-B-4822', 'GENERATED', 'BATCH-01'),
   ('QR-NODE-04', '[ADMIN BUILDING] — Facade Base Terminal', 'NAVIGATION', '96b8feb5-9ac4-40bd-94de-10ec75d8da92', '{"x":0,"y":0,"index":2}'::jsonb, '{"puzzleCode":"P03","stage":1}'::jsonb, 'NX-037-C', '037-C-4823', 'GENERATED', 'BATCH-01'),
@@ -72,7 +89,56 @@ ON CONFLICT (code) DO UPDATE
       deployment_status = EXCLUDED.deployment_status,
       deployment_batch = EXCLUDED.deployment_batch;
 
--- evidence: 43 rows
+-- ---------------------------------------------------------------------------
+-- BATCH-02: missing markers for puzzles that had nextQrNode references
+--           but no physical QR node. Uses subquery for puzzle_node_id
+--           so it resolves correctly regardless of generated UUIDs.
+-- ---------------------------------------------------------------------------
+INSERT INTO qr_nodes (code, label, type, puzzle_node_id, position, metadata, marker_id, manual_code, deployment_status, deployment_batch) VALUES
+  ('QR-NODE-38', '[ADMIN BUILDING] — Archive Figure Display', 'NAVIGATION',
+   (SELECT id FROM puzzle_nodes WHERE code = 'P05'), '{"x":0,"y":0,"index":36}'::jsonb,
+   '{"puzzleCode":"P05","stage":1}'::jsonb, 'NX-037-AK', '037-AK-4857', 'GENERATED', 'BATCH-02'),
+  ('QR-NODE-39', '[SCIENCE BUILDING] — Basement Archive Locker', 'NAVIGATION',
+   (SELECT id FROM puzzle_nodes WHERE code = 'P07b'), '{"x":0,"y":0,"index":37}'::jsonb,
+   '{"puzzleCode":"P07b","stage":2}'::jsonb, 'NX-037-AL', '037-AL-4858', 'GENERATED', 'BATCH-02'),
+  ('QR-NODE-40', '[SCIENCE BUILDING] — Auditorium Basement Archive', 'NAVIGATION',
+   (SELECT id FROM puzzle_nodes WHERE code = 'P17b'), '{"x":0,"y":0,"index":38}'::jsonb,
+   '{"puzzleCode":"P17b","stage":3}'::jsonb, 'NX-037-AM', '037-AM-4859', 'GENERATED', 'BATCH-02'),
+  ('QR-NODE-41', '[ADMIN BUILDING] — Fourth Floor Window', 'NAVIGATION',
+   (SELECT id FROM puzzle_nodes WHERE code = 'P21'), '{"x":0,"y":0,"index":39}'::jsonb,
+   '{"puzzleCode":"P21","stage":3}'::jsonb, 'NX-037-AN', '037-AN-4860', 'GENERATED', 'BATCH-02'),
+  ('QR-NODE-42', '[SCIENCE BUILDING] — Research Lab', 'NAVIGATION',
+   (SELECT id FROM puzzle_nodes WHERE code = 'P22'), '{"x":0,"y":0,"index":40}'::jsonb,
+   '{"puzzleCode":"P22","stage":4}'::jsonb, 'NX-037-AO', '037-AO-4861', 'GENERATED', 'BATCH-02'),
+  ('QR-NODE-43', '[ENGINEERING BLOCK] — Robotics Bay 1', 'NAVIGATION',
+   (SELECT id FROM puzzle_nodes WHERE code = 'P23'), '{"x":0,"y":0,"index":41}'::jsonb,
+   '{"puzzleCode":"P23","stage":4}'::jsonb, 'NX-037-AP', '037-AP-4862', 'GENERATED', 'BATCH-02'),
+  ('QR-NODE-44', '[ENGINEERING BLOCK] — Robotics Bay 1 — Maintenance Vent', 'NAVIGATION',
+   (SELECT id FROM puzzle_nodes WHERE code = 'P23b'), '{"x":0,"y":0,"index":42}'::jsonb,
+   '{"puzzleCode":"P23b","stage":4}'::jsonb, 'NX-037-AQ', '037-AQ-4863', 'GENERATED', 'BATCH-02'),
+  ('QR-NODE-45', '[ENGINEERING BLOCK] — Antenna Deck Interrogation Room', 'NAVIGATION',
+   (SELECT id FROM puzzle_nodes WHERE code = 'P24b'), '{"x":0,"y":0,"index":43}'::jsonb,
+   '{"puzzleCode":"P24b","stage":4}'::jsonb, 'NX-037-AR', '037-AR-4864', 'GENERATED', 'BATCH-02'),
+  ('QR-NODE-46', '[ENGINEERING BLOCK] — Architecture Lab — Debug Console', 'NAVIGATION',
+   (SELECT id FROM puzzle_nodes WHERE code = 'P27b'), '{"x":0,"y":0,"index":44}'::jsonb,
+   '{"puzzleCode":"P27b","stage":4}'::jsonb, 'NX-037-AS', '037-AS-4865', 'GENERATED', 'BATCH-02'),
+  ('QR-NODE-47', '[ENGINEERING BLOCK] — Core Declassification Vault', 'NAVIGATION',
+   (SELECT id FROM puzzle_nodes WHERE code = 'P29'), '{"x":0,"y":0,"index":45}'::jsonb,
+   '{"puzzleCode":"P29","stage":4}'::jsonb, 'NX-037-AT', '037-AT-4866', 'GENERATED', 'BATCH-02'),
+  ('QR-NODE-48', '[NEXUS CORE] — Final Boss Arena', 'NAVIGATION',
+   (SELECT id FROM puzzle_nodes WHERE code = 'P37'), '{"x":0,"y":0,"index":46}'::jsonb,
+   '{"puzzleCode":"P37","stage":5}'::jsonb, 'NX-037-AU', '037-AU-4867', 'GENERATED', 'BATCH-02')
+ON CONFLICT (code) DO UPDATE
+  SET label = EXCLUDED.label,
+      type = EXCLUDED.type,
+      puzzle_node_id = EXCLUDED.puzzle_node_id,
+      metadata = EXCLUDED.metadata,
+      marker_id = EXCLUDED.marker_id,
+      manual_code = EXCLUDED.manual_code,
+      deployment_status = EXCLUDED.deployment_status,
+      deployment_batch = EXCLUDED.deployment_batch;
+
+-- evidence: 47 rows
 INSERT INTO evidence (code, title, description, type, classification, content, metadata) VALUES
   ('EVID-M01', 'Stage 1 Meta — Archive Access Record', 'The archive confirms: all Stage 1 paths relate to LIGHT. A new folder labeled "STAGE 2 — MEMORY TRANSFER" has been unlocked.', 'DOCUMENT', 'CLASSIFIED', '{"text":"The archive confirms: all Stage 1 paths relate to LIGHT. A new folder labeled \"STAGE 2 — MEMORY TRANSFER\" has been unlocked.","source":"Central archive terminal","state":"RECOVERED"}'::jsonb, '{"source":"Central archive terminal","nodeCode":"M01"}'::jsonb),
   ('FRAG-04', 'Fragment 4 — Lattice', 'The fourth fragment. The word LATTICE: "The grid connects. The intersection is the node. Find the lattice."', 'DOCUMENT', 'CLASSIFIED', '{"text":"The fourth fragment. The word LATTICE: \"The grid connects. The intersection is the node. Find the lattice.\"","source":"Memory lab terminal","state":"RECOVERED"}'::jsonb, '{"source":"Memory lab terminal","nodeCode":"M02"}'::jsonb),
