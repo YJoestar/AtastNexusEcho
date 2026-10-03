@@ -208,7 +208,6 @@ export function bloom(canvas, { threshold = 0.72, radius = 14, strength = 0.5 } 
 export function sensorNoise(canvas, seed, { amount = 0.06, chroma = 0.5, shadowBias = 1.4 } = {}) {
   const rng = makeRng(seed)
   const { data } = canvas
-  const blockNoise = makeNoise2d(seed + 11, 64)
   for (let i = 0, p = 0; i < data.length; i += 3, p++) {
     const x = p % canvas.width
     const y = (p / canvas.width) | 0
@@ -218,7 +217,9 @@ export function sensorNoise(canvas, seed, { amount = 0.06, chroma = 0.5, shadowB
     const cr = (rng() - 0.5) * amount * chroma * shadowWeight
     const cg = (rng() - 0.5) * amount * chroma * shadowWeight
     const cb = (rng() - 0.5) * amount * chroma * shadowWeight
-    const blotch = (blockNoise(x * 0.06, y * 0.06) - 0.5) * amount * 1.1
+    // No low-frequency 'blotch' term: cloudy mottling is not a sensor
+    // artefact, it just reads as dirty walls. Real noise is per-pixel.
+    const blotch = 0
     data[i] = clamp01(data[i] + mono + cr + blotch)
     data[i + 1] = clamp01(data[i + 1] + mono + cg + blotch)
     data[i + 2] = clamp01(data[i + 2] + mono + cb + blotch)

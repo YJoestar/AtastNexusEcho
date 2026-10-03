@@ -151,6 +151,72 @@ function barycentric(px, py, p0, p1, p2) {
   return [a, b, 1 - a - b]
 }
 
+
+/**
+ * Room bounds from the geometry itself, used for ambient occlusion: a surface
+ * darkens where it meets a floor, ceiling or wall, which is what separates a
+ * lit room from a coloured diagram of one.
+ */
+function sceneBounds(faces) {
+  const min = { x: Infinity, y: Infinity, z: Infinity }
+  const max = { x: -Infinity, y: -Infinity, z: -Infinity }
+  for (const f of faces) {
+    for (const p of f.points) {
+      for (const k of ['x', 'y', 'z']) {
+        if (p[k] < min[k]) min[k] = p[k]
+        if (p[k] > max[k]) max[k] = p[k]
+      }
+    }
+  }
+  return { min, max }
+}
+
+/**
+ * Solid occluders for shadow rays: every opaque, non-emissive box() in the
+ * scene (six consecutive faces tagged front..left) that is thick enough to
+ * throw a shadow. Housings, skirting and trim are ignored.
+ */
+const BOX_TAGS = ['front', 'back', 'top', 'bottom', 'right', 'left']
+function collectOccluders(faces) {
+  const out = []
+  for (let i = 0; i + 5 < faces.length; i++) {
+    if (faces[i].tag !== 'front') continue
+    let ok = true
+    for (let k = 0; k < 6; k++) if (faces[i + k].tag !== BOX_TAGS[k]) { ok = false; break }
+    if (!ok) continue
+    if (faces[i].emissive > 0 || faces[i].alpha < 1) continue
+    const b = sceneBounds(faces.slice(i, i + 6))
+    const size = { x: b.max.x - b.min.x, y: b.max.y - b.min.y, z: b.max.z - b.min.z }
+    if (Math.min(size.x, size.y, size.z) < 0.09) continue
+    // Overhead runs (pipes, beams) are not what throws a shadow on a floor.
+    if (b.min.y > 1.1) continue
+    out.push(b)
+    i += 5
+  }
+  return out
+}
+
+/** Slab test: does the segment from `o` towards `t` (length `len`) cross `box`? */
+function segmentHitsBox(o, d, len, box) {
+  let t0 = 0
+  let t1 = len
+  for (const k of ['x', 'y', 'z']) {
+    const inv = 1 / (d[k] || 1e-9)
+    let a = (box.min[k] - o[k]) * inv
+    let b = (box.max[k] - o[k]) * inv
+    if (a > b) { const tmp = a; a = b; b = tmp }
+    if (a > t0) t0 = a
+    if (b < t1) t1 = b
+    if (t0 > t1) return false
+  }
+  return true
+}
+
+const smooth = (edge0, edge1, x) => {
+  const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)))
+  return t * t * (3 - 2 * t)
+}
+
 /**
  * Painter's-algorithm scanline rasteriser.
  *
@@ -168,6 +234,8 @@ export function renderScene(scene, camera, buffer, options = {}) {
   const fogFar = scene.fogFar ?? 30
   const background = scene.background ?? [10, 11, 12]
   const nearBias = options.nearBias ?? 0.004
+  const bounds = scene.bounds ?? sceneBounds(scene.faces)
+  const occluders = scene.shadows === false ? [] : collectOccluders(scene.faces)
 
   for (let i = 0; i < width * height; i++) {
     data[i * 3] = background[0] / 255
@@ -217,6 +285,9 @@ export function renderScene(scene, camera, buffer, options = {}) {
       fogNear,
       fogFar,
       nearBias,
+      bounds,
+      occluders,
+      aoStrength: scene.ao ?? 0.55,
     })
   }
 
@@ -278,16 +349,35 @@ function rasterPolygon(item, camera, buffer, env) {
       let r = 0
       let g = 0
       let b = 0
-      const sky = Math.max(0, normal.y)
+      // Hemisphere ambient. A ceiling faces away from the sky term but is
+      // lit by light bounced up off the floor, so it takes the sky value too.
+      const sky = normal.y > 0 ? normal.y : Math.max(0, -normal.y) * 0.8
       r += env.ambientSky[0] * sky + env.ambient[0] * (1 - sky)
       g += env.ambientSky[1] * sky + env.ambient[1] * (1 - sky)
       b += env.ambientSky[2] * sky + env.ambient[2] * (1 - sky)
+
+      // Ambient occlusion from the room volume: contact darkening where a
+      // surface meets another plane. Planes the surface lies in are skipped.
+      let occlusion = 1
+      if (env.aoStrength > 0) {
+        const bnd = env.bounds
+        const p = { x: wx, y: wy, z: wz }
+        for (const axis of ['x', 'y', 'z']) {
+          if (Math.abs(normal[axis]) > 0.6) continue
+          const reach = axis === 'y' ? 0.55 : 0.4
+          const dLow = p[axis] - bnd.min[axis]
+          const dHigh = bnd.max[axis] - p[axis]
+          occlusion *= 1 - env.aoStrength * (1 - smooth(0, reach, dLow)) * 0.6
+          occlusion *= 1 - env.aoStrength * (1 - smooth(0, reach, dHigh)) * 0.6
+        }
+      }
 
       if (polygon.emissive > 0) {
         r += polygon.color[0] * polygon.emissive
         g += polygon.color[1] * polygon.emissive
         b += polygon.color[2] * polygon.emissive
       } else {
+        let shadowTests = 0
         for (let li = 0; li < lightCount; li++) {
           const light = env.lights[li]
           const dx = light.position.x - wx
@@ -296,23 +386,40 @@ function rasterPolygon(item, camera, buffer, env) {
           const distSq = dx * dx + dy * dy + dz * dz
           const dist = Math.sqrt(distSq)
           if (dist < 1e-5) continue
-          const ndl = Math.max(0, (normal.x * dx + normal.y * dy + normal.z * dz) / dist)
-          if (ndl <= 0) continue
           const range = light.range ?? 6
           const falloff = (light.intensity ?? 1) / (1 + distSq / (range * range))
-          const amount = ndl * falloff
-          r += polygon.color[0] * light.color[0] * amount
-          g += polygon.color[1] * light.color[1] * amount
-          b += polygon.color[2] * light.color[2] * amount
+          const ndl = Math.max(0, (normal.x * dx + normal.y * dy + normal.z * dz) / dist)
+          // Direct term with a little wrap so a surface at a grazing angle to a
+          // fixture (a ceiling, a wall beside a troffer) still shows a gradient.
+          let amount = ((ndl + 0.25) / 1.25) * falloff
+          if (ndl <= 0) amount = 0.2 * falloff * Math.max(0, 0.25 + ndl)
+          // Soft indirect: light that has already bounced off the room, with
+          // no direction, so shadowed areas are dim rather than black.
+          // Near a fixture the panel is a large soft source: surfaces beside it
+          // (the ceiling it hangs in, the wall above a door) pool with light.
+          const indirect = 0.06 * falloff + 0.15 * (light.intensity ?? 1) / (1 + distSq / 2.4)
+          if (amount > 0.012 && env.occluders.length > 0 && shadowTests < 3 && dist > 0.3) {
+            shadowTests++
+            const inv = 1 / dist
+            const dir = { x: dx * inv, y: dy * inv, z: dz * inv }
+            const o = { x: wx + normal.x * 0.03, y: wy + normal.y * 0.03, z: wz + normal.z * 0.03 }
+            for (const box of env.occluders) {
+              if (segmentHitsBox(o, dir, dist - 0.05, box)) { amount *= 0.08; break }
+            }
+          }
+          const total = amount + indirect
+          r += polygon.color[0] * light.color[0] * total
+          g += polygon.color[1] * light.color[1] * total
+          b += polygon.color[2] * light.color[2] * total
         }
       }
 
       // Grazing surfaces catch slightly more light — cheap fresnel-ish lift.
       const graze = 0.82 + 0.18 * Math.abs(facing)
 
-      r *= albedoScale * graze
-      g *= albedoScale * graze
-      b *= albedoScale * graze
+      r *= albedoScale * graze * occlusion
+      g *= albedoScale * graze * occlusion
+      b *= albedoScale * graze * occlusion
 
       if (env.fogColor) {
         const t = Math.max(0, Math.min(1, (depth - env.fogNear) / (env.fogFar - env.fogNear)))

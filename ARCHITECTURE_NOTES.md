@@ -119,3 +119,35 @@ All 138 referenced media paths exist (`npm run evidence:refs`). Mix: 12 photogra
 - Screen curvature, and an in-app control for the effects preference, were not built (the preference API exists).
 - Admin screens (dashboard, QA hub, locations…) were audited, not redesigned; the QA hub in particular still looks like generic web UI.
 - Per-device wording like "Mobile viewport" in the simulator is a CSS width, not a real device.
+
+## Photograph realism repair
+
+Audit of the 12 field photographs (`docs/evidence/photos-before.jpg` → `photos-after.jpg`).
+The faults were in the source scene, not the post-process, and are fixed there.
+
+Root causes found:
+1. `terrazzo` / `ceilingTile` took `(x, z)` but the rasteriser passes `(x, y, z, depth)`, so floors sampled `(x, y=0)`: the long "streaks" down every corridor. Fixed.
+2. `sensorNoise` added a low-frequency "blotch" term to every pixel, the cloudy mottling on every wall. Removed; noise is per-pixel only.
+3. The old plaster used low-frequency noise at 0.22/m; replaced with fine, low-amplitude detail that fades with distance (no moiré).
+4. Ceilings: facing away from the sky term, and flat against the fixture plane (n·l≈0), so they rendered flat dark. Now: floor-bounce hemisphere term, wrap lighting, a near-fixture soft-source pool.
+5. No contact shading and no shadows. Added room-volume ambient occlusion and per-fragment shadow rays against solid boxes (overhead runs and trim excluded).
+
+| Photo | Verdict before | Result |
+|---|---|---|
+| B-01 corridor | NEEDS REWORK | PASS: clean walls, lit floor, shadowed doors |
+| B-02 corridor (north) | NEEDS REWORK | PASS |
+| B-03 archive | NEEDS REWORK | PASS (dark by design, shelving shadows read) |
+| B-04 stairwell | NEEDS REWORK | PASS (low-key by design; ceiling still dark) |
+| B-05 lab | NEEDS REWORK (high key) | PASS after exposure 1.05→0.62 |
+| B-06 entrance (night) | PASS | PASS: canopy now casts a shadow |
+| B-07 rejected frame | NEEDS REWORK (80 % clipped) | PASS: still a flash blow-out, fixtures legible |
+| B-08 plant room | NEEDS REWORK | PASS |
+| B-09 equipment room | NEEDS REWORK | PASS (ceiling beams still dark) |
+| B-10 archive office | NEEDS REWORK | PASS (dark by design; unlit ceiling) |
+| B-11 lecture room | NEEDS REWORK (white walls) | PASS, still bright |
+| B-12 corridor | NEEDS REWORK | PASS (stain is deliberate damage) |
+
+Not done: no photo was REGENERATE-class once the renderer was fixed, and
+Canva was not used (full-size export needs network access that was declined).
+Remaining weakness: dark rooms' ceilings are still low-contrast, props are
+boxy, and shadows are hard-edged. Content lock holds (66 records).

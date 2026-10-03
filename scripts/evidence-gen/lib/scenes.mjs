@@ -6,32 +6,43 @@
 import { v3, box, quad, face } from './render3d.mjs'
 import { makeNoise2d, makeRng } from './rng.mjs'
 
+// Procedural surface values. Each takes the fragment's camera depth as a last
+// argument and fades its fine detail to the mean value with distance, so
+// grout lines and chips do not alias into moire streaks down a long corridor.
+const detail = depth => 1 - Math.max(0, Math.min(1, ((depth ?? 0) - 2.5) / 7))
+const lerpMean = (value, mean, k) => mean + (value - mean) * k
+
 const plaster = (seed, tint = 1) => {
   const n = makeNoise2d(seed, 48)
-  const m = makeNoise2d(seed + 5, 16)
-  return (x, y) => tint * (0.86 + n(x * 1.6, y * 1.6) * 0.14 + m(x * 0.22, y * 0.22) * 0.12)
+  return (x, y, z, depth) => tint * (0.95 + (n(x * 9, y * 9) - 0.5) * 0.04 * detail(depth))
 }
 
 const paintedBlock = (seed, tint = 1) => {
   const n = makeNoise2d(seed, 48)
   // Mortar courses: a horizontal line every 0.22m in Y, running joints offset.
-  return (x, y, z) => {
+  return (x, y, z, depth) => {
+    const k = detail(depth)
     const course = Math.abs(((y % 0.22) + 0.22) % 0.22)
     const along = Math.abs(((x + z) % 0.44 + 0.44) % 0.44)
-    const joint = course < 0.008 || (Math.abs(course - 0.11) < 0.006 && along < 0.012) ? 0.86 : 1
-    return tint * joint * (0.9 + n(x * 3, y * 3) * 0.1)
+    const joint = course < 0.008 || (Math.abs(course - 0.11) < 0.006 && along < 0.012) ? 0.88 : 1
+    // Paint is dirtier low down (shoes, mops) and cleaner above head height.
+    const wear = 0.9 + 0.1 * Math.min(1, Math.max(0, (y - 0.15) / 1.2))
+    return tint * wear * lerpMean(joint, 0.995, k) * (0.97 + (n(x * 11, y * 11) - 0.5) * 0.05 * k)
   }
 }
 
 const terrazzo = (seed, tint = 1) => {
   const speck = makeNoise2d(seed, 64)
   const grit = makeNoise2d(seed + 9, 32)
-  return (x, z) => {
+  return (x, _y, z, depth) => {
+    const k = detail(depth)
     const tileX = Math.abs(((x % 0.6) + 0.6) % 0.6)
     const tileZ = Math.abs(((z % 0.6) + 0.6) % 0.6)
-    const grout = tileX < 0.012 || tileZ < 0.012 ? 0.72 : 1
-    const chips = speck(x * 34, z * 34) > 0.78 ? 1.22 : speck(x * 34, z * 34) < 0.2 ? 0.82 : 1
-    return tint * grout * chips * (0.94 + grit(x * 2, z * 2) * 0.1)
+    const grout = tileX < 0.012 || tileZ < 0.012 ? 0.76 : 1
+    const s = speck(x * 34, z * 34)
+    const chips = s > 0.78 ? 1.16 : s < 0.2 ? 0.86 : 1
+    const sheen = 0.97 + (grit(x * 2, z * 2) - 0.5) * 0.06
+    return tint * sheen * lerpMean(grout, 0.985, k) * lerpMean(chips, 1, k)
   }
 }
 
@@ -42,13 +53,14 @@ const brushedMetal = (seed, tint = 1) => {
 
 const ceilingTile = (seed, tint = 1) => {
   const n = makeNoise2d(seed, 32)
-  return (x, z) => {
+  return (x, _y, z, depth) => {
+    const k = detail(depth)
     const gx = Math.abs(((x % 0.61) + 0.61) % 0.61)
     const gz = Math.abs(((z % 0.61) + 0.61) % 0.61)
-    const grid = gx < 0.016 || gz < 0.016 ? 0.66 : 1
-    // Water staining in the corner tiles.
-    const stain = n(x * 0.7, z * 0.7) > 0.72 ? 0.86 : 1
-    return tint * grid * stain * (0.95 + n(x * 6, z * 6) * 0.08)
+    const grid = gx < 0.016 || gz < 0.016 ? 0.7 : 1
+    // Water staining in a few tiles, soft-edged so it reads as damp, not paint.
+    const stain = 1 - 0.14 * Math.max(0, Math.min(1, (n(x * 0.7, z * 0.7) - 0.66) * 6))
+    return tint * lerpMean(grid, 0.97, k) * stain * (0.97 + (n(x * 8, z * 8) - 0.5) * 0.05 * k)
   }
 }
 
