@@ -13,20 +13,24 @@ import { BureauIcons } from '@/components/bureau'
 import { useAdmin } from '@/app/providers/AdminProvider'
 import { cn } from '@/lib/utils'
 import { ROUTES } from '@/app/config'
+import { SHOWCASE_CASE } from '@/lib/evidence/showcaseCatalog'
 
-const BOOT_LINES = [
-  { text: 'NEXUS ECHO INTERNAL SYSTEM', delay: 100 },
-  { text: 'NODE 02 BOOT SEQUENCE', delay: 100 },
-  { text: 'ARCHIVE ......... OK', delay: 80 },
-  { text: 'FIELD NETWORK ... OK', delay: 80 },
-  { text: 'OBSERVATION ..... OK', delay: 80 },
-  { text: 'CASE DATABASE ... OK', delay: 80 },
-  { text: 'SIGNAL CHANNEL .. OK', delay: 80 },
-  { text: '', delay: 200 },
-  { text: 'WARNING: ONE ENTRY COULD NOT BE FULLY VERIFIED', delay: 150 },
-  { text: '', delay: 200 },
-  { text: 'AWAITING AUTHORIZATION', delay: 200 },
-]
+/**
+ * Honest boot lines: the only thing this screen can actually know before
+ * sign-in is whether the browser sees a network carrier. No checks are faked.
+ */
+function bootLines(): Array<{ text: string; delay: number }> {
+  const online = typeof navigator === 'undefined' ? true : navigator.onLine
+  return [
+    { text: `NEXUS ECHO // CONTINUITY RECORDS SYSTEM  ${SHOWCASE_CASE.build}`, delay: 90 },
+    { text: SHOWCASE_CASE.institution, delay: 70 },
+    { text: `TERMINAL ${SHOWCASE_CASE.terminal} / NODE ${SHOWCASE_CASE.node}`, delay: 70 },
+    { text: online ? 'CARRIER PRESENT' : 'NO CARRIER — SIGN-IN WILL FAIL UNTIL THE LINK RETURNS', delay: 90 },
+    { text: '', delay: 120 },
+    { text: 'ACCESS RESTRICTED. AUTHORIZED PERSONNEL ONLY.', delay: 90 },
+    { text: 'AWAITING AUTHORIZATION', delay: 140 },
+  ]
+}
 
 export function AdminLogin() {
   const navigate = useNavigate()
@@ -39,19 +43,28 @@ export function AdminLogin() {
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [touched, setTouched] = useState<Record<string, boolean>>({})
+  const [lines] = useState(bootLines)
   const [bootComplete, setBootComplete] = useState(false)
   const [bootIndex, setBootIndex] = useState(0)
 
   useEffect(() => {
-    if (bootIndex < BOOT_LINES.length) {
+    if (bootIndex < lines.length) {
       const timer = setTimeout(() => {
         setBootIndex(bootIndex + 1)
-      }, BOOT_LINES[bootIndex]?.delay ?? 100)
+      }, lines[bootIndex]?.delay ?? 100)
       return () => clearTimeout(timer)
-    } else if (bootIndex === BOOT_LINES.length) {
+    } else if (bootIndex === lines.length) {
       setBootComplete(true)
     }
-  }, [bootIndex])
+  }, [bootIndex, lines])
+
+  // Skippable: any key, or a click on the boot text.
+  useEffect(() => {
+    if (bootComplete) return
+    const skip = () => { setBootIndex(lines.length); setBootComplete(true) }
+    window.addEventListener('keydown', skip)
+    return () => window.removeEventListener('keydown', skip)
+  }, [bootComplete, lines.length])
 
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname ?? ROUTES.ADMIN_DASHBOARD
 
@@ -83,20 +96,20 @@ export function AdminLogin() {
       <div className="nexus-terminal-screen">
         <div className="nexus-terminal-window">
           <div className="nexus-terminal-title-bar">
-            <span className="nexus-terminal-title">NEXUS ECHO — INTERNAL INVESTIGATION TERMINAL</span>
+            <span className="nexus-terminal-title">SECURE ACCESS TERMINAL</span>
             <span className="nexus-terminal-window-id">SESSION 01</span>
           </div>
 
           <div className="nexus-terminal-body">
             {!bootComplete ? (
               <div className="nexus-terminal-output space-y-1">
-                {BOOT_LINES.slice(0, bootIndex).map((line, i) => (
+                {lines.slice(0, bootIndex).map((line, i) => (
                   <div
                     key={i}
                     className={cn(
                       'font-mono text-[0.72rem] tracking-[0.06em]',
-                      line.text.includes('WARNING') && 'text-nexus-warning',
-                      line.text.includes('OK') && 'text-nexus-accent',
+                      line.text.startsWith('NO CARRIER') && 'text-nexus-warning',
+                      line.text.startsWith('AWAITING') && 'text-nexus-accent',
                     )}
                   >
                     {line.text === '' ? '\u00A0' : line.text}
@@ -184,6 +197,10 @@ export function AdminLogin() {
                   </div>
                 )}
 
+                <p className="flex justify-between border-y border-nexus-borderSubtle py-2 font-mono text-[0.58rem] uppercase tracking-[0.14em] text-nexus-textSubtle">
+                  <span>ACCESS LEVEL</span><span className="text-nexus-textMuted">ADMINISTRATOR</span>
+                </p>
+
                 <button
                   type="submit"
                   disabled={isLoading || authLoading}
@@ -200,7 +217,7 @@ export function AdminLogin() {
                   ) : (
                     <>
                       <BureauIcons.Shield className="bureau-icon w-4 h-4" />
-                      <span>INITIALIZE SESSION</span>
+                      <span>AUTHENTICATE</span>
                     </>
                   )}
                 </button>
@@ -213,7 +230,7 @@ export function AdminLogin() {
               AUTHORIZED PERSONNEL ONLY
             </span>
             <span className="font-mono text-[0.56rem] text-nexus-textSubtle">
-              NODE 02 · SHIFT 07
+              TERMINAL 07 · NODE B-04
             </span>
           </div>
         </div>

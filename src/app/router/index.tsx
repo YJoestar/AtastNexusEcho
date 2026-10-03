@@ -8,6 +8,7 @@ import { ReactNode } from 'react'
 import { Layout } from '@/components/layout/Layout'
 import { PlayerLayout } from '@/features/player/PlayerLayout'
 import { AdminLayout } from '@/features/admin/AdminLayout'
+import { Workstation } from '@/features/admin/workstation/Workstation'
 
 // Route guards
 import { RequireAuth } from '@/components/auth/RequireAuth'
@@ -29,16 +30,6 @@ import { PlayerComplete } from '@/features/player/Complete'
 
 // Admin route components
 import { AdminLogin } from '@/features/admin/Login'
-import { AdminDashboard } from '@/features/admin/Dashboard'
-import { AdminTeams } from '@/features/admin/Teams'
-import { AdminTeamDetail } from '@/features/admin/TeamDetail'
-import { AdminLeaderboard } from '@/features/admin/Leaderboard'
-import { AdminGameControl } from '@/features/admin/GameControl'
-import { AdminAudit } from '@/features/admin/Audit'
-import { AdminLocations } from '@/features/admin/Locations'
-import { AdminQAViewer } from '@/features/admin/QAViewer'
-import { AdminEvidenceLab } from '@/features/admin/EvidenceLab'
-import { QAHub } from '@/features/admin/QAHub'
 
 // eslint-disable-next-line react-refresh/only-export-components
 function ProtectedPlayerRoute({ children }: { children: ReactNode }) {
@@ -171,91 +162,15 @@ export const router = createBrowserRouter([
         Component: AdminLayout,
         children: [{ index: true, Component: AdminLogin }],
       },
+      // Everything behind the sign-in is one workstation; each old admin screen
+      // is a module window inside it and keeps its URL (/admin/teams, ...).
       {
-        path: 'admin',
-        Component: AdminLayout,
-        children: [
-          {
-            path: 'dashboard',
-            element: (
-              <ProtectedAdminRoute>
-                <AdminDashboard />
-              </ProtectedAdminRoute>
-            ),
-          },
-          {
-            path: 'teams',
-            element: (
-              <ProtectedAdminRoute>
-                <AdminTeams />
-              </ProtectedAdminRoute>
-            ),
-          },
-          {
-            path: 'teams/:teamId',
-            element: (
-              <ProtectedAdminRoute>
-                <AdminTeamDetail />
-              </ProtectedAdminRoute>
-            ),
-          },
-          {
-            path: 'leaderboard',
-            element: (
-              <ProtectedAdminRoute>
-                <AdminLeaderboard />
-              </ProtectedAdminRoute>
-            ),
-          },
-          {
-            path: 'game-control',
-            element: (
-              <ProtectedAdminRoute>
-                <AdminGameControl />
-              </ProtectedAdminRoute>
-            ),
-          },
-          {
-            path: 'evidence-register',
-            element: (
-              <ProtectedAdminRoute>
-                <AdminEvidenceLab />
-              </ProtectedAdminRoute>
-            ),
-          },
-          {
-            path: 'audit',
-            element: (
-              <ProtectedAdminRoute>
-                <AdminAudit />
-              </ProtectedAdminRoute>
-            ),
-          },
-           {
-             path: 'locations',
-             element: (
-               <ProtectedAdminRoute>
-                 <AdminLocations />
-               </ProtectedAdminRoute>
-             ),
-           },
-           {
-             path: 'qa-viewer',
-             element: (
-               <ProtectedAdminRoute>
-                 <AdminQAViewer />
-               </ProtectedAdminRoute>
-             ),
-           },
-           {
-             path: 'qa-simulator',
-             element: (
-               <ProtectedAdminRoute>
-                 <QAHub />
-               </ProtectedAdminRoute>
-             ),
-           },
-        ],
+        path: 'admin/*',
+        element: (
+          <ProtectedAdminRoute>
+            <Workstation />
+          </ProtectedAdminRoute>
+        ),
       },
 
       // Redirect root to player login

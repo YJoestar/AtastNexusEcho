@@ -52,6 +52,22 @@ Removing an object from the table never deletes its links: they go *dormant* and
 - `package.json` had duplicate `evidence:*` script keys.
 - 5 `useConnection` tests failed without a local `.env`; the test config now supplies Supabase env.
 
+## Admin workstation (`src/features/admin/workstation/`)
+
+The admin is no longer a sidebar layout. It is **NEXUS ECHO // CONTINUITY RECORDS SYSTEM** (build NX-4.17 and the institution name come from the existing NX-037 lore constants): a system bar, a desktop of module windows, and a task strip. `AdminLayout` is now only the frame around sign-in; everything behind authentication is `Workstation`, mounted at `admin/*` behind the unchanged `RequireAdmin`.
+
+- **Windows host the existing screens.** Each module window runs one of the old admin pages inside its own in-memory location (`WindowRouter` — React Router refuses a nested `<Router>`, so it provides the same three contexts over a small history). Links, params and redirects keep working; a link that belongs to another module opens *that* module's window and leaves this one where it was. All ten old URLs (`/admin/teams/42`, `/admin/audit`, …) still deep-link and are verified in the browser.
+- **`windowManager.ts`** is pure and unit-tested: open/focus/close/minimise/maximise/move/resize/pin, cascade, clamping so a window can never be lost off-screen, single-instance modules, focus cycling, defensive load of a saved layout. The layout persists per operator (`nexus_workstation_v1:<id>`); **RESET LAYOUT** is in the module menu. Dragging and resizing mutate the element and commit once on release, so the screen inside never re-renders mid-drag.
+- **Modules** (`apps.ts`): the nine old screens under their institutional names, plus **SURVEILLANCE CONTROL** (camera records from the evidence register, with zoom/brightness/contrast; in development it also lists the generated NX-037 set) and **NEXUS://**.
+- **NEXUS:// is real.** `terminal.ts` reads the same admin API as the windows: `status`, `teams`, `team <code>` (opens the dossier), `evidence`, `locations`, `search`, `logs`, `events`, `open`, `apps`, `case 037`, `whoami`, `time`, `help`, `clear`, with history and Tab completion. A failed read prints an ARCHIVE ERROR with the source message; it never invents a value.
+- **QUERY ARCHIVE** (Ctrl/Cmd+K): modules, field units, locations and evidence in one ranked list, with filters.
+- **System messages** are diffs between two real snapshots (link lost/restored, a unit's status or node changed, a unit added/removed). The first read is a baseline, so nothing is announced on load.
+- **Boot**: skippable, once per session, shorter after the first ever, instant under reduced motion, and every line is read from live state. The sign-in screen's old boot lines (`ARCHIVE ..... OK` etc.) claimed checks that never ran; they now say only what the browser can know.
+- **Keys**: Ctrl/Cmd+K query · Ctrl+\` terminal · Alt+[ / Alt+] cycle windows (by `code`, since Alt changes the character) · Esc closes the focused window only when nothing else holds the keyboard.
+- **Below 900 px** it becomes one maximised window at a time (secondary support).
+
+Not done: icons are an original 11-glyph set but the *screens inside* the windows are the old pages, restyled only by the surrounding frame; there is no admin-side evidence *board* (the board is the player's, and needs a GM-side data model); "archive age" styling (old files looking more degraded) is not implemented; the CRT overlay has no screen curvature.
+
 ## Clue layers and cross-referencing
 
 `src/lib/evidence/clues.ts` derives clues from the relationships the case data **already declares** (`artifact.relationships`). It invents nothing: a clue's text is the relationship's own note. Kind → category / difficulty: SOURCE, SPATIAL → easy; PERSONNEL, REFERENCE → medium; TEMPORAL → hard (found by lining timestamps up); CONTRADICTION → expert.

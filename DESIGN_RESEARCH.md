@@ -31,6 +31,16 @@ Searched this session: **Her Story**, **Telling Lies**, **Orwell: Keeping an Eye
 | Orwell ([Steam guide](https://steamcommunity.com/sharedfiles/filedetails/?id=1493639258), [Geeks Under Grace](https://www.geeksundergrace.com/gaming/review-orwell-keeping-an-eye-on-you/)) | The player's selection of evidence is itself a judgement; context matters. | Clue status is the player's own reasoning (discovered / corroborated / contradicted), never system truth. |
 | The Roottrees Are Dead ([Wikipedia](https://en.wikipedia.org/wiki/The_Roottrees_are_Dead), [Thinky Games](https://thinkygames.com/reviews/the-roottrees-are-dead-review/)) | Photographs and notes gain meaning as relationships accumulate on a board. | Discoveries feed the board; links stay private hypotheses. |
 
+## Third round (admin workstation)
+
+Searched this session: **Hypnospace Outlaw**, **Stories Untold**, **Shadows of Doubt** (its pseudo-Windows evidence windows). Not searched: The Operator's OS design was covered earlier; **Observer: System Redux**, SIGNALIS interfaces, Her Story, Telling Lies, Orwell and the real-world computing eras (Windows 9x, MS-DOS, Unix workstations, police/forensic systems) were **not** researched for this pass.
+
+| Reference | Principle | Used as |
+|---|---|---|
+| Hypnospace Outlaw ([Wikipedia](https://en.wikipedia.org/wiki/Hypnospace_Outlaw), [HypnOS wiki](https://hypnospace.fandom.com/wiki/HypnOS)) | The desktop is the world: a boot screen, built-in applications, icons that open them. | A named system, a boot sequence, a module column and a task strip. No Windows 9x chrome copied. |
+| Stories Untold ([Wikipedia](https://en.wikipedia.org/wiki/Stories_Untold_(video_game))) | Old hardware and text parsers as the horror; point-and-click on virtual interfaces. | NEXUS:// is a real parser over real data; restraint over effects. |
+| Shadows of Doubt ([devblog](https://colepowered.com/shadows-of-doubt-devblog-4-case-folders-cork-boards/)) | Evidence in windows that move, resize, minimise and pin; skeuomorphic, with a familiar close button. | Window controls and pinning, in an original thin forensic header. |
+
 ## Patterns kept / patterns refused
 
 Kept: physical evidence (photo, document, tape, ID card each look different);
