@@ -103,12 +103,12 @@ export function PlayerHeader() {
           >
             {player.role}
           </span>
-          <span className={cn('text-[0.58rem] uppercase tracking-[0.18em]', roleTheme?.text)}>
+          <span className={cn('hidden sm:inline text-[0.58rem] uppercase tracking-[0.18em]', roleTheme?.text)}>
             {player.role && ROLE_SUBTITLES[player.role]}
           </span>
         </div>
         <div className="flex items-center gap-3">
-          <span className="font-mono text-[0.62rem] uppercase tracking-[0.18em] text-nexus-textSubtle">
+          <span className="max-w-[7rem] truncate font-mono text-[0.62rem] uppercase tracking-[0.18em] text-nexus-textSubtle">
             {player.displayName}
           </span>
           <div
@@ -126,7 +126,7 @@ export function PlayerHeader() {
           </div>
           <span
             className={cn(
-              'font-mono text-[0.64rem] uppercase tracking-[0.18em]',
+              'whitespace-nowrap font-mono text-[0.64rem] uppercase tracking-[0.18em]',
               TIMER_TONE[timer.urgency],
             )}
             aria-live="off"

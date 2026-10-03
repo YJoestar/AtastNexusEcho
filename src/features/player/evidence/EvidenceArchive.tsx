@@ -320,6 +320,12 @@ export function PlayerEvidenceArchive() {
             <p className="font-mono text-[0.52rem] uppercase tracking-[0.18em] text-nexus-textSubtle">CASE {team?.code ?? 'UNASSIGNED'} / FIELD ARCHIVE</p>
             <h1 className="mt-1 font-mono text-lg font-bold text-nexus-text">RECOVERED MATERIAL</h1>
           </div>
+          <Link
+            to={ROUTES.PLAYER_INVENTORY}
+            className="flex min-h-10 items-center border border-nexus-accent px-2 font-mono text-[0.5rem] uppercase text-nexus-accent"
+          >
+            OBJECTS
+          </Link>
           <span className="hidden text-right font-mono text-[0.52rem] uppercase text-nexus-textSubtle sm:block">
             {Object.values(workspace.annotations).reduce((sum, notes) => sum + notes.length, 0)} NOTES FILED
             <br />

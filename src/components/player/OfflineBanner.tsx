@@ -111,7 +111,7 @@ export function OfflineBanner({
       aria-live="polite"
       data-connection-status={status}
     >
-      <div className="flex items-start gap-2 px-4 py-2">
+      <div className="flex items-center gap-2 px-4 py-1.5">
         <Icon
           className={cn('bureau-icon w-4 h-4 flex-shrink-0 mt-0.5', copy.accent, isProblem && 'animate-pulse')}
           aria-hidden="true"
@@ -125,7 +125,16 @@ export function OfflineBanner({
           >
             {showFlushAck ? 'SUBMITTED' : copy.text}
           </p>
-          <p className="text-sm text-nexus-textMuted leading-snug">
+          {/* The full explanation stays one tap away for assistive tech; sighted
+              players get it inline only when it carries news (held answers, or
+              a delivery receipt). A permanent three-line banner costs a
+              small phone a quarter of its screen. */}
+          <p
+            className={cn(
+              'text-xs text-nexus-textMuted leading-snug',
+              !showFlushAck && queuedCount === 0 && 'sr-only',
+            )}
+          >
             {showFlushAck
               ? `${lastFlush?.length} queued answer${lastFlush?.length === 1 ? '' : 's'} delivered.`
               : copy.detail(queuedCount)}

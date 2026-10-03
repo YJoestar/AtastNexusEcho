@@ -154,3 +154,27 @@ environment the team is standing in. Realism and usability outrank atmosphere.
 
 All eight are used by the clue derivation (`src/lib/evidence/clues.ts`); none
 is decoration.
+
+---
+
+## What was changed because of this audit
+
+Player handset, only where a screen measurably failed at 360×800, 390×844 and
+412×915 (no horizontal overflow at any of the three):
+
+- Connection banner: was three lines (~100 px, a eighth of the screen) on every
+  degraded connection. Now one line; the explanation stays for assistive tech
+  and appears inline only when it carries news (answers held, delivery receipt).
+- Header: the timer wrapped to two lines; it no longer does, the role subtitle
+  (a repeat of the role badge) hides below `sm`, long names truncate.
+- Field communications: a dispatch was truncated to one register line, so the
+  actual message could not be read. Now each dispatch wraps in full, with an
+  11 px-comfortable tap target. A dispatch with no destination offers MARK READ.
+- Inventory: header wrapped to three lines beside its chips; now two.
+- Evidence ↔ Inventory: the archive now links to the object register (the
+  register already linked back).
+
+Deliberately not done, per the filter: no new apps, no new routes, no change to
+the bottom bar (its signal strip is tested and tied to real connection state),
+no new decoration. Not verified here: Node, Final, Complete, Waiting, Login at
+the three sizes; QR with a real camera.

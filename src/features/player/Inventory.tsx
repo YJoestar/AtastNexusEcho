@@ -153,7 +153,7 @@ export function PlayerInventory() {
     <div className="page">
       <div className="page-content max-w-2xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
           <Link
             to={ROUTES.PLAYER_GAME}
             className="p-2 border border-nexus-borderSubtle text-nexus-textMuted hover:text-nexus-text hover:bg-nexus-surfaceElevated touch-target-primary"
@@ -162,7 +162,7 @@ export function PlayerInventory() {
             <BureauIcons.Back className="bureau-icon w-5 h-5" />
           </Link>
           <div className="flex-1 min-w-0">
-            <h1 className="heading-3">RECOVERED OBJECT REGISTER</h1>
+            <h1 className="heading-3 leading-tight text-[0.95rem]">RECOVERED OBJECT REGISTER</h1>
             <p className="font-mono text-[0.56rem] uppercase tracking-[0.12em] text-nexus-textMuted">
               {filteredItems.length.toString().padStart(2, '0')} OBJECTS / {fragments.length.toString().padStart(2, '0')} FRAGMENTS
             </p>

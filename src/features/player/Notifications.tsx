@@ -14,7 +14,7 @@ import { ROUTES } from '@/app/config'
 import { cn } from '@/lib/utils'
 import { formatDateTime } from '@/lib/time'
 import { BureauIcons } from '@/components/bureau'
-import { DocumentShell, RegisterList, RegisterRow, StateMarker, Stamp, type StampVariant } from '@/components/bureau'
+import { DocumentShell, StateMarker, Stamp, type StampVariant } from '@/components/bureau'
 
 const PRIORITY_STAMP: Record<string, { variant: StampVariant; label: string }> = {
   LOW: { variant: 'archived', label: 'Low' },
@@ -61,7 +61,7 @@ export function PlayerNotifications() {
             <BureauIcons.Back className="bureau-icon w-4 h-4" />
             BACK
           </Link>
-          <h1 className="heading-2">FIELD COMMUNICATIONS</h1>
+          <h1 className="heading-3 min-w-0 flex-1 px-3 text-center">FIELD COMMUNICATIONS</h1>
           <button
             onClick={handleRefresh}
             className="p-2 border border-nexus-borderSubtle text-nexus-textSubtle hover:text-nexus-text touch-target-primary"
@@ -98,49 +98,36 @@ export function PlayerNotifications() {
             </div>
           </DocumentShell>
         ) : (
-          <RegisterList>
+          <ul className="border-y border-nexus-borderSubtle divide-y divide-nexus-borderSubtle" aria-label="Dispatches">
             {notifications.map(n => {
               const stamp = PRIORITY_STAMP[n.priority] ?? PRIORITY_STAMP.NORMAL
               return (
-                <RegisterRow
-                  key={n.id}
-                  id={formatDateTime(n.createdAt)}
-                  label={
-                    <div className="flex items-start gap-2">
-                      {!n.isRead && (
-                        <StateMarker glyph="●" tone="active" label="UNREAD" />
-                      )}
-                      <span className="font-medium text-nexus-text">{n.title}</span>
-                    </div>
-                  }
-                  meta={
-                    <div className="flex items-center gap-2 mt-1">
-                      <Stamp variant={stamp.variant} impressed>
-                        {stamp.label}
-                      </Stamp>
-                      <span className="text-xs text-nexus-textMuted font-mono">
-                        {n.message}
-                      </span>
-                    </div>
-                  }
-                  trailing={
+                <li key={n.id} className={cn('px-1 py-3', !n.isRead && 'bg-nexus-accentBg/10')}>
+                  {/* A dispatch is read, not scanned: the message wraps in full
+                      rather than truncating to one register line. */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {!n.isRead && <StateMarker glyph="●" tone="active" label="UNREAD" />}
+                    <Stamp variant={stamp.variant} impressed>{stamp.label}</Stamp>
+                    <time className="font-mono text-[0.58rem] uppercase tracking-[0.1em] text-nexus-textSubtle">
+                      {formatDateTime(n.createdAt)}
+                    </time>
+                  </div>
+                  <p className="mt-1.5 font-medium text-nexus-text break-words">{n.title}</p>
+                  <p className="mt-0.5 text-sm text-nexus-textMuted break-words">{n.message}</p>
+                  {(n.actionUrl || !n.isRead) && (
                     <button
                       onClick={() => handleOpen(n.id, n.isRead, n.actionUrl)}
-                      className="text-xs text-nexus-textSubtle hover:text-nexus-text font-mono"
+                      className="mt-2 min-h-11 px-1 font-mono text-xs uppercase tracking-[0.1em] text-nexus-accent"
                       aria-label={`Open ${n.title}`}
                       type="button"
                     >
-                      [ REVIEW ]
+                      {n.actionUrl ? '[ REVIEW ]' : '[ MARK READ ]'}
                     </button>
-                  }
-                  className={cn(
-                    'cursor-pointer',
-                    !n.isRead && 'bg-nexus-accentBg/10',
                   )}
-                />
+                </li>
               )
             })}
-          </RegisterList>
+          </ul>
         )}
 
         <div className="mt-6 flex items-center justify-center gap-2 text-xs text-nexus-textSubtle">
