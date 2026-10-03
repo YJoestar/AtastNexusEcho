@@ -49,7 +49,7 @@ const config: Config = {
           // TEXT — aged white, soft gray
           text: '#d8d6d0',
           textMuted: '#918f89',
-          textSubtle: '#6a6963',
+          textSubtle: '#85837d',
 
           // ACTIVE EVIDENCE — cold cyan, used sparingly and with meaning
           accent: '#6fb3c4',
@@ -61,7 +61,7 @@ const config: Config = {
           warningBg: '#241a0d',
 
           // CRITICAL — deep muted red. Rare. When it appears it matters.
-          danger: '#9e3b34',
+          danger: '#cc6058',
           dangerBg: '#230f0e',
 
           // RESTRICTED — dark burgundy / black-red
@@ -74,7 +74,10 @@ const config: Config = {
 
           info: '#5a6b86',
           infoBg: '#141a22',
-          success: '#6fb3c4',
+          // Verified: a muted green, used only for confirmed / closed. Never decoration.
+        verified: '#7fa88a',
+        verifiedBg: '#0f1c14',
+        success: '#6fb3c4',
           successBg: '#0d2226',
           inactive: '#4a4a4c',
           inactiveBg: '#17171a',
@@ -82,17 +85,17 @@ const config: Config = {
       },
       fontFamily: {
         // Modern institutional type. Labels, headers, system chrome.
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-        display: ['Space Grotesk', 'Inter', 'system-ui', 'sans-serif'],
-        system: ['Space Grotesk', 'Inter', 'system-ui', 'sans-serif'],
+        sans: ['IBM Plex Sans', 'system-ui', 'sans-serif'],
+        display: ['IBM Plex Sans Condensed', 'IBM Plex Sans', 'system-ui', 'sans-serif'],
+        system: ['IBM Plex Sans Condensed', 'IBM Plex Sans', 'system-ui', 'sans-serif'],
         // Terminal / archival mono. Identifiers, timestamps, log lines.
-        mono: ['JetBrains Mono', 'IBM Plex Mono', 'Consolas', 'monospace'],
+        mono: ['IBM Plex Mono', 'Consolas', 'monospace'],
         // Typewritten. 1970s-90s bureau documents and carbon copies.
         type: ['Courier Prime', 'Courier New', 'Courier', 'monospace'],
         // Human hand. Field annotations only — never machine material.
         hand: ['Segoe Script', 'Bradley Hand', 'Snell Roundhand', 'cursive'],
         // Evidence reading face.
-        evidence: ['Inter', 'system-ui', 'sans-serif'],
+        evidence: ['IBM Plex Sans', 'system-ui', 'sans-serif'],
       },
       fontSize: {
         'xs': ['0.7rem', { lineHeight: '1.45', letterSpacing: '0.04em' }],

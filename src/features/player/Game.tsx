@@ -194,7 +194,7 @@ export function PlayerGame() {
           <div className="flex gap-2">
             <FieldLink to={ROUTES.PLAYER_NAVIGATION} label="SITE MAP" />
             <FieldLink to={ROUTES.PLAYER_INVENTORY} label="OBJECTS" />
-            <FieldLink to={ROUTES.PLAYER_LEADERBOARD} label="FIELD RECORD" />
+            <FieldLink to={ROUTES.PLAYER_LEADERBOARD} label="RECORD" />
           </div>
         </section>
       </div>

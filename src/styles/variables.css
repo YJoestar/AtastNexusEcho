@@ -31,7 +31,7 @@
   /* Text — aged white, soft gray */
   --color-text: #d8d6d0;
   --color-text-muted: #918f89;
-  --color-text-subtle: #6a6963;
+  --color-text-subtle: #85837d;
 
   /* Live evidence — cold cyan, used sparingly and with meaning */
   --color-accent: #6fb3c4;
@@ -43,7 +43,7 @@
   --color-warning-bg: #241a0d;
 
   /* Critical — deep muted red. Rare. When it appears it matters. */
-  --color-danger: #9e3b34;
+  --color-danger: #cc6058;
   --color-danger-bg: #230f0e;
 
   /* Restricted — dark burgundy / black-red */

@@ -98,7 +98,7 @@ function BoardLinksImpl({ links, placements, preview, selectedLinkId, freshLinkI
               <text
                 textAnchor="middle"
                 y={4}
-                fontFamily="JetBrains Mono, IBM Plex Mono, monospace"
+                fontFamily="IBM Plex Mono, monospace"
                 fontSize={10.5}
                 letterSpacing={0.8}
                 fill={selected ? '#f0e4c0' : style.stroke}

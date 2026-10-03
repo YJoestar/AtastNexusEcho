@@ -12,6 +12,7 @@
 
 import type { SVGProps } from 'react'
 import { cn } from '@/lib/utils'
+import { BoardGlyph, CaseGlyph, CommsGlyph, EvidenceGlyph, LedgerGlyph, ScanGlyph } from '@/components/brand/glyphs'
 
 const base = 'bureau-icon'
 type Props = SVGProps<SVGSVGElement> & { className?: string }
@@ -300,25 +301,6 @@ export function UserIcon(props: Props) {
 
 /* ── Achievement & awards ─────────────────────────────── */
 
-export function TrophyIcon(props: Props) {
-  return (
-    <Icon {...props}>
-      <circle cx="12" cy="14" r="6" />
-      <path d="M12 2v4M8 6h8" />
-      <path d="M9 18h6" />
-      <path d="M10 22h4" />
-    </Icon>
-  )
-}
-
-export function StarIcon(props: Props) {
-  return (
-    <Icon {...props}>
-      <path d="M12 2l3 7h7l-5.5 4 2.5 7L12 17l-6 5 2.5-7L5 9h7z" />
-    </Icon>
-  )
-}
-
 export function FlagIcon(props: Props) {
   return (
     <Icon {...props}>
@@ -326,16 +308,6 @@ export function FlagIcon(props: Props) {
       <path d="M6 6l14-2v2" />
       <path d="M6 12l14-2v2" />
       <path d="M6 18l14-2v2" />
-    </Icon>
-  )
-}
-
-export function TrendingUpIcon(props: Props) {
-  return (
-    <Icon {...props}>
-      <path d="M4 18l6-6 4 4 6-6" />
-      <path d="M16 6h4v4" />
-      <path d="M20 6l-6 6-4-4-6 6" />
     </Icon>
   )
 }
@@ -357,25 +329,6 @@ export function MapPinIcon(props: Props) {
     <Icon {...props}>
       <path d="M21 10c0-6-6-10-9-10S3 4 3 10s6 10 9 10 9-4 9-10z" />
       <circle cx="12" cy="10" r="2.5" />
-    </Icon>
-  )
-}
-
-export function NavigationIcon(props: Props) {
-  return (
-    <Icon {...props}>
-      <circle cx="12" cy="12" r="10" />
-      <path d="M12 6v6l3 3" />
-    </Icon>
-  )
-}
-
-export function CompassIcon(props: Props) {
-  return (
-    <Icon {...props}>
-      <circle cx="12" cy="12" r="9" />
-      <circle cx="12" cy="12" r="2.5" />
-      <path d="M12 6l3 6-3 3-3-6z" />
     </Icon>
   )
 }
@@ -443,16 +396,6 @@ export function ImageIcon(props: Props) {
   )
 }
 
-export function MusicIcon(props: Props) {
-  return (
-    <Icon {...props}>
-      <path d="M9 18V5l9-2v13" />
-      <circle cx="9" cy="18" r="3" />
-      <circle cx="18" cy="18" r="3" />
-    </Icon>
-  )
-}
-
 export function VideoIcon(props: Props) {
   return (
     <Icon {...props}>
@@ -496,47 +439,6 @@ export function KeyIcon(props: Props) {
       <path d="M8 7V3a4 4 0 0 0-4 4v4" />
       <circle cx="8" cy="14" r="3" />
       <circle cx="16" cy="14" r="3" />
-    </Icon>
-  )
-}
-
-export function HashIcon(props: Props) {
-  return (
-    <Icon {...props}>
-      <path d="M4 9h2M4 15h2" />
-      <path d="M10 9h8M10 15h8" />
-      <path d="M6 6l2 0M6 18l2 0" />
-      <path d="M8 6l2 0M8 18l2 0" />
-    </Icon>
-  )
-}
-
-export function CpuIcon(props: Props) {
-  return (
-    <Icon {...props}>
-      <path d="M8 8h8v8H8z" />
-      <path d="M6 6h12v12H6z" />
-      <path d="M6 6V2h2v4M16 6V2h2v4" />
-      <path d="M6 18v4h2v-4M16 18v4h2v-4" />
-    </Icon>
-  )
-}
-
-export function PillIcon(props: Props) {
-  return (
-    <Icon {...props}>
-      <path d="M7 17l5-5 5 5-5 5z" />
-      <path d="M17 7l5-5 0 10-5 5z" />
-      <path d="M7 7l0 10-5 0 5-5z" />
-    </Icon>
-  )
-}
-
-export function GemIcon(props: Props) {
-  return (
-    <Icon {...props}>
-      <path d="M12 3l6 6-6 12L3 9z" />
-      <path d="M12 9l3 3-3 3-3-3z" />
     </Icon>
   )
 }
@@ -660,17 +562,6 @@ export function LayoutDashboardIcon(props: Props) {
   )
 }
 
-export function GamepadIcon(props: Props) {
-  return (
-    <Icon {...props}>
-      <rect x="4" y="6" width="16" height="12" rx="0" />
-      <circle cx="9" cy="11" r="1.5" />
-      <circle cx="15" cy="11" r="1.5" />
-      <path d="M8 14h2v2H8z" />
-    </Icon>
-  )
-}
-
 export function MaximizeIcon(props: Props) {
   return (
     <Icon {...props}>
@@ -755,14 +646,6 @@ export function ClockIcon(props: Props) {
 
 /* ── Charts & data ───────────────────────────────────── */
 
-export function BarChartIcon(props: Props) {
-  return (
-    <Icon {...props}>
-      <path d="M4 18h4v-6H4zM10 18h4v-10h-4zM16 18h4v-14h-4z" />
-    </Icon>
-  )
-}
-
 export function BrainIcon(props: Props) {
   return (
     <Icon {...props}>
@@ -836,20 +719,6 @@ export function SkipForwardIcon(props: Props) {
 
 /* ── BarChart3 ───────────────────────────────────────── */
 
-export function BarChart3Icon(props: Props) {
-  return (
-    <Icon {...props}>
-      <path d="M4 18V6a2 2 0 0 1 2-2h2" />
-      <path d="M10 18V3a2 2 0 0 1 2-2h2" />
-      <path d="M16 18V9a2 2 0 0 1 2-2h2" />
-      <path d="M4 18a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2" />
-      <path d="M4 6v12" />
-      <path d="M10 3v15" />
-      <path d="M16 9v9" />
-    </Icon>
-  )
-}
-
 /* ── Smartphone ──────────────────────────────────────── */
 
 export function SmartphoneIcon(props: Props) {
@@ -911,7 +780,17 @@ export function MicrophoneIcon(props: Props) {
 
 /* ── Export registry ──────────────────────────────────── */
 
+/* Field glyphs (brand/glyphs.tsx) are the icons of the five investigation
+   spaces. Trophy is retired: a ranking is a ledger, not a prize. */
+const TrophyIcon = LedgerGlyph
+
 export const BureauIcons = {
+  Case: CaseGlyph,
+  Evidence: EvidenceGlyph,
+  Board: BoardGlyph,
+  Scan: ScanGlyph,
+  Comms: CommsGlyph,
+  Ledger: LedgerGlyph,
   Back: BackIcon,
   Forward: ForwardIcon,
   ChevronLeft: ChevronLeftIcon,
@@ -942,30 +821,21 @@ export const BureauIcons = {
   Users: UsersIcon,
   User: UserIcon,
   Trophy: TrophyIcon,
-  Star: StarIcon,
   Flag: FlagIcon,
-  TrendingUp: TrendingUpIcon,
   Target: TargetIcon,
   LogOut: LogOutIcon,
   MapPin: MapPinIcon,
-  Navigation: NavigationIcon,
-  Compass: CompassIcon,
   Search: SearchIcon,
   Filter: FilterIcon,
   Info: InfoIcon,
   Help: HelpIcon,
   File: FileIcon,
   Image: ImageIcon,
-  Music: MusicIcon,
   Video: VideoIcon,
   Database: DatabaseIcon,
   Box: BoxIcon,
   Package: PackageIcon,
   Key: KeyIcon,
-  Hash: HashIcon,
-  Cpu: CpuIcon,
-  Pill: PillIcon,
-  Gem: GemIcon,
   Bell: BellIcon,
   BellOff: BellOffIcon,
   Keyboard: KeyboardIcon,
@@ -978,7 +848,6 @@ export const BureauIcons = {
   Rotate: RotateIcon,
   Radio: RadioIcon,
   LayoutDashboard: LayoutDashboardIcon,
-  Gamepad: GamepadIcon,
   Maximize: MaximizeIcon,
   Minimize: MinimizeIcon,
   Wifi: WifiIcon,
@@ -987,8 +856,6 @@ export const BureauIcons = {
   Server: ServerIcon,
   ServerCrash: ServerCrashIcon,
   Clock: ClockIcon,
-  BarChart: BarChartIcon,
-  BarChart3: BarChart3Icon,
   Brain: BrainIcon,
   Lightbulb: LightbulbIcon,
   RotateCcw: RotateCcwIcon,

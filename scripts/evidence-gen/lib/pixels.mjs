@@ -3,7 +3,7 @@
 // lens behaviour, sensor noise, highlight bloom, film grain, dust, scratches,
 // print border, and paper material for documents.
 
-import { makeNoise2d, fractalNoise2d, makeRng } from './rng.mjs'
+import { fractalNoise2d, makeRng } from './rng.mjs'
 
 export function createCanvas(width, height) {
   return { width, height, data: new Float32Array(width * height * 3) }
@@ -208,9 +208,7 @@ export function bloom(canvas, { threshold = 0.72, radius = 14, strength = 0.5 } 
 export function sensorNoise(canvas, seed, { amount = 0.06, chroma = 0.5, shadowBias = 1.4 } = {}) {
   const rng = makeRng(seed)
   const { data } = canvas
-  for (let i = 0, p = 0; i < data.length; i += 3, p++) {
-    const x = p % canvas.width
-    const y = (p / canvas.width) | 0
+  for (let i = 0; i < data.length; i += 3) {
     const luma = 0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2]
     const shadowWeight = 1 + (1 - luma) * (shadowBias - 1)
     const mono = (rng() - 0.5) * amount * shadowWeight

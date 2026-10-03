@@ -67,12 +67,13 @@
 
     --nx-text: #d8d6d0;
     --nx-text-muted: #918f89;
-    --nx-text-subtle: #6a6963;
+    --nx-text-subtle: #85837d;
 
     --nx-accent: #6fb3c4;
     --nx-accent-bg: #0d2226;
+    --nx-verified: #7fa88a;
     --nx-warning: #b8863f;
-    --nx-danger: #9e3b34;
+    --nx-danger: #cc6058;
     --nx-restricted: #7c2f33;
     --nx-inactive: #4a4a4c;
   }
@@ -1165,10 +1166,10 @@
   }
 
   .terminal-register {
-    border-color: var(--nx-textSubtle);
+    border-color: var(--nx-text-subtle);
   }
   .terminal-register .terminal-header {
-    background-color: var(--nx-surfaceSubtle);
+    background-color: var(--nx-surface-subtle);
   }
 
   /* Monospace data grid inside a terminal panel. */
@@ -1299,7 +1300,7 @@
     gap: 1.5rem;
     padding: 0.5rem 1rem;
     border-bottom: 1px solid var(--nx-border);
-    background: var(--nx-surfaceElevated);
+    background: var(--nx-surface-elevated);
     font-size: 0.625rem;
     letter-spacing: 0.18em;
     text-transform: uppercase;
@@ -1333,7 +1334,7 @@
     align-items: center;
     padding: 0.4rem 0.75rem;
     border-top: 1px solid var(--nx-border);
-    background: var(--nx-surfaceElevated);
+    background: var(--nx-surface-elevated);
     font-size: 0.52rem;
     letter-spacing: 0.18em;
     text-transform: uppercase;
@@ -1392,31 +1393,18 @@
     cursor: pointer;
     transition: none;
   }
+  /* Where I am: a bar on the top edge and the accent colour. Not colour alone. */
   .nexus-device-control-active {
-    border-color: var(--nx-accent);
-    background: var(--nx-bg);
+    background: var(--nx-surface-elevated);
+    box-shadow: inset 0 var(--line-2) 0 var(--nx-accent);
   }
   .nexus-device-control-active .nexus-device-control-icon {
     color: var(--nx-accent);
   }
-  .nexus-device-control-active .nexus-device-control-icon::before {
-    content: '';
-    position: absolute;
-    top: -2px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 1.25rem;
-    height: 1.5rem;
-    border-top: 1px solid var(--nx-accent);
-    border-left: 1px solid var(--nx-accent);
-    border-right: 1px solid var(--nx-accent);
-  }
   .nexus-device-control-inactive {
     border-color: transparent;
   }
-  .nexus-device-control-inactive:hover {
-    border-color: var(--nx-border);
-  }
+  .nexus-device-control:active { transform: translateY(1px); background: var(--nx-surface-elevated); }
   .nexus-device-control-icon {
     position: relative;
     display: flex;
@@ -1424,7 +1412,7 @@
     justify-content: center;
     width: 1.75rem;
     height: 1.75rem;
-    color: var(--nx-textSubtle);
+    color: var(--nx-text-muted);
   }
 
   @keyframes blink-fast {
@@ -1458,7 +1446,7 @@
     align-items: center;
     padding: 0.4rem 0.75rem;
     border-bottom: 1px solid var(--nx-border);
-    background: var(--nx-surfaceElevated);
+    background: var(--nx-surface-elevated);
     font-family: var(--font-mono);
     font-size: 0.56rem;
     letter-spacing: 0.18em;
@@ -1540,8 +1528,8 @@
     cursor: pointer;
   }
   .handset-button:hover {
-    background: var(--nx-textMuted);
-    border-color: var(--nx-textMuted);
+    background: var(--nx-text-muted);
+    border-color: var(--nx-text-muted);
   }
   .handset-button:active {
     transform: translateY(1px);
@@ -1551,9 +1539,9 @@
     opacity: 0.5;
   }
   .handset-button-inactive {
-    border-color: var(--nx-textSubtle);
+    border-color: var(--nx-text-subtle);
     background: transparent;
-    color: var(--nx-textSubtle);
+    color: var(--nx-text-subtle);
     cursor: not-allowed;
   }
 
@@ -1563,7 +1551,7 @@
     align-items: center;
     padding: 0.4rem 0.75rem;
     border-top: 1px solid var(--nx-border);
-    background: var(--nx-surfaceElevated);
+    background: var(--nx-surface-elevated);
     font-family: var(--font-mono);
     font-size: 0.52rem;
     letter-spacing: 0.22em;
@@ -1594,7 +1582,7 @@
     gap: 0.5rem;
     padding: 0.35rem 0.75rem;
     border-bottom: 1px solid var(--nx-border-subtle);
-    background: var(--nx-surfaceElevated);
+    background: var(--nx-surface-elevated);
   }
 
   .nexus-handset-subheader {
@@ -1652,7 +1640,7 @@
     align-items: center;
     padding: 0.4rem 0.75rem;
     border-bottom: 1px solid var(--nx-border);
-    background: var(--nx-surfaceElevated);
+    background: var(--nx-surface-elevated);
     font-family: var(--font-mono);
     font-size: 0.56rem;
     letter-spacing: 0.18em;
@@ -1727,8 +1715,8 @@
     transition: background 0.15s, border-color 0.15s;
   }
   .terminal-button:hover {
-    background: var(--nx-textMuted);
-    border-color: var(--nx-textMuted);
+    background: var(--nx-text-muted);
+    border-color: var(--nx-text-muted);
   }
   .terminal-button:active {
     transform: translateY(1px);
@@ -1744,7 +1732,7 @@
     align-items: center;
     padding: 0.4rem 0.75rem;
     border-top: 1px solid var(--nx-border);
-    background: var(--nx-surfaceElevated);
+    background: var(--nx-surface-elevated);
     font-family: var(--font-mono);
     font-size: 0.52rem;
     letter-spacing: 0.22em;
@@ -2212,7 +2200,7 @@
     position: relative;
     padding: 1.5rem 1.25rem 1.5rem;
     border: 1px solid var(--nx-border);
-    background: linear-gradient(180deg, var(--nx-surfaceElevated), var(--nx-surface));
+    background: linear-gradient(180deg, var(--nx-surface-elevated), var(--nx-surface));
   }
   /* Corner brackets: a viewfinder framing the one thing to look at. */
   .nx-lead::before,
@@ -2226,7 +2214,7 @@
   }
   .nx-lead::before { top: -1px; left: -1px; border-right: 0; border-bottom: 0; }
   .nx-lead::after { right: -1px; bottom: -1px; border-left: 0; border-top: 0; }
-  .nx-intel:active { background: var(--nx-surfaceElevated); }
+  .nx-intel:active { background: var(--nx-surface-elevated); }
   /* Device wake: the case file resolves in. Opacity only, once, ~220ms. */
   .nx-wake { animation: nx-wake 220ms ease-out both; }
   @keyframes nx-wake { from { opacity: 0; } to { opacity: 1; } }
@@ -2253,5 +2241,41 @@
   .nx-chiprow::-webkit-scrollbar { display: none; }
   .nx-chiprow > button { flex: none; min-height: 44px; font-size: 0.7rem; padding-inline: 0.9rem; }
   .nx-record { border-radius: 0; }
-  .nx-record:active { background: var(--nx-surfaceElevated); }
+  .nx-record:active { background: var(--nx-surface-elevated); }
+}
+
+
+/* ── Glyph states (brand/glyphs.tsx) ───────────────────────────────────── */
+@layer components {
+  .nx-glyph { position: relative; display: inline-flex; flex: none; color: inherit; }
+  .nx-glyph svg { display: block; overflow: visible; }
+  .nx-glyph [data-node] { fill: none; }
+  .nx-glyph[data-state='active'] { color: var(--nx-accent); }
+  .nx-glyph[data-state='selected'] { color: var(--nx-accent); }
+  .nx-glyph[data-state='active'] [data-node],
+  .nx-glyph[data-state='selected'] [data-node] { fill: currentColor; }
+  .nx-glyph[data-state='active']::after {
+    content: ''; position: absolute; left: 2px; right: 2px; bottom: -3px; height: var(--line-2); background: currentColor;
+  }
+  .nx-glyph[data-state='disabled'],
+  .nx-glyph[data-state='locked'] { opacity: 0.4; }
+  .nx-glyph[data-state='disabled'] svg,
+  .nx-glyph[data-state='locked'] svg { stroke-dasharray: 2.5 2; }
+  .nx-glyph-mark { position: absolute; right: -4px; width: 7px; height: 7px; }
+  .nx-glyph-new { top: -3px; background: var(--nx-warning); }
+  .nx-glyph-alert { top: -4px; width: 0; height: 0; border-left: 4.5px solid transparent; border-right: 4.5px solid transparent; border-bottom: 8px solid var(--nx-warning); }
+  .nx-glyph-connected { bottom: -3px; background: var(--nx-accent); }
+  .nx-glyph-locked { bottom: -3px; width: 8px; height: 6px; border: var(--line-1) solid var(--nx-text); background: var(--nx-bg); opacity: 1; }
+}
+
+/* ── Press feedback: pressure, not bounce ──────────────────────────────── */
+@layer components {
+  .nexus-btn, .nx-record, .nx-intel {
+    transition: transform var(--dur-fast) var(--ease-lock), background-color var(--dur-fast) var(--ease-lock), filter var(--dur-fast) var(--ease-lock);
+  }
+  .nexus-btn:active { transform: translateY(1px); filter: brightness(1.12); }
+  .nexus-btn:disabled, .nexus-btn[aria-disabled='true'] { opacity: 0.45; cursor: not-allowed; }
+  @media (prefers-reduced-motion: reduce) {
+    .nexus-btn:active, .nexus-device-control:active { transform: none; }
+  }
 }

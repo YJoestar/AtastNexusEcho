@@ -93,7 +93,7 @@ export function FieldLedger({ cells, closed, total }: { cells: boolean[]; closed
         {cells.map((done, index) => (
           <span
             key={index}
-            className={cn('h-2.5 flex-1 border', done ? 'border-nexus-accent bg-nexus-accent/70' : 'border-nexus-borderSubtle')}
+            className={cn('h-2.5 flex-1 border', done ? 'border-nexus-verified bg-nexus-verified/70' : 'border-nexus-borderSubtle')}
           />
         ))}
       </div>

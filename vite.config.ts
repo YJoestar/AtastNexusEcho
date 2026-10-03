@@ -28,7 +28,7 @@ export default defineConfig({
         manualChunks: {
           vendor: ['react', 'react-dom', 'react-router-dom'],
           supabase: ['@supabase/supabase-js'],
-          utils: ['zod', 'clsx', 'tailwind-merge', 'lucide-react'],
+          utils: ['zod', 'clsx', 'tailwind-merge'],
         },
       },
     },

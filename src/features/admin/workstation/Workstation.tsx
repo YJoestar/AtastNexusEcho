@@ -22,6 +22,7 @@ import { adminAPI, type EvidenceLabCatalog, type LocationEntry } from '@/lib/adm
 import { showcaseCatalog, showcaseEnabled, SHOWCASE_CASE } from '@/lib/evidence/showcaseCatalog'
 import { levelFromCasePhase } from '@/lib/narrative'
 import { cn } from '@/lib/utils'
+import { NexusMark } from '@/components/brand/NexusMark'
 import { APPS, APP_ORDER, appForPath, type AppId } from './apps'
 import { BootSequence } from './BootSequence'
 import { bootAlreadyShown } from './bootState'
@@ -327,7 +328,7 @@ export function Workstation() {
         {/* ── system bar ── */}
         <header className="relative z-[60] flex h-9 shrink-0 items-center justify-between gap-4 border-b border-nexus-border bg-nexus-surfaceElevated px-3 text-[0.58rem] uppercase tracking-[0.14em]">
           <div className="flex min-w-0 items-center gap-4">
-            <span className="flex shrink-0 items-center gap-2 font-bold text-nexus-text"><span className="h-2 w-2 bg-nexus-accent" aria-hidden="true" />NEXUS ECHO // CONTINUITY RECORDS SYSTEM</span>
+            <span className="flex shrink-0 items-center gap-2 font-bold text-nexus-text"><NexusMark size={20} className="text-nexus-text" />NEXUS ECHO // CONTINUITY RECORDS SYSTEM</span>
             <span className="hidden text-nexus-textSubtle xl:inline">{SHOWCASE_CASE.build}</span>
             <span className="hidden border border-nexus-border px-1.5 text-nexus-textMuted lg:inline">CASE 037 · {(gameState?.status ?? 'STATE UNCONFIRMED').toString()}</span>
           </div>

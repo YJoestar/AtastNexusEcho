@@ -12,6 +12,7 @@ import { useGameTimer } from '@/hooks/useGameTimer'
 import { ROUTES, ROLE_THEMES } from '@/app/config'
 import { cn } from '@/lib/utils'
 import { BureauIcons } from '@/components/bureau'
+import { NexusMark } from '@/components/brand/NexusMark'
 
 const TIMER_TONE: Record<string, string> = {
   normal: 'text-nexus-text',
@@ -51,7 +52,7 @@ export function PlayerHeader() {
       {/* One row: where I am, who I am on this case, the link, the clock. */}
       <div className="nexus-handset-title-bar !py-1.5">
         <Link to={ROUTES.PLAYER_GAME} className="flex min-w-0 items-center gap-2" aria-label="Case file">
-          <div className="handset-badge-mark">N</div>
+          <NexusMark size={28} className="text-nexus-text" />
           <div className="min-w-0 leading-none">
             <div className="font-mono text-[0.6rem] uppercase tracking-[0.2em] text-nexus-textMuted">CASE 037</div>
             <div className={cn('mt-1 font-mono text-[0.58rem] uppercase tracking-[0.2em]', roleTheme?.text)}>{player.role}</div>

@@ -37,11 +37,11 @@ function bureauIcon(name: IconName) {
  * places a team works from.
  */
 export const NAV_ITEMS: NavItem[] = [
-  { id: 'CASE', path: ROUTES.PLAYER_GAME, label: 'Case', icon: bureauIcon('File') },
-  { id: 'EVIDENCE', path: ROUTES.PLAYER_EVIDENCE, label: 'Evidence', icon: bureauIcon('Package') },
-  { id: 'BOARD', path: ROUTES.PLAYER_EVIDENCE, search: '?view=table', label: 'Board', icon: bureauIcon('Share') },
-  { id: 'SCAN', path: ROUTES.PLAYER_QR, label: 'Scan', icon: bureauIcon('ScanLine') },
-  { id: 'COMMS', path: ROUTES.PLAYER_NOTIFICATIONS, label: 'Comms', icon: bureauIcon('Radio') },
+  { id: 'CASE', path: ROUTES.PLAYER_GAME, label: 'Case', icon: bureauIcon('Case') },
+  { id: 'EVIDENCE', path: ROUTES.PLAYER_EVIDENCE, label: 'Evidence', icon: bureauIcon('Evidence') },
+  { id: 'BOARD', path: ROUTES.PLAYER_EVIDENCE, search: '?view=table', label: 'Board', icon: bureauIcon('Board') },
+  { id: 'SCAN', path: ROUTES.PLAYER_QR, label: 'Scan', icon: bureauIcon('Scan') },
+  { id: 'COMMS', path: ROUTES.PLAYER_NOTIFICATIONS, label: 'Comms', icon: bureauIcon('Comms') },
 ]
 
 /** Which destination a location belongs to. Evidence and Board share a route. */

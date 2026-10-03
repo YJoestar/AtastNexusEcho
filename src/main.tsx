@@ -8,6 +8,8 @@ import { createRoot } from 'react-dom/client'
 import { RouterProvider } from 'react-router-dom'
 import { AppProvider, AdminProvider } from '@/app/providers'
 import { router } from '@/app/router'
+import '@/styles/fonts.css'
+import '@/styles/tokens.css'
 import '@/styles/globals.css'
 
 const rootElement = document.getElementById('root')

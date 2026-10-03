@@ -1,0 +1,55 @@
+/**
+ * NEXUS ECHO — design tokens (non-colour)
+ *
+ * Colour lives in `--nx-*` (globals.css :root) and the Tailwind `nexus` theme.
+ * Everything else a screen needs to decide, decided once. New CSS uses these;
+ * a literal px/ms/z-index in new code is a bug.
+ */
+:root {
+  /* Space: a 4 px base, doubling toward the top. */
+  --sp-1: 0.25rem;  /*  4 */
+  --sp-2: 0.5rem;   /*  8 */
+  --sp-3: 0.75rem;  /* 12 */
+  --sp-4: 1rem;     /* 16  screen gutter */
+  --sp-5: 1.5rem;   /* 24  between groups */
+  --sp-6: 2rem;     /* 32  between sections */
+  --sp-7: 3rem;     /* 48 */
+  --sp-8: 4rem;     /* 64 */
+
+  /* Type scale (rem). Mono is metadata; sans is reading; condensed is labels. */
+  --fs-meta: 0.6875rem;   /* 11  IDs, timestamps, system state */
+  --fs-label: 0.75rem;    /* 12  labels, buttons, tabs */
+  --fs-body-sm: 0.875rem; /* 14  secondary reading */
+  --fs-body: 1rem;        /* 16  reading, inputs (no iOS zoom) */
+  --fs-lead: 1.25rem;     /* 20  record titles */
+  --fs-title: 1.75rem;    /* 28  the one lead on a screen */
+
+  /* Corners: square by default. The brand is cut, not rounded. */
+  --r-0: 0;
+  --r-1: 2px;     /* controls that are pressed: the only rounding allowed */
+
+  /* Lines */
+  --line-1: 1px;  /* hairline: dividers, resting borders */
+  --line-2: 2px;  /* emphasis: the active bar, a selected edge */
+
+  /* Motion. Fast = micro response, medium = a screen, slow = an investigation moment. */
+  --dur-fast: 90ms;
+  --dur-med: 180ms;
+  --dur-slow: 360ms;
+  --ease-lock: cubic-bezier(0.3, 0, 0.1, 1);   /* decisive: arrives and stops */
+  --ease-draw: cubic-bezier(0.4, 0, 0.2, 1);   /* a line forming */
+
+  /* Layers */
+  --z-base: 0;
+  --z-board: 10;
+  --z-sticky: 20;
+  --z-header: 40;
+  --z-nav: 40;
+  --z-sheet: 60;
+  --z-overlay: 80;
+  --z-glitch: 90;
+
+  /* Touch */
+  --touch-min: 2.75rem;      /* 44 */
+  --touch-primary: 3.5rem;   /* 56 */
+}

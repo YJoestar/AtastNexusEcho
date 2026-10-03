@@ -14,6 +14,7 @@ import { useNavigate } from 'react-router-dom'
 import { useApp } from '@/app/providers'
 import { ROUTES } from '@/app/config'
 import { cn } from '@/lib/utils'
+import { NexusMark, NexusWordmark } from '@/components/brand/NexusMark'
 import {
   LOGIN_CODE_LENGTH,
   containsForbiddenLogicChars,
@@ -96,7 +97,7 @@ export function PlayerLogin() {
       <div className="nexus-handset-screen">
         <div className="nexus-handset-window">
           <div className="nexus-handset-title-bar">
-            <span className="nexus-handset-title">FH-037</span>
+            <span className="nexus-handset-title flex items-center gap-2"><NexusMark size={20} className="text-nexus-text" />FH-037</span>
             <span className="nexus-handset-status">
               {bootComplete ? 'READY' : 'INITIALIZING'}
             </span>
@@ -121,6 +122,11 @@ export function PlayerLogin() {
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="nexus-handset-form space-y-5" noValidate>
+                {/* The one place the full identity appears on the handset. */}
+                <div className="flex flex-col items-center gap-3 pb-2 text-nexus-text">
+                  <NexusMark size={72} />
+                  <NexusWordmark height={16} />
+                </div>
                 <div>
                   <label htmlFor="accessCode" className="handset-label">
                     ACCESS CODE
