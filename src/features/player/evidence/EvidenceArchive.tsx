@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, useCallback } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { BureauIcons, DocumentShell, FileTabs, FileRow, Stamp } from '@/components/bureau'
+import { BureauIcons, DocumentShell, FileTabs, Stamp } from '@/components/bureau'
 import { ROUTES } from '@/app/config'
 import { useGameEngine } from '@/hooks/useGameEngine'
 import { useInvestigationWorkspace } from '@/hooks/useInvestigationWorkspace'
@@ -15,6 +15,7 @@ import { InvestigationTable } from './InvestigationTable'
 import { CompareStation } from './CompareStation'
 import { contentString, artifactType, artifactCondition, artifactState, artifactThumbUrl, type CaseArtifact } from './types'
 import { showcaseCatalog, showcaseEnabled } from '@/lib/evidence/showcaseCatalog'
+import { searchArtifacts, type SearchHit } from '@/lib/evidence/search'
 import { cn } from '@/lib/utils'
 
 type ArchiveClass = 'ALL' | 'PHOTOGRAPHS' | 'DOCUMENTS' | 'AUDIO' | 'SURVEILLANCE' | 'FRAGMENTS' | 'NOTES' | 'VERIFIED' | 'UNRESOLVED' | 'ANOMALOUS'
@@ -89,9 +90,10 @@ export function PlayerEvidenceArchive() {
   const { inventory, isLoading, fetchInventory, team, teamProgress } = useGameEngine()
   const { workspace, updateWorkspace } = useInvestigationWorkspace(team?.id)
   const [archiveClass, setArchiveClass] = useState<ArchiveClass>('ALL')
-  const [search, setSearch] = useState('')
+  const [search, setSearch] = useState(() => searchParams.get('q') ?? '')
   const [compareIds, setCompareIds] = useState<string[]>([])
-  const [mode, setMode] = useState<WorkspaceMode>('ARCHIVE')
+  const [mode, setMode] = useState<WorkspaceMode>(() => (searchParams.get('view') === 'table' ? 'TABLE' : 'ARCHIVE'))
+  const viewParam = searchParams.get('view')
 
   useEffect(() => {
     void fetchInventory()
@@ -213,14 +215,33 @@ export function PlayerEvidenceArchive() {
   const activeArtifact = artifacts.find(artifact => artifact.id === activeId) ?? null
   const comparedArtifacts = compareIds.map(id => artifacts.find(artifact => artifact.id === id)).filter((artifact): artifact is CaseArtifact => !!artifact)
 
+  // The bottom bar's BOARD destination is this route with ?view=table.
+  useEffect(() => {
+    if (viewParam === 'table') setMode('TABLE')
+    else if (viewParam === null && mode === 'TABLE') setMode('ARCHIVE')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewParam])
+
   useEffect(() => {
     if (activeId && activeArtifact) setMode('INSPECT')
     else if (mode === 'INSPECT' && !activeId) setMode('ARCHIVE')
   }, [activeId, activeArtifact, mode])
 
+  const noteTexts = useCallback(
+    (artifact: CaseArtifact) => (workspace.annotations[artifact.id] ?? []).map(note => note.text),
+    [workspace.annotations],
+  )
+
+  const hits = useMemo(() => {
+    const result = new Map<string, SearchHit>()
+    for (const hit of searchArtifacts(artifacts, search, noteTexts)) result.set(hit.artifact.id, hit)
+    return result
+  }, [artifacts, search, noteTexts])
+
+  const searching = search.trim().length > 0
+
   const filteredArtifacts = useMemo(() => {
-    const term = search.trim().toLowerCase()
-        return artifacts.filter(artifact => {
+    const list = artifacts.filter(artifact => {
       const mark = workspace.marks[artifact.id] ?? 'UNMARKED'
       const type = artifactType(artifact)
       const matchesClass = archiveClass === 'ALL'
@@ -234,9 +255,19 @@ export function PlayerEvidenceArchive() {
         || (archiveClass === 'UNRESOLVED' && mark === 'UNRESOLVED')
         || (archiveClass === 'ANOMALOUS' && (mark === 'CONTRADICTION' || artifactState(artifact) === 'CONTRADICTED' || artifactState(artifact) === 'ANOMALOUS'))
       if (!matchesClass) return false
-      return !term || `${artifact.code} ${artifact.title} ${artifact.type} ${artifact.description} ${artifact.location ?? ''}`.toLowerCase().includes(term)
+      return !searching || hits.has(artifact.id)
     })
-  }, [artifacts, archiveClass, search, workspace.annotations, workspace.marks])
+    // While searching, the best match leads.
+    return searching ? list.sort((a, b) => (hits.get(b.id)?.score ?? 0) - (hits.get(a.id)?.score ?? 0)) : list
+  }, [artifacts, archiveClass, searching, hits, workspace.annotations, workspace.marks])
+
+  /** Chase a term noticed in one record through every other. */
+  const traceTerm = (term: string) => {
+    setSearch(term)
+    setArchiveClass('ALL')
+    setSearchParams({ q: term }, { replace: false })
+    setMode('ARCHIVE')
+  }
 
   const openArtifact = (id: string, artifact: CaseArtifact) => {
     setSearchParams({ artifact: id })
@@ -266,9 +297,15 @@ export function PlayerEvidenceArchive() {
     }))
   }
 
-  const toggleCompare = (id: string) => setCompareIds(current =>
-    current.includes(id) ? current.filter(entry => entry !== id) : [...current.slice(-1), id],
-  )
+  const toggleCompare = (id: string) => {
+    const next = compareIds.includes(id) ? compareIds.filter(entry => entry !== id) : [...compareIds.slice(-1), id]
+    setCompareIds(next)
+    // Two records chosen: go straight to the examination.
+    if (next.length === 2) {
+      setSearchParams({}, { replace: true })
+      setMode('COMPARE')
+    }
+  }
 
   const placeOnTable = (id: string) => updateWorkspace(current => {
     if (current.placements[id]) return current
@@ -292,9 +329,9 @@ export function PlayerEvidenceArchive() {
   const newInfoCount = Object.values(workspace.revelations).filter(r => r.hasNewInfo).length
 
   const modeTabs = [
-    { id: 'ARCHIVE', label: `CASE ARCHIVE / ${artifacts.length.toString().padStart(2, '0')}${newInfoCount > 0 ? ` / ${newInfoCount} UPDATED` : ''}` },
-    { id: 'TABLE', label: `INVESTIGATION TABLE / ${Object.keys(workspace.placements).length.toString().padStart(2, '0')}` },
-    { id: 'COMPARE', label: `COMPARE / ${compareIds.length} SELECTED` },
+    { id: 'ARCHIVE', label: `ARCHIVE · ${artifacts.length}${newInfoCount > 0 ? ` · ${newInfoCount} UPDATED` : ''}` },
+    { id: 'TABLE', label: `BOARD · ${Object.keys(workspace.placements).length}` },
+    { id: 'COMPARE', label: `COMPARE · ${compareIds.length}` },
   ] as const
 
   if (isLoading('inventory') && !inventory && artifacts.length === 0) {
@@ -313,25 +350,17 @@ export function PlayerEvidenceArchive() {
     <div className="page">
       <div className="page-content mx-auto max-w-5xl space-y-4">
         <header className="flex items-center gap-3 border-b border-nexus-border pb-3">
-          <Link to={ROUTES.PLAYER_GAME} className="flex min-h-10 min-w-10 items-center justify-center border border-nexus-borderSubtle text-nexus-textMuted hover:text-nexus-text" aria-label="RETURN TO FIELD">
-            <BureauIcons.Back className="bureau-icon h-5 w-5" />
-          </Link>
           <div className="min-w-0 flex-1">
-            <p className="font-mono text-[0.52rem] uppercase tracking-[0.18em] text-nexus-textSubtle">CASE {team?.code ?? 'UNASSIGNED'} / FIELD ARCHIVE</p>
-            <h1 className="mt-1 font-mono text-lg font-bold text-nexus-text">RECOVERED MATERIAL</h1>
+            <p className="font-mono text-[0.68rem] uppercase tracking-[0.18em] text-nexus-textSubtle">CASE {team?.code ?? 'UNASSIGNED'} · RECOVERED</p>
+            <h1 className="mt-1 font-mono text-lg font-bold text-nexus-text">{mode === 'TABLE' ? 'CASE BOARD' : mode === 'COMPARE' ? 'COMPARISON' : mode === 'INSPECT' ? 'EXAMINATION' : 'EVIDENCE'}</h1>
           </div>
           <Link
             to={ROUTES.PLAYER_INVENTORY}
-            className="flex min-h-10 items-center border border-nexus-accent px-2 font-mono text-[0.5rem] uppercase text-nexus-accent"
+            className="flex min-h-12 items-center border border-nexus-accent px-3 font-mono text-[0.68rem] uppercase text-nexus-accent"
           >
             OBJECTS
           </Link>
-          <span className="hidden text-right font-mono text-[0.52rem] uppercase text-nexus-textSubtle sm:block">
-            {Object.values(workspace.annotations).reduce((sum, notes) => sum + notes.length, 0)} NOTES FILED
-            <br />
-            {Object.keys(workspace.placements).length} OBJECTS ON TABLE
-          </span>
-          <button type="button" onClick={() => void fetchInventory()} className="flex min-h-10 min-w-10 items-center justify-center border border-nexus-borderSubtle text-nexus-textSubtle hover:text-nexus-text" aria-label="Re-query case archive" title="Re-query archive">
+          <button type="button" onClick={() => void fetchInventory()} className="flex min-h-12 min-w-12 items-center justify-center border border-nexus-borderSubtle text-nexus-textSubtle hover:text-nexus-text" aria-label="Re-query case archive" title="Re-query archive">
             <BureauIcons.Refresh className="bureau-icon h-4 w-4" />
           </button>
         </header>
@@ -340,7 +369,7 @@ export function PlayerEvidenceArchive() {
           <FileTabs
             tabs={modeTabs.map(tab => ({ id: tab.id, label: tab.label }))}
             activeId={mode}
-            onSelect={id => setMode(id as WorkspaceMode)}
+            onSelect={id => { setMode(id as WorkspaceMode); setSearchParams(id === 'TABLE' ? { view: 'table' } : {}, { replace: true }) }}
             className="border-b border-nexus-borderSubtle pb-1"
           />
         )}
@@ -349,9 +378,21 @@ export function PlayerEvidenceArchive() {
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_250px]">
             <section className="min-w-0">
               <div className="mb-3 flex flex-col gap-2 border-b border-nexus-borderSubtle pb-3">
-                <label className="font-mono text-[0.52rem] uppercase tracking-[0.14em] text-nexus-textSubtle" htmlFor="archive-query">ARCHIVE QUERY / LOCAL + SERVER INDEX</label>
-                <input id="archive-query" type="search" value={search} onChange={event => setSearch(event.target.value)} placeholder="QUERY REF, TITLE, OR CLASS…" className="min-h-10 border border-nexus-border bg-nexus-bg px-3 font-mono text-xs text-nexus-text placeholder:text-nexus-textSubtle" />
-                <FileTabs tabs={ARCHIVE_TABS} activeId={archiveClass} onSelect={id => setArchiveClass(id as ArchiveClass)} />
+                <label className="font-mono text-[0.68rem] uppercase tracking-[0.14em] text-nexus-textSubtle" htmlFor="archive-query">SEARCH THE ARCHIVE</label>
+                <div className="relative">
+                  <input id="archive-query" type="search" value={search} onChange={event => setSearch(event.target.value)} placeholder="A name, place or reference…" autoComplete="off" enterKeyHint="search" className="min-h-12 w-full border border-nexus-border bg-nexus-bg px-3 pr-12 [&::-webkit-search-cancel-button]:hidden font-mono text-base text-nexus-text placeholder:text-nexus-textSubtle" />
+                  {searching && (
+                    <button type="button" onClick={() => { setSearch(''); setSearchParams({}, { replace: true }) }} className="absolute right-0 top-0 flex h-12 w-12 items-center justify-center text-nexus-textMuted" aria-label="Clear search">
+                      <BureauIcons.Close className="bureau-icon h-5 w-5" />
+                    </button>
+                  )}
+                </div>
+                {searching && (
+                  <p className="font-mono text-[0.7rem] uppercase tracking-[0.12em] text-nexus-textMuted" role="status">
+                    {filteredArtifacts.length} {filteredArtifacts.length === 1 ? 'RECORD MENTIONS' : 'RECORDS MENTION'} “{search.trim()}”
+                  </p>
+                )}
+                <FileTabs tabs={ARCHIVE_TABS} activeId={archiveClass} onSelect={id => setArchiveClass(id as ArchiveClass)} className="!flex-nowrap overflow-x-auto nx-chiprow" />
               </div>
 
               {filteredArtifacts.length === 0 ? (
@@ -369,82 +410,54 @@ export function PlayerEvidenceArchive() {
                     const mark = workspace.marks[artifact.id] ?? 'UNMARKED'
                     const position = workspace.placements[artifact.id]
                     const noteCount = workspace.annotations[artifact.id]?.length ?? 0
-                    const isComparing = compareIds.includes(artifact.id)
                     const revelation = workspace.revelations[artifact.id]
                     const hasNewInfo = revelation?.hasNewInfo ?? false
                     const lastInspected = workspace.lastInspected[artifact.id] ?? revelation?.lastInspectedAt ?? null
                     const thumb = artifactThumbUrl(artifact)
                     const condition = artifactCondition(artifact)
                     const state = artifactState(artifact)
+                    const hit = hits.get(artifact.id)
                     return (
-                      <div key={artifact.id} className="grid grid-cols-[44px_minmax(0,1fr)_auto] items-center gap-2 py-2">
+                      <button
+                        key={artifact.id}
+                        type="button"
+                        onClick={() => openArtifact(artifact.id, artifact)}
+                        aria-label={`Open ${artifact.code}, ${artifact.title}`}
+                        className="nx-record flex min-h-[5.5rem] w-full items-start gap-3 py-3 text-left"
+                      >
                         {thumb ? (
-                          <div className="relative h-11 w-11 overflow-hidden border border-nexus-borderSubtle bg-nexus-surface">
-                            <img
-                              src={thumb}
-                              alt=""
-                              loading="lazy"
-                              className="h-full w-full object-cover"
-                            />
+                          <span className="relative h-16 w-16 shrink-0 overflow-hidden border border-nexus-borderSubtle bg-nexus-surface">
+                            <img src={thumb} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
                             {condition !== 'NORMAL' && (
-                              <span
-                                className="absolute inset-x-0 bottom-0 h-1"
-                                style={{ background: 'var(--nx-warning)', opacity: 0.75 }}
-                                aria-hidden="true"
-                              />
+                              <span className="absolute inset-x-0 bottom-0 h-1" style={{ background: 'var(--nx-warning)', opacity: 0.8 }} aria-hidden="true" />
                             )}
-                          </div>
+                          </span>
                         ) : (
-                          <div className="flex h-11 w-11 items-center justify-center border border-nexus-borderSubtle font-mono text-[0.45rem] text-nexus-textSubtle" aria-hidden="true">
-                            {artifactType(artifact).slice(0, 3)}
-                          </div>
+                          <span className="flex h-16 w-16 shrink-0 items-center justify-center border border-nexus-borderSubtle font-mono text-[0.7rem] text-nexus-textSubtle" aria-hidden="true">
+                            {artifactType(artifact).slice(0, 4)}
+                          </span>
                         )}
-                        <FileRow
-                          reference={artifact.code}
-                          title={
-                            <span className="inline-flex items-center gap-1">
-                              {artifact.title}
-                              {condition !== 'NORMAL' && (
-                                <span className="font-mono text-[0.45rem] uppercase tracking-[0.12em] text-nexus-warning">{condition}</span>
-                              )}
-                              {state === 'CONTRADICTED' || state === 'ANOMALOUS' ? (
-                                <span className="font-mono text-[0.45rem] uppercase tracking-[0.12em] text-nexus-danger">{state}</span>
-                              ) : null}
-                              {artifact.simulation && (
-                                <span className="font-mono text-[0.45rem] uppercase tracking-[0.12em] text-nexus-textSubtle">SIM</span>
-                              )}
-                              {hasNewInfo && (
-                                <span className="font-mono text-[0.45rem] uppercase tracking-[0.12em] text-nexus-warning">NEW</span>
-                              )}
+                        <span className="min-w-0 flex-1">
+                          <span className="flex flex-wrap items-center gap-x-2 font-mono text-[0.68rem] uppercase tracking-[0.12em] text-nexus-textSubtle">
+                            <span>{artifact.code}</span>
+                            <span>{artifactType(artifact)}</span>
+                            {hasNewInfo && <span className="text-nexus-warning">UPDATED</span>}
+                            {condition !== 'NORMAL' && <span className="text-nexus-warning">{condition}</span>}
+                            {(state === 'CONTRADICTED' || state === 'ANOMALOUS') && <span className="text-nexus-danger">{state}</span>}
+                          </span>
+                          <span className="mt-1 block text-[0.98rem] font-medium leading-snug text-nexus-text">{artifact.title}</span>
+                          <span className="mt-1 block truncate font-mono text-[0.68rem] uppercase tracking-[0.08em] text-nexus-textMuted">
+                            {artifact.location ?? 'LOCATION UNKNOWN'}{mark !== 'UNMARKED' ? ` · ${MARK_LABEL[mark]}` : ''}{noteCount ? ` · ${noteCount} NOTE${noteCount > 1 ? 'S' : ''}` : ''}{position ? ' · ON BOARD' : ''}
+                          </span>
+                          {hit && hit.matches.slice(0, 2).map(match => (
+                            <span key={`${match.field}:${match.snippet}`} className="mt-1.5 block border-l-2 border-nexus-accent pl-2 text-xs leading-snug text-nexus-textMuted">
+                              <span className="font-mono text-[0.62rem] uppercase tracking-[0.1em] text-nexus-accent">{match.field}</span>{' '}
+                              {match.snippet}
                             </span>
-                          }
-                          meta={`${artifactType(artifact)} / ${artifact.location ?? 'LOCATION UNKNOWN'} / ${MARK_LABEL[mark]}${noteCount ? ` / ${noteCount} NOTES` : ''}${position ? ' / ON TABLE' : ''}`}
-                          selected={activeId === artifact.id}
-                          onSelect={() => openArtifact(artifact.id, artifact)}
-                          trailing={
-                            <div className="flex items-center gap-2">
-                              {lastInspected && (
-                                <time className="font-mono text-[0.45rem] text-nexus-textSubtle" title={`LAST INSPECTED: ${new Date(lastInspected).toLocaleString()}`}>
-                                  {formatRelativeTime(lastInspected)}
-                                </time>
-                              )}
-                              {artifact.acquiredAt && (
-                                <time className="font-mono text-[0.52rem] text-nexus-textSubtle" title={`ACQUIRED: ${new Date(artifact.acquiredAt).toLocaleString()}`}>
-                                  {artifact.acquiredAt}
-                                </time>
-                              )}
-                            </div>
-                          }
-                        />
-                        <div className="flex items-center gap-1">
-                          <button type="button" onClick={() => placeOnTable(artifact.id)} disabled={!!position} className="min-h-9 border border-nexus-border px-2 font-mono text-[0.48rem] uppercase text-nexus-textSubtle disabled:opacity-45" aria-label={`${position ? 'Already on table' : 'Place on table'} ${artifact.title}`} title={position ? 'Already on table' : 'Place on investigation table'}>
-                            {position ? 'PLACED' : 'TABLE'}
-                          </button>
-                          <button type="button" onClick={() => toggleCompare(artifact.id)} aria-pressed={isComparing} className={`min-h-9 border px-2 font-mono text-[0.48rem] uppercase ${isComparing ? 'border-nexus-warning text-nexus-warning' : 'border-nexus-border text-nexus-textSubtle'}`}>
-                            COMPARE
-                          </button>
-                        </div>
-                      </div>
+                          ))}
+                        </span>
+                        {lastInspected === null && <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-nexus-accent" role="img" aria-label="Not yet opened" />}
+                      </button>
                     )
                   })}
                 </div>
@@ -454,7 +467,7 @@ export function PlayerEvidenceArchive() {
               )}
             </section>
 
-            <aside className="border-l border-nexus-borderSubtle pl-3">
+            <aside className="hidden border-l border-nexus-borderSubtle pl-3 lg:block">
               <p className="font-mono text-[0.52rem] uppercase tracking-[0.14em] text-nexus-textSubtle">CASE STATE / LOCAL WORKSPACE</p>
               <dl className="mt-2 space-y-2 font-mono text-[0.58rem]">
                 <SummaryField label="EVIDENCE" value={String(artifacts.filter(item => item.source === 'EVIDENCE').length).padStart(2, '0')} />
@@ -501,6 +514,16 @@ export function PlayerEvidenceArchive() {
               onAddAnnotation={(kind, text, point) => addAnnotation(activeArtifact.id, kind, text, point)}
               onPlaceOnTable={() => placeOnTable(activeArtifact.id)}
               isOnTable={!!workspace.placements[activeArtifact.id]}
+              related={(activeArtifact.relationships ?? [])
+                .map(link => {
+                  const other = artifacts.find(candidate => candidate.code === link.to)
+                  return other ? { artifact: other, kind: link.kind, note: link.note } : null
+                })
+                .filter((entry): entry is { artifact: CaseArtifact; kind: string; note: string } => entry !== null)}
+              onOpenRelated={id => { const other = artifacts.find(candidate => candidate.id === id); if (other) openArtifact(id, other) }}
+              onTrace={traceTerm}
+              isComparing={compareIds.includes(activeArtifact.id)}
+              onToggleCompare={() => toggleCompare(activeArtifact.id)}
               seenFields={workspace.revelations[activeArtifact.id]?.seenFields}
               newKeys={workspace.revelations[activeArtifact.id]?.hasNewInfo ? getNewFieldKeys(activeArtifact, workspace.revelations[activeArtifact.id]?.seenFields) : undefined}
             />

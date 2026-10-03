@@ -80,7 +80,7 @@ export function InvestigationTable({ artifacts, workspace, onUpdate, onInspect }
   const inspectorRef = useRef<HTMLDivElement>(null)
   const sectionRef = useRef<HTMLElement>(null)
   const [wide, setWide] = useState(false)
-  const [toolsOpen, setToolsOpen] = useState(() => Object.keys(workspace.placements).length === 0)
+  const [toolsOpen, setToolsOpen] = useState(() => Object.keys(workspace.placements).length === 0 && !(typeof window !== 'undefined' && window.innerWidth < 640))
 
   const cameraRef = useRef<Camera>(workspace.view ?? DEFAULT_CAMERA)
   const viewportRef = useRef<Size>({ width: 0, height: 0 })
@@ -669,7 +669,7 @@ export function InvestigationTable({ artifacts, workspace, onUpdate, onInspect }
               <div className="pointer-events-none absolute left-1/2 top-1/2 w-72 -translate-x-1/2 -translate-y-1/2 border-l border-[#b5ae96] pl-4 font-mono">
                 <p className="text-[0.56rem] uppercase tracking-[0.16em] text-[#d3b87b]">TABLE / UNSET</p>
                 <p className="mt-2 text-xs text-[#c0bcaf]">No objects placed. The archive remains intact.</p>
-                <p className="mt-1 text-[0.6rem] text-[#9a9684]">Place recovered objects above, then arrange and connect them here.</p>
+                <p className="mt-1 text-xs text-[#9a9684]">Open a record and tap ADD TO BOARD, or use the board tools, then arrange and connect records here.</p>
               </div>
             )}
           </div>

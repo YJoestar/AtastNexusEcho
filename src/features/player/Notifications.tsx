@@ -8,9 +8,8 @@
  */
 
 import { useCallback, useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useApp } from '@/app/providers'
-import { ROUTES } from '@/app/config'
 import { cn } from '@/lib/utils'
 import { formatDateTime } from '@/lib/time'
 import { BureauIcons } from '@/components/bureau'
@@ -56,15 +55,14 @@ export function PlayerNotifications() {
   return (
     <div className="page">
       <div className="page-content max-w-2xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <Link to={ROUTES.PLAYER_GAME} className="nexus-btn nexus-btn-ghost touch-target-primary" aria-label="RETURN TO FIELD">
-            <BureauIcons.Back className="bureau-icon w-4 h-4" />
-            BACK
-          </Link>
-          <h1 className="heading-3 min-w-0 flex-1 px-3 text-center">FIELD COMMUNICATIONS</h1>
+        <header className="mb-5 flex items-center gap-3 border-b border-nexus-border pb-3">
+          <div className="min-w-0 flex-1">
+            <p className="font-mono text-[0.68rem] uppercase tracking-[0.18em] text-nexus-textSubtle">SECURE CHANNEL · BUREAU</p>
+            <h1 className="mt-1 font-mono text-lg font-bold text-nexus-text">COMMS</h1>
+          </div>
           <button
             onClick={handleRefresh}
-            className="p-2 border border-nexus-borderSubtle text-nexus-textSubtle hover:text-nexus-text touch-target-primary"
+            className="flex min-h-12 min-w-12 items-center justify-center border border-nexus-borderSubtle text-nexus-textSubtle hover:text-nexus-text"
             aria-label="Re-query field channel"
             title="Re-query channel"
             disabled={isRefreshing}
@@ -72,7 +70,7 @@ export function PlayerNotifications() {
           >
             <BureauIcons.Refresh className={cn('bureau-icon w-4 h-4', isRefreshing && 'animate-spin')} />
           </button>
-        </div>
+        </header>
 
         {unreadCount > 0 && (
           <button
@@ -88,7 +86,7 @@ export function PlayerNotifications() {
         {notifications.length === 0 ? (
           <DocumentShell
             reference="FIELD CHANNEL / CASE 037"
-            title="NO DISPATCH RECEIVED"
+            title="NO ACTIVE COMMUNICATIONS"
             stock="paper"
             footer={<Stamp variant="archived">Channel listening</Stamp>}
           >

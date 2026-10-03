@@ -9,7 +9,7 @@ import { useApp } from '@/app/providers'
 import { useConnection, type ConnectionStatus } from '@/hooks/useConnection'
 import { useSubmissionQueue } from '@/hooks/useSubmissionQueue'
 import { useGameTimer } from '@/hooks/useGameTimer'
-import { ROUTES, ROLE_SUBTITLES, ROLE_THEMES } from '@/app/config'
+import { ROUTES, ROLE_THEMES } from '@/app/config'
 import { cn } from '@/lib/utils'
 import { BureauIcons } from '@/components/bureau'
 
@@ -48,39 +48,26 @@ export function PlayerHeader() {
 
   return (
     <header className="sticky top-0 z-40 nexus-handset-header safe-area-top">
-      <div className="nexus-handset-title-bar">
-        <div className="flex items-center gap-3 min-w-0">
-          <Link to={ROUTES.PLAYER_GAME} className="flex items-center gap-2 shrink-0">
-            <div className="handset-badge-mark">N</div>
-            <div className="min-w-0">
-              <div className="font-display text-[0.62rem] uppercase tracking-[0.32em] text-nexus-textSubtle">NEXUS</div>
-              <div className="font-mono text-[0.6rem] uppercase tracking-[0.2em] text-nexus-textMuted">Case 037</div>
-            </div>
-          </Link>
-          <span className="font-mono text-[0.62rem] uppercase tracking-[0.18em] text-nexus-textMuted hidden sm:block">
-            Team {team.name}
-          </span>
-        </div>
+      {/* One row: where I am, who I am on this case, the link, the clock. */}
+      <div className="nexus-handset-title-bar !py-1.5">
+        <Link to={ROUTES.PLAYER_GAME} className="flex min-w-0 items-center gap-2" aria-label="Case file">
+          <div className="handset-badge-mark">N</div>
+          <div className="min-w-0 leading-none">
+            <div className="font-mono text-[0.6rem] uppercase tracking-[0.2em] text-nexus-textMuted">CASE 037</div>
+            <div className={cn('mt-1 font-mono text-[0.58rem] uppercase tracking-[0.2em]', roleTheme?.text)}>{player.role}</div>
+          </div>
+        </Link>
 
         <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-6 h-6">
+          <span
+            className="flex items-center gap-1"
+            role="img"
+            aria-label={`Signal ${connection.status}: ${indicator.label}`}
+          >
             <ConnectionIcon
-              className={cn(
-                'bureau-icon w-3.5 h-3.5',
-                indicator.className,
-                connection.status !== 'online' && 'animate-pulse',
-              )}
+              className={cn('bureau-icon w-4 h-4', indicator.className, connection.status !== 'online' && 'animate-pulse')}
               aria-hidden="true"
             />
-          </div>
-          <span
-            className={cn(
-              'font-mono text-[0.56rem] uppercase tracking-[0.18em]',
-              connection.status !== 'online' ? 'text-nexus-warning' : 'text-nexus-accent',
-            )}
-            aria-label={`Signal ${connection.status}`}
-          >
-            {connection.status.toUpperCase()}
           </span>
           {queuedCount > 0 && (
             <span
@@ -90,47 +77,12 @@ export function PlayerHeader() {
               {queuedCount}
             </span>
           )}
-        </div>
-      </div>
-
-      <div className="nexus-handset-subheader border-t border-nexus-borderSubtle/60">
-        <div className="flex items-center gap-3 min-w-0">
           <span
-            className={cn(
-              'px-2 py-1 text-[0.58rem] font-medium uppercase tracking-[0.22em] border border-current bg-transparent',
-              roleTheme?.badge,
-            )}
-          >
-            {player.role}
-          </span>
-          <span className={cn('hidden sm:inline text-[0.58rem] uppercase tracking-[0.18em]', roleTheme?.text)}>
-            {player.role && ROLE_SUBTITLES[player.role]}
-          </span>
-        </div>
-        <div className="flex items-center gap-3">
-          <span className="max-w-[7rem] truncate font-mono text-[0.62rem] uppercase tracking-[0.18em] text-nexus-textSubtle">
-            {player.displayName}
-          </span>
-          <div
-            className="handset-badge-mark"
-            aria-label={`Timer: ${timer.isArmed ? timeRemaining : 'not started'}`}
+            className={cn('flex items-center gap-1.5 whitespace-nowrap font-mono text-[0.72rem] tabular-nums tracking-[0.1em]', TIMER_TONE[timer.urgency])}
             role="timer"
+            aria-label={`Timer: ${timer.isArmed ? timeRemaining : 'not started'}`}
           >
-            <BureauIcons.Clock
-              className={cn(
-                'bureau-icon w-3 h-3',
-                timer.urgency === 'normal' ? 'text-nexus-textSubtle' : TIMER_TONE[timer.urgency],
-              )}
-              aria-hidden="true"
-            />
-          </div>
-          <span
-            className={cn(
-              'whitespace-nowrap font-mono text-[0.64rem] uppercase tracking-[0.18em]',
-              TIMER_TONE[timer.urgency],
-            )}
-            aria-live="off"
-          >
+            <BureauIcons.Clock className="bureau-icon w-3.5 h-3.5" aria-hidden="true" />
             {timeRemaining}
           </span>
         </div>

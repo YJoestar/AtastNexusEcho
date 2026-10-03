@@ -11,7 +11,7 @@
  * about it.
  */
 
-import { useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { PlayerHeader } from '@/components/player/PlayerHeader'
 import { BottomNav } from '@/components/player/BottomNav'
@@ -25,6 +25,7 @@ import { useConnection } from '@/hooks/useConnection'
 import { useSubmissionQueue } from '@/hooks/useSubmissionQueue'
 import { useNarrative } from '@/hooks/useNarrative'
 import { PUZZLE_COUNT } from '@/content/puzzles'
+import { glitch } from '@/lib/vfx/glitch'
 
 export function PlayerLayout() {
   const { isAuthenticated, isInitializing, teamProgress, unreadCount } = useApp()
@@ -50,6 +51,15 @@ export function PlayerLayout() {
   )
 
   const narrative = useNarrative(signals)
+
+  // A dispatch arriving while the device is open is the one authored moment in
+  // the shell: a brief disruption, then calm. Not on first load, not on read.
+  const lastUnread = useRef<number | null>(null)
+  useEffect(() => {
+    const previous = lastUnread.current
+    lastUnread.current = unreadCount
+    if (previous !== null && unreadCount > previous) glitch({ type: 'LIGHT' })
+  }, [unreadCount])
   const horrorLevel = narrative.level
 
   // Derive signal strength from connection state for the visual environment
@@ -90,7 +100,7 @@ export function PlayerLayout() {
         <main
           className={
             showBottomNav
-              ? 'relative flex-1 w-full overflow-x-hidden pb-[calc(56px+var(--safe-bottom))] md:pb-0'
+              ? 'relative flex-1 w-full overflow-x-hidden pb-[calc(104px+var(--safe-bottom))] md:pb-0'
               : 'relative flex-1 w-full overflow-x-hidden'
           }
         >

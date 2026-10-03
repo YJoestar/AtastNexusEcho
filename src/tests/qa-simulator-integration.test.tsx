@@ -104,7 +104,7 @@ describe('QA Simulator — Real Providers Integration', () => {
     await new Promise(r => setTimeout(r, 100))
 
     await waitFor(() => {
-      expect(screen.getByText(/Investigation Progress/i)).toBeTruthy()
+      expect(screen.getByText(/Case ledger/i)).toBeTruthy()
     })
 
     const criticalErrors = reactErrors.filter(
@@ -146,7 +146,7 @@ describe('QA Simulator — Real Providers Integration', () => {
     })
 
     await waitFor(() => {
-      expect(screen.getByRole('link', { name: 'Evidence' })).toBeTruthy()
+      expect(screen.getByRole('link', { name: 'EVIDENCE' })).toBeTruthy()
     })
   })
 })

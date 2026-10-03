@@ -4,6 +4,7 @@ import type { EvidenceAnnotation, EvidenceMark, AnnotationKind } from '@/lib/inv
 import { artifactCondition, artifactImageUrl, artifactMediaUrl, artifactThumbUrl, artifactType, contentString, visibleArtifactFields, type CaseArtifact } from './types'
 import { glitch, glitchForCondition, glitchForMedium } from '@/lib/vfx/glitch'
 import { cn } from '@/lib/utils'
+import { traceTerms } from '@/lib/evidence/search'
 
 interface ArtifactInspectionProps {
   artifact: CaseArtifact
@@ -16,6 +17,13 @@ interface ArtifactInspectionProps {
   seenFields?: Set<string>
   newKeys?: string[]
   compact?: boolean
+  /** Records this one is linked to, resolved from the catalogue. */
+  related?: Array<{ artifact: CaseArtifact; kind: string; note: string }>
+  onOpenRelated?: (id: string) => void
+  /** Chase a term (a place, a device, a name) through the whole archive. */
+  onTrace?: (term: string) => void
+  isComparing?: boolean
+  onToggleCompare?: () => void
 }
 
 const MARK_OPTIONS: { value: EvidenceMark; label: string }[] = [
@@ -43,6 +51,11 @@ export function ArtifactInspection({
   isOnTable,
   newKeys,
   compact = false,
+  related,
+  onOpenRelated,
+  onTrace,
+  isComparing = false,
+  onToggleCompare,
 }: ArtifactInspectionProps) {
   const [scale, setScale] = useState(1)
   const [offset, setOffset] = useState({ x: 0, y: 0 })
@@ -366,7 +379,7 @@ export function ArtifactInspection({
           )}
         </section>
 
-        <dl className="grid grid-cols-2 gap-x-3 gap-y-2 border-y border-nexus-borderSubtle py-3 font-mono text-[0.58rem] lg:grid-cols-1">
+        <dl className="grid grid-cols-2 gap-x-4 gap-y-3 border-y border-nexus-borderSubtle py-3 font-mono lg:grid-cols-1">
           <MetaField label="EVIDENCE ID" value={artifact.code} />
           <MetaField label="TYPE" value={artifact.type} />
           <MetaField label="CASE" value="CURRENT CASE" />
@@ -397,14 +410,74 @@ export function ArtifactInspection({
             isNew={newKeys?.some(key => ['integrity', 'integrity_status'].includes(key.toLowerCase()))}
           />
         </dl>
+
+        {onTrace && traceTerms(artifact).length > 0 && (
+          <section aria-label="Trace" className="border-b border-nexus-borderSubtle pb-3">
+            <h3 className="font-mono text-[0.68rem] uppercase tracking-[0.18em] text-nexus-textSubtle">TRACE — SEARCH THE ARCHIVE FOR</h3>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {traceTerms(artifact).map(term => (
+                <button
+                  key={term}
+                  type="button"
+                  onClick={() => onTrace(term)}
+                  className="min-h-11 border border-nexus-accent/60 px-3 font-mono text-xs uppercase tracking-[0.08em] text-nexus-accent active:bg-nexus-accentBg/20"
+                >
+                  {term} →
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {related && related.length > 0 && (
+          <section aria-label="Linked records" className="border-b border-nexus-borderSubtle pb-3">
+            <h3 className="font-mono text-[0.68rem] uppercase tracking-[0.18em] text-nexus-textSubtle">LINKED RECORDS</h3>
+            <ul className="mt-1 divide-y divide-nexus-borderSubtle">
+              {related.map(({ artifact: other, kind, note }) => (
+                <li key={other.id}>
+                  <button type="button" onClick={() => onOpenRelated?.(other.id)} className="flex min-h-14 w-full items-center gap-3 py-2 text-left">
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-mono text-[0.68rem] uppercase tracking-[0.1em] text-nexus-warning">{kind} · {other.code}</span>
+                      <span className="block truncate text-sm text-nexus-text">{other.title}</span>
+                      {note && <span className="block text-xs text-nexus-textMuted">{note}</span>}
+                    </span>
+                    <BureauIcons.Forward className="bureau-icon h-4 w-4 shrink-0 text-nexus-textSubtle" aria-hidden="true" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
       </div>
 
-      <div className="flex flex-wrap gap-1 border-t border-nexus-borderSubtle pt-2" role="group" aria-label="Classify evidence">
+      <div className="flex flex-wrap gap-2 border-t border-nexus-borderSubtle pt-2" role="group" aria-label="Classify evidence">
         {MARK_OPTIONS.map(option => (
-          <button key={option.value} type="button" aria-pressed={mark === option.value} onClick={() => onMarkChange(option.value)} className={cn('min-h-9 border px-2 font-mono text-[0.5rem] uppercase tracking-[0.08em]', mark === option.value ? 'border-nexus-warning bg-nexus-warningBg/20 text-nexus-warning' : 'border-nexus-border text-nexus-textSubtle hover:text-nexus-text')}>
+          <button key={option.value} type="button" aria-pressed={mark === option.value} onClick={() => onMarkChange(option.value)} className={cn('min-h-11 border px-3 font-mono text-[0.62rem] uppercase tracking-[0.08em]', mark === option.value ? 'border-nexus-warning bg-nexus-warningBg/20 text-nexus-warning' : 'border-nexus-border text-nexus-textSubtle hover:text-nexus-text')}>
             {option.label}
           </button>
         ))}
+      </div>
+
+      {/* Thumb zone: the two things a player does next with a record. */}
+      <div className="nx-actionbar" role="group" aria-label="Record actions">
+        <button
+          type="button"
+          onClick={onPlaceOnTable}
+          disabled={isOnTable}
+          className="nexus-btn nexus-btn-secondary min-h-14 flex-1 text-xs disabled:opacity-50"
+        >
+          {isOnTable ? 'ON BOARD' : 'ADD TO BOARD'}
+        </button>
+        {onToggleCompare && (
+          <button
+            type="button"
+            onClick={onToggleCompare}
+            aria-pressed={isComparing}
+            className={cn('nexus-btn min-h-14 flex-1 text-xs', isComparing ? 'nexus-btn-primary' : 'nexus-btn-secondary')}
+          >
+            {isComparing ? 'IN COMPARE' : 'COMPARE'}
+          </button>
+        )}
       </div>
     </div>
   )
@@ -414,12 +487,12 @@ function MetaField({ label, value, isNew = false }: { label: string; value: stri
   return (
     <div>
       <dt className={cn(
-        'text-[0.47rem] uppercase tracking-[0.12em] text-nexus-textSubtle',
+        'text-[0.64rem] uppercase tracking-[0.12em] text-nexus-textSubtle',
         isNew && 'text-nexus-warning',
       )}>
         {label}{isNew && ' · NEW'}
       </dt>
-      <dd className="mt-0.5 break-words text-[0.58rem] text-nexus-text">{value}</dd>
+      <dd className="mt-0.5 break-words text-[0.82rem] text-nexus-text">{value}</dd>
     </div>
   )
 }

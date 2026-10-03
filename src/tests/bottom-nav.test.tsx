@@ -27,7 +27,23 @@ vi.mock('@/hooks/useSubmissionQueue', () => ({
 }))
 
 const { BottomNav } = await import('@/components/player/BottomNav')
-const { NAV_ITEMS, navDestinationFor, shouldRenderBottomNav } = await import('@/lib/navigation')
+const { NAV_ITEMS, navDestinationFor, navItemFor, shouldRenderBottomNav } = await import('@/lib/navigation')
+
+describe('navItemFor', () => {
+  it('names the five investigation spaces', () => {
+    expect(NAV_ITEMS.map(item => item.id)).toEqual(['CASE', 'EVIDENCE', 'BOARD', 'SCAN', 'COMMS'])
+  })
+
+  it('tells Evidence from Board on their shared route', () => {
+    expect(navItemFor('/player/game/evidence', '')?.id).toBe('EVIDENCE')
+    expect(navItemFor('/player/game/evidence', '?artifact=x')?.id).toBe('EVIDENCE')
+    expect(navItemFor('/player/game/evidence', '?view=table')?.id).toBe('BOARD')
+  })
+
+  it('returns null off the bar', () => {
+    expect(navItemFor('/player/game/node/P01')).toBeNull()
+  })
+})
 
 describe('navDestinationFor', () => {
   it('matches each of the five listed destinations exactly', () => {
@@ -44,7 +60,8 @@ describe('navDestinationFor', () => {
     const unlisted = [
       '/player/game/node/P01',
       '/player/game/navigation',
-      '/player/game/notifications',
+      '/player/game/inventory',
+      '/player/game/leaderboard',
       '/player/game/final',
       '/player/game/complete',
       '/player/waiting',
@@ -93,6 +110,12 @@ describe('BottomNav', () => {
     useApp.mockReturnValue({ player: null })
     const { container } = renderAt('/player/game')
     expect(container.querySelector('nav')).toBeNull()
+  })
+
+  it('shows unread dispatches on Comms', () => {
+    useApp.mockReturnValue({ player: { id: 'p1', role: 'OBSERVER' }, unreadCount: 3 })
+    const { getByLabelText } = renderAt('/player/game')
+    expect(getByLabelText('COMMS, 3 unread')).toBeTruthy()
   })
 
   it('renders the five destinations on a listed route', () => {

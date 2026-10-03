@@ -16,7 +16,11 @@ import type { ComponentType, SVGProps } from 'react'
 import { ROUTES } from '@/app/config'
 
 export interface NavItem {
+  /** Stable identity: two destinations may share a route (Evidence / Board). */
+  id: 'CASE' | 'EVIDENCE' | 'BOARD' | 'SCAN' | 'COMMS'
   path: string
+  /** Query string that selects the destination within a shared route. */
+  search?: string
   label: string
   icon: ComponentType<SVGProps<SVGSVGElement>>
 }
@@ -27,13 +31,28 @@ function bureauIcon(name: IconName) {
   return BureauIcons[name] as ComponentType<SVGProps<SVGSVGElement>>
 }
 
+/**
+ * The five investigation spaces of the field device. Inventory, the site map and
+ * the field record are reached from the case itself; they are references, not
+ * places a team works from.
+ */
 export const NAV_ITEMS: NavItem[] = [
-  { path: ROUTES.PLAYER_GAME, label: 'Game', icon: bureauIcon('LayoutDashboard') },
-  { path: ROUTES.PLAYER_EVIDENCE, label: 'Evidence', icon: bureauIcon('Package') },
-  { path: ROUTES.PLAYER_INVENTORY, label: 'Inventory', icon: bureauIcon('Key') },
-  { path: ROUTES.PLAYER_QR, label: 'QR', icon: bureauIcon('QrCode') },
-  { path: ROUTES.PLAYER_LEADERBOARD, label: 'Ranking', icon: bureauIcon('Trophy') },
+  { id: 'CASE', path: ROUTES.PLAYER_GAME, label: 'Case', icon: bureauIcon('File') },
+  { id: 'EVIDENCE', path: ROUTES.PLAYER_EVIDENCE, label: 'Evidence', icon: bureauIcon('Package') },
+  { id: 'BOARD', path: ROUTES.PLAYER_EVIDENCE, search: '?view=table', label: 'Board', icon: bureauIcon('Share') },
+  { id: 'SCAN', path: ROUTES.PLAYER_QR, label: 'Scan', icon: bureauIcon('ScanLine') },
+  { id: 'COMMS', path: ROUTES.PLAYER_NOTIFICATIONS, label: 'Comms', icon: bureauIcon('Radio') },
 ]
+
+/** Which destination a location belongs to. Evidence and Board share a route. */
+export function navItemFor(pathname: string, search = ''): NavItem | null {
+  const normalized = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname
+  const onRoute = NAV_ITEMS.filter(item => item.path === normalized)
+  if (onRoute.length === 0) return null
+  if (onRoute.length === 1) return onRoute[0]
+  const view = new URLSearchParams(search).get('view')
+  return onRoute.find(item => item.search && new URLSearchParams(item.search).get('view') === view) ?? onRoute[0]
+}
 
 const NAV_PATHS = NAV_ITEMS.map(item => item.path)
 

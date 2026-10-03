@@ -2205,3 +2205,53 @@
     74% { transform: none; }
   }
 }
+
+/* ── Field device: lead panel and device wake ───────────────────────────── */
+@layer components {
+  .nx-lead {
+    position: relative;
+    padding: 1.5rem 1.25rem 1.5rem;
+    border: 1px solid var(--nx-border);
+    background: linear-gradient(180deg, var(--nx-surfaceElevated), var(--nx-surface));
+  }
+  /* Corner brackets: a viewfinder framing the one thing to look at. */
+  .nx-lead::before,
+  .nx-lead::after {
+    content: '';
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border: 2px solid var(--nx-accent);
+    pointer-events: none;
+  }
+  .nx-lead::before { top: -1px; left: -1px; border-right: 0; border-bottom: 0; }
+  .nx-lead::after { right: -1px; bottom: -1px; border-left: 0; border-top: 0; }
+  .nx-intel:active { background: var(--nx-surfaceElevated); }
+  /* Device wake: the case file resolves in. Opacity only, once, ~220ms. */
+  .nx-wake { animation: nx-wake 220ms ease-out both; }
+  @keyframes nx-wake { from { opacity: 0; } to { opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { .nx-wake { animation: none; } }
+}
+
+@layer components {
+  /* Sticky action zone at the bottom of a record, clear of the device bar. */
+  .nx-actionbar {
+    position: sticky;
+    bottom: calc(5.75rem + var(--safe-bottom, 0px));
+    z-index: 20;
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.5rem 0;
+    background: linear-gradient(180deg, transparent, var(--nx-bg) 35%);
+  }
+  @media (min-width: 768px) { .nx-actionbar { bottom: 0; } }
+}
+
+@layer components {
+  /* One scrolling row of filters on a phone instead of four wrapped rows. */
+  .nx-chiprow { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; -webkit-overflow-scrolling: touch; }
+  .nx-chiprow::-webkit-scrollbar { display: none; }
+  .nx-chiprow > button { flex: none; min-height: 44px; font-size: 0.7rem; padding-inline: 0.9rem; }
+  .nx-record { border-radius: 0; }
+  .nx-record:active { background: var(--nx-surfaceElevated); }
+}
