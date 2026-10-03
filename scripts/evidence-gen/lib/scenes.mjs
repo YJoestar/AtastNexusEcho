@@ -68,7 +68,7 @@ export function wallSign(x, y, z, w, h, rotY, color, emissive = 0) {
   const dir = rotY === 0 ? 1 : -1
   return face(
     [v3(x, y, z), v3(x + w * dir, y, z), v3(x + w * dir, y + h, z), v3(x, y + h, z)],
-    { color, emissive, doubleSided: true, roughness: 0.7, tag: 'sign' },
+    { color, emissive, doubleSided: true, roughness: 0.7, tag: 'sign', bias: 0.04 },
   )
 }
 
@@ -91,7 +91,7 @@ export function addDoor(faces, { x, y, z, width, height, frame = [126, 118, 104]
   faces.push(
     face(
       [at(0, 0), at(width, 0), at(width, height), at(0, height)],
-      { color: panel, roughness: 0.75, doubleSided: true, texture: brushedMetal(7, 1), tag: 'door' },
+      { color: panel, roughness: 0.75, doubleSided: true, texture: brushedMetal(7, 1), tag: 'door', bias: 0.02 },
     ),
   )
   faces.push(...(side
@@ -100,7 +100,7 @@ export function addDoor(faces, { x, y, z, width, height, frame = [126, 118, 104]
   if (kick) {
     faces.push(face(
       [at(0.04, 0.02, 0.07), at(width, 0.02, 0.07), at(width, 0.32, 0.07), at(0.04, 0.32, 0.07)],
-      { color: [70, 68, 64], roughness: 0.5, doubleSided: true, tag: 'kick' },
+      { color: [70, 68, 64], roughness: 0.5, doubleSided: true, tag: 'kick', bias: 0.03 },
     ))
   }
 }

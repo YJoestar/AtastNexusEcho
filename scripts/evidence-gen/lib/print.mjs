@@ -99,9 +99,11 @@ export function photoPrint({
   // Caption strip: written on the back edge by the processing lab.
   if (captionBottom > 0 && caption?.length) {
     const capY = inner.y + inner.h + 12
+    // The gummed label sits bottom-left; the caption starts to its right.
+    const capX = label ? border + Math.max(96, label.length * 8.4 + 22) + 16 : border + 2
     const lines = caption
     lines.forEach((line, i) => {
-      parts.push(`<text x="${border + 2}" y="${capY + 12 + i * 13}" font-family="'Courier New',Courier,monospace" font-size="10.5" letter-spacing="0.6" fill="#3b382f" opacity="0.9">${esc(line)}</text>`)
+      parts.push(`<text x="${capX}" y="${capY + 12 + i * 13}" font-family="'Courier New',Courier,monospace" font-size="10.5" letter-spacing="0.6" fill="#3b382f" opacity="0.9">${esc(line)}</text>`)
     })
   }
 

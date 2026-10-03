@@ -79,7 +79,7 @@ export const PHOTOGRAPHS = [
     sceneOptions: { seed: 11, doorSide: 'alternate', lightStart: 2.4, lightEvery: 4.6 },
     camera: { position: { x: -0.35, y: 1.6, z: 0.2 }, yaw: 0.05, pitch: -0.03, focal: 780 },
     cameraBounce: 0.22,
-    treatment: { exposure: 2.15, vignette: 0.6, grain: 0.036, noise: 0.05 },
+    treatment: { exposure: 1.5, vignette: 0.6, grain: 0.036, noise: 0.05 },
     props: [
       { kind: 'sign', x: -1.26, y: 2.16, z: 4.6, w: 0.46, h: 0.15, color: [178, 174, 158], emissive: 0.16 },
       { kind: 'box', x: 0.9, y: 0.06, z: 1.4, w: 0.3, h: 0.12, d: 0.3, color: [70, 70, 66] },
@@ -184,7 +184,7 @@ export const PHOTOGRAPHS = [
     scene: 'lab',
     sceneOptions: { seed: 15, lit: true },
     camera: { position: { x: 0.4, y: 1.62, z: 0.3 }, yaw: -0.04, pitch: -0.04, focal: 720 },
-    treatment: { exposure: 1.3, vignette: 0.6, grain: 0.034, noise: 0.05 },
+    treatment: { exposure: 1.05, vignette: 0.6, grain: 0.034, noise: 0.05 },
     props: [{ kind: 'chair', x: 1.1, y: 0, z: 4.4 }],
     relationships: [{ to: 'NX-037-P-01', kind: 'PERSONNEL', note: 'Lab 04 is L.V.-0029\'s assigned bench.' }],
   },

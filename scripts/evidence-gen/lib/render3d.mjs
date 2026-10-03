@@ -199,10 +199,17 @@ export function renderScene(scene, camera, buffer, options = {}) {
       prepared.push({ polygon, screen: tri, avgDepth, normal: shadingNormal, facing: Math.abs(facing) })
     }
   }
-  prepared.sort((a, b) => b.avgDepth - a.avgDepth)
+  // Per-pixel depth test. A painter's sort cannot order a door against the wall
+  // it hangs in (coplanar, interleaved triangles), which showed up as slivers
+  // and stray triangles. Opaque faces draw in any order; translucent ones
+  // (glass, haze planes) go last, far to near, testing but not writing depth.
+  const zbuf = new Float32Array(width * height).fill(Infinity)
+  const opaque = prepared.filter(item => item.polygon.alpha >= 1)
+  const translucent = prepared.filter(item => item.polygon.alpha < 1).sort((a, b) => b.avgDepth - a.avgDepth)
 
-  for (const item of prepared) {
+  for (const item of [...opaque, ...translucent]) {
     rasterPolygon(item, camera, buffer, {
+      zbuf,
       ambient,
       ambientSky,
       lights,
@@ -254,6 +261,13 @@ function rasterPolygon(item, camera, buffer, env) {
 
       // Perspective-correct world position for texture lookup.
       const iw = 1 / (weights[0] / b0.depth + weights[1] / b1.depth + weights[2] / b2.depth + 1e-9)
+      // `iw` is the perspective-correct depth of this fragment. `bias` pulls a
+      // decal (door leaf, sign, kick plate) a hair toward the camera so it
+      // wins against the surface it is attached to.
+      const zIndex = y * width + x
+      const z = iw - (polygon.bias ?? 0)
+      if (z >= env.zbuf[zIndex]) continue
+      if (polygon.alpha >= 1) env.zbuf[zIndex] = z
       const wx = (weights[0] / b0.depth * b0.wx + weights[1] / b1.depth * b1.wx + weights[2] / b2.depth * b2.wx) * iw
       const wy = (weights[0] / b0.depth * b0.wy + weights[1] / b1.depth * b1.wy + weights[2] / b2.depth * b2.wy) * iw
       const wz = (weights[0] / b0.depth * b0.wz + weights[1] / b1.depth * b1.wz + weights[2] / b2.depth * b2.wz) * iw

@@ -351,14 +351,16 @@ export function physicalImperfections(canvas, seed, { dust = 60, scratches = 4, 
     const angle = rng.range(-0.5, 0.5) + (rng.chance(0.5) ? 0 : Math.PI / 2)
     const bright = rng.chance(0.55)
     for (let t = 0; t < length; t++) {
-      const x = startX + Math.cos(angle) * t
-      const y = startY + Math.sin(angle) * t
+      const x = Math.round(startX + Math.cos(angle) * t)
+      const y = Math.round(startY + Math.sin(angle) * t)
+      if (x < 0 || y < 0 || x >= width || y >= height) continue
       const alpha = rng.range(0.04, 0.16)
-      const existing = [(y * width + x) * 3]
-      const current = [data[existing[0]], data[existing[0] + 1], data[existing[0] + 2]]
+      // Index with integers: a fractional index read NaN and painted solid black.
+      const at = (y * width + x) * 3
+      const current = [data[at], data[at + 1], data[at + 2]]
       setPx(
-        Math.round(x),
-        Math.round(y),
+        x,
+        y,
         bright
           ? [current[0] + alpha, current[1] + alpha, current[2] + alpha * 0.8]
           : [current[0] * (1 - alpha), current[1] * (1 - alpha), current[2] * (1 - alpha)],

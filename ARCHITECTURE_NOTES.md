@@ -82,6 +82,10 @@ Both are fixed (Sutherland-Hodgman clip + fan triangulation). Corridor side-wall
 
 Inspection view: shows the thumbnail instantly behind the full frame, and now lists CONDITION and CAPTURED from fields that already existed. The board swaps to the full-size image above 110 % zoom (thumbnails are 220 px).
 
+Later fixes in the same renderer: a **z-buffer** replaced the painter's sort (doors/signs now sit correctly in their walls, and props that had been hidden behind walls — the figure in B-02, the crates in B-09 — now appear); hairline **black scratches** were a NaN from a fractional array index (`physicalImperfections`); and the evidence label no longer overlaps the print caption. Exposure on B-01 and B-05 was lowered.
+
+**Photoreal AI imagery was tried and not used.** The connected Canva generator produced a convincing flash-photo corridor, but only a 199 px preview is returned; getting full-size files needs the sandbox to reach Canva's download hosts, which the environment's network policy blocks, and the owner chose not to open it. The pipeline stays procedural. Known limits: flat-shaded surfaces, a blotchy wall texture, unlit black ceilings.
+
 Gotcha: `build.mjs --only <codes>` deletes every other artifact's files and truncates the catalog. Always run the full build (about 50 s).
 
 ## Evidence audit (CASE NX-037, 66 generated artifacts)
