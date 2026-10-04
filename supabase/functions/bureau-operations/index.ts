@@ -1727,18 +1727,36 @@ email_confirm: true,
           return dbErrorResponse(hintError)
         }
 
-        const { data: node } = await supabaseAdmin
+        // Hints live in `content->'hints'` — that is the path request_hint reads
+        // (2026093010_server_authoritative_puzzles.sql:602). This used to select
+        // `answer_metadata` and read `meta.hints`, a path that migration
+        // documents as empty, so every Bureau-granted hint silently degraded to
+        // the literal 'Emergency hint granted by Bureau.' The operator believed
+        // they had sent the team a real nudge.
+        const { data: node, error: nodeLookupError } = await supabaseAdmin
           .from('puzzle_nodes')
-          .select('answer_metadata')
+          .select('content')
           .eq('id', nodeId)
-          .single()
+          .maybeSingle()
+
+        if (nodeLookupError) {
+          console.error('grant-hint: node lookup failed:', nodeLookupError)
+          return dbErrorResponse(nodeLookupError)
+        }
 
         let hintContent = 'Emergency hint granted by Bureau.'
-        if (node?.answer_metadata) {
-          const meta = node.answer_metadata as { hints?: string[] }
-          if (meta.hints && meta.hints[hintNumber - 1]) {
-            hintContent = meta.hints[hintNumber - 1]
-          }
+        const nodeContent = node?.content as { hints?: unknown } | undefined
+        const hints = Array.isArray(nodeContent?.hints) ? (nodeContent.hints as unknown[]) : []
+        const requested = typeof hintNumber === 'number' ? hintNumber : 1
+        const candidate = hints[requested - 1]
+        if (typeof candidate === 'string' && candidate.trim().length > 0) {
+          hintContent = candidate
+        } else {
+          // Never pretend a fabricated nudge was the authored one.
+          console.warn(
+            `grant-hint: node ${nodeId} has no authored hint ${requested}; sending an explicit placeholder.`,
+          )
+          hintContent = `Bureau guidance (no authored hint ${requested} exists for this node): re-read the evidence you have already recovered and check it against the access record.`
         }
 
         await supabaseAdmin.from('notifications').insert({

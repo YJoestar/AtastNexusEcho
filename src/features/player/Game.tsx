@@ -14,9 +14,9 @@
  * Reads the same engine state as before and links to the same destinations.
  */
 
-import { useMemo } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import { useGameEngine } from '@/hooks/useGameEngine'
+import { useGameEngine, type PlayerNodeView } from '@/hooks/useGameEngine'
 import { useGameTimer } from '@/hooks/useGameTimer'
 import { useNarrative } from '@/hooks/useNarrative'
 import { useInvestigationWorkspace } from '@/hooks/useInvestigationWorkspace'
@@ -24,6 +24,7 @@ import { ROUTES } from '@/app/config'
 import { cn } from '@/lib/utils'
 import { AnomalyArtifact } from '@/components/bureau'
 import { FieldLead, FieldLedger, FieldLink, IntelRow } from '@/components/player/field'
+import { buildCaseLead } from '@/lib/investigation/lead'
 
 export function PlayerGame() {
   const {
@@ -38,12 +39,51 @@ export function PlayerGame() {
     queuedCount,
     unreadCount,
     notifications,
+    role,
+    fetchNode,
   } = useGameEngine()
   const { workspace } = useInvestigationWorkspace(team?.id)
   const timer = useGameTimer(gameState?.endsAt)
 
   const currentNodeId = teamProgress?.currentNodeId
   const currentNode = currentNodeId ? allNodesForMap.find(n => n.code === currentNodeId) : null
+
+  // The lead is built from the server's authored, role-scoped objective — not from
+  // the local puzzle bundle. The bundle carries the node's `location` string, and
+  // rendering it turned the case home into a waypoint ("go here next"). The
+  // objective and the clue are what the team reasons over; where to go stays theirs
+  // to infer.
+  const [leadNode, setLeadNode] = useState<PlayerNodeView | null>(null)
+
+  // `fetchNode` is not a stable dependency: under the QA simulator the engine
+  // returns a fresh closure on every render, so depending on it directly would
+  // re-fire the fetch, set state, re-render, and spin. Track the latest in a ref
+  // and key the effect on the values that actually change the answer.
+  const fetchNodeRef = useRef(fetchNode)
+  fetchNodeRef.current = fetchNode
+
+  useEffect(() => {
+    let cancelled = false
+    if (!currentNodeId || !role) {
+      setLeadNode(null)
+      return
+    }
+    void fetchNodeRef
+      .current(currentNodeId)
+      .then(node => {
+        if (!cancelled) setLeadNode(node)
+      })
+      .catch(() => {
+        // Fail closed: a lead we cannot verify is worse than a degraded one, and
+        // buildCaseLead already handles a node with no authored objective.
+        if (!cancelled) setLeadNode(null)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [currentNodeId, role])
+
+  const lead = useMemo(() => buildCaseLead(leadNode), [leadNode])
 
   const narrative = useNarrative({
     solvedCount,
@@ -90,18 +130,18 @@ export function PlayerGame() {
 
         {/* 1 — the lead */}
         <AnomalyArtifact seed={`case:${team.code}`} level={narrative.level}>
-          {currentNode ? (
+          {lead ? (
             <FieldLead
-              eyebrow={`LEAD · STAGE ${currentNode.stage}`}
-              title={currentNode.title}
-              place={currentNode.location}
-              note={narrative.observation}
+              eyebrow={lead.eyebrow}
+              title={lead.objective}
+              clue={lead.clue}
+              note={lead.degraded ? narrative.observation : null}
               action={
                 <Link
-                  to={ROUTES.PLAYER_NODE.replace(':nodeId', currentNode.code)}
+                  to={ROUTES.PLAYER_NODE.replace(':nodeId', lead.nodeCode)}
                   className="nexus-btn nexus-btn-primary flex min-h-14 w-full items-center justify-center text-sm"
                 >
-                  OPEN LEAD
+                  WORK THIS LEAD
                 </Link>
               }
             />

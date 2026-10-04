@@ -14,7 +14,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { BureauIcons, TerminalFrame } from '@/components/bureau'
 import { cn } from '@/lib/utils'
 import { adminAPI } from '@/lib/admin'
-import type { PuzzleQAEntry } from '@/lib/admin'
+import type { PuzzleQAEntry, QRCodeEntry, LocationEntry } from '@/lib/admin'
+import { validateGameIntegrity } from '@/lib/integrity/validate'
 
 interface AudioPlayerProps {
   url: string
@@ -56,6 +57,8 @@ function AudioStatusIcon({ status }: { status: 'ok' | 'broken' | 'missing' }) {
 
 export function AdminQAViewer() {
   const [puzzles, setPuzzles] = useState<PuzzleQAEntry[]>([])
+  const [markers, setMarkers] = useState<QRCodeEntry[]>([])
+  const [locations, setLocations] = useState<LocationEntry[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
@@ -66,8 +69,14 @@ export function AdminQAViewer() {
     setIsLoading(true)
     setError(null)
     try {
-      const data = await adminAPI.listPuzzleQA()
+      const [data, qr, loc] = await Promise.all([
+        adminAPI.listPuzzleQA(),
+        adminAPI.listQRCodes(),
+        adminAPI.listLocations(),
+      ])
       setPuzzles(data)
+      setMarkers(qr)
+      setLocations(loc)
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Failed to fetch puzzle QA data'
       setError(msg)
@@ -98,6 +107,32 @@ export function AdminQAViewer() {
     0
   )
   const okAudio = totalAudio - brokenAudio
+
+  const integrity = useMemo(
+    () =>
+      validateGameIntegrity(
+        puzzles.map(p => ({
+          id: p.id,
+          code: p.code,
+          title: p.title,
+          type: p.type,
+          stage: p.stage,
+          unlocks: p.branches?.unlocks ?? null,
+          isFinale: p.type === 'FINAL_BOSS',
+        })),
+        markers.map(m => ({
+          id: m.id,
+          code: m.code,
+          markerId: m.markerId ?? null,
+          manualCode: m.manualCode ?? null,
+          puzzleNodeId: m.puzzleNodeId ?? null,
+        })),
+        locations.map(l => ({ nodeId: l.nodeId, status: l.status })),
+      ),
+    [puzzles, markers, locations],
+  )
+
+  const blockingIssues = integrity.issues.filter(i => i.severity !== 'INFO')
 
   if (isLoading) {
     return (
@@ -147,6 +182,62 @@ export function AdminQAViewer() {
           <BureauIcons.Refresh className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
         </button>
       </div>
+
+      {/* Progression integrity */}
+      <TerminalFrame
+        title="DEPLOYMENT INTEGRITY"
+        reference={integrity.playable ? 'HANDOFF CLEARED' : `${integrity.blockers} BLOCKING`}
+        variant={integrity.playable ? 'system' : 'monitor'}
+      >
+        <div className="space-y-3 p-4">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-[0.625rem] uppercase tracking-[0.14em]">
+            <span className={integrity.playable ? 'text-nexus-accent' : 'text-nexus-danger'}>
+              {integrity.playable
+                ? 'MARKERS RESOLVE / PROGRESSION CLOSES'
+                : `NOT SAFE TO DEPLOY / ${integrity.blockers} BLOCKER(S)`}
+            </span>
+            <span className="text-nexus-textSubtle">
+              {integrity.counts.nodesWithMarkers}/{integrity.counts.nodes} PUZZLES SCANNABLE
+            </span>
+            <span className="text-nexus-textSubtle">
+              {integrity.counts.assignedMarkers}/{integrity.counts.markers} MARKERS ASSIGNED
+            </span>
+            {integrity.warnings > 0 && (
+              <span className="text-nexus-warning">{integrity.warnings} WARNING(S)</span>
+            )}
+          </div>
+
+          {blockingIssues.length === 0 ? (
+            <p className="text-xs text-nexus-textMuted">
+              Every marker is assigned to a real puzzle, and every non-finale puzzle unlocks a
+              puzzle that exists.
+            </p>
+          ) : (
+            <ul className="divide-y divide-nexus-borderSubtle">
+              {blockingIssues.map((issue, i) => (
+                <li key={`${issue.code}-${issue.ref ?? i}-${i}`} className="flex items-start gap-3 py-2">
+                  <span
+                    className={cn(
+                      'mt-0.5 shrink-0 border px-1.5 py-0.5 text-[0.5625rem] font-bold uppercase tracking-[0.1em]',
+                      issue.severity === 'BLOCKER'
+                        ? 'border-nexus-danger text-nexus-danger'
+                        : 'border-nexus-warning text-nexus-warning',
+                    )}
+                  >
+                    {issue.severity}
+                  </span>
+                  <span className="text-xs text-nexus-textMuted">
+                    {issue.ref && (
+                      <span className="font-bold text-nexus-text">{issue.ref} — </span>
+                    )}
+                    {issue.message}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </TerminalFrame>
 
       {/* Filters */}
       <div className="panel">

@@ -14,13 +14,20 @@ import { cn } from '@/lib/utils'
 export function FieldLead({
   eyebrow,
   title,
-  place,
+  clue,
   note,
   action,
 }: {
   eyebrow: string
   title: string
-  place?: string | null
+  /**
+   * The observable fact that suggests a direction — what the team should reason
+   * over. This replaced a `place` prop that rendered the node's location string
+   * under a MapPin icon, which made the case home a waypoint: it told the team
+   * where to go instead of what to think about. The destination is the team's to
+   * infer from the clue.
+   */
+  clue?: string | null
   note?: ReactNode
   action: ReactNode
 }) {
@@ -28,11 +35,10 @@ export function FieldLead({
     <section className="nx-lead" aria-label="Current lead">
       <p className="font-mono text-[0.68rem] uppercase tracking-[0.2em] text-nexus-accent">{eyebrow}</p>
       <h1 className="mt-3 font-type text-[1.65rem] font-bold leading-[1.15] text-nexus-text break-words">{title}</h1>
-      {place && (
-        <p className="mt-2 flex items-center gap-2 font-mono text-xs uppercase tracking-[0.12em] text-nexus-textMuted">
-          <BureauIcons.MapPin className="bureau-icon w-4 h-4 shrink-0" aria-hidden="true" />
-          <span className="min-w-0 break-words">{place}</span>
-        </p>
+      {clue && (
+        <blockquote className="mt-3 border-l-2 border-nexus-accent/50 pl-3 font-mono text-[0.82rem] leading-relaxed text-nexus-textMuted">
+          {clue}
+        </blockquote>
       )}
       {note && <div className="mt-4 text-[0.95rem] leading-relaxed text-nexus-textMuted">{note}</div>}
       <div className="mt-6">{action}</div>
