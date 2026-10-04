@@ -136,8 +136,8 @@ function OverlayView({ a, b, blend, onBlend }: { a: CaseArtifact; b: CaseArtifac
   return (
     <div className="space-y-2">
       <div className="relative mx-auto aspect-[4/3] w-full max-w-3xl overflow-hidden border border-nexus-border bg-black">
-        <img src={first} alt={`${a.title} (base layer)`} draggable={false} className="absolute inset-0 h-full w-full object-contain" />
-        <img src={second} alt={`${b.title} (overlay)`} draggable={false} className="absolute inset-0 h-full w-full object-contain" style={{ opacity: blend / 100 }} />
+        <img src={first} alt={`${a.title} (base layer)`} decoding="async" draggable={false} className="absolute inset-0 h-full w-full object-contain" />
+        <img src={second} alt={`${b.title} (overlay)`} decoding="async" draggable={false} className="absolute inset-0 h-full w-full object-contain" style={{ opacity: blend / 100 }} />
       </div>
       <label className="flex items-center gap-3 font-mono text-[0.55rem] uppercase text-nexus-textSubtle">
         {a.code}

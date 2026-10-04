@@ -328,18 +328,18 @@ export function Workstation() {
         {/* ── system bar ── */}
         <header className="relative z-[60] flex h-9 shrink-0 items-center justify-between gap-4 border-b border-nexus-border bg-nexus-surfaceElevated px-3 text-[0.58rem] uppercase tracking-[0.14em]">
           <div className="flex min-w-0 items-center gap-4">
-            <span className="flex shrink-0 items-center gap-2 font-bold text-nexus-text"><NexusMark size={20} className="text-nexus-text" />NEXUS ECHO // CONTINUITY RECORDS SYSTEM</span>
+            <span className="flex min-w-0 items-center gap-2 font-bold text-nexus-text"><NexusMark size={20} className="shrink-0 text-nexus-text" /><span className="truncate">NEXUS ECHO<span className="hidden md:inline"> // CONTINUITY RECORDS SYSTEM</span></span></span>
             <span className="hidden text-nexus-textSubtle xl:inline">{SHOWCASE_CASE.build}</span>
             <span className="hidden border border-nexus-border px-1.5 text-nexus-textMuted lg:inline">CASE 037 · {(gameState?.status ?? 'STATE UNCONFIRMED').toString()}</span>
           </div>
-          <div className="flex shrink-0 items-center gap-4">
+          <div className="flex shrink-0 items-center gap-2 md:gap-4">
             <span className="hidden text-nexus-textMuted lg:inline" title="Access level">{admin?.username ?? 'OPERATOR'} · {admin?.role ?? 'UNCLASSIFIED'}</span>
             <span className={cn('hidden items-center gap-1.5 font-semibold md:flex', isConnected ? 'text-nexus-accent' : 'text-nexus-danger')}>
               <span className={cn('h-1.5 w-1.5', isConnected ? 'bg-nexus-accent' : 'bg-nexus-danger')} aria-hidden="true" />NETWORK {isConnected ? 'AVAILABLE' : 'OFFLINE'}
             </span>
-            <button type="button" onClick={() => setPaletteOpen(true)} className="min-h-7 border border-nexus-border px-2 text-nexus-textMuted hover:border-nexus-accent hover:text-nexus-accent">QUERY ARCHIVE <span className="text-nexus-textSubtle">Ctrl K</span></button>
+            <button type="button" onClick={() => setPaletteOpen(true)} className="min-h-7 border border-nexus-border px-2 text-nexus-textMuted hover:border-nexus-accent hover:text-nexus-accent">QUERY<span className="hidden md:inline"> ARCHIVE</span> <span className="hidden text-nexus-textSubtle md:inline">Ctrl K</span></button>
             <span className="tabular-nums text-nexus-accent" aria-label="Station time">{time}</span>
-            <button type="button" onClick={handleLogout} className="min-h-7 border border-transparent px-2 text-nexus-textSubtle hover:border-nexus-danger hover:text-nexus-danger">TERMINATE SESSION</button>
+            <button type="button" onClick={handleLogout} aria-label="Terminate session" className="min-h-7 border border-transparent px-2 text-nexus-textSubtle hover:border-nexus-danger hover:text-nexus-danger"><span className="hidden md:inline">TERMINATE SESSION</span><span className="md:hidden" aria-hidden="true">END</span></button>
           </div>
         </header>
 

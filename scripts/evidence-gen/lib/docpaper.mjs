@@ -5,6 +5,7 @@
 
 import { makeRng, makeNoise1d } from './rng.mjs'
 import { esc, stamp } from './print.mjs'
+import { HAND_FAMILY, HAND_METRICS } from './fontenv.mjs'
 
 const MONO = "'Courier New',Courier,monospace"
 const SERIF = "'Times New Roman',Times,serif"
@@ -99,38 +100,74 @@ export function boxedTable({ x, y, width, rows, rowHeight = 20, columns = [], si
   return parts.join('')
 }
 
-/** Handwritten cursive: per-character jitter plus a doubled stroke. */
-export function handwriting(text, { x, y, size = 15, color = '#232a3a', seed = 1, spacing = 0.5, family = "'Segoe Print','Bradley Hand','Comic Sans MS',cursive" } = {}) {
+const HAND_SCALE = 1.42 // Caveat has a small x-height; this makes `size` read like the old stack
+
+/** Advance width of `text` in the hand face at `size` (px), before per-letter variation. */
+export function handWidth(text, size) {
+  const { unitsPerEm, advance } = HAND_METRICS
+  let w = 0
+  for (const ch of text) w += ((advance[ch] ?? 420) / unitsPerEm) * size * HAND_SCALE
+  return w
+}
+
+/**
+ * Ballpoint hand: the vendored Caveat face, set glyph by glyph on its real
+ * advance widths, with a slow baseline drift across the line, a slight slant,
+ * per-letter wobble and size, and ink pressure that swells and fades by word.
+ */
+export function handwriting(text, { x, y, size = 15, color = '#232a3a', seed = 1, family = HAND_FAMILY } = {}) {
   const rng = makeRng(seed)
-  const noise = makeNoise1d(seed + 13, 3)
+  const drift = makeNoise1d(seed + 13, 3)   // slow, line-wide baseline wander
+  const wobble = makeNoise1d(seed + 29, 5)  // letter-scale tremor
+  const fs = size * HAND_SCALE
+  const slant = -7 + rng.range(-1.5, 1.5)   // degrees of rightward lean
   const parts = []
+  const { unitsPerEm, advance } = HAND_METRICS
   let cx = x
   let i = 0
+  let wordPress = 0.8
+  let startOfWord = true
   for (const ch of text) {
-    if (ch === ' ') { cx += size * 0.34; i++; continue }
-    const rot = noise(i * 0.8) * 5
-    const dy = noise(i * 1.3 + 4) * 2.4
-    const scale = 0.94 + rng.range(-0.06, 0.08)
-    const press = 0.62 + rng.range(0, 0.34)
-    parts.push(`<g transform="translate(${cx.toFixed(1)} ${(y + dy).toFixed(1)}) rotate(${rot.toFixed(1)}) scale(${scale.toFixed(3)})"><text x="0" y="0" font-family="${family}" font-size="${size}" fill="${color}" opacity="${(press * 0.35).toFixed(2)}" transform="translate(0.5 0.4)">${esc(ch)}</text><text x="0" y="0" font-family="${family}" font-size="${size}" fill="${color}" opacity="${press.toFixed(2)}">${esc(ch)}</text></g>`)
-    cx += size * (0.5 + spacing) * (ch === 'i' || ch === 'l' || ch === 'j' ? 0.6 : 1)
+    if (ch === ' ') { cx += fs * (0.2 + rng.range(-0.02, 0.07)); i++; startOfWord = true; continue }
+    if (startOfWord) { wordPress = 0.74 + rng.range(0, 0.2); startOfWord = false }
+    const dy = drift(cx * 0.012) * 2.2 + wobble(i * 1.1) * 0.7
+    const rot = drift(cx * 0.01 + 7) * 1.4 + wobble(i * 0.9 + 3) * 1.6
+    const scale = 1 + rng.range(-0.04, 0.05)
+    const press = Math.min(0.97, wordPress + rng.range(-0.08, 0.06))
+    const t = `translate(${cx.toFixed(1)} ${(y + dy).toFixed(1)}) rotate(${rot.toFixed(2)}) skewX(${slant.toFixed(1)}) scale(${scale.toFixed(3)})`
+    const g = c => `<text x="0" y="0" font-family="${family}" font-size="${fs.toFixed(1)}" fill="${color}"${c}>${esc(ch)}</text>`
+    parts.push(`<g transform="${t}">${g(` opacity="${(press * 0.3).toFixed(2)}" transform="translate(0.45 0.35)"`)}${g(` opacity="${press.toFixed(2)}"`)}</g>`)
+    cx += ((advance[ch] ?? 420) / unitsPerEm) * fs * (1 + rng.range(-0.04, 0.05))
     i++
   }
   // Returned as a String object with `width` attached, so a caller that forgets
-// `.svg` renders the handwriting instead of the text "[object Object]".
+  // `.svg` renders the handwriting instead of the text "[object Object]".
   const out = new String(parts.join(''))
   out.svg = out
   out.width = cx - x
   return out
 }
 
+/** Wrap on measured hand width (not a monospace column count). */
+function wrapHand(text, size, maxWidth) {
+  const lines = []
+  let line = ''
+  for (const word of text.split(' ')) {
+    const next = line ? `${line} ${word}` : word
+    if (line && handWidth(next, size) > maxWidth) { lines.push(line); line = word } else line = next
+  }
+  if (line) lines.push(line)
+  return lines
+}
+
 export function handwrittenLines(lines, { x, y, size = 15, leading = 26, color = '#232a3a', seed = 1, maxWidth = 420 } = {}) {
   const parts = []
+  let row = 0
   lines.forEach((line, i) => {
-    const wrapped = wrapMono(line, Math.floor(maxWidth / (size * 0.52)))
-    wrapped.forEach((sub, j) => {
-      const result = handwriting(sub, { x, y: y + (i + j) * leading, size, color, seed: seed + i * 17 + j })
+    wrapHand(line, size, maxWidth).forEach((sub, j) => {
+      const result = handwriting(sub, { x, y: y + row * leading, size, color, seed: seed + i * 17 + j })
       parts.push(result.svg)
+      row++
     })
   })
   return parts.join('')

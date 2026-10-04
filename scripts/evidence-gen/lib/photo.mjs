@@ -7,6 +7,7 @@
 // the character comes from what happens to the pixels afterwards.
 
 import sharp from 'sharp'
+import { HAND_FAMILY } from './fontenv.mjs'
 import { createCamera, renderScene } from './render3d.mjs'
 import { SCENE_BUILDERS, addFigure, addCrate, addShelving, addDesk, addLockers, addChair, wallSign, troffer } from './scenes.mjs'
 import { v3 } from './render3d.mjs'
@@ -20,7 +21,7 @@ import { makeRng, makeNoise1d } from './rng.mjs'
 import { photoPrint, surveillanceOsd, captionFields, penAnnotation } from './print.mjs'
 import { scratches, burnMask, stain, crease, tearMask, missingStrip, fade } from './damage.mjs'
 
-const HAND_FONT = "'Segoe Print','Bradley Hand','Comic Sans MS',cursive"
+const HAND_FONT = HAND_FAMILY
 
 function escapeText(text) {
   return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')

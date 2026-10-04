@@ -24,6 +24,7 @@ import { AdminLocations } from '../Locations'
 import { AdminQAViewer } from '../QAViewer'
 import { AdminEvidenceLab } from '../EvidenceLab'
 import { QAHub } from '../QAHub'
+import { EvidenceShowcase } from '../EvidenceShowcase'
 import { APPS, appForPath, type AppId } from './apps'
 
 interface WindowBodyProps {
@@ -69,6 +70,7 @@ function Routing({ app, path, onPath, onForeign }: WindowBodyProps) {
       <Route path={ROUTES.ADMIN_LEADERBOARD} element={<AdminLeaderboard />} />
       <Route path={ROUTES.ADMIN_GAME_CONTROL} element={<AdminGameControl />} />
       <Route path={ROUTES.ADMIN_EVIDENCE_REGISTER} element={<AdminEvidenceLab />} />
+      <Route path={ROUTES.ADMIN_EVIDENCE_SHOWCASE} element={<EvidenceShowcase />} />
       <Route path={ROUTES.ADMIN_AUDIT} element={<AdminAudit />} />
       <Route path={ROUTES.ADMIN_LOCATIONS} element={<AdminLocations />} />
       <Route path={ROUTES.ADMIN_QA_VIEWER} element={<AdminQAViewer />} />

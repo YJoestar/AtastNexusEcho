@@ -15,6 +15,7 @@ import { constants } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import './lib/fontenv.mjs'
 import {
   ARTIFACT_REGISTRY, ENVELOPES, CASE, PERSONNEL_ROSTER, LOCATION_CODES,
 } from './library.mjs'

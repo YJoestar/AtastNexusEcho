@@ -1,5 +1,6 @@
 import { memo, type PointerEvent as ReactPointerEvent } from 'react'
-import { Waveform } from '@/components/bureau'
+import { MediumThumb } from './MediumThumb'
+import { fragmentClip } from './thumbGeometry'
 import type { BoardPlacement } from '@/lib/investigationWorkspace'
 import {
   artifactCondition,
@@ -80,6 +81,8 @@ function BoardCardImpl(props: BoardCardProps) {
         top: worldY,
         zIndex: dragging ? 100000 : placement.order,
         transform: `translate(-50%, -50%) rotate(${placement.pinned ? placement.rotation * 0.4 : placement.rotation}deg)`,
+        ...(medium === 'FRAGMENT' ? { clipPath: fragmentClip(condition) } : null),
+        ...(medium === 'NOTE' ? { color: '#1f2748' } : null),
       }}
     >
       {placement.pinned ? <span className="nx-pin" aria-hidden="true" /> : medium === 'PHOTOGRAPH' || medium === 'NOTE' ? <span className="nx-tape" aria-hidden="true" /> : null}
@@ -124,30 +127,22 @@ function BoardCardImpl(props: BoardCardProps) {
       </div>
 
       <div className="nx-card-media relative mt-2">
-        {imageUrl ? (
-          <div className={medium === 'SURVEILLANCE' ? 'nx-card-scan relative' : 'relative'}>
-            <img
-              src={imageUrl}
-              alt=""
-              loading="lazy"
-              decoding="async"
-              draggable={false}
-              className={`h-24 w-full object-cover ${medium === 'SURVEILLANCE' ? 'grayscale contrast-125 brightness-90' : ''}`}
-            />
-            {medium === 'SURVEILLANCE' && (
-              <span className="absolute left-1 top-1 flex items-center gap-1 font-mono text-[0.45rem] text-[#e8e2d0]">
-                <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#c24b3f]" aria-hidden="true" />
-                REC {camera ?? ''}
-              </span>
-            )}
-            {medium === 'SURVEILLANCE' && stamp && (
-              <span className="absolute bottom-1 right-1 font-mono text-[0.45rem] text-[#e8e2d0]">{stamp}</span>
-            )}
-          </div>
-        ) : medium === 'AUDIO' ? (
-          <Waveform seed={artifact.id} height={32} tone="normal" />
+        {medium === 'AUDIO' && (
+          <p className="mb-1 flex items-center justify-between border border-dashed border-current/40 px-1 font-mono text-[0.45rem] uppercase tracking-[0.12em] opacity-80">
+            <span>TAPE SLIP</span>
+            <span>{contentString(artifact.content, ['duration']) ?? '--:--'}</span>
+          </p>
+        )}
+        {medium === 'PERSONNEL' && (
+          <p className="mb-1 border-b border-current/30 font-mono text-[0.45rem] uppercase tracking-[0.12em] opacity-80">ISSUED CARD / FILE COPY</p>
+        )}
+        {imageUrl || medium === 'AUDIO' ? (
+          <MediumThumb artifact={artifact} variant="card" detail={detail} />
         ) : (
           <p className="line-clamp-3 font-type text-[0.68rem] leading-relaxed opacity-80">{artifact.description || artifact.code}</p>
+        )}
+        {medium === 'SURVEILLANCE' && !imageUrl && (
+          <p className="font-mono text-[0.45rem] text-[#e8e2d0]">REC {camera ?? ''} {stamp ?? ''}</p>
         )}
       </div>
 

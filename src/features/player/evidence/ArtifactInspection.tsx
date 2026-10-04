@@ -1,10 +1,17 @@
-import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type WheelEvent as ReactWheelEvent } from 'react'
-import { BureauIcons, Waveform } from '@/components/bureau'
+import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type WheelEvent as ReactWheelEvent } from 'react'
+import { BureauIcons } from '@/components/bureau'
 import type { EvidenceAnnotation, EvidenceMark, AnnotationKind } from '@/lib/investigationWorkspace'
 import { artifactCondition, artifactImageUrl, artifactMediaUrl, artifactThumbUrl, artifactType, contentString, visibleArtifactFields, type CaseArtifact } from './types'
 import { glitch, glitchForCondition, glitchForMedium } from '@/lib/vfx/glitch'
 import { cn } from '@/lib/utils'
 import { traceTerms } from '@/lib/evidence/search'
+import { showcaseCatalog } from '@/lib/evidence/showcaseCatalog'
+import { MediaOverlay, MediaStrip, MediaSurface } from './media/EvidenceRenderer'
+import { mediumView } from './media/views'
+import { LinkedRecordsList } from './media/shared'
+import { seriesContextFor } from './media/seriesContext'
+import { useVideoControl } from './media/useVideoControl'
+import type { MediaProps } from './media/types'
 
 interface ArtifactInspectionProps {
   artifact: CaseArtifact
@@ -22,6 +29,8 @@ interface ArtifactInspectionProps {
   onOpenRelated?: (id: string) => void
   /** Chase a term (a place, a device, a name) through the whole archive. */
   onTrace?: (term: string) => void
+  /** Every record in the case, so a frame can find its series and a map its linked records. */
+  catalog?: readonly CaseArtifact[]
   isComparing?: boolean
   onToggleCompare?: () => void
 }
@@ -54,6 +63,7 @@ export function ArtifactInspection({
   related,
   onOpenRelated,
   onTrace,
+  catalog: catalogProp,
   isComparing = false,
   onToggleCompare,
 }: ArtifactInspectionProps) {
@@ -66,6 +76,7 @@ export function ArtifactInspection({
   const [markMode, setMarkMode] = useState(false)
   const [noteKind, setNoteKind] = useState<AnnotationKind>('NOTE')
   const [noteDraft, setNoteDraft] = useState('')
+  const [inkOn, setInkOn] = useState(false)
   const stageRef = useRef<HTMLDivElement>(null)
   const pointers = useRef(new Map<number, { x: number; y: number }>())
   const gesture = useRef<{
@@ -94,12 +105,32 @@ export function ArtifactInspection({
   const thumbUrl = artifactThumbUrl(artifact)
   const audioUrl = artifactMediaUrl(artifact, 'AUDIO')
   const videoUrl = artifactMediaUrl(artifact, 'VIDEO')
-  const isAudio = artifact.type.toUpperCase() === 'AUDIO' || !!audioUrl
-  const isVideo = artifact.type.toUpperCase().includes('VIDEO') || artifact.type.toUpperCase().includes('SURVEILLANCE') || !!videoUrl
-  const isImage = ['IMAGE', 'PHOTO', 'PHOTOGRAPH'].some(type => artifact.type.toUpperCase().includes(type)) || !!imageUrl
+  // A real attached recording or video decides the reader; otherwise the record's own medium does.
+  const medium = audioUrl ? 'AUDIO' : videoUrl ? 'SURVEILLANCE' : artifactType(artifact)
+  const view = mediumView(medium)
+  const video = useVideoControl(artifact.id)
+  const catalog = useMemo(() => catalogProp ?? showcaseCatalog(), [catalogProp])
+  const series = useMemo(
+    () => (medium === 'SURVEILLANCE' ? seriesContextFor(artifact, catalog) : null),
+    [medium, artifact, catalog],
+  )
   const fields = visibleArtifactFields(artifact.content)
 
   const enhanced = brightness !== 100 || contrast !== 100 || sharpen
+
+  const toggleInk = () => {
+    if (inkOn) {
+      setInkOn(false)
+      setScale(1)
+      setOffset({ x: 0, y: 0 })
+      setContrast(100)
+    } else {
+      setInkOn(true)
+      setScale(2)
+      setOffset({ x: 0, y: 0 })
+      setContrast(180)
+    }
+  }
 
   const resetView = () => {
     setScale(1)
@@ -174,8 +205,8 @@ export function ArtifactInspection({
   const handleMarkPoint = (event: React.MouseEvent<HTMLDivElement>) => {
     if (!markMode || moved.current || !stageRef.current) return
     const rect = stageRef.current.getBoundingClientRect()
-    const contentWidth = Math.max(1, rect.width - 48)
-    const contentHeight = Math.max(1, rect.height - 48)
+    const contentWidth = Math.max(1, rect.width - view.inset * 2)
+    const contentHeight = Math.max(1, rect.height - view.inset * 2)
     const localX = event.clientX - rect.left - rect.width / 2 - offset.x
     const localY = event.clientY - rect.top - rect.height / 2 - offset.y
     const radians = -rotation * Math.PI / 180
@@ -189,6 +220,23 @@ export function ArtifactInspection({
   }
 
   const contentText = contentString(artifact.content, ['text', 'transcript', 'body', 'document_text', 'description'])
+  const mediaProps: MediaProps = {
+    artifact,
+    medium,
+    imageUrl,
+    thumbUrl,
+    audioUrl,
+    videoUrl,
+    contentText,
+    fields,
+    imageStyle: { filter: enhanced ? `brightness(${brightness}%) contrast(${contrast}%)${sharpen ? ' url(#nx-sharpen)' : ''}` : undefined },
+    catalog,
+    related: related ?? [],
+    onOpenRelated,
+    series,
+    video,
+    ink: { on: inkOn, toggle: toggleInk },
+  }
 
   return (
     <div className={cn('space-y-3', compact && 'text-sm')}>
@@ -209,7 +257,7 @@ export function ArtifactInspection({
         </div>
       </div>
 
-      {imageUrl && isImage && !isAudio && (
+      {imageUrl && medium !== 'AUDIO' && (
         <details className="border border-nexus-borderSubtle bg-nexus-surfaceSubtle px-3 py-2">
           <summary className="min-h-8 cursor-pointer font-mono text-[0.68rem] uppercase tracking-[0.12em] text-nexus-textMuted">
             ENHANCE{enhanced ? ' / ADJUSTED' : ''} — BRIGHTNESS / CONTRAST / SHARPEN (VIEW ONLY, THE RECORD IS NOT CHANGED)
@@ -241,7 +289,8 @@ export function ArtifactInspection({
       <div
         ref={stageRef}
         className={cn(
-          'relative h-[min(52vh,520px)] min-h-[300px] select-none overflow-hidden border border-nexus-border bg-nexus-bg',
+          'relative h-[min(56vh,560px)] min-h-[300px] select-none overflow-hidden border border-nexus-border',
+          view.stageClass,
           markMode ? 'cursor-crosshair' : 'cursor-grab active:cursor-grabbing',
         )}
         role="group"
@@ -262,74 +311,10 @@ export function ArtifactInspection({
         style={{ touchAction: 'none' }}
       >
         <div
-          className="absolute inset-6"
-          style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale}) rotate(${rotation}deg)`, transformOrigin: 'center' }}
+          className="absolute"
+          style={{ inset: view.inset, transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale}) rotate(${rotation}deg)`, transformOrigin: 'center' }}
         >
-          {isAudio ? (
-            <div className="absolute inset-0 flex flex-col justify-center border border-nexus-border bg-nexus-surfaceElevated p-5" onPointerDown={event => event.stopPropagation()}>
-              <p className="mb-2 font-mono text-[0.68rem] uppercase tracking-[0.16em] text-nexus-textSubtle">ARCHIVAL RECORDING / {artifact.code}</p>
-              <Waveform seed={artifact.id} height={92} tone="normal" />
-              {audioUrl ? (
-                <AudioScrubber key={artifact.id} src={audioUrl} />
-              ) : (
-                <p className="mt-4 border-l border-nexus-warning pl-3 font-mono text-xs text-nexus-warning">AUDIO SOURCE / NOT ATTACHED</p>
-              )}
-              {contentText && <p className="mt-4 max-h-32 overflow-auto whitespace-pre-wrap border-t border-nexus-borderSubtle pt-3 text-xs leading-relaxed text-nexus-textMuted">{contentText}</p>}
-            </div>
-          ) : isImage ? (
-            imageUrl ? (
-              // The 220px thumbnail is already cached by the archive list: show it at
-              // once behind the full frame so opening a record never starts on black.
-              <img
-                src={imageUrl}
-                alt={artifact.title}
-                draggable={false}
-                decoding="async"
-                className="absolute inset-0 h-full w-full bg-black bg-contain bg-center bg-no-repeat object-contain"
-                style={{
-                  ...(thumbUrl && thumbUrl !== imageUrl ? { backgroundImage: `url(${thumbUrl})` } : null),
-                  filter: enhanced ? `brightness(${brightness}%) contrast(${contrast}%)${sharpen ? ' url(#nx-sharpen)' : ''}` : undefined,
-                }}
-              />
-            ) : (
-              <div className="absolute inset-0 flex flex-col items-center justify-center border border-nexus-border bg-nexus-surfaceElevated p-6 text-center">
-                <BureauIcons.Image className="bureau-icon mb-4 h-8 w-8 text-nexus-textSubtle" aria-hidden="true" />
-                <p className="font-mono text-[0.68rem] uppercase tracking-[0.16em] text-nexus-warning">IMAGE SOURCE / NOT ATTACHED</p>
-                <p className="mt-2 max-w-sm text-sm text-nexus-textMuted">{contentText || artifact.description || 'No image payload is available in this recovered record.'}</p>
-              </div>
-            )
-          ) : isVideo ? (
-            videoUrl ? (
-              <video src={videoUrl} controls className="absolute inset-0 h-full w-full bg-black object-contain" />
-            ) : (
-              <div className="absolute inset-0 flex flex-col justify-center border border-nexus-border bg-[#111416] p-5 font-mono">
-                <div className="mb-4 flex items-center justify-between border-b border-nexus-border pb-2 text-[0.68rem] uppercase tracking-[0.14em] text-nexus-textSubtle">
-                  <span>SURVEILLANCE REVIEW / {artifact.code}</span><span>SOURCE UNAVAILABLE</span>
-                </div>
-                <p className="whitespace-pre-wrap text-sm leading-relaxed text-nexus-textMuted">{contentText || artifact.description || 'NO PLAYABLE FOOTAGE ATTACHED TO THIS RECORD.'}</p>
-              </div>
-            )
-          ) : (
-            <article className="absolute inset-0 overflow-auto border border-nexus-border bg-[#d4d0c5] p-5 text-[#24231f] shadow-[4px_5px_0_rgba(0,0,0,0.25)]">
-              <header className="mb-5 flex items-start justify-between gap-3 border-b border-[#77746c] pb-3">
-                <div>
-                  <p className="font-mono text-[0.68rem] uppercase tracking-[0.15em]">NEXUS ECHO / CASE MATERIAL</p>
-                  <h3 className="mt-2 font-document text-lg font-semibold">{artifact.title}</h3>
-                </div>
-                <span className="font-mono text-[0.68rem]">{artifact.code}</span>
-              </header>
-              <p className="whitespace-pre-wrap font-document text-sm leading-relaxed">{contentText || artifact.description || 'NO TEXTUAL CONTENT ATTACHED.'}</p>
-              {fields.length > 0 && (
-                <dl className="mt-5 space-y-2 border-t border-[#77746c] pt-3 font-mono text-[0.68rem]">
-                  {fields.map(([label, value]) => (
-                    <div key={label} className="grid grid-cols-[110px_1fr] gap-2">
-                      <dt className="text-[#69665e]">{label}</dt><dd className="whitespace-pre-wrap break-words">{value}</dd>
-                    </div>
-                  ))}
-                </dl>
-              )}
-            </article>
-          )}
+          <MediaSurface {...mediaProps} />
           {annotations.filter(annotation => annotation.x !== undefined && annotation.y !== undefined).map((annotation, index) => (
             <span
               key={annotation.id}
@@ -341,10 +326,13 @@ export function ArtifactInspection({
             </span>
           ))}
         </div>
-        <div className="pointer-events-none absolute bottom-2 left-2 font-mono text-[0.68rem] uppercase tracking-[0.12em] text-nexus-textSubtle">
+        <MediaOverlay {...mediaProps} />
+        <div className="pointer-events-none absolute bottom-2 left-2 z-20 font-mono text-[0.68rem] uppercase tracking-[0.12em] text-nexus-textSubtle">
           {markMode ? 'MARK MODE / TAP DETAIL' : 'DRAG PAN / PINCH OR WHEEL ZOOM / DOUBLE TAP FIT'}
         </div>
       </div>
+
+      <MediaStrip {...mediaProps} />
 
       {newKeys && newKeys.length > 0 && (
         <div className="border border-nexus-warning/30 bg-nexus-warningBg/10 px-3 py-2 font-mono text-[0.68rem] uppercase tracking-[0.1em] text-nexus-warning">
@@ -352,7 +340,7 @@ export function ArtifactInspection({
         </div>
       )}
 
-      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_250px]">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-3 lg:grid-cols-[minmax(0,1fr)_250px]">
         <section className="border border-nexus-border bg-nexus-surfaceElevated p-3">
           <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
             <h3 className="font-mono text-[0.68rem] font-bold uppercase tracking-[0.14em] text-nexus-text">INVESTIGATOR ANNOTATIONS / {annotations.length.toString().padStart(2, '0')}</h3>
@@ -376,7 +364,11 @@ export function ArtifactInspection({
           )}
         </section>
 
-        <dl className="grid grid-cols-2 gap-x-4 gap-y-3 border-y border-nexus-borderSubtle py-3 font-mono lg:grid-cols-1">
+        <details className="border-y border-nexus-borderSubtle">
+          <summary className="flex min-h-11 cursor-pointer items-center font-mono text-[0.68rem] uppercase tracking-[0.14em] text-nexus-textMuted">
+            RECORD DETAILS — {artifact.code} / {medium} / {artifactCondition(artifact)}
+          </summary>
+        <dl className="grid grid-cols-2 gap-x-4 gap-y-3 pb-3 pt-1 font-mono lg:grid-cols-1">
           <MetaField label="EVIDENCE ID" value={artifact.code} />
           <MetaField label="TYPE" value={artifact.type} />
           <MetaField label="CASE" value="CURRENT CASE" />
@@ -407,6 +399,7 @@ export function ArtifactInspection({
             isNew={newKeys?.some(key => ['integrity', 'integrity_status'].includes(key.toLowerCase()))}
           />
         </dl>
+        </details>
 
         {onTrace && traceTerms(artifact).length > 0 && (
           <section aria-label="Trace" className="border-b border-nexus-borderSubtle pb-3">
@@ -426,24 +419,8 @@ export function ArtifactInspection({
           </section>
         )}
 
-        {related && related.length > 0 && (
-          <section aria-label="Linked records" className="border-b border-nexus-borderSubtle pb-3">
-            <h3 className="font-mono text-[0.68rem] uppercase tracking-[0.18em] text-nexus-textSubtle">LINKED RECORDS</h3>
-            <ul className="mt-1 divide-y divide-nexus-borderSubtle">
-              {related.map(({ artifact: other, kind, note }) => (
-                <li key={other.id}>
-                  <button type="button" onClick={() => onOpenRelated?.(other.id)} className="flex min-h-14 w-full items-center gap-3 py-2 text-left">
-                    <span className="min-w-0 flex-1">
-                      <span className="block font-mono text-[0.68rem] uppercase tracking-[0.1em] text-nexus-warning">{kind} · {other.code}</span>
-                      <span className="block truncate text-sm text-nexus-text">{other.title}</span>
-                      {note && <span className="block text-xs text-nexus-textMuted">{note}</span>}
-                    </span>
-                    <BureauIcons.Forward className="bureau-icon h-4 w-4 shrink-0 text-nexus-textSubtle" aria-hidden="true" />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </section>
+        {!view.ownsLinked && related && related.length > 0 && (
+          <LinkedRecordsList records={related} title="LINKED RECORDS" label="Linked records" onOpen={onOpenRelated} />
         )}
       </div>
 
@@ -490,45 +467,6 @@ function MetaField({ label, value, isNew = false }: { label: string; value: stri
         {label}{isNew && ' · NEW'}
       </dt>
       <dd className="mt-0.5 break-words text-[0.82rem] text-nexus-text">{value}</dd>
-    </div>
-  )
-}
-
-function AudioScrubber({ src }: { src: string }) {
-  const audioRef = useRef<HTMLAudioElement>(null)
-  const [duration, setDuration] = useState(0)
-  const [current, setCurrent] = useState(0)
-  const format = (seconds: number) => `${Math.floor(seconds / 60).toString().padStart(2, '0')}:${Math.floor(seconds % 60).toString().padStart(2, '0')}`
-
-  return (
-    <div className="mt-4 border-t border-nexus-border pt-3">
-      <audio
-        ref={audioRef}
-        src={src}
-        controls
-        preload="metadata"
-        className="w-full"
-        onLoadedMetadata={event => setDuration(Number.isFinite(event.currentTarget.duration) ? event.currentTarget.duration : 0)}
-        onTimeUpdate={event => setCurrent(event.currentTarget.currentTime)}
-      />
-      <input
-        type="range"
-        min={0}
-        max={duration || 0}
-        step={0.1}
-        value={Math.min(current, duration)}
-        onChange={event => {
-          const value = Number(event.target.value)
-          if (audioRef.current) audioRef.current.currentTime = value
-          setCurrent(value)
-        }}
-        aria-label="Recording timeline"
-        className="mt-2 w-full accent-nexus-accent"
-        disabled={!duration}
-      />
-      <div className="flex justify-between font-mono text-[0.5rem] tabular-nums text-nexus-textSubtle">
-        <span>{format(current)}</span><span>{duration ? format(duration) : 'DURATION UNKNOWN'}</span>
-      </div>
     </div>
   )
 }

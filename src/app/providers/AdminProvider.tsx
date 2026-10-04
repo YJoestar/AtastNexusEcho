@@ -12,6 +12,7 @@
 import { createContext, useContext, useState, useCallback, useEffect, useRef, ReactNode } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { AdminUser } from '@/types'
+import { DEV_ADMIN_USER, devAdminBypassActive } from '@/lib/devAdminBypass'
 
 interface AdminContextValue {
   admin: AdminUser | null
@@ -48,6 +49,11 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     const isCurrent = () => mountedRef.current && seq === checkSeqRef.current
     if (mountedRef.current) setIsLoading(true)
     try {
+      // Development builds only, and only with the local flag set (see the module).
+      if (devAdminBypassActive()) {
+        if (isCurrent()) setAdmin(DEV_ADMIN_USER)
+        return true
+      }
       const { data: { session } } = await supabase.auth.getSession()
 
       if (!session?.access_token) {

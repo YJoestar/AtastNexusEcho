@@ -1,0 +1,336 @@
+{
+  "startedAt": "2026-10-04T13:01:24.689Z",
+  "base": "http://127.0.0.1:38283",
+  "chromium": "/opt/pw-browsers/chromium-1194/chrome-linux/chrome",
+  "shots": [
+    {
+      "file": "desktop-01-photograph-library.png",
+      "viewport": "desktop",
+      "medium": "PHOTOGRAPH",
+      "step": "library",
+      "code": "NX-037-B-02",
+      "problems": [],
+      "offlineBackendErrors": 4
+    },
+    {
+      "file": "desktop-01-photograph-inspection.png",
+      "viewport": "desktop",
+      "medium": "PHOTOGRAPH",
+      "step": "inspection",
+      "code": "NX-037-B-02",
+      "problems": [],
+      "offlineBackendErrors": 4
+    },
+    {
+      "file": "desktop-02-surveillance-library.png",
+      "viewport": "desktop",
+      "medium": "SURVEILLANCE",
+      "step": "library",
+      "code": "NX-CAM-07",
+      "problems": [],
+      "offlineBackendErrors": 4
+    },
+    {
+      "file": "desktop-02-surveillance-inspection.png",
+      "viewport": "desktop",
+      "medium": "SURVEILLANCE",
+      "step": "inspection",
+      "code": "NX-CAM-07",
+      "problems": [],
+      "offlineBackendErrors": 4
+    },
+    {
+      "file": "desktop-03-document-library.png",
+      "viewport": "desktop",
+      "medium": "DOCUMENT",
+      "step": "library",
+      "code": "NX-037-D-01",
+      "problems": [],
+      "offlineBackendErrors": 4
+    },
+    {
+      "file": "desktop-03-document-inspection.png",
+      "viewport": "desktop",
+      "medium": "DOCUMENT",
+      "step": "inspection",
+      "code": "NX-037-D-01",
+      "problems": [],
+      "offlineBackendErrors": 4
+    },
+    {
+      "file": "desktop-04-fragment-library.png",
+      "viewport": "desktop",
+      "medium": "FRAGMENT",
+      "step": "library",
+      "code": "NX-037-F-04",
+      "problems": [],
+      "offlineBackendErrors": 4
+    },
+    {
+      "file": "desktop-04-fragment-inspection.png",
+      "viewport": "desktop",
+      "medium": "FRAGMENT",
+      "step": "inspection",
+      "code": "NX-037-F-04",
+      "problems": [],
+      "offlineBackendErrors": 4
+    },
+    {
+      "file": "desktop-05-note-library.png",
+      "viewport": "desktop",
+      "medium": "NOTE",
+      "step": "library",
+      "code": "NX-037-N-02",
+      "problems": [],
+      "offlineBackendErrors": 4
+    },
+    {
+      "file": "desktop-05-note-inspection.png",
+      "viewport": "desktop",
+      "medium": "NOTE",
+      "step": "inspection",
+      "code": "NX-037-N-02",
+      "problems": [],
+      "offlineBackendErrors": 4
+    },
+    {
+      "file": "desktop-06-personnel-library.png",
+      "viewport": "desktop",
+      "medium": "PERSONNEL",
+      "step": "library",
+      "code": "NX-037-P-01",
+      "problems": [],
+      "offlineBackendErrors": 4
+    },
+    {
+      "file": "desktop-06-personnel-inspection.png",
+      "viewport": "desktop",
+      "medium": "PERSONNEL",
+      "step": "inspection",
+      "code": "NX-037-P-01",
+      "problems": [],
+      "offlineBackendErrors": 4
+    },
+    {
+      "file": "desktop-07-audio-library.png",
+      "viewport": "desktop",
+      "medium": "AUDIO",
+      "step": "library",
+      "code": "NX-037-A-02",
+      "problems": [],
+      "offlineBackendErrors": 4
+    },
+    {
+      "file": "desktop-07-audio-inspection.png",
+      "viewport": "desktop",
+      "medium": "AUDIO",
+      "step": "inspection",
+      "code": "NX-037-A-02",
+      "problems": [],
+      "offlineBackendErrors": 4
+    },
+    {
+      "file": "desktop-08-map-library.png",
+      "viewport": "desktop",
+      "medium": "MAP",
+      "step": "library",
+      "code": "NX-037-M-01",
+      "problems": [],
+      "offlineBackendErrors": 4
+    },
+    {
+      "file": "desktop-08-map-inspection.png",
+      "viewport": "desktop",
+      "medium": "MAP",
+      "step": "inspection",
+      "code": "NX-037-M-01",
+      "problems": [],
+      "offlineBackendErrors": 4
+    },
+    {
+      "file": "mobile-01-photograph-library.png",
+      "viewport": "mobile",
+      "medium": "PHOTOGRAPH",
+      "step": "library",
+      "code": "NX-037-B-02",
+      "problems": [],
+      "offlineBackendErrors": 4
+    },
+    {
+      "file": "mobile-01-photograph-inspection.png",
+      "viewport": "mobile",
+      "medium": "PHOTOGRAPH",
+      "step": "inspection",
+      "code": "NX-037-B-02",
+      "problems": [],
+      "offlineBackendErrors": 4
+    },
+    {
+      "file": "mobile-02-surveillance-library.png",
+      "viewport": "mobile",
+      "medium": "SURVEILLANCE",
+      "step": "library",
+      "code": "NX-CAM-07",
+      "problems": [],
+      "offlineBackendErrors": 4
+    },
+    {
+      "file": "mobile-02-surveillance-inspection.png",
+      "viewport": "mobile",
+      "medium": "SURVEILLANCE",
+      "step": "inspection",
+      "code": "NX-CAM-07",
+      "problems": [],
+      "offlineBackendErrors": 4
+    },
+    {
+      "file": "mobile-03-document-library.png",
+      "viewport": "mobile",
+      "medium": "DOCUMENT",
+      "step": "library",
+      "code": "NX-037-D-01",
+      "problems": [],
+      "offlineBackendErrors": 4
+    },
+    {
+      "file": "mobile-03-document-inspection.png",
+      "viewport": "mobile",
+      "medium": "DOCUMENT",
+      "step": "inspection",
+      "code": "NX-037-D-01",
+      "problems": [],
+      "offlineBackendErrors": 4
+    },
+    {
+      "file": "mobile-04-fragment-library.png",
+      "viewport": "mobile",
+      "medium": "FRAGMENT",
+      "step": "library",
+      "code": "NX-037-F-04",
+      "problems": [],
+      "offlineBackendErrors": 4
+    },
+    {
+      "file": "mobile-04-fragment-inspection.png",
+      "viewport": "mobile",
+      "medium": "FRAGMENT",
+      "step": "inspection",
+      "code": "NX-037-F-04",
+      "problems": [],
+      "offlineBackendErrors": 4
+    },
+    {
+      "file": "mobile-05-note-library.png",
+      "viewport": "mobile",
+      "medium": "NOTE",
+      "step": "library",
+      "code": "NX-037-N-02",
+      "problems": [],
+      "offlineBackendErrors": 4
+    },
+    {
+      "file": "mobile-05-note-inspection.png",
+      "viewport": "mobile",
+      "medium": "NOTE",
+      "step": "inspection",
+      "code": "NX-037-N-02",
+      "problems": [],
+      "offlineBackendErrors": 4
+    },
+    {
+      "file": "mobile-06-personnel-library.png",
+      "viewport": "mobile",
+      "medium": "PERSONNEL",
+      "step": "library",
+      "code": "NX-037-P-01",
+      "problems": [],
+      "offlineBackendErrors": 4
+    },
+    {
+      "file": "mobile-06-personnel-inspection.png",
+      "viewport": "mobile",
+      "medium": "PERSONNEL",
+      "step": "inspection",
+      "code": "NX-037-P-01",
+      "problems": [],
+      "offlineBackendErrors": 4
+    },
+    {
+      "file": "mobile-07-audio-library.png",
+      "viewport": "mobile",
+      "medium": "AUDIO",
+      "step": "library",
+      "code": "NX-037-A-02",
+      "problems": [],
+      "offlineBackendErrors": 4
+    },
+    {
+      "file": "mobile-07-audio-inspection.png",
+      "viewport": "mobile",
+      "medium": "AUDIO",
+      "step": "inspection",
+      "code": "NX-037-A-02",
+      "problems": [],
+      "offlineBackendErrors": 4
+    },
+    {
+      "file": "mobile-08-map-library.png",
+      "viewport": "mobile",
+      "medium": "MAP",
+      "step": "library",
+      "code": "NX-037-M-01",
+      "problems": [],
+      "offlineBackendErrors": 4
+    },
+    {
+      "file": "mobile-08-map-inspection.png",
+      "viewport": "mobile",
+      "medium": "MAP",
+      "step": "inspection",
+      "code": "NX-037-M-01",
+      "problems": [],
+      "offlineBackendErrors": 4
+    }
+  ],
+  "finishedAt": "2026-10-04T13:02:40.842Z",
+  "contactSheet": {
+    "file": "evidence-showcase-contact-sheet.png",
+    "width": 1428,
+    "height": 1710,
+    "tiles": [
+      "desktop-01-photograph-library.png",
+      "desktop-01-photograph-inspection.png",
+      "desktop-02-surveillance-library.png",
+      "desktop-02-surveillance-inspection.png",
+      "desktop-03-document-library.png",
+      "desktop-03-document-inspection.png",
+      "desktop-04-fragment-library.png",
+      "desktop-04-fragment-inspection.png",
+      "desktop-05-note-library.png",
+      "desktop-05-note-inspection.png",
+      "desktop-06-personnel-library.png",
+      "desktop-06-personnel-inspection.png",
+      "desktop-07-audio-library.png",
+      "desktop-07-audio-inspection.png",
+      "desktop-08-map-library.png",
+      "desktop-08-map-inspection.png",
+      "mobile-01-photograph-library.png",
+      "mobile-01-photograph-inspection.png",
+      "mobile-02-surveillance-library.png",
+      "mobile-02-surveillance-inspection.png",
+      "mobile-03-document-library.png",
+      "mobile-03-document-inspection.png",
+      "mobile-04-fragment-library.png",
+      "mobile-04-fragment-inspection.png",
+      "mobile-05-note-library.png",
+      "mobile-05-note-inspection.png",
+      "mobile-06-personnel-library.png",
+      "mobile-06-personnel-inspection.png",
+      "mobile-07-audio-library.png",
+      "mobile-07-audio-inspection.png",
+      "mobile-08-map-library.png",
+      "mobile-08-map-inspection.png"
+    ]
+  },
+  "totalBytes": 27073400
+}

@@ -4,6 +4,7 @@
 // is indistinguishable from a bug.
 import { createHash } from 'node:crypto'
 import sharp from 'sharp'
+import './lib/fontenv.mjs'
 import { ARTIFACT_REGISTRY } from './library.mjs'
 import { composePhotograph, composeSurveillance } from './lib/photo.mjs'
 import {

@@ -17,7 +17,7 @@ describe('QUERY ARCHIVE', () => {
   it('lists every module for an empty query and nothing else', () => {
     const results = queryArchive('', 'ALL', DATA)
     expect(results.every(result => result.kind === 'MODULE')).toBe(true)
-    expect(results.length).toBe(11)
+    expect(results.length).toBe(12)
   })
 
   it('finds records across kinds and ranks exact over prefix over contains', () => {

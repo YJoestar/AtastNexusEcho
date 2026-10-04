@@ -71,6 +71,7 @@ const ALIASES: Record<string, AppId> = {
   operations: 'OPERATIONS', control: 'OPERATIONS', game: 'OPERATIONS',
   record: 'RECORD', ledger: 'RECORD', leaderboard: 'RECORD',
   evidence: 'EVIDENCE', register: 'EVIDENCE',
+  archive: 'ARCHIVE', showcase: 'ARCHIVE',
   surveillance: 'SURVEILLANCE', cameras: 'SURVEILLANCE', cctv: 'SURVEILLANCE',
   log: 'ACCESS_LOG', logs: 'ACCESS_LOG', audit: 'ACCESS_LOG', access: 'ACCESS_LOG',
   simulator: 'SIMULATOR', sim: 'SIMULATOR', handset: 'SIMULATOR',

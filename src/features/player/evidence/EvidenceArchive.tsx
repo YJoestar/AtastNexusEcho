@@ -13,12 +13,25 @@ import {
 import { ArtifactInspection } from './ArtifactInspection'
 import { InvestigationTable } from './InvestigationTable'
 import { CompareStation } from './CompareStation'
-import { contentString, artifactType, artifactCondition, artifactState, artifactThumbUrl, type CaseArtifact } from './types'
+import { contentString, artifactType, artifactCondition, artifactState, type ArtifactType, type CaseArtifact } from './types'
 import { showcaseCatalog, showcaseEnabled } from '@/lib/evidence/showcaseCatalog'
 import { searchArtifacts, type SearchHit } from '@/lib/evidence/search'
 import { deriveSeries, seriesPosition, sortChronologically, captureTimeOf } from '@/lib/evidence/series'
 import { mediumFacts } from '@/lib/evidence/facts'
 import { cn } from '@/lib/utils'
+import { MediumThumb } from './board/MediumThumb'
+
+/** The title is set the way the object itself would be: typed, handwritten, machine-logged. */
+const TITLE_FACE: Record<ArtifactType, string> = {
+  PHOTOGRAPH: 'font-sans',
+  SURVEILLANCE: 'font-mono uppercase tracking-wide text-[0.9rem]',
+  DOCUMENT: 'font-type',
+  NOTE: 'font-type italic',
+  MAP: 'font-mono text-[0.9rem]',
+  PERSONNEL: 'font-type uppercase tracking-wide text-[0.9rem]',
+  FRAGMENT: 'font-type',
+  AUDIO: 'font-mono text-[0.9rem]',
+}
 
 type ArchiveClass = 'ALL' | 'PHOTOGRAPHS' | 'DOCUMENTS' | 'AUDIO' | 'SURVEILLANCE' | 'FRAGMENTS' | 'NOTES' | 'VERIFIED' | 'UNRESOLVED' | 'ANOMALOUS'
 type ArchiveSort = 'RECOVERED' | 'CHRONOLOGY'
@@ -434,7 +447,7 @@ export function PlayerEvidenceArchive() {
                     const revelation = workspace.revelations[artifact.id]
                     const hasNewInfo = revelation?.hasNewInfo ?? false
                     const lastInspected = workspace.lastInspected[artifact.id] ?? revelation?.lastInspectedAt ?? null
-                    const thumb = artifactThumbUrl(artifact)
+                    const medium = artifactType(artifact)
                     const condition = artifactCondition(artifact)
                     const state = artifactState(artifact)
                     const hit = hits.get(artifact.id)
@@ -449,27 +462,18 @@ export function PlayerEvidenceArchive() {
                         aria-label={`Open ${artifact.code}, ${artifact.title}`}
                         className="nx-record flex min-h-[5.5rem] w-full items-start gap-3 py-3 text-left"
                       >
-                        {thumb ? (
-                          <span className="relative h-16 w-16 shrink-0 overflow-hidden border border-nexus-borderSubtle bg-nexus-surface">
-                            <img src={thumb} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
-                            {condition !== 'NORMAL' && (
-                              <span className="absolute inset-x-0 bottom-0 h-1" style={{ background: 'var(--nx-warning)', opacity: 0.8 }} aria-hidden="true" />
-                            )}
-                          </span>
-                        ) : (
-                          <span className="flex h-16 w-16 shrink-0 items-center justify-center border border-nexus-borderSubtle font-mono text-[0.7rem] text-nexus-textSubtle" aria-hidden="true">
-                            {artifactType(artifact).slice(0, 4)}
-                          </span>
-                        )}
+                        <span className="flex w-[5.5rem] shrink-0 justify-center pt-0.5">
+                          <MediumThumb artifact={artifact} variant="row" />
+                        </span>
                         <span className="min-w-0 flex-1">
-                          <span className="flex flex-wrap items-center gap-x-2 font-mono text-[0.68rem] uppercase tracking-[0.12em] text-nexus-textSubtle">
+                          <span className={cn('block text-[0.98rem] font-medium leading-snug text-nexus-text', TITLE_FACE[medium])}>{artifact.title}</span>
+                          <span className="mt-1 flex flex-wrap items-center gap-x-2 font-mono text-[0.68rem] uppercase tracking-[0.12em] text-nexus-textSubtle">
                             <span>{artifact.code}</span>
-                            <span>{artifactType(artifact)}</span>
+                            <span>{medium}</span>
                             {hasNewInfo && <span className="text-nexus-warning">UPDATED</span>}
                             {condition !== 'NORMAL' && <span className="text-nexus-warning">{condition}</span>}
                             {(state === 'CONTRADICTED' || state === 'ANOMALOUS') && <span className="text-nexus-danger">{state}</span>}
                           </span>
-                          <span className="mt-1 block text-[0.98rem] font-medium leading-snug text-nexus-text">{artifact.title}</span>
                           <span className="mt-1 block truncate font-mono text-[0.68rem] uppercase tracking-[0.08em] text-nexus-textMuted">
                             {artifact.location ?? 'LOCATION UNKNOWN'}{mark !== 'UNMARKED' ? ` · ${MARK_LABEL[mark]}` : ''}{noteCount ? ` · ${noteCount} NOTE${noteCount > 1 ? 'S' : ''}` : ''}{position ? ' · ON BOARD' : ''}
                           </span>
@@ -542,6 +546,7 @@ export function PlayerEvidenceArchive() {
               <span className="truncate font-mono text-[0.55rem] uppercase tracking-[0.12em] text-nexus-textSubtle">OBJECT EXAMINATION / {activeArtifact.code}</span>
             </div>
             <ArtifactInspection
+              catalog={artifacts}
               artifact={activeArtifact}
               mark={workspace.marks[activeArtifact.id] ?? 'UNMARKED'}
               annotations={workspace.annotations[activeArtifact.id] ?? []}
@@ -585,6 +590,7 @@ export function PlayerEvidenceArchive() {
                     <button type="button" onClick={() => openArtifact(artifact.id, artifact)} className="mb-2 text-left font-mono text-[0.58rem] uppercase text-nexus-accent">OPEN FULL RECORD / {artifact.code} →</button>
                     <ArtifactInspection
                       compact
+                      catalog={artifacts}
                       artifact={artifact}
                       mark={workspace.marks[artifact.id] ?? 'UNMARKED'}
                       annotations={workspace.annotations[artifact.id] ?? []}

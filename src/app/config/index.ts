@@ -38,6 +38,7 @@ export const ROUTES = {
   ADMIN_GAME_CONTROL: '/admin/game-control',
   ADMIN_AUDIT: '/admin/audit',
   ADMIN_EVIDENCE_REGISTER: '/admin/evidence-register',
+  ADMIN_EVIDENCE_SHOWCASE: '/admin/evidence-showcase',
    ADMIN_LOCATIONS: '/admin/locations',
    ADMIN_QA_VIEWER: '/admin/qa-viewer',
    ADMIN_QA_HUB: '/admin/qa-simulator',

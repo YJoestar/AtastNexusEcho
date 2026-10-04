@@ -3,6 +3,7 @@
 // just an image; with them it is an object that was handled.
 
 import { makeRng, makeNoise1d } from './rng.mjs'
+import { HAND_FAMILY } from './fontenv.mjs'
 
 export function esc(text) {
   return String(text)
@@ -254,7 +255,7 @@ export function penAnnotation({ cx, cy, r, note, color = '#8a2f24', rotation = 0
     const nx = cx + r * 1.2
     const ny = cy - r * 1.15
     parts.push(`<line x1="${cx + r * 0.72}" y1="${cy - r * 0.72}" x2="${nx - 6}" y2="${ny + 6}" stroke="${color}" stroke-width="1.3" stroke-opacity="0.7"/>`)
-    parts.push(`<text x="${nx}" y="${ny}" font-family="'Segoe Print','Bradley Hand',cursive" font-size="13" fill="${color}">${esc(note)}</text>`)
+    parts.push(`<text x="${nx}" y="${ny}" font-family="${HAND_FAMILY}" font-size="16.9" fill="${color}">${esc(note)}</text>`)
   }
   parts.push(`</g>`)
   return parts.join('')

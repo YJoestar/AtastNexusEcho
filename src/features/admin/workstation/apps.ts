@@ -21,6 +21,7 @@ export type AppId =
   | 'SIMULATOR'
   | 'QA_MONITOR'
   | 'TERMINAL'
+  | 'ARCHIVE'
 
 export interface AppDefinition {
   id: AppId
@@ -61,12 +62,13 @@ export const APPS: Record<AppId, AppDefinition> = {
   ACCESS_LOG: { id: 'ACCESS_LOG', module: 'M-08', title: 'SYSTEM ACCESS RECORD', purpose: 'Every administrative action, in order', path: ROUTES.ADMIN_AUDIT, size: { w: 960, h: 660 }, multiple: false, glyph: 'tape' },
   SIMULATOR: { id: 'SIMULATOR', module: 'M-09', title: 'FIELD SIMULATOR', purpose: 'Handset emulation in isolated memory', path: ROUTES.ADMIN_QA_HUB, size: { w: 1100, h: 780 }, multiple: false, glyph: 'handset' },
   QA_MONITOR: { id: 'QA_MONITOR', module: 'M-10', title: 'QA MONITOR', purpose: 'Puzzle content inspection', path: ROUTES.ADMIN_QA_VIEWER, size: { w: 1000, h: 700 }, multiple: false, glyph: 'inspect' },
+  ARCHIVE: { id: 'ARCHIVE', module: 'M-12', title: 'EVIDENCE ARCHIVE', purpose: 'The eight media, record by record (simulation data)', path: ROUTES.ADMIN_EVIDENCE_SHOWCASE, size: { w: 1120, h: 780 }, multiple: false, glyph: 'inspect' },
   TERMINAL: { id: 'TERMINAL', module: 'M-11', title: 'NEXUS://', purpose: 'Command line to the same data', path: null, size: { w: 720, h: 460 }, multiple: false, glyph: 'prompt' },
 }
 
 export const APP_ORDER: AppId[] = [
   'COMMAND', 'FIELD_UNITS', 'LOCATIONS', 'OPERATIONS', 'RECORD', 'EVIDENCE',
-  'SURVEILLANCE', 'ACCESS_LOG', 'SIMULATOR', 'QA_MONITOR', 'TERMINAL',
+  'ARCHIVE', 'SURVEILLANCE', 'ACCESS_LOG', 'SIMULATOR', 'QA_MONITOR', 'TERMINAL',
 ]
 
 /** Which app owns an admin URL (team detail belongs to FIELD_UNITS). */

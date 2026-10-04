@@ -10,6 +10,8 @@
  * the game intends, without being told to.
  */
 
+import { HAND_FAMILY } from './lib/fontenv.mjs'
+
 export const CASE = {
   id: 'NX-037',
   title: 'EAST CORRIDOR',
@@ -1031,11 +1033,11 @@ export const FRAGMENTS = [
     stock: 'ledger',
     base: () => `${Array.from({ length: 6 }, (_, i) => `<line x1="20" y1="${60 + i * 30}" x2="620" y2="${60 + i * 30}" stroke="#8a9a8c" stroke-width="0.7" stroke-opacity="0.55"/>`).join('')}
       <line x1="70" y1="20" x2="70" y2="240" stroke="#a8636a" stroke-width="1" stroke-opacity="0.5"/>
-      <text x="26" y="50" font-family="'Segoe Print','Bradley Hand',cursive" font-size="14" fill="#25304a" transform="rotate(-1 26 50)">14 OCT</text>
-      <text x="80" y="50" font-family="'Segoe Print','Bradley Hand',cursive" font-size="14" fill="#25304a" transform="rotate(1 80 50)">TAPE ROUTE RERUN VIA SUB-BASEMENT. JOINT</text>
-      <text x="80" y="80" font-family="'Segoe Print','Bradley Hand',cursive" font-size="14" fill="#25304a" transform="rotate(-1 80 80)">FAILED AT 03:19. TAPE 7 NOT WRITTEN</text>
-      <text x="80" y="110" font-family="'Segoe Print','Bradley Hand',cursive" font-size="14" fill="#25304a" transform="rotate(1 80 110)">03:17 TO 03:24 BY ORDER OF D. WRIGHT-</text>
-      <text x="80" y="140" font-family="'Segoe Print','Bradley Hand',cursive" font-size="14" fill="#25304a" transform="rotate(-1 80 140)">____ WHO IS NOT ON THE ESTABLISH</text>`,
+      <text x="26" y="50" font-family="${HAND_FAMILY}" font-size="18.2" fill="#25304a" transform="rotate(-1 26 50)">14 OCT</text>
+      <text x="80" y="50" font-family="${HAND_FAMILY}" font-size="18.2" fill="#25304a" transform="rotate(1 80 50)">TAPE ROUTE RERUN VIA SUB-BASEMENT. JOINT</text>
+      <text x="80" y="80" font-family="${HAND_FAMILY}" font-size="18.2" fill="#25304a" transform="rotate(-1 80 80)">FAILED AT 03:19. TAPE 7 NOT WRITTEN</text>
+      <text x="80" y="110" font-family="${HAND_FAMILY}" font-size="18.2" fill="#25304a" transform="rotate(1 80 110)">03:17 TO 03:24 BY ORDER OF D. WRIGHT-</text>
+      <text x="80" y="140" font-family="${HAND_FAMILY}" font-size="18.2" fill="#25304a" transform="rotate(-1 80 140)">____ WHO IS NOT ON THE ESTABLISH</text>`,
     relationships: [
       { to: 'NX-037-D-02', kind: 'REFERENCE', note: 'Continues the sector C ledger.' },
       { to: 'NX-037-P-06', kind: 'PERSONNEL', note: 'The name is cut off before it can be read.' },
@@ -1133,12 +1135,12 @@ export const FRAGMENTS = [
       <line x1="20" y1="182" x2="520" y2="180" stroke="#8fa0a8" stroke-width="0.7" stroke-opacity="0.5"/>
       <line x1="20" y1="214" x2="520" y2="212" stroke="#8fa0a8" stroke-width="0.7" stroke-opacity="0.5"/>
       <line x1="20" y1="246" x2="520" y2="244" stroke="#8fa0a8" stroke-width="0.7" stroke-opacity="0.5"/>
-      <text x="30" y="120" font-family="'Segoe Print','Bradley Hand',cursive" font-size="16" fill="#22293a" opacity="0.3">...(upper half lost)</text>
-      <text x="30" y="142" font-family="'Segoe Print','Bradley Hand',cursive" font-size="16" fill="#22293a" transform="rotate(-0.6 30 142)">the light is off but the shadows are</text>
-      <text x="30" y="174" font-family="'Segoe Print','Bradley Hand',cursive" font-size="16" fill="#22293a" transform="rotate(0.5 30 174)">right. I want that written down before</text>
-      <text x="30" y="206" font-family="'Segoe Print','Bradley Hand',cursive" font-size="16" fill="#22293a" transform="rotate(-0.4 30 206)">I stop believing it. Ask Carter where</text>
-      <text x="30" y="238" font-family="'Segoe Print','Bradley Hand',cursive" font-size="16" fill="#22293a" transform="rotate(0.7 30 238)">the survey of June went. Ask again on</text>
-      <text x="30" y="270" font-family="'Segoe Print','Bradley Hand',cursive" font-size="16" fill="#22293a" transform="rotate(-0.5 30 270)">paper. — A.R.</text>`,
+      <text x="30" y="120" font-family="${HAND_FAMILY}" font-size="20.8" fill="#22293a" opacity="0.3">...(upper half lost)</text>
+      <text x="30" y="142" font-family="${HAND_FAMILY}" font-size="20.8" fill="#22293a" transform="rotate(-0.6 30 142)">the light is off but the shadows are</text>
+      <text x="30" y="174" font-family="${HAND_FAMILY}" font-size="20.8" fill="#22293a" transform="rotate(0.5 30 174)">right. I want that written down before</text>
+      <text x="30" y="206" font-family="${HAND_FAMILY}" font-size="20.8" fill="#22293a" transform="rotate(-0.4 30 206)">I stop believing it. Ask Carter where</text>
+      <text x="30" y="238" font-family="${HAND_FAMILY}" font-size="20.8" fill="#22293a" transform="rotate(0.7 30 238)">the survey of June went. Ask again on</text>
+      <text x="30" y="270" font-family="${HAND_FAMILY}" font-size="20.8" fill="#22293a" transform="rotate(-0.5 30 270)">paper. — A.R.</text>`,
     relationships: [{ to: 'NX-037-F-01', kind: 'REFERENCE', note: 'Both mention the June survey.' }],
   },
   {
@@ -1709,8 +1711,8 @@ export const NOTES = [
       <line x1="60" y1="120" x2="80" y2="0" stroke="#22293a" stroke-width="1.2"/>
       <line x1="230" y1="120" x2="212" y2="0" stroke="#22293a" stroke-width="1.2"/>
       <circle cx="150" cy="150" r="16" fill="none" stroke="#22293a" stroke-width="1.6"/>
-      <text x="0" y="-8" font-family="'Segoe Print','Bradley Hand',cursive" font-size="13" fill="#22293a">C214 — after 03:17</text>
-      <text x="150" y="112" text-anchor="middle" font-family="'Segoe Print','Bradley Hand',cursive" font-size="12" fill="#22293a">me</text>
+      <text x="0" y="-8" font-family="${HAND_FAMILY}" font-size="16.9" fill="#22293a">C214 — after 03:17</text>
+      <text x="150" y="112" text-anchor="middle" font-family="${HAND_FAMILY}" font-size="15.6" fill="#22293a">me</text>
     </g>`,
     relationships: [
       { to: 'NX-037-B-02', kind: 'TEMPORAL', note: 'The frame is taken at the line where the note stops.' },
@@ -1888,11 +1890,11 @@ export const NOTES = [
       <line x1="0" y1="0" x2="0" y2="70" stroke="#22293a" stroke-width="1.4"/>
       <line x1="0" y1="70" x2="520" y2="70" stroke="#22293a" stroke-width="1.4"/>
       <path d="M 0 8 C 60 8 80 60 140 66 L 380 66" fill="none" stroke="#a8322a" stroke-width="1.8" stroke-dasharray="6 4"/>
-      <text x="150" y="56" font-family="'Segoe Print','Bradley Hand',cursive" font-size="12" fill="#a8322a">TAPE 7 (MOVED)</text>
+      <text x="150" y="56" font-family="${HAND_FAMILY}" font-size="15.6" fill="#a8322a">TAPE 7 (MOVED)</text>
       <path d="M 0 40 C 80 40 120 66 200 68 L 380 68" fill="none" stroke="#22293a" stroke-width="1.2"/>
-      <text x="200" y="88" font-family="'Segoe Print','Bradley Hand',cursive" font-size="12" fill="#22293a">TAPE 6 (AS DRAWN)</text>
-      <text x="0" y="-8" font-family="'Segoe Print','Bradley Hand',cursive" font-size="12" fill="#22293a">C214</text>
-      <text x="480" y="88" font-family="'Segoe Print','Bradley Hand',cursive" font-size="12" fill="#22293a">S01</text>
+      <text x="200" y="88" font-family="${HAND_FAMILY}" font-size="15.6" fill="#22293a">TAPE 6 (AS DRAWN)</text>
+      <text x="0" y="-8" font-family="${HAND_FAMILY}" font-size="15.6" fill="#22293a">C214</text>
+      <text x="480" y="88" font-family="${HAND_FAMILY}" font-size="15.6" fill="#22293a">S01</text>
       <circle cx="300" cy="40" r="3" fill="#22293a"/>
     </g>`,
     relationships: [
