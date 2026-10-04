@@ -14,4 +14,4 @@ psql -v ON_ERROR_STOP=1 -q -d "$DB" -f scripts/db/supabase-stub.sql >/dev/null
 for f in $(ls supabase/migrations/*.sql | python3 -c "import sys,os;print('\n'.join(sorted((l.strip() for l in sys.stdin), key=lambda p: os.path.basename(p).split('_')[0])))"); do
   psql -v ON_ERROR_STOP=1 -q -d "$DB" -f "$f" >/dev/null && echo "ok   $(basename "$f")"
 done
-psql -v ON_ERROR_STOP=1 -q -d "$DB" -f supabase/tests/privileges.sql
+for t in supabase/tests/*.sql; do echo "test $(basename "$t")"; psql -v ON_ERROR_STOP=1 -q -d "$DB" -f "$t"; done
