@@ -54,3 +54,10 @@ export function requireInteger(value: unknown, field: string, min: number, max: 
   }
   return value
 }
+
+export function requireBoolean(value: unknown, field: string): boolean {
+  if (typeof value !== 'boolean') {
+    throw new BadRequestError(`${field} must be true or false`)
+  }
+  return value
+}

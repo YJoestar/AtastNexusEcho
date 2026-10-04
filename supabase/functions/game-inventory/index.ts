@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
-import { preflightOrMethodError } from '../_shared/http.ts'
+import { dbError, preflightOrMethodError } from '../_shared/http.ts'
+import { AuthError, requireBearerToken, requireVerifiedUser } from '../_shared/auth.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,10 +13,7 @@ Deno.serve(async (req: Request) => {
   if (early) return early
 
   try {
-    const token = req.headers.get('Authorization')?.replace('Bearer ', '') ?? ''
-    if (!token) {
-      return errorResponse(401, 'Authentication required')
-    }
+    const token = requireBearerToken(req)
 
     const supabaseUser = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -26,15 +24,21 @@ Deno.serve(async (req: Request) => {
       },
     )
 
+    // Establish who the caller is before any game data is read. An expired or
+    // invalid token is a 401 here rather than an unexplained 500 from PostgREST.
+    await requireVerifiedUser(supabaseUser, token)
+
     const { data, error } = await supabaseUser.rpc('get_team_inventory')
 
     if (error) {
       console.error('get_team_inventory error:', error)
-      return errorResponse(500, 'Failed to fetch inventory')
+      const mapped = dbError(error)
+      return errorResponse(mapped.status, mapped.message)
     }
 
     return jsonResponse(200, { success: true, inventory: data })
   } catch (err: unknown) {
+    if (err instanceof AuthError) return errorResponse(err.status, err.message)
     console.error('Unhandled error in game-inventory:', err)
     return errorResponse(500, 'Internal server error')
   }

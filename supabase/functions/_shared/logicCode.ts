@@ -20,16 +20,22 @@ export const TEAM_CODE_LENGTH = 6
 
 const LOGIC_CODE_PATTERN = new RegExp(`^[${LOGIC_CODE_ALPHABET}]+$`)
 
-export function isValidLogicCode(code: unknown, length: number): boolean {
+/**
+ * These are type predicates rather than plain booleans. Callers use them as
+ * guards before handing the value on (`player-login` passes `code` straight to
+ * signInWithPassword); without the predicate a validated code stayed `unknown`
+ * at every one of those call sites.
+ */
+export function isValidLogicCode(code: unknown, length: number): code is string {
   if (typeof code !== 'string' || code.length !== length) return false
   return LOGIC_CODE_PATTERN.test(code)
 }
 
-export function isValidLoginCode(code: unknown): boolean {
+export function isValidLoginCode(code: unknown): code is string {
   return isValidLogicCode(code, LOGIN_CODE_LENGTH)
 }
 
-export function isValidTeamCode(code: unknown): boolean {
+export function isValidTeamCode(code: unknown): code is string {
   return isValidLogicCode(code, TEAM_CODE_LENGTH)
 }
 

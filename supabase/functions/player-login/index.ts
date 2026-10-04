@@ -132,26 +132,65 @@ Deno.serve(async (req: Request) => {
       return errorResponse(401, 'Invalid access code')
     }
 
-    // Check if account is locked due to too many failed attempts
+    // Check whether the account is under a lockout.
+    //
+    // player_login_flow has already refused an actively locked player (it only
+    // matches rows whose login_locked_until is NULL or already in the past) and
+    // clears the lock on success, so this read is defence in depth rather than
+    // the primary gate. It is compared against now() for the same reason the
+    // SQL is: an expired lock must never keep a player out.
+    //
+    // A failure to read the row is a server fault, not a bad code. Reporting it
+    // as "Invalid access code" used to send a player with a perfectly good code
+    // round in circles retyping it.
     const { data: playerData, error: playerError } = await supabaseAdmin
       .from('players')
       .select('login_locked_until')
       .eq('id', result.player_id)
-      .single()
+      .maybeSingle()
 
-    if (playerError || playerData?.login_locked_until) {
-      return errorResponse(401, 'Invalid access code')
+    if (playerError) {
+      console.error('Lockout check failed for player', result.player_id, playerError)
+      return errorResponse(500, 'Could not verify this account. Please try again.')
     }
 
-    // Sign in the auth user using the login code as the password
+    const lockedUntil = playerData?.login_locked_until
+      ? new Date(playerData.login_locked_until).getTime()
+      : null
+    if (lockedUntil !== null && Number.isFinite(lockedUntil) && lockedUntil > Date.now()) {
+      const retryAfter = Math.max(1, Math.ceil((lockedUntil - Date.now()) / 1000))
+      return jsonResponse(
+        429,
+        { success: false, error: 'Too many failed attempts. Wait for the lock to clear, then try again.' },
+        { 'Retry-After': String(retryAfter) },
+      )
+    }
+
+    // Sign in the auth user using the login code as the password.
+    //
+    // auth_user_email comes back from the RPC as untyped jsonb. Passing it
+    // straight into signInWithPassword meant a row with a missing or
+    // non-string value reached GoTrue as `undefined`, which fails as an opaque
+    // "Invalid login credentials" — the same lie we refuse to tell elsewhere.
+    const authUserEmail = result.auth_user_email
+    if (typeof authUserEmail !== 'string' || authUserEmail.length === 0) {
+      console.error(
+        'Login flow returned no usable auth_user_email for player',
+        result.player_id,
+      )
+      return errorResponse(500, 'Could not start your session. Please contact the Bureau.')
+    }
+
     const { data: authData, error: authError } = await supabaseAdmin.auth.signInWithPassword({
-      email: result.auth_user_email,
+      email: authUserEmail,
       password: code,
     })
 
-    if (authError || !authData.session) {
-      console.error('Auth sign-in error:', authError)
-      return errorResponse(401, 'Invalid access code')
+    if (authError || !authData?.session) {
+      // The code was accepted by the database, so telling the player it is
+      // invalid would be a lie and would strand them. This is our fault.
+      console.error('Auth sign-in failed for player', result.player_id, authError)
+      return errorResponse(500, 'Could not start your session. Please try again.')
     }
 
     const session = authData.session

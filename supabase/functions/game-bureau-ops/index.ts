@@ -33,20 +33,33 @@ Deno.serve(async (req: Request) => {
     }
 
     const token = authHeader.replace('Bearer ', '')
-    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token)
+    // Destructuring `{ data: { user } }` throws a TypeError when `data` is null,
+    // turning a rejected token into a 500. Take the envelope apart first.
+    const { data: userData, error: authError } = await supabaseAdmin.auth.getUser(token)
+    const user = userData?.user ?? null
 
     if (authError || !user) {
-      return errorResponse(401, 'Authentication required')
+      return errorResponse(401, 'Invalid session')
     }
 
-    const { data: adminRecord } = await supabaseAdmin
+    // maybeSingle(), not single(): `single()` rejects zero rows as PGRST116, and
+    // this lookup discards `error`, so a missing admin row and a real database
+    // fault were indistinguishable. An authenticated user with no admin grant is
+    // not an authentication problem — 401 sent operators re-authenticating with
+    // perfectly good credentials.
+    const { data: adminRecord, error: adminLookupError } = await supabaseAdmin
       .from('admin_users')
       .select('role')
       .eq('auth_user_id', user.id)
-      .single()
+      .maybeSingle()
+
+    if (adminLookupError) {
+      console.error('admin_users lookup failed:', adminLookupError)
+      return errorResponse(500, 'Could not verify your permissions. Please try again.')
+    }
 
     if (!adminRecord || !['ADMIN', 'SUPER_ADMIN'].includes(adminRecord.role)) {
-      return errorResponse(401, 'Authentication required')
+      return errorResponse(403, 'This account is not authorised for Bureau operations')
     }
 
     // Create a user-authenticated client for RPC calls that use auth.uid()
@@ -72,13 +85,8 @@ Deno.serve(async (req: Request) => {
 
     switch (action) {
       case 'manual_unlock': {
-        if (!nodeId && !nodeCode) {
-          return errorResponse(400, 'Missing nodeId or nodeCode')
-        }
-        const resolvedNodeId = nodeId ?? (await resolveNodeCode(supabaseAdmin, nodeCode as string))
-        if (!resolvedNodeId) {
-          return errorResponse(404, 'Node not found')
-        }
+        const resolvedNodeId = await resolveNodeIdOrResponse(supabaseAdmin, nodeId, nodeCode)
+        if (typeof resolvedNodeId !== 'string') return resolvedNodeId
         const { data, error } = await supabaseAdminUser.rpc('bureau_manual_unlock', {
           p_team_id: teamId ?? null,
           p_node_id: resolvedNodeId,
@@ -98,13 +106,8 @@ Deno.serve(async (req: Request) => {
         if (adminRecord.role !== 'SUPER_ADMIN') {
           return errorResponse(403, 'This action requires a super administrator')
         }
-        if (!nodeId && !nodeCode) {
-          return errorResponse(400, 'Missing nodeId or nodeCode')
-        }
-        const resolvedNodeId = nodeId ?? (await resolveNodeCode(supabaseAdmin, nodeCode as string))
-        if (!resolvedNodeId) {
-          return errorResponse(404, 'Node not found')
-        }
+        const resolvedNodeId = await resolveNodeIdOrResponse(supabaseAdmin, nodeId, nodeCode)
+        if (typeof resolvedNodeId !== 'string') return resolvedNodeId
         const { data, error } = await supabaseAdminUser.rpc('bureau_reset_node', {
           p_team_id: teamId ?? null,
           p_node_id: resolvedNodeId,
@@ -119,13 +122,8 @@ Deno.serve(async (req: Request) => {
       }
 
       case 'get_node_detail': {
-        if (!nodeId && !nodeCode) {
-          return errorResponse(400, 'Missing nodeId or nodeCode')
-        }
-        const resolvedNodeId = nodeId ?? (await resolveNodeCode(supabaseAdmin, nodeCode as string))
-        if (!resolvedNodeId) {
-          return errorResponse(404, 'Node not found')
-        }
+        const resolvedNodeId = await resolveNodeIdOrResponse(supabaseAdmin, nodeId, nodeCode)
+        if (typeof resolvedNodeId !== 'string') return resolvedNodeId
         const { data, error } = await supabaseAdminUser.rpc('bureau_get_node_detail', {
           p_node_id: resolvedNodeId,
         })
@@ -162,14 +160,39 @@ Deno.serve(async (req: Request) => {
   }
 })
 
-async function resolveNodeCode(supabaseAdmin: ReturnType<typeof createClient>, nodeCode: string): Promise<string | null> {
-  const { data, error } = await supabaseAdmin
-    .from('puzzle_nodes')
-    .select('id')
-    .eq('code', nodeCode)
-    .single()
-  if (error || !data) return null
-  return (data as { id: string }).id
+/**
+ * Resolves the target node for an action, accepting either a uuid or a code.
+ *
+ * Returns the node id, or the Response to send when the node cannot be
+ * resolved. A failed lookup is deliberately NOT reported as 404: a privilege
+ * or connectivity fault told to the operator as "Node not found" sends them
+ * hunting for a typo that does not exist while the real fault goes unreported.
+ */
+async function resolveNodeIdOrResponse(
+  client: {
+    // supabase-js returns a PostgrestFilterBuilder, which is thenable rather
+    // than a real Promise, so the structural type must accept PromiseLike.
+    rpc: (fn: string, args: Record<string, unknown>) => PromiseLike<{
+      data: unknown
+      error: { code?: string; message?: string } | null
+    }>
+  },
+  nodeId: string | undefined,
+  nodeCode: unknown,
+): Promise<string | Response> {
+  if (nodeId) return nodeId
+  if (typeof nodeCode !== 'string' || nodeCode.trim().length === 0) {
+    return errorResponse(400, 'Missing nodeId or nodeCode')
+  }
+  const { data, error } = await client.rpc('resolve_node_ref', { p_ref: nodeCode })
+  if (error) {
+    console.error('resolve_node_ref error:', error)
+    return dbErrorResponse(error)
+  }
+  if (typeof data !== 'string' || data.length === 0) {
+    return errorResponse(404, 'Node not found')
+  }
+  return data
 }
 
 function dbErrorResponse(error: { code?: string | null; message?: string | null }) {

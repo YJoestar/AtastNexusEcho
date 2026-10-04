@@ -171,4 +171,57 @@ begin
   end loop;
 end $$;
 
+-- ---------------------------------------------------------------------------
+-- 6. Admin policies must be able to evaluate (2026100401)
+--
+-- Nine policies read
+--   USING (EXISTS (SELECT 1 FROM admin_users WHERE auth_user_id = auth.uid()))
+-- which is part of the policy expression and therefore evaluated as the
+-- invoking role — so admin_users' own deny-all RLS applies and the subquery can
+-- never return a row. They were permanently FALSE while looking correct.
+--
+-- The check below is behavioural rather than textual: as an ADMIN, the policy
+-- must now actually admit the row, and as a non-admin it must still refuse.
+-- A policy that is textually right but still dead fails here.
+-- ---------------------------------------------------------------------------
+do $$
+declare t uuid; bad text;
+  e1 text := '00000000-0000-0000-0000-0000000000e1';  -- ADMIN
+  e3 text := '00000000-0000-0000-0000-0000000000e3';  -- player
+begin
+  perform set_config('request.jwt.claim.role','service_role',false);
+  select team_id into t from bureau_create_team('POLICY_EVAL');
+
+  -- The helper itself must see its own admin_users row despite the deny-all
+  -- policy; if it does not, every policy built on it is dead again.
+  if pg_temp.try_as('select is_current_user_admin()', 'authenticated','authenticated', e1) <> 'ok' then
+    raise exception 'is_current_user_admin must be callable by an admin'; end if;
+
+  -- An admin can read a team through "Admins can read all teams" ...
+  if pg_temp.try_as(format('select id from teams where id = %L', t), 'authenticated','authenticated', e1) <> 'ok' then
+    raise exception 'ADMIN must be able to read a team through RLS'; end if;
+  -- ... and a player cannot. Zero rows is a success here; an error is not.
+  perform pg_temp.try_as(format('select id from teams where id = %L', t), 'authenticated','authenticated', e3);
+
+  select string_agg(pol.polname, ', ') into bad
+    from pg_policies pol
+   where pol.schemaname = 'public'
+     and pol.polname like 'Admins can%'
+     and (pol.qual is null or pol.qual ~* 'admin_users');
+  if bad is not null then
+    raise exception 'admin policies still name admin_users inline: %', bad; end if;
+
+  -- Every admin policy must now go through the SECURITY DEFINER helper.
+  select string_agg(pol.polname, ', ') into bad
+    from pg_policies pol
+   where pol.schemaname = 'public'
+     and pol.polname like 'Admins can%'
+     and coalesce(pol.qual, pol.with_check) !~* 'is_current_user_admin';
+  if bad is not null then
+    raise exception 'admin policies not using is_current_user_admin: %', bad; end if;
+
+  perform set_config('request.jwt.claim.role','service_role',false);
+  delete from teams where id = t;
+end $$;
+
 select 'security hardening tests passed' as result;

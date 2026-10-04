@@ -35,21 +35,39 @@ Deno.serve(async (req: Request) => {
     const token = authHeader.replace('Bearer ', '')
 
     // Verify the token and get the user
-    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token)
+    const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(token)
+    const user = userData?.user ?? null
 
     if (userError || !user) {
       return jsonResponse(401, { authenticated: false, error: 'Invalid or expired session' })
     }
 
-    // Check if this user is an admin
+    // Check if this user is an admin.
+    //
+    // maybeSingle() rather than single(): a genuine auth user with no admin row
+    // is "not an admin", not a query failure. A failed lookup is a server fault
+    // and is reported as one — it used to be reported as 401, which told the
+    // operator their credentials were bad and sent them re-authenticating
+    // against a perfectly working password.
     const { data: adminData, error: adminError } = await supabaseAdmin
       .from('admin_users')
       .select('role, username')
       .eq('auth_user_id', user.id)
-      .single()
+      .maybeSingle()
 
-    if (adminError || !adminData) {
-      return jsonResponse(401, { authenticated: true, isAdmin: false, error: 'Not authorized as admin' })
+    if (adminError) {
+      console.error('admin_users lookup failed:', adminError)
+      return jsonResponse(500, {
+        authenticated: true,
+        isAdmin: false,
+        error: 'Could not verify your permissions. Please try again.',
+      })
+    }
+
+    if (!adminData) {
+      // The session is valid; the account simply has no Bureau grant. 403 says
+      // exactly that, where 401 wrongly claimed the session was the problem.
+      return jsonResponse(403, { authenticated: true, isAdmin: false, error: 'Not authorised as an administrator' })
     }
 
     return jsonResponse(200, {

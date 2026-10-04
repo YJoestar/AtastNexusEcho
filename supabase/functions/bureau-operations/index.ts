@@ -147,26 +147,38 @@ Deno.serve(async (req: Request) => {
     }
 
     const token = authHeader.replace('Bearer ', '')
-    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token)
+    const { data: userData, error: authError } = await supabaseAdmin.auth.getUser(token)
+    const user = userData?.user ?? null
 
     if (authError || !user) {
       return jsonResponse(401, { error: 'Invalid session' })
     }
 
-    const { data: adminRecord } = await supabaseAdmin
+    // An authenticated user with no admin row is not an authentication
+    // problem — the session is fine, the grant is missing. 403 says that;
+    // 401 told the client its token was bad, which sent operators re-authenticating
+    // with perfectly good credentials.
+    const { data: adminRecord, error: adminLookupError } = await supabaseAdmin
       .from('admin_users')
       .select('role')
       .eq('auth_user_id', user.id)
-      .single()
+      .maybeSingle()
+
+    if (adminLookupError) {
+      console.error('admin_users lookup failed:', adminLookupError)
+      return jsonResponse(500, { error: 'Could not verify your permissions. Please try again.' })
+    }
 
     if (!adminRecord) {
-      return jsonResponse(401, { error: 'Authentication required' })
+      return jsonResponse(403, { error: 'This account is not authorised for Bureau operations' })
     }
 
     const isAdmin = adminRecord.role === 'ADMIN' || adminRecord.role === 'SUPER_ADMIN'
     if (!isAdmin) {
-      return jsonResponse(401, { error: 'Authentication required' })
+      return jsonResponse(403, { error: 'This account is not authorised for Bureau operations' })
     }
+
+    const adminUserId = user.id
 
     // Create a user-authenticated client for RPC calls that use auth.uid()
     // (SECURITY DEFINER functions call auth.uid() for audit logging).
@@ -189,9 +201,22 @@ Deno.serve(async (req: Request) => {
     // honestly reports it as needing a re-issue instead of showing nothing.
     async function persistLoginCodeCiphers(
       issued: Array<{ playerId: string; loginCode: string }>,
-    ): Promise<void> {
+    ): Promise<{ stored: number; failed: number }> {
+      let stored = 0
+      let failed = 0
       await Promise.all(
         issued.map(async credential => {
+          // A missing field here means the caller built the wrong shape. Without
+          // this guard encryptLoginCode(undefined) throws per player and the
+          // Bureau silently ends up with no re-displayable codes at all.
+          if (!credential?.playerId || !credential?.loginCode) {
+            failed += 1
+            console.error(
+              'Refusing to store a login code cipher for an incomplete credential',
+              credential,
+            )
+            return
+          }
           try {
             const cipher = await encryptLoginCode(credential.loginCode)
             const { error: cipherError } = await supabaseAdmin
@@ -199,13 +224,21 @@ Deno.serve(async (req: Request) => {
               .update({ login_code_cipher: cipher })
               .eq('id', credential.playerId)
             if (cipherError) {
+              failed += 1
               console.error('Could not store the encrypted code:', cipherError.message)
+            } else {
+              stored += 1
             }
           } catch (err: unknown) {
+            failed += 1
             console.error('Could not store the encrypted code:', err)
           }
         }),
       )
+      if (failed > 0) {
+        console.error(`login code cipher storage incomplete: ${stored} stored, ${failed} failed`)
+      }
+      return { stored, failed }
     }
 
     // Rotate login codes in the database (transactional) and then make each new
@@ -250,8 +283,11 @@ Deno.serve(async (req: Request) => {
           const { data: authData, error: createError } = await supabaseAdmin.auth.admin.createUser({
             email: internalEmail,
             password: row.login_code,
-            email_confirm: true,
-            user_data: { player_id: row.player_id },
+email_confirm: true,
+              // supabase-js v2 forwards AdminUserAttributes to GoTrue; the
+              // field is `user_metadata`. `user_data` is not part of the type
+              // and was dropped silently, so the player link never landed.
+              user_metadata: { player_id: row.player_id },
           })
 
           if (createError || !authData?.user) {
@@ -317,11 +353,56 @@ Deno.serve(async (req: Request) => {
       return jsonResponse(403, { error: 'This action requires a super administrator' })
     }
 
+    /**
+     * Applies a team status change that is only legal from certain states.
+     *
+     * PostgREST reports "the filter matched nothing" as a success with an empty
+     * result set, not as an error. Pausing an already-paused team therefore
+     * answered { success: true } while changing nothing, leaving the operator
+     * believing a team had been paused when it had not. The two real outcomes
+     * are now separated: no such team is a 404, and a team in a state that does
+     * not allow the transition is a 409 that names the state it is actually in.
+     */
+    async function transitionTeamStatus(
+      teamId: string,
+      nextStatus: string,
+      allowedFrom: string[],
+      extraColumns: Record<string, unknown> = {},
+    ): Promise<Response | null> {
+      const { data: updated, error: updateError } = await supabaseAdmin
+        .from('teams')
+        .update({ status: nextStatus, updated_at: new Date().toISOString(), ...extraColumns })
+        .eq('id', teamId)
+        .in('status', allowedFrom)
+        .select('id')
+
+      if (updateError) return dbErrorResponse(updateError)
+
+      if (!updated || updated.length === 0) {
+        const { data: current } = await supabaseAdmin
+          .from('teams')
+          .select('status')
+          .eq('id', teamId)
+          .maybeSingle()
+
+        if (!current) {
+          return jsonResponse(404, { error: 'Team not found' })
+        }
+        return jsonResponse(409, {
+          error: `This team is ${current.status} and cannot be changed to ${nextStatus}`,
+          currentStatus: current.status,
+          allowedFrom,
+        })
+      }
+
+      return null
+    }
+
     // --- Log admin action ---
     async function logAction(actionType: string, targetTeamId?: string, targetPlayerId?: string, payload?: Record<string, unknown>) {
       try {
         const { error } = await supabaseAdmin.from('audit_log').insert({
-          admin_id: user.id,
+          admin_id: adminUserId,
           action_type: actionType,
           target_team_id: targetTeamId ?? null,
           target_player_id: targetPlayerId ?? null,
@@ -428,7 +509,10 @@ Deno.serve(async (req: Request) => {
               email: internalEmail,
               password: p.login_code,
               email_confirm: true,
-              user_data: { player_id: p.player_id },
+              // supabase-js v2 forwards AdminUserAttributes to GoTrue; the
+              // field is `user_metadata`. `user_data` is not part of the type
+              // and was dropped silently, so the player link never landed.
+              user_metadata: { player_id: p.player_id },
             })
 
             if (authErr || !authData?.user) {
@@ -458,21 +542,43 @@ Deno.serve(async (req: Request) => {
             })
           }
 
+          // The rollback is compensating work. It must not mask the original
+          // failure, but it also must not be silent: a half-deleted roster or an
+          // orphaned auth account is exactly what an operator must be able to
+          // find afterwards, so every step is reported.
           for (const authUserId of createdAuthUserIds) {
             try {
-              await supabaseAdmin.auth.admin.deleteUser(authUserId)
-            } catch {
-              // best-effort cleanup
+              const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(authUserId)
+              if (deleteError) {
+                console.error(
+                  `Rollback could not remove auth user ${authUserId}; it is orphaned and must be deleted manually:`,
+                  deleteError.message,
+                )
+              }
+            } catch (err: unknown) {
+              console.error(
+                `Rollback threw while removing auth user ${authUserId}; it is orphaned and must be deleted manually:`,
+                err,
+              )
             }
           }
           for (const table of ['game_events', 'audit_log', 'players', 'teams']) {
             try {
-              await supabaseAdmin.from(table).delete().eq(
-                table === 'teams' ? 'id' : 'team_id',
-                provisioned.team_id,
+              const { error: deleteError } = await supabaseAdmin
+                .from(table)
+                .delete()
+                .eq(table === 'teams' ? 'id' : 'team_id', provisioned.team_id)
+              if (deleteError) {
+                console.error(
+                  `Rollback could not clear ${table} for team ${provisioned.team_id}:`,
+                  deleteError.message,
+                )
+              }
+            } catch (err: unknown) {
+              console.error(
+                `Rollback threw while clearing ${table} for team ${provisioned.team_id}:`,
+                err,
               )
-            } catch {
-              // best-effort cleanup
             }
           }
           return jsonResponse(500, {
@@ -485,7 +591,17 @@ Deno.serve(async (req: Request) => {
           players: provisionedPlayers.length,
         })
 
-        await persistLoginCodeCiphers(provisionedPlayers)
+        // provisionedPlayers is the SQL row shape (snake_case); the cipher
+        // helper takes the credential shape. Passing it straight through gave
+        // every entry an undefined playerId/loginCode, so encryptLoginCode threw
+        // for each player and the whole roster ended up with no stored cipher —
+        // which is what `reveal-codes` needs to show the Bureau the codes again.
+        await persistLoginCodeCiphers(
+          provisionedPlayers.map(row => ({
+            playerId: row.player_id,
+            loginCode: row.login_code,
+          })),
+        )
 
         return jsonResponse(200, {
           success: true,
@@ -777,70 +893,68 @@ Deno.serve(async (req: Request) => {
 
       case 'pause-team': {
         const { teamId, reason } = params as { teamId: string; reason?: string }
-        const { error } = await supabaseAdmin
-          .from('teams')
-          .update({ status: 'PAUSED', updated_at: new Date().toISOString() })
-          .eq('id', teamId)
-          .in('status', ['ACTIVE'])
-
-        if (error) return dbErrorResponse(error)
+        const refusal = await transitionTeamStatus(teamId, 'PAUSED', ['ACTIVE'])
+        if (refusal) return refusal
         await logAction('TEAM_PAUSE', teamId, undefined, { reason })
         return jsonResponse(200, { success: true, teamId })
       }
 
       case 'resume-team': {
         const { teamId, reason } = params as { teamId: string; reason?: string }
-        const { error } = await supabaseAdmin
-          .from('teams')
-          .update({ status: 'ACTIVE', updated_at: new Date().toISOString() })
-          .eq('id', teamId)
-          .eq('status', 'PAUSED')
-
-        if (error) return dbErrorResponse(error)
+        const refusal = await transitionTeamStatus(teamId, 'ACTIVE', ['PAUSED'])
+        if (refusal) return refusal
         await logAction('TEAM_RESUME', teamId, undefined, { reason })
+
+        // The event stream is what the live monitor and the audit trail read, so
+        // a resume has to appear there too. It previously wrote no event at all,
+        // leaving TEAM_RESUMED permanently absent from the record.
+        const { error: eventError } = await supabaseAdmin.from('game_events').insert({
+          type: 'TEAM_RESUMED',
+          team_id: teamId,
+          payload: { reason: reason ?? 'Resumed by Bureau' },
+        })
+        if (eventError) {
+          console.error(`TEAM_RESUMED event not recorded for team ${teamId}:`, eventError.message)
+        }
+
         return jsonResponse(200, { success: true, teamId })
       }
 
       case 'complete-team': {
         const { teamId, reason } = params as { teamId: string; reason?: string }
-        const { error } = await supabaseAdmin
-          .from('teams')
-          .update({
-            status: 'COMPLETED',
-            completed_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', teamId)
-          .in('status', ['ACTIVE', 'PAUSED'])
-
-        if (error) return dbErrorResponse(error)
+        const completedAt = new Date().toISOString()
+        const refusal = await transitionTeamStatus(teamId, 'COMPLETED', ['ACTIVE', 'PAUSED'], {
+          completed_at: completedAt,
+        })
+        if (refusal) return refusal
         await logAction('TEAM_COMPLETE', teamId, undefined, { reason })
 
-        await supabaseAdmin.from('game_events').insert({
+        const { error: eventError } = await supabaseAdmin.from('game_events').insert({
           type: 'TEAM_COMPLETED',
           team_id: teamId,
           payload: { reason },
         })
+        if (eventError) {
+          console.error(`TEAM_COMPLETED event not recorded for team ${teamId}:`, eventError.message)
+        }
 
         return jsonResponse(200, { success: true, teamId })
       }
 
       case 'disqualify-team': {
         const { teamId, reason } = params as { teamId: string; reason?: string }
-        const { error } = await supabaseAdmin
-          .from('teams')
-          .update({ status: 'DISQUALIFIED', updated_at: new Date().toISOString() })
-          .eq('id', teamId)
-          .in('status', ['ACTIVE', 'PAUSED', 'WAITING'])
-
-        if (error) return dbErrorResponse(error)
+        const refusal = await transitionTeamStatus(teamId, 'DISQUALIFIED', ['ACTIVE', 'PAUSED', 'WAITING'])
+        if (refusal) return refusal
         await logAction('TEAM_DISQUALIFY', teamId, undefined, { reason })
 
-        await supabaseAdmin.from('game_events').insert({
+        const { error: eventError } = await supabaseAdmin.from('game_events').insert({
           type: 'TEAM_DISQUALIFIED',
           team_id: teamId,
           payload: { reason },
         })
+        if (eventError) {
+          console.error(`TEAM_DISQUALIFIED event not recorded for team ${teamId}:`, eventError.message)
+        }
 
         return jsonResponse(200, { success: true, teamId })
       }
@@ -922,17 +1036,29 @@ Deno.serve(async (req: Request) => {
         const { teamId } = params as { teamId: string }
         if (!teamId) return jsonResponse(400, { error: 'teamId is required' })
 
-        const { data: team } = await supabaseAdmin
-          .from('teams')
-          .select('*')
-          .eq('id', teamId)
-          .single()
+        const [teamResult, playersResult] = await Promise.all([
+          supabaseAdmin
+            .from('teams')
+            .select('*')
+            .eq('id', teamId)
+            .maybeSingle(),
+          supabaseAdmin
+            .from('players')
+            .select('id, team_id, role, display_name, status, is_connected, last_seen_at, created_at, joined_at, auth_user_id, device_session_token')
+            .eq('team_id', teamId)
+            .order('role'),
+        ])
 
-        const { data: players } = await supabaseAdmin
-          .from('players')
-          .select('id, team_id, role, display_name, status, is_connected, last_seen_at, created_at, joined_at, auth_user_id, device_session_token')
-          .eq('team_id', teamId)
-          .order('role')
+        // Both checked. These two queries had their errors discarded entirely,
+        // so a failure answered 200 with { team: null, players: [] } — which
+        // the dossier renders as a team that exists with no roster.
+        if (teamResult.error) return dbErrorResponse(teamResult.error)
+        if (playersResult.error) return dbErrorResponse(playersResult.error)
+
+        const team = teamResult.data
+        const players = playersResult.data
+
+        if (!team) return jsonResponse(404, { error: 'Team not found' })
 
         return jsonResponse(200, {
           success: true,
@@ -1015,51 +1141,70 @@ Deno.serve(async (req: Request) => {
         const { teamId } = params as { teamId: string }
         if (!teamId) return jsonResponse(400, { error: 'teamId is required' })
 
-        const { data: team } = await supabaseAdmin
+        const { data: team, error: teamError } = await supabaseAdmin
           .from('teams')
           .select('*')
           .eq('id', teamId)
-          .single()
+          .maybeSingle()
 
+        if (teamError) return dbErrorResponse(teamError)
         if (!team) return jsonResponse(404, { error: 'Team not found' })
 
-        const { data: players } = await supabaseAdmin
-          .from('players')
-          .select('id, team_id, role, display_name, status, is_connected, last_seen_at, created_at, joined_at, auth_user_id, device_session_token, login_code_hash, login_code_expires_at, updated_at')
-          .eq('team_id', teamId)
-          .order('role')
+        // The five detail queries used to discard their errors, so any of them
+        // failing produced a dossier with a hole in it and no indication that
+        // anything was missing — e.g. no submissions at all, which reads as
+        // "this team has attempted nothing".
+        const [playersResult, progressResult, nodeProgressResult, hintsResult, submissionsResult] =
+          await Promise.all([
+            supabaseAdmin
+              .from('players')
+              .select('id, team_id, role, display_name, status, is_connected, last_seen_at, created_at, joined_at, auth_user_id, device_session_token, login_code_hash, login_code_expires_at, updated_at')
+              .eq('team_id', teamId)
+              .order('role'),
+            supabaseAdmin
+              .from('team_progress')
+              .select('*')
+              .eq('team_id', teamId)
+              .maybeSingle(),
+            supabaseAdmin
+              .from('node_progress')
+              .select('*, puzzle_nodes!inner(code, title, type, stage, location)')
+              .eq('team_id', teamId)
+              .order('created_at', { ascending: true }),
+            supabaseAdmin
+              .from('hints_used')
+              .select('*, puzzle_nodes!inner(code, title)')
+              .eq('team_id', teamId)
+              .order('used_at', { ascending: false }),
+            supabaseAdmin
+              .from('submissions')
+              .select('*, puzzle_nodes!inner(code, title)')
+              .eq('team_id', teamId)
+              .order('submitted_at', { ascending: false })
+              .limit(50),
+          ])
 
-        const { data: progress } = await supabaseAdmin
-          .from('team_progress')
-          .select('*')
-          .eq('team_id', teamId)
-          .single()
+        const detailError = playersResult.error
+          ?? progressResult.error
+          ?? nodeProgressResult.error
+          ?? hintsResult.error
+          ?? submissionsResult.error
+        if (detailError) return dbErrorResponse(detailError)
 
-        const { data: nodeProgress } = await supabaseAdmin
-          .from('node_progress')
-          .select('*, puzzle_nodes!inner(code, title, type, stage, location)')
-          .eq('team_id', teamId)
-          .order('created_at', { ascending: true })
+        const players = playersResult.data
+        const progress = progressResult.data
+        const nodeProgress = nodeProgressResult.data
+        const hintsUsed = hintsResult.data
+        const submissions = submissionsResult.data
 
-        const { data: hintsUsed } = await supabaseAdmin
-          .from('hints_used')
-          .select('*, puzzle_nodes!inner(code, title)')
-          .eq('team_id', teamId)
-          .order('used_at', { ascending: false })
-
-        const { data: submissions } = await supabaseAdmin
-          .from('submissions')
-          .select('*, puzzle_nodes!inner(code, title)')
-          .eq('team_id', teamId)
-          .order('submitted_at', { ascending: false })
-          .limit(50)
-
-        const { data: gameEvents } = await supabaseAdmin
+        const { data: gameEvents, error: gameEventsError } = await supabaseAdmin
           .from('game_events')
           .select('*')
           .eq('team_id', teamId)
           .order('timestamp', { ascending: false })
           .limit(50)
+
+        if (gameEventsError) return dbErrorResponse(gameEventsError)
 
         const safePlayers = (players ?? []).map(p => ({
           id: p.id,
@@ -1149,14 +1294,26 @@ Deno.serve(async (req: Request) => {
       }
 
       case 'get-game-state': {
-        const { data: config } = await supabaseAdmin
-          .from('game_config')
-          .select('*')
-          .in('key', ['game_duration_minutes', 'hint_penalties', 'rate_limit_submissions', 'login_code_ttl_minutes'])
+        const [configResult, teamsResult] = await Promise.all([
+          supabaseAdmin
+            .from('game_config')
+            .select('*')
+            .in('key', ['game_duration_minutes', 'hint_penalties', 'rate_limit_submissions', 'login_code_ttl_minutes']),
+          supabaseAdmin
+            .from('teams')
+            .select('status'),
+        ])
 
-        const { data: teams } = await supabaseAdmin
-          .from('teams')
-          .select('status')
+        // Both reads are checked. A failure here used to be indistinguishable
+        // from a real pre-game state: the team list came back empty, so
+        // totalTeams was 0 and gameStatus resolved to NOT_STARTED. During a
+        // database outage the Operations Control screen would therefore claim
+        // the game had not begun, inviting an operator to press Start.
+        if (teamsResult.error) return dbErrorResponse(teamsResult.error)
+        if (configResult.error) return dbErrorResponse(configResult.error)
+
+        const config = configResult.data
+        const teams = teamsResult.data
 
         const statusCounts: Record<string, number> = {}
         for (const t of teams ?? []) {
@@ -1199,19 +1356,29 @@ Deno.serve(async (req: Request) => {
           sortDir?: 'asc' | 'desc'
         }
 
-        const { data: teams } = await supabaseAdmin
-          .from('teams')
-          .select('id, name, code, status, score, started_at, completed_at, current_node_id, current_node_code')
-          .order('created_at', { ascending: false })
+        const [teamsResult, progressResult, solvedResult] = await Promise.all([
+          supabaseAdmin
+            .from('teams')
+            .select('id, name, code, status, score, started_at, completed_at, current_node_id, current_node_code')
+            .order('created_at', { ascending: false }),
+          supabaseAdmin
+            .from('team_progress')
+            .select('team_id, hints_used, time_elapsed_minutes'),
+          supabaseAdmin
+            .from('node_progress')
+            .select('team_id, status')
+            .eq('status', 'SOLVED'),
+        ])
 
-        const { data: progressData } = await supabaseAdmin
-          .from('team_progress')
-          .select('team_id, hints_used, time_elapsed_minutes')
+        // Checked, because a dropped query here renders as a leaderboard where
+        // every team shows zero solved and no time — a plausible-looking board
+        // that is simply wrong, shown to the Bureau during a live event.
+        const leaderboardError = teamsResult.error ?? progressResult.error ?? solvedResult.error
+        if (leaderboardError) return dbErrorResponse(leaderboardError)
 
-        const { data: solvedCounts } = await supabaseAdmin
-          .from('node_progress')
-          .select('team_id, status')
-          .eq('status', 'SOLVED')
+        const teams = teamsResult.data
+        const progressData = progressResult.data
+        const solvedCounts = solvedResult.data
 
         const progressMap = new Map()
         for (const tp of progressData ?? []) {
@@ -1285,10 +1452,15 @@ Deno.serve(async (req: Request) => {
 
         const nodeCodes = (nodes ?? []).map(n => n.code)
 
-        const { data: evidenceItems } = await supabaseAdmin
+        const { data: evidenceItems, error: evidenceError } = await supabaseAdmin
           .from('evidence')
           .select('id, type, title, content, metadata')
           .in('metadata->nodeCode', nodeCodes)
+
+        // Checked: an unchecked failure returned puzzles with no evidence
+        // attached, which the QA screen reads as "this puzzle rewards nothing"
+        // rather than "the evidence table could not be read".
+        if (evidenceError) return dbErrorResponse(evidenceError)
 
         const evidenceByNodeCode = new Map<string, typeof evidenceItems>()
         for (const ev of evidenceItems ?? []) {
@@ -1391,7 +1563,10 @@ Deno.serve(async (req: Request) => {
           teamIds?: string[]
           title: string
           message: string
-          notifType?: string
+          // The wire field is `type`; it is renamed to notifType on
+          // destructuring. Declaring `notifType` here described a field the
+          // body never reads, so the compiler could not see the rename.
+          type?: string
           priority?: string
           targetRoles?: string[]
           reason?: string
@@ -1416,11 +1591,12 @@ Deno.serve(async (req: Request) => {
         let targetTeams: string[] = []
 
         if (target === 'all') {
-          const { data: allTeams } = await supabaseAdmin
+          const { data: allTeams, error: allTeamsError } = await supabaseAdmin
             .from('teams')
             .select('id')
             .in('status', ['ACTIVE', 'PAUSED', 'WAITING', 'READY', 'FORMING'])
 
+          if (allTeamsError) return dbErrorResponse(allTeamsError)
           targetTeams = (allTeams ?? []).map(t => t.id)
         } else {
           if (!teamIds || teamIds.length === 0) {
@@ -1435,8 +1611,15 @@ Deno.serve(async (req: Request) => {
         }
 
         const now = new Date().toISOString()
+
+        // Each insert is checked. This loop used to discard its errors and then
+        // report teamsNotified as the number of teams it *tried* to reach, so an
+        // announcement that reached nobody was indistinguishable from one that
+        // reached everybody — the worst possible outcome for a mid-event
+        // instruction to all teams.
+        const failedTeamIds: string[] = []
         for (const teamId of targetTeams) {
-          await supabaseAdmin.from('notifications').insert({
+          const { error: insertError } = await supabaseAdmin.from('notifications').insert({
             team_id: teamId,
             target_roles: rolesValue,
             type: notifTypeValue,
@@ -1444,6 +1627,18 @@ Deno.serve(async (req: Request) => {
             message,
             priority: priorityValue,
             is_read: false,
+          })
+          if (insertError) {
+            console.error(`Notification not delivered to team ${teamId}:`, insertError.message)
+            failedTeamIds.push(teamId)
+          }
+        }
+
+        if (targetTeams.length > 0 && failedTeamIds.length === targetTeams.length) {
+          return jsonResponse(500, {
+            error: 'The notification could not be delivered to any team. Nothing was sent.',
+            teamsNotified: 0,
+            failedTeamIds,
           })
         }
 
@@ -1454,6 +1649,7 @@ Deno.serve(async (req: Request) => {
           message,
           type: notifTypeValue,
           priority: priorityValue,
+          failedTeamIds,
           reason,
         })
 
@@ -1474,7 +1670,8 @@ Deno.serve(async (req: Request) => {
 
         return jsonResponse(200, {
           success: true,
-          teamsNotified: targetTeams.length,
+          teamsNotified: targetTeams.length - failedTeamIds.length,
+          ...(failedTeamIds.length > 0 ? { failedTeamIds } : {}),
         })
       }
 
@@ -1695,22 +1892,36 @@ Deno.serve(async (req: Request) => {
         if (fetchError) return dbErrorResponse(fetchError)
 
         let resetCount = 0
+        const resetFailures: Array<{ teamId: string; reason: string }> = []
         for (const t of allTeams ?? []) {
           const { error: resetError } = await supabaseAdminUser.rpc('bureau_reset_team', {
             p_team_id: t.id,
             p_reason: reason,
           })
           if (resetError) {
-            console.warn(`Reset failed for team ${t.id}:`, resetError.message)
+            // Reported, not swallowed. A partial reset used to answer 200 with
+            // only the success count, leaving an operator believing the whole
+            // field was back to its starting state when some teams still held
+            // live progress.
+            console.error(`Reset failed for team ${t.id}:`, resetError.message)
+            resetFailures.push({ teamId: t.id, reason: resetError.message })
             continue
           }
           await logAction('TEAM_UPDATE', t.id, undefined, { action: 'GAME_RESET', reason })
           resetCount++
         }
 
+        if (resetFailures.length > 0 && resetCount === 0) {
+          return jsonResponse(500, {
+            error: 'No team could be reset. Nothing was changed.',
+            failedTeams: resetFailures,
+          })
+        }
+
         return jsonResponse(200, {
           success: true,
           teamsReset: resetCount,
+          ...(resetFailures.length > 0 ? { failedTeams: resetFailures } : {}),
         })
       }
 
@@ -1722,6 +1933,7 @@ Deno.serve(async (req: Request) => {
 
         const now = new Date().toISOString()
         const updatedKeys: string[] = []
+        const failedKeys: Array<{ key: string; reason: string }> = []
 
         for (const [key, value] of Object.entries(config)) {
           if (['id', 'created_at', 'updated_at', 'updated_by'].includes(key)) continue
@@ -1734,12 +1946,17 @@ Deno.serve(async (req: Request) => {
               value: typeof value === 'string' ? `"${value}"` : JSON.stringify(value),
               description: null,
               updated_at: now,
-              updated_by: user.id,
+              updated_by: adminUserId,
             })
             .select('key')
 
           if (upsertError) {
-            console.warn(`Config update failed for ${key}:`, upsertError.message)
+            // Logged loudly and reported to the caller. A partial config write
+            // used to answer 200 with the failed key simply absent from
+            // updatedKeys, so an operator could believe the game duration had
+            // been changed when it had not.
+            console.error(`Config update failed for ${key}:`, upsertError.message)
+            failedKeys.push({ key, reason: upsertError.message })
           } else {
             updatedKeys.push(key)
           }
@@ -1747,17 +1964,26 @@ Deno.serve(async (req: Request) => {
 
         await logAction('CONFIG_UPDATE', undefined, undefined, {
           keys: updatedKeys,
+          failedKeys: failedKeys.map(f => f.key),
           reason: (params as Record<string, unknown>).reason as string ?? '',
         })
+
+        if (updatedKeys.length === 0 && failedKeys.length > 0) {
+          return jsonResponse(500, {
+            error: 'No configuration value could be saved.',
+            failedKeys,
+          })
+        }
 
         return jsonResponse(200, {
           success: true,
           updatedKeys,
+          ...(failedKeys.length > 0 ? { failedKeys } : {}),
         })
       }
 
       case 'list-locations': {
-        const { data: locations } = await supabaseAdmin
+        const { data: locations, error: locationsError } = await supabaseAdmin
           .from('locations')
           .select(`
             id,
@@ -1772,6 +1998,11 @@ Deno.serve(async (req: Request) => {
           `)
           .order('puzzle_nodes.code', { foreignTable: 'puzzle_nodes', ascending: true })
 
+        // Checked: an unchecked failure rendered as "no locations configured",
+        // which would have an operator conclude every puzzle is at its default
+        // position when in fact the table could not be read.
+        if (locationsError) return dbErrorResponse(locationsError)
+
         return jsonResponse(200, {
           success: true,
           locations: locations ?? [],
@@ -1785,33 +2016,40 @@ Deno.serve(async (req: Request) => {
           return jsonResponse(400, { error: 'nodeId is required' })
         }
 
-        const { data: location } = await supabaseAdmin
-          .from('locations')
-          .select(`
-            id,
-            node_id,
-            name,
-            status,
-            created_at,
-            updated_at,
-            created_by,
-            updated_by,
-            puzzle_nodes:node_id (code, title, type, stage)
-          `)
-          .eq('node_id', nodeId)
-          .order('created_at', { ascending: false })
-          .maybeSingle()
+        const [locationResult, historyResult] = await Promise.all([
+          supabaseAdmin
+            .from('locations')
+            .select(`
+              id,
+              node_id,
+              name,
+              status,
+              created_at,
+              updated_at,
+              created_by,
+              updated_by,
+              puzzle_nodes:node_id (code, title, type, stage)
+            `)
+            .eq('node_id', nodeId)
+            .order('created_at', { ascending: false })
+            .maybeSingle(),
+          supabaseAdmin
+            .from('location_history')
+            .select('*')
+            .eq('node_id', nodeId)
+            .order('created_at', { ascending: false }),
+        ])
 
-        const { data: history } = await supabaseAdmin
-          .from('location_history')
-          .select('*')
-          .eq('node_id', nodeId)
-          .order('created_at', { ascending: false })
+        // Both checked. A failure used to answer { location: null }, which the
+        // editor reads as "this puzzle has no location override" — the exact
+        // state an operator would then create one against.
+        if (locationResult.error) return dbErrorResponse(locationResult.error)
+        if (historyResult.error) return dbErrorResponse(historyResult.error)
 
         return jsonResponse(200, {
           success: true,
-          location: location ?? null,
-          history: history ?? [],
+          location: locationResult.data ?? null,
+          history: historyResult.data ?? [],
         })
       }
 
@@ -2047,9 +2285,10 @@ Deno.serve(async (req: Request) => {
             metadata: { source: 'bureau', timestamp: now },
           })
 
-          const duplicates = enriched
+          const qrCodes: string[] = enriched
             .map(e => e.code)
-            .filter((code: string, idx: number, arr: string[]) => arr.indexOf(code) !== idx)
+            .filter((code): code is string => typeof code === 'string')
+          const duplicates = qrCodes.filter((code, idx, arr) => arr.indexOf(code) !== idx)
 
           return jsonResponse(200, {
             success: true,

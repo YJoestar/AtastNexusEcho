@@ -1,5 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
-import { preflightOrMethodError } from '../_shared/http.ts'
+import { BadRequestError, readJsonObject, requireBoolean } from '../_shared/request.ts'
+import { dbError, preflightOrMethodError } from '../_shared/http.ts'
+import { AuthError, requireBearerToken, requireVerifiedUser } from '../_shared/auth.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -12,10 +14,7 @@ Deno.serve(async (req: Request) => {
   if (early) return early
 
   try {
-    const token = req.headers.get('Authorization')?.replace('Bearer ', '') ?? ''
-    if (!token) {
-      return errorResponse(401, 'Authentication required')
-    }
+    const token = requireBearerToken(req)
 
     const supabaseUser = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -24,9 +23,15 @@ Deno.serve(async (req: Request) => {
         global: { headers: { Authorization: `Bearer ${token}` } },
         auth: { autoRefreshToken: false, persistSession: false },
       },
-    )
+)
 
-    const { unreadOnly = true } = await req.json().catch(() => ({}))
+    await requireVerifiedUser(supabaseUser, token)
+
+// An absent unreadOnly means "unread only", which is what every caller wants.
+// It used to be read as `await req.json().catch(() => ({}))`, which threw the
+// malformed body away silently and passed unreadOnly to PostgREST unvalidated.
+const body = await readJsonObject(req)
+const unreadOnly = body.unreadOnly === undefined ? true : requireBoolean(body.unreadOnly, 'unreadOnly')
 
     const { data, error } = await supabaseUser.rpc('get_team_notifications', {
       p_unread_only: unreadOnly,
@@ -34,11 +39,14 @@ Deno.serve(async (req: Request) => {
 
     if (error) {
       console.error('get_team_notifications error:', error)
-      return errorResponse(500, 'Failed to fetch notifications')
+      const mapped = dbError(error)
+      return errorResponse(mapped.status, mapped.message)
     }
 
     return jsonResponse(200, { success: true, notifications: data })
   } catch (err: unknown) {
+    if (err instanceof AuthError) return errorResponse(err.status, err.message)
+    if (err instanceof BadRequestError) return errorResponse(400, err.message)
     console.error('Unhandled error in game-notifications:', err)
     return errorResponse(500, 'Internal server error')
   }

@@ -1,6 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
 import { BadRequestError, readJsonObject, requireString } from '../_shared/request.ts'
-import { preflightOrMethodError } from '../_shared/http.ts'
+import { dbError, preflightOrMethodError } from '../_shared/http.ts'
+import { AuthError, requireBearerToken, requireVerifiedUser } from '../_shared/auth.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,10 +14,7 @@ Deno.serve(async (req: Request) => {
   if (early) return early
 
   try {
-    const token = req.headers.get('Authorization')?.replace('Bearer ', '') ?? ''
-    if (!token) {
-      return errorResponse(401, 'Authentication required')
-    }
+    const token = requireBearerToken(req)
 
     const supabaseUser = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -27,6 +25,8 @@ Deno.serve(async (req: Request) => {
       },
     )
 
+    await requireVerifiedUser(supabaseUser, token)
+
     const body = await readJsonObject(req)
     const qrCode = requireString(body.qrCode, 'qrCode', 64)
 
@@ -36,7 +36,11 @@ Deno.serve(async (req: Request) => {
 
     if (error) {
       console.error('scan_qr_code error:', error)
-      return errorResponse(500, 'Failed to scan QR code')
+      // Every error from this call used to become a flat 500, so a privilege
+      // failure, a dropped connection and a missing table were indistinguishable
+      // from each other. The shared mapping names the real cause.
+      const mapped = dbError(error)
+      return errorResponse(mapped.status, mapped.message)
     }
 
     if (data && typeof data === 'object' && data.error === 'Invalid QR code') {
@@ -58,12 +62,21 @@ Deno.serve(async (req: Request) => {
         const retry = await supabaseUser.rpc('scan_qr_code', {
           p_qr_code: nodeData.code,
         })
+        // The retry used to be returned without looking at its error, so a
+        // failed second scan answered 200 with result: undefined — a success
+        // response for an operation that never happened.
+        if (retry.error) {
+          console.error('scan_qr_code retry error:', retry.error)
+          const mapped = dbError(retry.error)
+          return errorResponse(mapped.status, mapped.message)
+        }
         return jsonResponse(200, { success: true, result: retry.data })
       }
     }
 
     return jsonResponse(200, { success: true, result: data })
   } catch (err: unknown) {
+    if (err instanceof AuthError) return errorResponse(err.status, err.message)
     if (err instanceof BadRequestError) return errorResponse(400, err.message)
     console.error('Unhandled error in game-scan-qr:', err)
     return errorResponse(500, 'Internal server error')

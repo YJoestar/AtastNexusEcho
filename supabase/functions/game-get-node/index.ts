@@ -1,6 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
 import { BadRequestError, readJsonObject, requireString } from '../_shared/request.ts'
-import { preflightOrMethodError } from '../_shared/http.ts'
+import { dbError, preflightOrMethodError } from '../_shared/http.ts'
+import { AuthError, requireBearerToken, requireVerifiedUser } from '../_shared/auth.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,10 +14,7 @@ Deno.serve(async (req: Request) => {
   if (early) return early
 
   try {
-    const token = req.headers.get('Authorization')?.replace('Bearer ', '') ?? ''
-    if (!token) {
-      return errorResponse(401, 'Authentication required')
-    }
+    const token = requireBearerToken(req)
 
     const supabaseUser = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -27,11 +25,21 @@ Deno.serve(async (req: Request) => {
       },
     )
 
+    await requireVerifiedUser(supabaseUser, token)
+
     const body = await readJsonObject(req)
     const nodeRef = requireString(body.nodeId, 'nodeId', 64)
     // The app sends a node's code ("P01"); the RPCs want its id. Resolve either.
     const { data: nodeId, error: resolveError } = await supabaseUser.rpc('resolve_node_ref', { p_ref: nodeRef })
-    if (resolveError || typeof nodeId !== 'string') {
+    if (resolveError) {
+      // A failure to resolve is not the same as "no such node". Reporting a
+      // privilege or connectivity fault as 404 hides the real problem and
+      // leaves the player hunting for a typo that does not exist.
+      console.error('resolve_node_ref error:', resolveError)
+      const mapped = dbError(resolveError)
+      return errorResponse(mapped.status, mapped.message)
+    }
+    if (typeof nodeId !== 'string' || nodeId.length === 0) {
       return errorResponse(404, 'Node not found')
     }
 
@@ -44,11 +52,13 @@ Deno.serve(async (req: Request) => {
 
     if (error) {
       console.error('get_player_node_detail error:', error)
-      return errorResponse(500, 'Failed to fetch node')
+      const mapped = dbError(error)
+      return errorResponse(mapped.status, mapped.message)
     }
 
     return jsonResponse(200, { success: true, node: data })
   } catch (err: unknown) {
+    if (err instanceof AuthError) return errorResponse(err.status, err.message)
     if (err instanceof BadRequestError) return errorResponse(400, err.message)
     console.error('Unhandled error in game-get-node:', err)
     return errorResponse(500, 'Internal server error')

@@ -28,9 +28,14 @@ function toBase64(bytes: Uint8Array): string {
   return btoa(binary)
 }
 
-function fromBase64(value: string): Uint8Array {
+// The return type is inferred on purpose. Annotating it as `Uint8Array` widens
+// the buffer to ArrayBufferLike, which is not assignable to WebCrypto's
+// BufferSource (ArrayBufferView<ArrayBuffer>) and so failed the type check at
+// the decrypt call site. A locally allocated ArrayBuffer infers as
+// Uint8Array<ArrayBuffer>, which WebCrypto accepts.
+function fromBase64(value: string) {
   const binary = atob(value)
-  const bytes = new Uint8Array(binary.length)
+  const bytes = new Uint8Array(new ArrayBuffer(binary.length))
   for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
   return bytes
 }
