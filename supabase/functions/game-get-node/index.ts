@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
+import { BadRequestError, readJsonObject, requireUuid } from '../_shared/request.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -26,15 +27,14 @@ Deno.serve(async (req: Request) => {
       },
     )
 
-    const { nodeId, role } = await req.json()
-
-    if (!nodeId) {
-      return errorResponse(400, 'Missing nodeId')
-    }
+    const body = await readJsonObject(req)
+    const nodeId = requireUuid(body.nodeId, 'nodeId')
 
     const { data, error } = await supabaseUser.rpc('get_player_node_detail', {
       p_node_id: nodeId,
-      p_player_role: role ?? 'OPERATOR',
+      // Ignored by the database, which reads the caller's role from `players`.
+      // Nothing here may default to a privileged role.
+      p_player_role: typeof body.role === 'string' ? body.role : 'OBSERVER',
     })
 
     if (error) {
@@ -44,6 +44,7 @@ Deno.serve(async (req: Request) => {
 
     return jsonResponse(200, { success: true, node: data })
   } catch (err: unknown) {
+    if (err instanceof BadRequestError) return errorResponse(400, err.message)
     console.error('Unhandled error in game-get-node:', err)
     return errorResponse(500, 'Internal server error')
   }

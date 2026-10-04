@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
+import { BadRequestError, readJsonObject, requireString } from '../_shared/request.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -26,11 +27,8 @@ Deno.serve(async (req: Request) => {
       },
     )
 
-    const { qrCode } = await req.json()
-
-    if (!qrCode) {
-      return errorResponse(400, 'Missing qrCode')
-    }
+    const body = await readJsonObject(req)
+    const qrCode = requireString(body.qrCode, 'qrCode', 64)
 
     const { data, error } = await supabaseUser.rpc('scan_qr_code', {
       p_qr_code: qrCode,
@@ -42,14 +40,18 @@ Deno.serve(async (req: Request) => {
     }
 
     if (data && typeof data === 'object' && data.error === 'Invalid QR code') {
-      const { data: nodeData, error: nodeError } = await supabaseUser
-        .from('qr_nodes')
-        .select('code')
-        .or(`marker_id.eq.${qrCode},manual_code.eq.${qrCode}`)
-        .maybeSingle()
+      // Resolve a printed marker id or manual code to the node's code in the
+      // database, with the typed text as a bound parameter. (This used to query
+      // qr_nodes with the text interpolated into a PostgREST `.or(...)` string, so
+      // a "code" such as `x,code.eq.QR-NODE-37` rewrote the filter, and the table
+      // read itself failed on a recursive row-level policy.)
+      const { data: resolvedCode, error: nodeError } = await supabaseUser.rpc('resolve_qr_code', {
+        p_input: qrCode,
+      })
+      const nodeData = typeof resolvedCode === 'string' && resolvedCode ? { code: resolvedCode } : null
 
       if (nodeError) {
-        console.error('qr_nodes fallback lookup error:', nodeError)
+        console.error('resolve_qr_code error:', nodeError)
       }
 
       if (nodeData) {
@@ -62,6 +64,7 @@ Deno.serve(async (req: Request) => {
 
     return jsonResponse(200, { success: true, result: data })
   } catch (err: unknown) {
+    if (err instanceof BadRequestError) return errorResponse(400, err.message)
     console.error('Unhandled error in game-scan-qr:', err)
     return errorResponse(500, 'Internal server error')
   }

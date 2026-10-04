@@ -16,6 +16,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
 import { isValidLoginCode } from '../_shared/logicCode.ts'
+import { BadRequestError, readJsonObject } from '../_shared/request.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -52,7 +53,7 @@ Deno.serve(async (req: Request) => {
       return errorResponse(429, 'Too many login attempts. Please try again later.')
     }
 
-    const { code, deviceFingerprint, deviceInfo } = await req.json()
+    const { code, deviceFingerprint, deviceInfo } = await readJsonObject(req)
 
     // Exact same rule as the generator and the client input: LOGIN_CODE_LENGTH
     // characters from A-Z and 2-9, with I, O, 0 and 1 rejected. Anything else
@@ -62,7 +63,7 @@ Deno.serve(async (req: Request) => {
       return errorResponse(401, 'Invalid access code')
     }
 
-    if (!deviceFingerprint || typeof deviceFingerprint !== 'string') {
+    if (!deviceFingerprint || typeof deviceFingerprint !== 'string' || deviceFingerprint.length > 200) {
       return errorResponse(401, 'Invalid access code')
     }
 
@@ -165,6 +166,7 @@ Deno.serve(async (req: Request) => {
       },
     })
   } catch (err: unknown) {
+    if (err instanceof BadRequestError) return errorResponse(400, err.message)
     console.error('Unhandled error in player-login:', err)
     return errorResponse(500, 'Internal server error')
   }

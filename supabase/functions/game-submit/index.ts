@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
+import { BadRequestError, readJsonObject, requireString, requireUuid } from '../_shared/request.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -26,11 +27,9 @@ Deno.serve(async (req: Request) => {
       },
     )
 
-    const { nodeId, answer } = await req.json()
-
-    if (!nodeId || !answer) {
-      return errorResponse(400, 'Missing nodeId or answer')
-    }
+    const body = await readJsonObject(req)
+    const nodeId = requireUuid(body.nodeId, 'nodeId')
+    const answer = requireString(body.answer, 'answer', 1000)
 
     const { data, error } = await supabaseUser.rpc('submit_puzzle_answer', {
       p_node_id: nodeId,
@@ -52,6 +51,7 @@ Deno.serve(async (req: Request) => {
 
     return jsonResponse(200, { success: true, result: data })
   } catch (err: unknown) {
+    if (err instanceof BadRequestError) return errorResponse(400, err.message)
     console.error('Unhandled error in game-submit:', err)
     return errorResponse(500, 'Internal server error')
   }

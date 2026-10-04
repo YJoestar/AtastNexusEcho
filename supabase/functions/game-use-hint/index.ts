@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
+import { BadRequestError, readJsonObject, requireInteger, requireUuid } from '../_shared/request.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -26,11 +27,9 @@ Deno.serve(async (req: Request) => {
       },
     )
 
-    const { nodeId, hintNumber } = await req.json()
-
-    if (!nodeId || hintNumber === undefined || hintNumber === null) {
-      return errorResponse(400, 'Missing nodeId or hintNumber')
-    }
+    const body = await readJsonObject(req)
+    const nodeId = requireUuid(body.nodeId, 'nodeId')
+    const hintNumber = requireInteger(body.hintNumber, 'hintNumber', 1, 20)
 
     const { data, error } = await supabaseUser.rpc('request_hint', {
       p_node_id: nodeId,
@@ -51,6 +50,7 @@ Deno.serve(async (req: Request) => {
 
     return jsonResponse(200, { success: true, result: data })
   } catch (err: unknown) {
+    if (err instanceof BadRequestError) return errorResponse(400, err.message)
     console.error('Unhandled error in game-use-hint:', err)
     return errorResponse(500, 'Internal server error')
   }
