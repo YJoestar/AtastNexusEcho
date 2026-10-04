@@ -3,33 +3,37 @@
  * Defines all application routes for player and admin experiences
  */
 
+import { lazy } from 'react'
 import { createBrowserRouter, Navigate } from 'react-router-dom'
-import { ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { Layout } from '@/components/layout/Layout'
-import { PlayerLayout } from '@/features/player/PlayerLayout'
-import { AdminLayout } from '@/features/admin/AdminLayout'
-import { Workstation } from '@/features/admin/workstation/Workstation'
+import { RouteError } from '@/components/layout/RouteError'
 
-// Route guards
+// Route guards (tiny; kept in the entry chunk so the guard logic never lazy-loads)
 import { RequireAuth } from '@/components/auth/RequireAuth'
 import { RequireAdmin } from '@/components/auth/RequireAdmin'
 
+// Every screen is its own chunk; <Layout> supplies the Suspense boundary.
+const PlayerLayout = lazy(() => import('@/features/player/PlayerLayout').then(m => ({ default: m.PlayerLayout })))
+const AdminLayout = lazy(() => import('@/features/admin/AdminLayout').then(m => ({ default: m.AdminLayout })))
+const Workstation = lazy(() => import('@/features/admin/workstation/Workstation').then(m => ({ default: m.Workstation })))
+
 // Player route components
-import { PlayerLogin } from '@/features/player/Login'
-import { PlayerWaiting } from '@/features/player/Waiting'
-import { PlayerGame } from '@/features/player/Game'
-import { PlayerNode } from '@/features/player/Node'
-import { PlayerEvidence } from '@/features/player/Evidence'
-import { PlayerInventory } from '@/features/player/Inventory'
-import { PlayerNavigation } from '@/features/player/Navigation'
-import { PlayerQR } from '@/features/player/QR'
-import { PlayerLeaderboard } from '@/features/player/Leaderboard'
-import { PlayerNotifications } from '@/features/player/Notifications'
-import { PlayerFinal } from '@/features/player/Final'
-import { PlayerComplete } from '@/features/player/Complete'
+const PlayerLogin = lazy(() => import('@/features/player/Login').then(m => ({ default: m.PlayerLogin })))
+const PlayerWaiting = lazy(() => import('@/features/player/Waiting').then(m => ({ default: m.PlayerWaiting })))
+const PlayerGame = lazy(() => import('@/features/player/Game').then(m => ({ default: m.PlayerGame })))
+const PlayerNode = lazy(() => import('@/features/player/Node').then(m => ({ default: m.PlayerNode })))
+const PlayerEvidence = lazy(() => import('@/features/player/Evidence').then(m => ({ default: m.PlayerEvidence })))
+const PlayerInventory = lazy(() => import('@/features/player/Inventory').then(m => ({ default: m.PlayerInventory })))
+const PlayerNavigation = lazy(() => import('@/features/player/Navigation').then(m => ({ default: m.PlayerNavigation })))
+const PlayerQR = lazy(() => import('@/features/player/QR').then(m => ({ default: m.PlayerQR })))
+const PlayerLeaderboard = lazy(() => import('@/features/player/Leaderboard').then(m => ({ default: m.PlayerLeaderboard })))
+const PlayerNotifications = lazy(() => import('@/features/player/Notifications').then(m => ({ default: m.PlayerNotifications })))
+const PlayerFinal = lazy(() => import('@/features/player/Final').then(m => ({ default: m.PlayerFinal })))
+const PlayerComplete = lazy(() => import('@/features/player/Complete').then(m => ({ default: m.PlayerComplete })))
 
 // Admin route components
-import { AdminLogin } from '@/features/admin/Login'
+const AdminLogin = lazy(() => import('@/features/admin/Login').then(m => ({ default: m.AdminLogin })))
 
 // eslint-disable-next-line react-refresh/only-export-components
 function ProtectedPlayerRoute({ children }: { children: ReactNode }) {
@@ -45,6 +49,7 @@ export const router = createBrowserRouter([
   {
     path: '/',
     Component: Layout,
+    errorElement: <RouteError />,
     children: [
       // Public routes
       { path: 'login', Component: () => <Navigate to="/player/login" replace /> },

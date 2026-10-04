@@ -35,6 +35,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
 import { encryptLoginCode, decryptLoginCode } from '../_shared/loginCodeCipher.ts'
 import { BadRequestError, readJsonObject } from '../_shared/request.ts'
+import { preflightOrMethodError, dbError } from '../_shared/http.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -89,9 +90,36 @@ class BureauActionError extends Error {
   }
 }
 
+/** The caller is a valid admin but not allowed to do this (HTTP 403). */
+class BureauForbiddenError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'BureauForbiddenError'
+  }
+}
+
+/**
+ * Actions that destroy data or end/disqualify teams irreversibly. They need a
+ * SUPER_ADMIN, matching bureau_reset_team / bureau_reset_node in the database
+ * (migration 2026100309). Everything else stays available to ADMIN.
+ */
+export const SUPER_ADMIN_ACTIONS: ReadonlySet<string> = new Set([
+  'reset-team',
+  'reset-game',
+  'end-game',
+  'disqualify-team',
+  'delete-location',
+])
+
+function dbErrorResponse(error: { code?: string | null; message?: string | null }) {
+  const { status, message } = dbError(error)
+  return jsonResponse(status, { error: message })
+}
+
 /** Map an action failure onto an HTTP status without leaking internals. */
 function bureauErrorResponse(err: unknown) {
   if (err instanceof BadRequestError) return jsonResponse(400, { error: err.message })
+  if (err instanceof BureauForbiddenError) return jsonResponse(403, { error: err.message })
   const message = err instanceof Error ? err.message : 'Unknown error'
   if (err instanceof BureauActionError) {
     const locked = message.includes('roster is locked') || message.includes('Team not found')
@@ -102,9 +130,8 @@ function bureauErrorResponse(err: unknown) {
 }
 
 Deno.serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
-  }
+  const early = preflightOrMethodError(req, corsHeaders)
+  if (early) return early
 
   try {
     const supabaseAdmin = createClient(
@@ -196,7 +223,10 @@ Deno.serve(async (req: Request) => {
       })
 
       if (error) {
-        throw new BureauActionError(error.message)
+        if (error.code === '42501') {
+          throw new BureauForbiddenError(dbError(error).message)
+        }
+        throw new BureauActionError(dbError(error).message)
       }
 
       const rows = (Array.isArray(data) ? data : []) as ReissueRpcRow[]
@@ -282,6 +312,11 @@ Deno.serve(async (req: Request) => {
       return jsonResponse(400, { error: 'Missing action' })
     }
 
+    // --- SUPER_ADMIN gate for destructive actions (403, not 401/500) ---
+    if (SUPER_ADMIN_ACTIONS.has(action) && adminRecord.role !== 'SUPER_ADMIN') {
+      return jsonResponse(403, { error: 'This action requires a super administrator' })
+    }
+
     // --- Log admin action ---
     async function logAction(actionType: string, targetTeamId?: string, targetPlayerId?: string, payload?: Record<string, unknown>) {
       try {
@@ -349,7 +384,7 @@ Deno.serve(async (req: Request) => {
         )
 
         if (provisionError) {
-          return jsonResponse(400, { error: provisionError.message })
+          return dbErrorResponse(provisionError)
         }
 
         const provisioned = Array.isArray(provisionData) ? provisionData[0] : provisionData
@@ -420,7 +455,6 @@ Deno.serve(async (req: Request) => {
           if (replayed) {
             return jsonResponse(500, {
               error: 'Could not issue working login codes for the existing team. It was left in place — retry to rotate its codes again.',
-              detail: reason,
             })
           }
 
@@ -443,7 +477,6 @@ Deno.serve(async (req: Request) => {
           }
           return jsonResponse(500, {
             error: 'Provisioning failed and was rolled back. No team was created.',
-            detail: reason,
           })
         }
 
@@ -478,7 +511,7 @@ Deno.serve(async (req: Request) => {
 
         await logAction('TEAM_CREATE', data?.[0]?.team_id)
 
-        if (error) return jsonResponse(400, { error: error.message })
+        if (error) return dbErrorResponse(error)
 
         return jsonResponse(200, {
           success: true,
@@ -511,7 +544,7 @@ Deno.serve(async (req: Request) => {
 
         await logAction('ROLE_ASSIGN', teamId, data?.[0]?.player_id, { displayName, role })
 
-        if (error) return jsonResponse(400, { error: error.message })
+        if (error) return dbErrorResponse(error)
 
         return jsonResponse(200, {
           success: true,
@@ -625,7 +658,7 @@ Deno.serve(async (req: Request) => {
           .order('created_at', { ascending: true })
 
         if (rosterError) {
-          return jsonResponse(500, { error: rosterError.message })
+          return dbErrorResponse(rosterError)
         }
 
         const players = await Promise.all(
@@ -674,7 +707,7 @@ Deno.serve(async (req: Request) => {
           .select('auth_user_id, device_session_token')
           .eq('team_id', teamId)
 
-        if (playerError) return jsonResponse(400, { error: playerError.message })
+        if (playerError) return dbErrorResponse(playerError)
 
         const allLoggedIn = players.length === 3 &&
           players.every(p => p.auth_user_id && p.device_session_token)
@@ -693,7 +726,7 @@ Deno.serve(async (req: Request) => {
           .eq('id', teamId)
           .single()
 
-        if (teamFetchError) return jsonResponse(400, { error: teamFetchError.message })
+        if (teamFetchError) return dbErrorResponse(teamFetchError)
 
         const currentStatus = teamRow?.status
 
@@ -720,7 +753,7 @@ Deno.serve(async (req: Request) => {
 
           if (waitingError) {
             return jsonResponse(400, {
-              error: `Could not move team to WAITING status: ${waitingError.message}`,
+              error: `Could not move team to WAITING status: ${dbError(waitingError).message}`,
             })
           }
         }
@@ -736,7 +769,7 @@ Deno.serve(async (req: Request) => {
           if (rpcError.message.includes('WAITING')) {
             return jsonResponse(400, { error: 'Team must be in WAITING status to start' })
           }
-          return jsonResponse(400, { error: rpcError.message })
+          return dbErrorResponse(rpcError)
         }
 
         return jsonResponse(200, { success: true, teamId, startedAt: rpcData[0]?.started_at })
@@ -750,7 +783,7 @@ Deno.serve(async (req: Request) => {
           .eq('id', teamId)
           .in('status', ['ACTIVE'])
 
-        if (error) return jsonResponse(400, { error: error.message })
+        if (error) return dbErrorResponse(error)
         await logAction('TEAM_PAUSE', teamId, undefined, { reason })
         return jsonResponse(200, { success: true, teamId })
       }
@@ -763,7 +796,7 @@ Deno.serve(async (req: Request) => {
           .eq('id', teamId)
           .eq('status', 'PAUSED')
 
-        if (error) return jsonResponse(400, { error: error.message })
+        if (error) return dbErrorResponse(error)
         await logAction('TEAM_RESUME', teamId, undefined, { reason })
         return jsonResponse(200, { success: true, teamId })
       }
@@ -780,7 +813,7 @@ Deno.serve(async (req: Request) => {
           .eq('id', teamId)
           .in('status', ['ACTIVE', 'PAUSED'])
 
-        if (error) return jsonResponse(400, { error: error.message })
+        if (error) return dbErrorResponse(error)
         await logAction('TEAM_COMPLETE', teamId, undefined, { reason })
 
         await supabaseAdmin.from('game_events').insert({
@@ -800,7 +833,7 @@ Deno.serve(async (req: Request) => {
           .eq('id', teamId)
           .in('status', ['ACTIVE', 'PAUSED', 'WAITING'])
 
-        if (error) return jsonResponse(400, { error: error.message })
+        if (error) return dbErrorResponse(error)
         await logAction('TEAM_DISQUALIFY', teamId, undefined, { reason })
 
         await supabaseAdmin.from('game_events').insert({
@@ -822,7 +855,7 @@ Deno.serve(async (req: Request) => {
           p_reason: reason,
         })
 
-        if (error) return jsonResponse(400, { error: error.message })
+        if (error) return dbErrorResponse(error)
 
         // Clear login codes to force regeneration
         await supabaseAdmin
@@ -879,7 +912,7 @@ Deno.serve(async (req: Request) => {
           .update({ role: newRole })
           .eq('id', playerId)
 
-        if (error) return jsonResponse(400, { error: error.message })
+        if (error) return dbErrorResponse(error)
         await logAction('ROLE_REASSIGN', player.team_id, playerId, { from: player.role, to: newRole, reason })
 
         return jsonResponse(200, { success: true, playerId, newRole })
@@ -1074,7 +1107,7 @@ Deno.serve(async (req: Request) => {
 
         const { data, error } = await query
 
-        if (error) return jsonResponse(400, { error: error.message })
+        if (error) return dbErrorResponse(error)
 
         let filtered = data ?? []
         if (search) {
@@ -1110,7 +1143,7 @@ Deno.serve(async (req: Request) => {
 
         const { data, error } = await query
 
-        if (error) return jsonResponse(400, { error: error.message })
+        if (error) return dbErrorResponse(error)
 
         return jsonResponse(200, { success: true, events: data ?? [] })
       }
@@ -1247,7 +1280,7 @@ Deno.serve(async (req: Request) => {
           .order('code')
 
         if (nodesError) {
-          return jsonResponse(400, { error: nodesError.message })
+          return dbErrorResponse(nodesError)
         }
 
         const nodeCodes = (nodes ?? []).map(n => n.code)
@@ -1339,7 +1372,7 @@ Deno.serve(async (req: Request) => {
           ?? inventoryResult.error
           ?? fragmentsResult.error
           ?? nodesResult.error
-        if (catalogError) return jsonResponse(400, { error: catalogError.message })
+        if (catalogError) return dbErrorResponse(catalogError)
 
         return jsonResponse(200, {
           success: true,
@@ -1470,7 +1503,7 @@ Deno.serve(async (req: Request) => {
           if (hintError.message.includes('duplicate')) {
             return jsonResponse(409, { error: 'Hint already granted for this node' })
           }
-          return jsonResponse(400, { error: hintError.message })
+          return dbErrorResponse(hintError)
         }
 
         const { data: node } = await supabaseAdmin
@@ -1528,7 +1561,7 @@ Deno.serve(async (req: Request) => {
 
         if (error) {
           console.error('bureau_manual_unlock error:', error)
-          return jsonResponse(400, { error: error.message })
+          return dbErrorResponse(error)
         }
 
         await logAction('NODE_UNLOCK', teamId, undefined, { nodeId: unlockNodeId, reason: unlockReason, manual: true })
@@ -1558,7 +1591,7 @@ Deno.serve(async (req: Request) => {
           .update({ status: 'WAITING', updated_at: now })
           .eq('status', 'READY')
 
-        if (waitingError) return jsonResponse(400, { error: `Could not move teams to WAITING: ${waitingError.message}` })
+        if (waitingError) return jsonResponse(400, { error: `Could not move teams to WAITING: ${dbError(waitingError).message}` })
 
         // Step 2: now transition all WAITING teams to ACTIVE.
         const { data: teams, error: startError } = await supabaseAdmin
@@ -1573,7 +1606,7 @@ Deno.serve(async (req: Request) => {
           .eq('status', 'WAITING')
           .select('id')
 
-        if (startError) return jsonResponse(400, { error: startError.message })
+        if (startError) return dbErrorResponse(startError)
 
         for (const t of teams ?? []) {
           await logAction('GAME_START', t.id, undefined, { startedAt: now, deadline, reason })
@@ -1600,7 +1633,7 @@ Deno.serve(async (req: Request) => {
           .eq('status', 'ACTIVE')
           .select('id')
 
-        if (pauseError) return jsonResponse(400, { error: pauseError.message })
+        if (pauseError) return dbErrorResponse(pauseError)
 
         for (const t of teams ?? []) {
           await logAction('GAME_PAUSE', t.id, undefined, { reason })
@@ -1633,7 +1666,7 @@ Deno.serve(async (req: Request) => {
           .in('status', ['ACTIVE', 'PAUSED'])
           .select('id')
 
-        if (endError) return jsonResponse(400, { error: endError.message })
+        if (endError) return dbErrorResponse(endError)
 
         for (const t of teams ?? []) {
           await logAction('GAME_END', t.id, undefined, { reason })
@@ -1659,7 +1692,7 @@ Deno.serve(async (req: Request) => {
           .select('id')
           .not('status', 'in', '(COMPLETED, DISQUALIFIED, ABANDONED)')
 
-        if (fetchError) return jsonResponse(400, { error: fetchError.message })
+        if (fetchError) return dbErrorResponse(fetchError)
 
         let resetCount = 0
         for (const t of allTeams ?? []) {
@@ -1848,7 +1881,7 @@ Deno.serve(async (req: Request) => {
             .eq('node_id', resolvedNodeId)
 
           if (updateError) {
-            return jsonResponse(400, { error: updateError.message })
+            return dbErrorResponse(updateError)
           }
 
           await logAction('LOCATION_UPDATE', undefined, undefined, { nodeId: resolvedNodeId, name, reason })
@@ -1867,7 +1900,7 @@ Deno.serve(async (req: Request) => {
             .single()
 
           if (insertError) {
-            return jsonResponse(400, { error: insertError.message })
+            return dbErrorResponse(insertError)
           }
 
           const { error: histError } = await supabaseAdmin.from('location_history').insert({
@@ -1940,7 +1973,7 @@ Deno.serve(async (req: Request) => {
           .eq('node_id', resolvedNodeId)
 
         if (deleteError) {
-          return jsonResponse(400, { error: deleteError.message })
+          return dbErrorResponse(deleteError)
         }
 
         await logAction('LOCATION_DELETE', undefined, undefined, { nodeId: resolvedNodeId, oldName: existing.name, reason })
@@ -1954,7 +1987,7 @@ Deno.serve(async (req: Request) => {
             .select('*')
 
           if (qrError) {
-            return jsonResponse(400, { error: qrError.message })
+            return dbErrorResponse(qrError)
           }
 
           const nodeIds = (qrNodes ?? []).map((q: Record<string, unknown>) => q.puzzle_node_id as string | null).filter(Boolean)

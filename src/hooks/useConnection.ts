@@ -91,16 +91,17 @@ export function useConnection(): ConnectionState {
   const [lastProbeStatus, setLastProbeStatus] = useState<number | null>(null)
   const [lastProbedAt, setLastProbedAt] = useState<string | null>(null)
   const inFlight = useRef(false)
+  const mountedRef = useRef(true)
 
   const probe = useCallback(async () => {
     if (inFlight.current) return
     if (!SUPABASE_URL) {
       // No configured backend: there is nothing to reach, so do not claim to
       // be connected and do not hammer an empty URL.
-      setIsServerReachable(false)
-      setIsServerHealthy(false)
-      setLastProbeStatus(null)
-      setLastProbedAt(new Date().toISOString())
+      if (mountedRef.current) setIsServerReachable(false)
+      if (mountedRef.current) setIsServerHealthy(false)
+      if (mountedRef.current) setLastProbeStatus(null)
+      if (mountedRef.current) setLastProbedAt(new Date().toISOString())
       return
     }
     inFlight.current = true
@@ -117,24 +118,25 @@ export function useConnection(): ConnectionState {
         })
         // We got a response, so there is a route to the server. A 401 from a
         // gated endpoint means reachable-and-refusing, not unreachable.
-        setIsServerReachable(true)
-        setIsServerHealthy(response.ok)
-        setLastProbeStatus(response.status)
+        if (mountedRef.current) setIsServerReachable(true)
+        if (mountedRef.current) setIsServerHealthy(response.ok)
+        if (mountedRef.current) setLastProbeStatus(response.status)
       } finally {
         clearTimeout(timeout)
       }
     } catch {
       // Abort, DNS failure, TLS failure, offline — all mean "cannot reach".
-      setIsServerReachable(false)
-      setIsServerHealthy(false)
-      setLastProbeStatus(null)
+      if (mountedRef.current) setIsServerReachable(false)
+      if (mountedRef.current) setIsServerHealthy(false)
+      if (mountedRef.current) setLastProbeStatus(null)
     } finally {
-      setLastProbedAt(new Date().toISOString())
+      if (mountedRef.current) setLastProbedAt(new Date().toISOString())
       inFlight.current = false
     }
   }, [])
 
   useEffect(() => {
+    mountedRef.current = true
     const handleOnline = () => {
       setIsBrowserOnline(true)
       void probe()
@@ -163,6 +165,7 @@ export function useConnection(): ConnectionState {
     document.addEventListener('visibilitychange', handleVisibility)
 
     return () => {
+      mountedRef.current = false
       window.removeEventListener('online', handleOnline)
       window.removeEventListener('offline', handleOffline)
       document.removeEventListener('visibilitychange', handleVisibility)

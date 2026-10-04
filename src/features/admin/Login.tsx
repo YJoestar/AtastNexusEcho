@@ -138,12 +138,16 @@ export function AdminLogin() {
                       className={cn('terminal-input pl-10', touched.email && !email.trim() && 'terminal-input-error')}
                       autoComplete="username"
                       autoFocus
+                      required
+                      aria-required="true"
+                      aria-invalid={touched.email && !email.trim() ? true : undefined}
+                      aria-describedby={touched.email && !email.trim() ? 'email-error' : undefined}
                       disabled={isLoading || authLoading}
                     />
                   </div>
                   {touched.email && !email.trim() && (
-                    <p className="mt-1.5 flex items-center gap-1 text-[0.62rem] text-nexus-danger">
-                      <BureauIcons.Alert className="bureau-icon w-3 h-3 flex-shrink-0" />
+                    <p id="email-error" role="alert" className="mt-1.5 flex items-center gap-1 text-[0.62rem] text-nexus-danger">
+                      <BureauIcons.Alert className="bureau-icon w-3 h-3 flex-shrink-0" aria-hidden="true" />
                       Operator ID is required
                     </p>
                   )}
@@ -167,6 +171,10 @@ export function AdminLogin() {
                       placeholder="[ CLASSIFIED ]"
                       className={cn('terminal-input pl-10 pr-12', touched.password && !password.trim() && 'terminal-input-error')}
                       autoComplete="current-password"
+                      required
+                      aria-required="true"
+                      aria-invalid={touched.password && !password.trim() ? true : undefined}
+                      aria-describedby={touched.password && !password.trim() ? 'password-error' : undefined}
                       disabled={isLoading || authLoading}
                     />
                     <button
@@ -174,6 +182,7 @@ export function AdminLogin() {
                       onClick={() => setShowPassword(!showPassword)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-nexus-textSubtle hover:text-nexus-text transition-colors"
                       aria-label={showPassword ? 'Mask key' : 'Show key'}
+                      aria-pressed={showPassword}
                     >
                       {showPassword ? (
                         <BureauIcons.EyeOff className="bureau-icon w-4 h-4" />
@@ -183,16 +192,16 @@ export function AdminLogin() {
                     </button>
                   </div>
                   {touched.password && !password.trim() && (
-                    <p className="mt-1.5 flex items-center gap-1 text-[0.62rem] text-nexus-danger">
-                      <BureauIcons.Alert className="bureau-icon w-3 h-3 flex-shrink-0" />
+                    <p id="password-error" role="alert" className="mt-1.5 flex items-center gap-1 text-[0.62rem] text-nexus-danger">
+                      <BureauIcons.Alert className="bureau-icon w-3 h-3 flex-shrink-0" aria-hidden="true" />
                       Access key is required
                     </p>
                   )}
                 </div>
 
                 {error && (
-                  <div className="flex items-start gap-2 rounded border border-nexus-danger/40 bg-nexus-dangerBg/30 px-3 py-2.5">
-                    <BureauIcons.AlertTriangle className="bureau-icon w-4 h-4 flex-shrink-0 text-nexus-danger mt-0.5" />
+                  <div role="alert" className="flex items-start gap-2 rounded border border-nexus-danger/40 bg-nexus-dangerBg/30 px-3 py-2.5">
+                    <BureauIcons.AlertTriangle className="bureau-icon w-4 h-4 flex-shrink-0 text-nexus-danger mt-0.5" aria-hidden="true" />
                     <p className="font-mono text-[0.68rem] text-nexus-danger">{error}</p>
                   </div>
                 )}
@@ -204,6 +213,7 @@ export function AdminLogin() {
                 <button
                   type="submit"
                   disabled={isLoading || authLoading}
+                  aria-busy={isLoading || authLoading}
                   className={cn(
                     'terminal-button w-full',
                     (isLoading || authLoading) && 'terminal-button-disabled',

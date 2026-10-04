@@ -9,7 +9,7 @@
  * admin-check Edge Function. The browser is untrusted.
  */
 
-import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react'
+import { createContext, useContext, useState, useCallback, useEffect, useRef, ReactNode } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { AdminUser } from '@/types'
 
@@ -32,14 +32,26 @@ export function AdminProvider({ children }: { children: ReactNode }) {
 
   const isAdmin = !!admin
 
+  const mountedRef = useRef(true)
+  // Only the newest admin check may write state: a slow response for an old
+  // session must not overwrite the result for the current one.
+  const checkSeqRef = useRef(0)
+  const loginInFlightRef = useRef<Promise<{ success: boolean; error?: string }> | null>(null)
+
+  useEffect(() => {
+    mountedRef.current = true
+    return () => { mountedRef.current = false }
+  }, [])
+
   const checkAdmin = useCallback(async (): Promise<boolean> => {
-    setIsLoading(true)
+    const seq = ++checkSeqRef.current
+    const isCurrent = () => mountedRef.current && seq === checkSeqRef.current
+    if (mountedRef.current) setIsLoading(true)
     try {
       const { data: { session } } = await supabase.auth.getSession()
 
       if (!session?.access_token) {
-        setAdmin(null)
-        setIsInitialized(true)
+        if (isCurrent()) setAdmin(null)
         return false
       }
 
@@ -52,7 +64,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       })
 
       if (error || !data) {
-        setAdmin(null)
+        if (isCurrent()) setAdmin(null)
         return false
       }
 
@@ -67,27 +79,45 @@ export function AdminProvider({ children }: { children: ReactNode }) {
           createdAt: '',
           lastLoginAt: null,
         }
-        setAdmin(adminData)
+        if (isCurrent()) setAdmin(adminData)
         return true
       } else {
-        setAdmin(null)
+        if (isCurrent()) setAdmin(null)
         return false
       }
     } catch (error) {
       console.error('Admin check failed:', error)
-      setAdmin(null)
+      if (isCurrent()) setAdmin(null)
       return false
     } finally {
-      setIsLoading(false)
-      setIsInitialized(true)
+      if (isCurrent()) {
+        setIsLoading(false)
+        setIsInitialized(true)
+      }
     }
   }, [])
 
   useEffect(() => {
-    checkAdmin()
+    void checkAdmin()
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
-      void checkAdmin()
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      // INITIAL_SESSION duplicates the check above. TOKEN_REFRESHED does not
+      // change who the user is, and re-checking on every refresh would flash
+      // the guard (unmounting the workstation) or sign an admin out on a blip.
+      if (event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') return
+      // Deferred: supabase-js holds its auth lock during this callback.
+      setTimeout(() => {
+        if (!mountedRef.current) return
+        if (event === 'SIGNED_OUT') {
+          // Signed out here or in another tab, or the refresh token was rejected.
+          checkSeqRef.current++
+          setAdmin(null)
+          setIsLoading(false)
+          setIsInitialized(true)
+          return
+        }
+        void checkAdmin()
+      }, 0)
     })
 
     return () => {
@@ -95,7 +125,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     }
   }, [checkAdmin])
 
-  const login = useCallback(async (email: string, password: string) => {
+  const performLogin = useCallback(async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -109,7 +139,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
       const isAuthorized = await checkAdmin()
 
       if (!isAuthorized) {
-        await supabase.auth.signOut()
+        await supabase.auth.signOut().catch(() => undefined)
         return { success: false, error: 'Not authorized as admin. Contact Bureau command.' }
       }
 
@@ -120,10 +150,28 @@ export function AdminProvider({ children }: { children: ReactNode }) {
     }
   }, [checkAdmin])
 
+  // Double-submit joins the attempt already in flight.
+  const login = useCallback((email: string, password: string) => {
+    if (loginInFlightRef.current) return loginInFlightRef.current
+    const attempt = performLogin(email, password).finally(() => {
+      loginInFlightRef.current = null
+    })
+    loginInFlightRef.current = attempt
+    return attempt
+  }, [performLogin])
+
   const logout = useCallback(async () => {
-    await supabase.auth.signOut()
-    setAdmin(null)
-    setIsInitialized(false)
+    try {
+      await supabase.auth.signOut()
+    } catch (error) {
+      console.warn('Admin sign out failed:', error)
+    } finally {
+      checkSeqRef.current++
+      if (mountedRef.current) {
+        setAdmin(null)
+        setIsInitialized(true)
+      }
+    }
   }, [])
 
   const value: AdminContextValue = {

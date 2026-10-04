@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
 import { BadRequestError, readJsonObject, requireString } from '../_shared/request.ts'
+import { preflightOrMethodError, dbError } from '../_shared/http.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -8,9 +9,8 @@ const corsHeaders = {
 }
 
 Deno.serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
-  }
+  const early = preflightOrMethodError(req, corsHeaders)
+  if (early) return early
 
   try {
     const token = req.headers.get('Authorization')?.replace('Bearer ', '') ?? ''
@@ -50,7 +50,7 @@ Deno.serve(async (req: Request) => {
     if (error) {
       console.error('submit_puzzle_answer error:', error)
       const status = mapSupabaseErrorToStatus(error)
-      const message = (error as { message?: string }).message ?? 'Submission failed'
+      const message = dbError(error as { code?: string; message?: string }).message
       return errorResponse(status, message)
     }
 

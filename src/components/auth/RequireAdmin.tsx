@@ -10,10 +10,11 @@ import { ReactNode } from 'react'
 import { useAdmin } from '@/app/providers/AdminProvider'
 
 export function RequireAdmin({ children }: { children: ReactNode }) {
-  const { isAdmin, isInitialized, isLoading } = useAdmin()
+  const { isAdmin, isInitialized } = useAdmin()
   const location = useLocation()
 
-  if (isLoading || !isInitialized) {
+  // Only the first check blocks: later re-checks must not unmount the workstation.
+  if (!isInitialized) {
     return <div className="flex items-center justify-center min-h-screen bg-nexus-bg">Checking permissions…</div>
   }
 

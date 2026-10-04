@@ -330,12 +330,13 @@ export function PlayerQR() {
     ].includes(cameraState)
 
     return (
-      <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
+      <div role="status" className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
         {stateInfo.icon}
         <h3 className="heading-4 mb-2">{stateInfo.title}</h3>
         <p className="text-nexus-textMuted mb-6 max-w-xs">{stateInfo.description}</p>
         {isRetryable && (
           <button
+            type="button"
             onClick={startScan}
             className="btn-primary touch-target-comfortable"
           >
@@ -386,6 +387,7 @@ export function PlayerQR() {
                 {CAMERA_STATE_LABELS[cameraState].description}
               </p>
               <button
+                type="button"
                 onClick={startScan}
                 className="nexus-btn-primary min-h-11 w-full max-w-xs font-mono text-xs uppercase tracking-[0.12em]"
                 disabled={isOffline}
@@ -416,6 +418,7 @@ export function PlayerQR() {
                 )}
                 playsInline
                 muted
+                aria-label="Camera viewfinder"
               />
               <canvas ref={canvasRef} className="hidden" aria-hidden="true" />
 
@@ -461,6 +464,7 @@ export function PlayerQR() {
 
               {cameraState !== 'SCANNING' && (
                 <button
+                  type="button"
                   onClick={stopScan}
                   className="absolute top-4 right-4 p-2 bg-nexus-dangerBg border border-nexus-danger/30 text-nexus-danger hover:bg-nexus-danger/20 transition-colors touch-target-primary"
                   aria-label="Exit viewfinder"

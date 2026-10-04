@@ -49,9 +49,12 @@ const invoke = vi.hoisted(() => vi.fn())
 vi.mock('@/lib/supabase/client', () => ({
   supabase: {
     functions: { invoke: (...args: unknown[]) => invoke(...args) },
+    channel: () => { const c = { on: () => c, subscribe: () => c }; return c },
+    removeChannel: async () => 'ok',
     auth: {
       getSession: async () => ({ data: { session: null }, error: null }),
       setSession: async () => ({ error: null }),
+      onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => undefined } } }),
     },
   },
   getSupabase: () => ({ functions: { invoke } }),

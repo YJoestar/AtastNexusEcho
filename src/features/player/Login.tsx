@@ -147,27 +147,29 @@ export function PlayerLogin() {
                       maxLength={LOGIN_CODE_LENGTH}
                       disabled={isLoading}
                       autoFocus
+                      aria-invalid={(formatError || inputWarning) ? true : undefined}
+                      aria-describedby={cn(!accessCode && 'accessCode-hint', formatError && 'accessCode-format', inputWarning && 'accessCode-warning') || undefined}
                     />
                   </div>
                   {!accessCode && (
-                    <p className="mt-2 flex items-start gap-1.5 text-[0.62rem] text-nexus-textSubtle">
+                    <p id="accessCode-hint" className="mt-2 flex items-start gap-1.5 text-[0.62rem] text-nexus-textSubtle">
                       <span>Enter the {LOGIN_CODE_LENGTH}-character Logic Code from the Bureau. Format: A-Z and 2-9 (no I, O, 0, 1).</span>
                     </p>
                   )}
                   {formatError && (
-                    <p className="mt-2 flex items-start gap-1.5 text-[0.62rem] text-nexus-danger" role="alert">
+                    <p id="accessCode-format" className="mt-2 flex items-start gap-1.5 text-[0.62rem] text-nexus-danger" role="alert">
                       <span>• {formatError}</span>
                     </p>
                   )}
                   {inputWarning && (
-                    <p className="mt-2 flex items-start gap-1.5 text-[0.62rem] text-nexus-danger" role="alert">
+                    <p id="accessCode-warning" className="mt-2 flex items-start gap-1.5 text-[0.62rem] text-nexus-danger" role="alert">
                       <span>• {inputWarning}</span>
                     </p>
                   )}
                 </div>
 
                 {error && (
-                  <div className="flex items-start gap-2 border border-nexus-danger/40 bg-nexus-dangerBg/20 px-3 py-2.5">
+                  <div role="alert" className="flex items-start gap-2 border border-nexus-danger/40 bg-nexus-dangerBg/20 px-3 py-2.5">
                     <span className="text-[0.68rem] font-mono text-nexus-danger">ACCESS DENIED — {error}</span>
                   </div>
                 )}
@@ -175,6 +177,7 @@ export function PlayerLogin() {
                 <button
                   type="submit"
                   disabled={isLoading || !isComplete}
+                  aria-busy={isLoading}
                   className={cn(
                     'handset-button w-full',
                     !isComplete && 'handset-button-inactive',

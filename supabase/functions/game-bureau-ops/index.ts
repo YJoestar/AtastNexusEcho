@@ -7,6 +7,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
 import { BadRequestError, readJsonObject, requireUuid } from '../_shared/request.ts'
+import { preflightOrMethodError, dbError } from '../_shared/http.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -15,9 +16,8 @@ const corsHeaders = {
 }
 
 Deno.serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
-  }
+  const early = preflightOrMethodError(req, corsHeaders)
+  if (early) return early
 
   try {
     const supabaseAdmin = createClient(
@@ -86,13 +86,18 @@ Deno.serve(async (req: Request) => {
         })
         if (error) {
           console.error('bureau_manual_unlock error:', error)
-          return errorResponse(500, error.message || 'Failed to unlock node')
+          return dbErrorResponse(error)
         }
         result = data
         break
       }
 
       case 'reset_node': {
+        // Irreversible (deletes the attempt history): SUPER_ADMIN only. The
+        // database enforces it too (42501), this just answers before any work.
+        if (adminRecord.role !== 'SUPER_ADMIN') {
+          return errorResponse(403, 'This action requires a super administrator')
+        }
         if (!nodeId && !nodeCode) {
           return errorResponse(400, 'Missing nodeId or nodeCode')
         }
@@ -107,7 +112,7 @@ Deno.serve(async (req: Request) => {
         })
         if (error) {
           console.error('bureau_reset_node error:', error)
-          return errorResponse(500, error.message || 'Failed to reset node')
+          return dbErrorResponse(error)
         }
         result = data
         break
@@ -126,7 +131,7 @@ Deno.serve(async (req: Request) => {
         })
         if (error) {
           console.error('bureau_get_node_detail error:', error)
-          return errorResponse(500, 'Failed to fetch node detail')
+          return dbErrorResponse(error)
         }
         result = data
         break
@@ -139,7 +144,7 @@ Deno.serve(async (req: Request) => {
         const { data, error } = await supabaseAdminUser.rpc('get_available_nodes')
         if (error) {
           console.error('get_available_nodes error:', error)
-          return errorResponse(500, 'Failed to fetch available nodes')
+          return dbErrorResponse(error)
         }
         result = data
         break
@@ -165,6 +170,11 @@ async function resolveNodeCode(supabaseAdmin: ReturnType<typeof createClient>, n
     .single()
   if (error || !data) return null
   return (data as { id: string }).id
+}
+
+function dbErrorResponse(error: { code?: string | null; message?: string | null }) {
+  const { status, message } = dbError(error)
+  return errorResponse(status, message)
 }
 
 function jsonResponse(status: number, body: unknown) {

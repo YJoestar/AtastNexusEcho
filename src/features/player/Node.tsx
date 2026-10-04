@@ -46,17 +46,34 @@ export function PlayerNode() {
   const [showHintPanel, setShowHintPanel] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  // A failed submit or hint keeps the puzzle on screen; only a failed load blocks it.
+  const [actionError, setActionError] = useState<string | null>(null)
   const [justSolved, setJustSolved] = useState(false)
   const hintIndexRef = useRef(0)
+  const hintBusyRef = useRef(false)
+  const mountedRef = useRef(true)
+  const leaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    mountedRef.current = true
+    return () => {
+      mountedRef.current = false
+      if (leaveTimerRef.current) clearTimeout(leaveTimerRef.current)
+    }
+  }, [])
 
   useEffect(() => {
     if (!nodeId || !role) return
 
+    // A slow response for a node the player already left must not overwrite the current one.
+    let cancelled = false
     const loadNode = async () => {
       setLoading(true)
       setError(null)
+      setActionError(null)
       try {
         const nodeData = await fetchNode(nodeId)
+        if (cancelled) return
         setNode(nodeData)
         setShowHintPanel(false)
         setJustSolved(false)
@@ -65,14 +82,16 @@ export function PlayerNode() {
         setAnswer('')
         hintIndexRef.current = nodeData?.hintsUsed ?? 0
       } catch (err: unknown) {
+        if (cancelled) return
         const msg = err instanceof Error ? err.message : 'Failed to load node'
         setError(msg)
       } finally {
-        setLoading(false)
+        if (!cancelled) setLoading(false)
       }
     }
 
-    loadNode()
+    void loadNode()
+    return () => { cancelled = true }
   }, [nodeId, role, fetchNode])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -80,9 +99,10 @@ export function PlayerNode() {
     if (!answer.trim() || isSubmitting || !nodeId) return
 
     setIsSubmitting(true)
-    setError(null)
+    setActionError(null)
     try {
       const result = await submitAnswer(nodeId, answer.trim())
+      if (!mountedRef.current) return
 
       setSubmissions(prev => [...prev, {
         answer: answer.trim(),
@@ -103,16 +123,18 @@ export function PlayerNode() {
           refreshGameState()
           refreshTeamProgress()
         }
-        setTimeout(() => {
+        if (leaveTimerRef.current) clearTimeout(leaveTimerRef.current)
+        leaveTimerRef.current = setTimeout(() => {
           navigate(ROUTES.PLAYER_GAME, { replace: true })
         }, 2000)
       }
       setAnswer('')
     } catch (err: unknown) {
+      if (!mountedRef.current) return
       const msg = err instanceof Error ? err.message : 'Submission failed'
-      setError(msg)
+      setActionError(msg)
     } finally {
-      setIsSubmitting(false)
+      if (mountedRef.current) setIsSubmitting(false)
     }
   }
 
@@ -120,9 +142,13 @@ export function PlayerNode() {
     if (!nodeId || !node) return
     const nextHintNumber = hintIndexRef.current + 1
     if (nextHintNumber > 3) return
+    // Each hint costs time: a double tap must not buy two.
+    if (hintBusyRef.current) return
+    hintBusyRef.current = true
 
     try {
       const result = await requestHint(nodeId, nextHintNumber)
+      if (!mountedRef.current) return
       setHints(prev => [...prev, {
         level: nextHintNumber,
         text: result.hint,
@@ -130,8 +156,11 @@ export function PlayerNode() {
       }])
       hintIndexRef.current = nextHintNumber
     } catch (err: unknown) {
+      if (!mountedRef.current) return
       const msg = err instanceof Error ? err.message : 'Failed to get hint'
-      setError(msg)
+      setActionError(msg)
+    } finally {
+      hintBusyRef.current = false
     }
   }
 
@@ -197,7 +226,7 @@ RETURN TO FIELD
             className="p-2 border border-nexus-borderSubtle text-nexus-textMuted hover:text-nexus-text touch-target-primary"
             aria-label="RETURN TO FIELD"
           >
-            <BureauIcons.Back className="bureau-icon w-5 h-5" />
+            <BureauIcons.Back className="bureau-icon w-5 h-5" aria-hidden="true" />
           </Link>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
@@ -410,9 +439,16 @@ RETURN TO FIELD
                   className="input font-mono text-lg text-center"
                   autoComplete="off"
                   disabled={isSubmitting}
+                  aria-invalid={actionError ? true : undefined}
+                  aria-describedby={cn(isOffline && 'answer-offline', actionError && 'answer-error') || undefined}
                 />
+                {actionError && (
+                  <p id="answer-error" role="alert" className="mt-1.5 text-sm text-nexus-danger">
+                    {actionError}
+                  </p>
+                )}
                 {isOffline && (
-                  <p className="mt-1.5 text-sm text-nexus-warning flex items-center gap-1.5">
+                  <p id="answer-offline" className="mt-1.5 text-sm text-nexus-warning flex items-center gap-1.5">
                     <BureauIcons.Alert className="bureau-icon w-3.5 h-3.5 flex-shrink-0" aria-hidden="true" />
                     <span>No signal — your answer will be queued and sent on reconnect</span>
                   </p>
@@ -426,12 +462,12 @@ RETURN TO FIELD
               >
                 {isSubmitting ? (
                   <>
-                    <BureauIcons.Spinner className="bureau-icon w-5 h-5 animate-spin" />
+                    <BureauIcons.Spinner className="bureau-icon w-5 h-5 animate-spin" aria-hidden="true" />
                     <span>TRANSMITTING…</span>
                   </>
                 ) : (
                   <>
-                    <BureauIcons.Send className="bureau-icon w-5 h-5" />
+                    <BureauIcons.Send className="bureau-icon w-5 h-5" aria-hidden="true" />
                     <span>{isOffline ? 'QUEUE SOLUTION' : 'TRANSMIT'}</span>
                   </>
                 )}
@@ -441,7 +477,7 @@ RETURN TO FIELD
             {/* Submission Status */}
             {submissions.length > 0 && (
               <RegisterColumn heading={`Recent Attempts (${submissions.length})`}>
-                <div className="space-y-1 max-h-40 overflow-y-auto">
+                <div className="space-y-1 max-h-40 overflow-y-auto" role="log" aria-live="polite" aria-label="Recent attempts">
                   {submissions.slice(-5).map((sub, i) => (
                     <div
                       key={i}

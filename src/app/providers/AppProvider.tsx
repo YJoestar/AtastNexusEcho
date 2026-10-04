@@ -5,7 +5,7 @@
  * and device binding. Replaces the legacy localStorage-based approach.
  */
 
-import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react'
+import { createContext, useContext, useState, useCallback, useEffect, useRef, ReactNode } from 'react'
 import type { Player, Team, Role, TeamStatus, PlayerStatus, TeamProgress, Notification, GameState, NodeProgress, ProgressMetadata, GameStatus, GamePhase } from '@/types'
 import { supabase } from '@/lib/supabase'
 import { gameAPI } from '@/lib/game'
@@ -23,6 +23,17 @@ function readFunctionErrorMessage(error: unknown): string | null {
   if (!context || typeof context !== 'object') return null
   const message = (context as { error?: unknown }).error
   return typeof message === 'string' && message.length > 0 ? message : null
+}
+
+const PLAYER_SESSION_STORAGE_KEY = 'nexus_player_session'
+
+/** Storage is a convenience: a full, blocked or private-mode store must never fail a login. */
+function safeStorageSet(key: string, value: string): void {
+  try { window.localStorage.setItem(key, value) } catch { /* optional */ }
+}
+
+function safeStorageRemove(key: string): void {
+  try { window.localStorage.removeItem(key) } catch { /* optional */ }
 }
 
 export interface AppContextValue {
@@ -75,24 +86,112 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const role = player?.role ?? null
   const isAuthenticated = !!player && !!team
 
+  // Guards against setState after unmount, and against a slow response for one
+  // user landing after the session has moved on to another.
+  const mountedRef = useRef(true)
+  const authUserIdRef = useRef<string | null>(null)
+  const loginInFlightRef = useRef<Promise<{ success: boolean; error?: string }> | null>(null)
+
+  useEffect(() => {
+    mountedRef.current = true
+    return () => { mountedRef.current = false }
+  }, [])
+
+  const clearSessionState = useCallback(() => {
+    authUserIdRef.current = null
+    setPlayer(null)
+    setTeam(null)
+    setGameState(null)
+    setTeamProgress(null)
+    setNotifications([])
+    safeStorageRemove(PLAYER_SESSION_STORAGE_KEY)
+  }, [])
+
   useEffect(() => {
     const init = async () => {
-      // Try to load existing session
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      try {
+        // Try to load existing session. An expired session whose refresh token
+        // is rejected comes back as no session, not as a crash.
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
 
-      if (sessionError) {
-        console.warn('Session load error:', sessionError)
+        if (sessionError) {
+          console.warn('Session load error:', sessionError)
+        }
+
+        if (session?.user && mountedRef.current) {
+          authUserIdRef.current = session.user.id
+          await loadPlayerSession(session.user.id)
+        }
+      } catch (error) {
+        // A rejected getSession() must not leave the guards on "Loading session…" forever.
+        console.error('Session init failed:', error)
+      } finally {
+        if (mountedRef.current) setIsInitializing(false)
       }
-
-      if (session?.user) {
-        await loadPlayerSession(session.user.id)
-      }
-
-      setIsInitializing(false)
     }
 
-    init()
+    void init()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Follow the Supabase session after startup: sign-out or sign-in in another
+  // tab, and a token refresh that fails (supabase-js then emits SIGNED_OUT).
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      // Defer: supabase-js holds its auth lock while it runs this callback, so
+      // calling back into the client synchronously can deadlock.
+      setTimeout(() => {
+        if (!mountedRef.current) return
+        if (event === 'SIGNED_OUT' || (!session && event !== 'INITIAL_SESSION')) {
+          clearSessionState()
+          return
+        }
+        const nextUserId = session?.user?.id ?? null
+        if (
+          nextUserId &&
+          authUserIdRef.current !== null &&
+          nextUserId !== authUserIdRef.current &&
+          (event === 'SIGNED_IN' || event === 'USER_UPDATED')
+        ) {
+          // Another tab signed in as someone else: this tab must not keep
+          // showing (or acting as) the previous player.
+          authUserIdRef.current = nextUserId
+          void loadPlayerSession(nextUserId)
+        }
+      }, 0)
+    })
+    return () => subscription.unsubscribe()
+  }, [clearSessionState]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Realtime team status; owned by an effect so it is torn down on logout/unmount.
+  const teamId = team?.id
+  useEffect(() => {
+    if (!teamId) return
+    const channel = supabase
+      .channel(`team:${teamId}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'teams', filter: `id=eq.${teamId}` },
+        (payload) => {
+          const updatedTeam = payload.new as {
+            status: string
+            score: number
+            started_at: string | null
+            completed_at: string | null
+          }
+          setTeam(prev => prev && {
+            ...prev,
+            status: updatedTeam.status as TeamStatus,
+            score: updatedTeam.score,
+            startedAt: updatedTeam.started_at,
+            completedAt: updatedTeam.completed_at,
+          })
+        },
+      )
+      .subscribe()
+    return () => {
+      void supabase.removeChannel(channel)
+    }
+  }, [teamId])
 
   const loadPlayerSession = useCallback(async (authUserId: string) => {
     try {
@@ -137,37 +236,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
         score: t.score,
         metadata: t.metadata as unknown as Team['metadata'],
       }
+      // Stale: unmounted, or the session moved to another user while we fetched.
+      if (!mountedRef.current || authUserIdRef.current !== authUserId) return
       setPlayer(mappedPlayer)
       setTeam(mappedTeam)
-
-      // Subscribe to realtime team status changes
-      const channel = supabase
-        .channel(`team:${mappedTeam.id}`)
-        .on(
-          'postgres_changes',
-          { event: 'UPDATE', schema: 'public', table: 'teams', filter: `id=eq.${mappedTeam.id}` },
-          (payload) => {
-            const updatedTeam = payload.new as typeof t
-            setTeam(prev => ({
-              ...(prev as Team),
-              status: updatedTeam.status as TeamStatus,
-              score: updatedTeam.score,
-              startedAt: updatedTeam.started_at,
-              completedAt: updatedTeam.completed_at,
-            }))
-          },
-        )
-        .subscribe()
-
-      return () => {
-        supabase.removeChannel(channel)
-      }
     } catch (error) {
       console.error('Failed to load player session:', error)
     }
   }, [])
 
-  const login = useCallback(async (accessCode: string, deviceInfo?: Record<string, unknown>) => {
+  const performLogin = useCallback(async (accessCode: string, deviceInfo?: Record<string, unknown>): Promise<{ success: boolean; error?: string }> => {
     try {
       // Collect and hash device fingerprint
       const fingerprint = collectDeviceFingerprint()
@@ -214,10 +292,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
       // The edge function returns the auth session tokens directly.
       // Set the session in the browser's Supabase Auth client.
       if (result.session) {
-        await supabase.auth.setSession({
+        const { data: sessionData, error: setSessionError } = await supabase.auth.setSession({
           access_token: result.session.access_token,
           refresh_token: result.session.refresh_token,
         })
+        if (setSessionError) {
+          return { success: false, error: 'Could not start a secure session. Please try again.' }
+        }
+        authUserIdRef.current = sessionData?.user?.id ?? null
       }
 
       if (!result.player || !result.team) {
@@ -255,8 +337,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         metadata: { registeredBy: 'PLAYER', assignedRoles: false } as Team['metadata'],
       }
 
-      setPlayer(mappedPlayer)
-      setTeam(mappedTeam)
+      if (mountedRef.current) {
+        setPlayer(mappedPlayer)
+        setTeam(mappedTeam)
+      }
 
       // Store non-sensitive session metadata for quick UI recovery
       // NOTE: Access tokens are managed by Supabase Auth (cookies/memory),
@@ -272,7 +356,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         createdAt: new Date().toISOString(),
       }
 
-      localStorage.setItem('nexus_player_session', JSON.stringify(sessionMeta))
+      safeStorageSet(PLAYER_SESSION_STORAGE_KEY, JSON.stringify(sessionMeta))
 
       return { success: true }
     } catch (error) {
@@ -281,15 +365,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  // A second submit while one is in flight (double tap, Enter + click) joins the
+  // first instead of starting another login against the one-time code.
+  const login = useCallback((accessCode: string, deviceInfo?: Record<string, unknown>) => {
+    if (loginInFlightRef.current) return loginInFlightRef.current
+    const attempt = performLogin(accessCode, deviceInfo).finally(() => {
+      loginInFlightRef.current = null
+    })
+    loginInFlightRef.current = attempt
+    return attempt
+  }, [performLogin])
+
   const logout = useCallback(async () => {
-    await supabase.auth.signOut()
-    setPlayer(null)
-    setTeam(null)
-    setGameState(null)
-    setTeamProgress(null)
-    setNotifications([])
-    localStorage.removeItem('nexus_player_session')
-  }, [])
+    try {
+      await supabase.auth.signOut()
+    } catch (error) {
+      // Offline or server error: the local session is still ended below.
+      console.warn('Sign out failed:', error)
+    } finally {
+      if (mountedRef.current) clearSessionState()
+      else authUserIdRef.current = null
+    }
+  }, [clearSessionState])
 
   const refreshGameState = useCallback(async () => {
     if (!team) return

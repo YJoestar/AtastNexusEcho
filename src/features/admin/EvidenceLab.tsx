@@ -7,6 +7,7 @@ import { buildEvidenceCatalog } from '@/lib/evidenceCatalog'
 import { cn } from '@/lib/utils'
 import { ArtifactInspection } from '@/features/player/evidence/ArtifactInspection'
 import { InvestigationTable } from '@/features/player/evidence/InvestigationTable'
+import { evidenceImportance } from '@/lib/evidence/importance'
 import { artifactType, artifactCondition, artifactState, artifactThumbUrl, type CaseArtifact } from '@/features/player/evidence/types'
 import { showcaseCatalog, showcaseEnabled, SHOWCASE_LABEL, SHOWCASE_CASE } from '@/lib/evidence/showcaseCatalog'
 import { type EvidenceMark } from '@/lib/investigationWorkspace'
@@ -85,6 +86,7 @@ export function AdminEvidenceLab() {
     return visibleArtifacts.filter(artifact => matchesFilter(artifact, filter)
       && (!query || `${artifact.code} ${artifact.title} ${artifact.type} ${artifact.location ?? ''} ${artifact.description}`.toLowerCase().includes(query)))
   }, [visibleArtifacts, filter, search])
+  const importance = useMemo(() => evidenceImportance(visibleArtifacts), [visibleArtifacts])
   const selectedArtifact = visibleArtifacts.find(artifact => artifact.id === selectedId) ?? null
   const comparedArtifacts = compareIds.map(id => visibleArtifacts.find(artifact => artifact.id === id)).filter((item): item is CaseArtifact => !!item)
   const annotationsCount = Object.values(workspace.annotations).reduce((total, entries) => total + entries.length, 0)
@@ -330,6 +332,7 @@ export function AdminEvidenceLab() {
                       {condition !== 'NORMAL' && <span className="text-nexus-warning">{condition} / </span>}
                       {(state === 'CONTRADICTED' || state === 'ANOMALOUS') && <span className="text-nexus-danger">{state} / </span>}
                       {artifact.simulation && <span className="text-nexus-info">{SHOWCASE_LABEL} / </span>}
+                      {importance.has(artifact.code) && <span>{importance.get(artifact.code)?.importance} / </span>}
                       {currentMark}{onTable ? ' / PLACED' : ''}
                     </span>
                     <button type="button" onClick={() => setCompareIds(current => current.includes(artifact.id) ? current.filter(id => id !== artifact.id) : [...current.slice(-1), artifact.id])} aria-pressed={isSelectedForCompare} className={cn('shrink-0 border px-1.5 py-1', isSelectedForCompare ? 'border-nexus-warning text-nexus-warning' : 'border-nexus-border')}>COMPARE</button>
@@ -456,6 +459,8 @@ export function AdminEvidenceLab() {
                 <StateLine label="TYPE" value={artifactType(selectedArtifact)} />
                 <StateLine label="COND" value={artifactCondition(selectedArtifact)} />
                 <StateLine label="STATE" value={artifactState(selectedArtifact)} />
+                <StateLine label="IMPORTANCE" value={importance.get(selectedArtifact.code)?.importance ?? 'BACKGROUND'} />
+                <StateLine label="CLUES" value={importance.get(selectedArtifact.code)?.clues ?? 0} />
                 <StateLine label="CASE" value={selectedArtifact.simulation ? `${SHOWCASE_CASE.id} / ${SHOWCASE_LABEL}` : '037 / SIMULATION'} />
                 <StateLine label="SOURCE" value={selectedArtifact.content.source ? String(selectedArtifact.content.source) : 'UNKNOWN'} />
                 <StateLine label="LOCATION" value={selectedArtifact.location ?? 'UNKNOWN'} />

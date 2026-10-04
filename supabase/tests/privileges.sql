@@ -38,14 +38,14 @@ select pg_temp.must_fail($$select * from bureau_reissue_login_codes('00000000-00
 select pg_temp.must_fail($$select * from verify_player_login('x','y','{}'::jsonb)$$, 'anon', 'anon', '');
 select pg_temp.must_fail($$select set_player_device_binding('00000000-0000-0000-0000-000000000000','h')$$, 'anon', 'anon', '');
 select pg_temp.must_fail($$select count(*) from game_events$$, 'anon', 'anon', '');
-select pg_temp.must_fail($$insert into login_rate_limits(ip_address) values ('9.9.9.9')$$, 'anon', 'anon', '');
+select pg_temp.must_fail($$insert into login_rate_limit_buckets(key,window_seconds) values ('ip:9.9.9.9',60)$$, 'anon', 'anon', '');
 select pg_temp.must_fail($$delete from locations$$, 'anon', 'anon', '');
 -- a signed-in player is not an administrator
 select pg_temp.must_fail($$select * from bureau_create_team('x')$$, 'authenticated', 'authenticated', '00000000-0000-0000-0000-0000000000b1');
 select pg_temp.must_fail($$select * from bureau_reset_team('00000000-0000-0000-0000-000000000000','x')$$, 'authenticated', 'authenticated', '00000000-0000-0000-0000-0000000000b1');
 select pg_temp.must_fail($$select * from bureau_manual_unlock('00000000-0000-0000-0000-000000000000','00000000-0000-0000-0000-000000000000','x')$$, 'authenticated', 'authenticated', '00000000-0000-0000-0000-0000000000b1');
 select pg_temp.must_fail($$select * from verify_player_login('x','y','{}'::jsonb)$$, 'authenticated', 'authenticated', '00000000-0000-0000-0000-0000000000b1');
-select pg_temp.must_fail($$select count(*) from login_rate_limits$$, 'authenticated', 'authenticated', '00000000-0000-0000-0000-0000000000b1');
+select pg_temp.must_fail($$select count(*) from login_rate_limit_buckets$$, 'authenticated', 'authenticated', '00000000-0000-0000-0000-0000000000b1');
 -- the answers never leave the server through the table API
 select pg_temp.must_fail($$select answer_metadata from puzzle_nodes$$, 'anon', 'anon', '');
 select pg_temp.must_fail($$select code from puzzle_nodes$$, 'anon', 'anon', '');
@@ -63,7 +63,7 @@ select pg_temp.must_fail($$delete from notifications$$, 'authenticated', 'authen
 select pg_temp.must_pass($$select * from bureau_create_team('ADMIN TEAM')$$, 'authenticated', 'authenticated', '00000000-0000-0000-0000-0000000000a1');
 select pg_temp.must_pass($$select bureau_list_locations()$$, 'authenticated', 'authenticated', '00000000-0000-0000-0000-0000000000a1');
 select pg_temp.must_pass($$select * from bureau_create_team('SERVICE TEAM')$$, 'service_role', 'service_role', '');
-select pg_temp.must_pass($$select count(*) from login_rate_limits$$, 'service_role', 'service_role', '');
+select pg_temp.must_pass($$select count(*) from login_rate_limit_buckets$$, 'service_role', 'service_role', '');
 select pg_temp.must_pass($$select answer_metadata from puzzle_nodes$$, 'service_role', 'service_role', '');
 -- players keep the RPCs the game calls
 select pg_temp.must_pass($$select * from get_leaderboard()$$, 'authenticated', 'authenticated', '00000000-0000-0000-0000-0000000000b1');

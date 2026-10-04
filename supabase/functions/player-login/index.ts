@@ -15,8 +15,10 @@
  */
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
-import { isValidLoginCode } from '../_shared/logicCode.ts'
+import { isValidLoginCode, isValidTeamCode } from '../_shared/logicCode.ts'
 import { BadRequestError, readJsonObject } from '../_shared/request.ts'
+import { preflightOrMethodError } from '../_shared/http.ts'
+import { clientAddress, loginRateLimitRequest } from '../_shared/clientKey.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -25,9 +27,8 @@ const corsHeaders = {
 }
 
 Deno.serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
-  }
+  const early = preflightOrMethodError(req, corsHeaders)
+  if (early) return early
 
   try {
     const supabaseAdmin = createClient(
@@ -36,24 +37,43 @@ Deno.serve(async (req: Request) => {
       { auth: { autoRefreshToken: false, persistSession: false } },
     )
 
-    // Rate limiting: track attempts per IP address
-    const clientIP = req.headers.get('x-forwarded-for')?.split(',')[0].trim() ?? 'unknown'
-    const { count: attemptCount, error: rateLimitError } = await supabaseAdmin
-      .from('login_rate_limits')
-      .select('id', { count: 'exact' })
-      .eq('ip_address', clientIP)
-      .gte('created_at', new Date(Date.now() - 60_000).toISOString())
-
-    if (rateLimitError) {
+    // Rate limiting. Every attempt is counted BEFORE anything else is checked
+    // (malformed bodies and wrong formats cost the attacker a try too), in one
+    // atomic call over several keys: the client network (trusted proxy header,
+    // IPv6 by /64), the team code when the client sends one, and a global
+    // breaker against distributed guessing. A successful login does not reset
+    // any counter. See login_rate_limit_hit in migration 2026100309.
+    let body: Record<string, unknown> | null = null
+    let bodyError: BadRequestError | null = null
+    try {
+      body = await readJsonObject(req)
+    } catch (err: unknown) {
+      if (!(err instanceof BadRequestError)) throw err
+      bodyError = err
+    }
+    const teamCode = typeof body?.teamCode === 'string' && isValidTeamCode(body.teamCode.toUpperCase())
+      ? body.teamCode.toUpperCase()
+      : null
+    const rl = loginRateLimitRequest(clientAddress(req.headers), teamCode)
+    const { data: rlData, error: rateLimitError } = await supabaseAdmin.rpc('login_rate_limit_hit', {
+      p_keys: rl.keys,
+      p_limits: rl.limits,
+      p_windows: rl.windows,
+    })
+    const verdict = Array.isArray(rlData) ? rlData[0] : rlData
+    if (rateLimitError || !verdict) {
+      // Fail closed: without a working limiter the login must not be open to guessing.
       console.error('Rate limit check error:', rateLimitError)
       return errorResponse(500, 'Internal server error')
     }
-
-    if ((attemptCount ?? 0) >= 10) {
-      return errorResponse(429, 'Too many login attempts. Please try again later.')
+    if (!verdict.allowed) {
+      return jsonResponse(429, { success: false, error: 'Too many login attempts. Please try again later.' }, {
+        'Retry-After': String(verdict.retry_after_seconds ?? 60),
+      })
     }
 
-    const { code, deviceFingerprint, deviceInfo } = await readJsonObject(req)
+    if (bodyError || !body) throw bodyError ?? new BadRequestError('Request body must be a JSON object')
+    const { code, deviceFingerprint, deviceInfo } = body
 
     // Exact same rule as the generator and the client input: LOGIN_CODE_LENGTH
     // characters from A-Z and 2-9, with I, O, 0 and 1 rejected. Anything else
@@ -66,11 +86,6 @@ Deno.serve(async (req: Request) => {
     if (!deviceFingerprint || typeof deviceFingerprint !== 'string' || deviceFingerprint.length > 200) {
       return errorResponse(401, 'Invalid access code')
     }
-
-    // Record this attempt for rate limiting
-    await supabaseAdmin.from('login_rate_limits').insert({
-      ip_address: clientIP,
-    })
 
     // Call the atomic login flow function
     const { data: loginData, error: loginError } = await supabaseAdmin.rpc(
@@ -139,12 +154,6 @@ Deno.serve(async (req: Request) => {
       return errorResponse(401, 'Invalid access code')
     }
 
-    // Clear rate limit entries for this IP on successful login
-    await supabaseAdmin
-      .from('login_rate_limits')
-      .delete()
-      .eq('ip_address', clientIP)
-
     const session = authData.session
 
     return jsonResponse(200, {
@@ -172,10 +181,10 @@ Deno.serve(async (req: Request) => {
   }
 })
 
-function jsonResponse(status: number, body: unknown) {
+function jsonResponse(status: number, body: unknown, extraHeaders: Record<string, string> = {}) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    headers: { ...corsHeaders, ...extraHeaders, 'Content-Type': 'application/json' },
   })
 }
 

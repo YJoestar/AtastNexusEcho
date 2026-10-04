@@ -16,9 +16,12 @@ import { CompareStation } from './CompareStation'
 import { contentString, artifactType, artifactCondition, artifactState, artifactThumbUrl, type CaseArtifact } from './types'
 import { showcaseCatalog, showcaseEnabled } from '@/lib/evidence/showcaseCatalog'
 import { searchArtifacts, type SearchHit } from '@/lib/evidence/search'
+import { deriveSeries, seriesPosition, sortChronologically, captureTimeOf } from '@/lib/evidence/series'
+import { mediumFacts } from '@/lib/evidence/facts'
 import { cn } from '@/lib/utils'
 
 type ArchiveClass = 'ALL' | 'PHOTOGRAPHS' | 'DOCUMENTS' | 'AUDIO' | 'SURVEILLANCE' | 'FRAGMENTS' | 'NOTES' | 'VERIFIED' | 'UNRESOLVED' | 'ANOMALOUS'
+type ArchiveSort = 'RECOVERED' | 'CHRONOLOGY'
 type WorkspaceMode = 'ARCHIVE' | 'INSPECT' | 'COMPARE' | 'TABLE'
 
 const ARCHIVE_TABS: { id: ArchiveClass; label: string }[] = [
@@ -91,6 +94,7 @@ export function PlayerEvidenceArchive() {
   const { workspace, updateWorkspace } = useInvestigationWorkspace(team?.id)
   const [archiveClass, setArchiveClass] = useState<ArchiveClass>('ALL')
   const [search, setSearch] = useState(() => searchParams.get('q') ?? '')
+  const [sort, setSort] = useState<ArchiveSort>('RECOVERED')
   const [compareIds, setCompareIds] = useState<string[]>([])
   const [mode, setMode] = useState<WorkspaceMode>(() => (searchParams.get('view') === 'table' ? 'TABLE' : 'ARCHIVE'))
   const viewParam = searchParams.get('view')
@@ -257,9 +261,12 @@ export function PlayerEvidenceArchive() {
       if (!matchesClass) return false
       return !searching || hits.has(artifact.id)
     })
-    // While searching, the best match leads.
+    // Chronology is an explicit choice and wins; otherwise the best match leads while searching.
+    if (sort === 'CHRONOLOGY') return sortChronologically(list)
     return searching ? list.sort((a, b) => (hits.get(b.id)?.score ?? 0) - (hits.get(a.id)?.score ?? 0)) : list
-  }, [artifacts, archiveClass, searching, hits, workspace.annotations, workspace.marks])
+  }, [artifacts, archiveClass, searching, hits, sort, workspace.annotations, workspace.marks])
+
+  const series = useMemo(() => deriveSeries(artifacts), [artifacts])
 
   /** Chase a term noticed in one record through every other. */
   const traceTerm = (term: string) => {
@@ -393,6 +400,20 @@ export function PlayerEvidenceArchive() {
                   </p>
                 )}
                 <FileTabs tabs={ARCHIVE_TABS} activeId={archiveClass} onSelect={id => setArchiveClass(id as ArchiveClass)} className="!flex-nowrap overflow-x-auto nx-chiprow" />
+                <div className="flex items-center gap-2 font-mono text-[0.68rem] uppercase tracking-[0.12em] text-nexus-textSubtle" role="group" aria-label="Order records">
+                  <span>ORDER</span>
+                  {(['RECOVERED', 'CHRONOLOGY'] as const).map(option => (
+                    <button
+                      key={option}
+                      type="button"
+                      aria-pressed={sort === option}
+                      onClick={() => setSort(option)}
+                      className={cn('min-h-12 border px-3', sort === option ? 'border-nexus-accent text-nexus-accent' : 'border-nexus-borderSubtle text-nexus-textMuted')}
+                    >
+                      {option === 'RECOVERED' ? 'INDEX' : 'BY TIME'}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {filteredArtifacts.length === 0 ? (
@@ -417,6 +438,9 @@ export function PlayerEvidenceArchive() {
                     const condition = artifactCondition(artifact)
                     const state = artifactState(artifact)
                     const hit = hits.get(artifact.id)
+                    const facts = mediumFacts(artifact)
+                    const place = seriesPosition(series, artifact.code)
+                    const time = sort === 'CHRONOLOGY' ? captureTimeOf(artifact) : null
                     return (
                       <button
                         key={artifact.id}
@@ -449,6 +473,17 @@ export function PlayerEvidenceArchive() {
                           <span className="mt-1 block truncate font-mono text-[0.68rem] uppercase tracking-[0.08em] text-nexus-textMuted">
                             {artifact.location ?? 'LOCATION UNKNOWN'}{mark !== 'UNMARKED' ? ` · ${MARK_LABEL[mark]}` : ''}{noteCount ? ` · ${noteCount} NOTE${noteCount > 1 ? 'S' : ''}` : ''}{position ? ' · ON BOARD' : ''}
                           </span>
+                          {(facts.length > 0 || place) && (
+                            <span className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 break-words font-mono text-[0.62rem] uppercase tracking-[0.06em] text-nexus-textSubtle">
+                              {facts.map(fact => (
+                                <span key={fact.label} className="min-w-0 max-w-full break-words"><span className="text-nexus-textMuted">{fact.label}</span> {fact.value}</span>
+                              ))}
+                              {place && (
+                                <span className="min-w-0 max-w-full break-words text-nexus-accent">{place.unit ? `${place.unit} · ` : ''}{place.series.source} {place.position}/{place.total}</span>
+                              )}
+                              {time && time.precision !== 'SECOND' && time.precision !== 'MINUTE' && <span>TIME {time.precision} ONLY</span>}
+                            </span>
+                          )}
                           {hit && hit.matches.slice(0, 2).map(match => (
                             <span key={`${match.field}:${match.snippet}`} className="mt-1.5 block border-l-2 border-nexus-accent pl-2 text-xs leading-snug text-nexus-textMuted">
                               <span className="font-mono text-[0.62rem] uppercase tracking-[0.1em] text-nexus-accent">{match.field}</span>{' '}

@@ -15,3 +15,13 @@ for f in $(ls supabase/migrations/*.sql | python3 -c "import sys,os;print('\n'.j
   psql -v ON_ERROR_STOP=1 -q -d "$DB" -f "$f" >/dev/null && echo "ok   $(basename "$f")"
 done
 for t in supabase/tests/*.sql; do echo "test $(basename "$t")"; psql -v ON_ERROR_STOP=1 -q -d "$DB" -f "$t"; done
+
+# Concurrency: 30 simultaneous attempts against a limit of 5 must let exactly 5
+# through (the counter is one atomic upsert, not read-then-insert).
+psql -v ON_ERROR_STOP=1 -q -d "$DB" -c "truncate login_rate_limit_buckets" >/dev/null
+allowed=$(for i in $(seq 1 30); do
+  psql -At -d "$DB" -c "select allowed from login_rate_limit_hit(array['ip:race'],array[5],array[60])" &
+done | grep -c '^t$' || true)
+wait
+if [ "$allowed" != "5" ]; then echo "rate limit race: $allowed of 30 passed, expected 5" >&2; exit 1; fi
+echo "test rate-limit concurrency: 5 of 30 passed"

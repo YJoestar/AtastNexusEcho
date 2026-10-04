@@ -25,10 +25,17 @@ export default defineConfig({
     sourcemap: true,
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom', 'react-router-dom'],
-          supabase: ['@supabase/supabase-js'],
-          utils: ['zod', 'clsx', 'tailwind-merge'],
+        // Only stable, always-needed vendor code is pinned to a named chunk.
+        // Heavy, rarely used libraries (jspdf, html2canvas, jsqr, qrcode, dompurify)
+        // are left to Rollup so they stay in their dynamic-import chunks.
+        manualChunks(id: string) {
+          if (!id.includes('node_modules')) return undefined
+          const pkg = (name: string) => id.includes(`/node_modules/${name}/`)
+          if (pkg('react') || pkg('react-dom') || pkg('scheduler') || pkg('react-router') || pkg('react-router-dom') || pkg('@remix-run/router')) return 'vendor'
+          if (id.includes('/node_modules/@supabase/')) return 'supabase'
+          if (pkg('gsap')) return 'gsap'
+          if (pkg('zod') || pkg('clsx') || pkg('tailwind-merge')) return 'utils'
+          return undefined
         },
       },
     },
