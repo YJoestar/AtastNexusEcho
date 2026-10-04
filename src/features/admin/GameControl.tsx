@@ -41,9 +41,26 @@ export function AdminGameControl() {
   const statusCounts = gameState?.statusCounts ?? {}
   const config = gameState?.config ?? {}
 
-  const deadline = config?.game_deadline as string | null
   const gameDuration = config?.game_duration_minutes as number ?? 180
-  const startedAt = config?.game_started_at as string | null
+
+  // The deadline is not a game_config key. `game_started_at` and `game_deadline`
+  // are per-team columns on `teams` (2026092902_game_engine.sql:36-37), set when
+  // each team starts. This screen read them from `config`, whose select list never
+  // contained them, so the deadline rendered "— / NOT INITIALIZED" permanently
+  // and the state rendered "— / OPEN" permanently, whatever the teams were doing.
+  // Derived from the teams this screen already loads.
+  const startedDeadlines = teams
+    .map(t => t.gameDeadline)
+    .filter((d): d is string => typeof d === 'string' && d.length > 0)
+    .sort()
+  const startedAtValues = teams
+    .map(t => t.gameStartedAt)
+    .filter((d): d is string => typeof d === 'string' && d.length > 0)
+    .sort()
+
+  // The earliest deadline is the one the Bureau is actually racing.
+  const deadline = startedDeadlines[0] ?? null
+  const startedAt = startedAtValues[0] ?? null
 
   const activeTeams = teams.filter(t => t.status === 'ACTIVE').length
   const preStartTeams = teams.filter(t => ['REGISTERED', 'FORMING', 'READY', 'WAITING'].includes(t.status)).length

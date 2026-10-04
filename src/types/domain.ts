@@ -194,7 +194,14 @@ export interface GameState {
   startedAt: string | null
   endsAt: string | null
   currentPhase: GamePhase
-  config: GameConfig
+  /**
+   * Optional because the player-facing `game-get-state` endpoint does not return
+   * game parameters. This used to be populated with hardcoded constants (25
+   * teams, 3 players, 180 minutes) that looked like server state and were read by
+   * nobody — so an operator changing `game_config` in the database saw no change
+   * here. Absent is honest; invented numbers are not.
+   */
+  config?: GameConfig
 }
 
 export type GamePhase = 'REGISTRATION' | 'BRIEFING' | 'GAMEPLAY' | 'FINAL' | 'DEBRIEF'

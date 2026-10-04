@@ -3,16 +3,20 @@
  *
  * Deterministic generation and validation of ambiguity-safe manual entry codes.
  *
- * Manual code format: NX-Loc-<NNN>-<TOKEN>
+ * Manual code format: NX-Loc-<CODE>-<TOKEN>
  *   - NX- confirms it's a NEXUS marker
  *   - Loc- confirms it's a location manual code
- *   - NNN is the 3-digit location ID (e.g. "001")
+ *   - CODE is the stable puzzle code (e.g. "P01", "M01")
  *   - TOKEN is the 8-char ambiguity-safe verification token
  *
- * The token is generated deterministically from the locationId using a simple
+ * The code segment is the puzzle code rather than an ordinal. Ordinals were
+ * assigned from the node's position in ALL_PUZZLES, so inserting or reordering a
+ * puzzle renumbered every later marker and invalidated every QR sheet already
+ * printed. Puzzle codes are the same identity the database uses, so they are
+ * stable across reordering, insertion and growth of the game.
+ *
+ * The token is generated deterministically from the puzzle code using a simple
  * hash folded into the Crockford base32 alphabet (no I, O, 0, 1, U).
- * This means the same locationId always produces the same manual code,
- * without needing a database lookup.
  *
  * Legacy support: bare puzzle codes (e.g. "P01", "QR-P01") are normalized
  * to their corresponding manual code via the location registry.
@@ -20,6 +24,7 @@
 
 import {
   TEST_CODE,
+  TEST_LOCATION_ID,
   SCAN_LOCATIONS_BY_NODE,
   SCAN_LOCATIONS_BY_MANUAL,
   SCAN_LOCATIONS_BY_ID,
@@ -28,23 +33,26 @@ import {
 import type { ScanLocation } from './locations'
 
 const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
-export const MANUAL_CODE_PATTERN = /^NX-Loc-(\d{3})-([A-HJ-NP-Z2-9]{8})$/i
+/** The code segment is a puzzle code, so it is alphanumeric rather than numeric. */
+export const MANUAL_CODE_PATTERN = /^NX-Loc-([A-Za-z0-9]+)-([A-HJ-NP-Z2-9]{8})$/
 export { ALPHABET as MANUAL_CODE_ALPHABET }
 
 /**
- * Generate the manual code for a location ID using the same deterministic
+ * Generate the manual code for a location using the same deterministic
  * algorithm used during registry construction.
+ *
+ * Accepts either a bare puzzle code ("P01") or a location id ("LOC-P01") so
+ * callers that hold either form still get the canonical manual code.
  *
  * This is re-exported for use in tests and admin tooling that needs to
  * produce codes without importing the full registry.
  */
 export function generateManualCode(locationId: string): string {
-  const num = parseInt(locationId.replace('LOC-', ''), 10)
-  const numStr = num.toString().padStart(3, '0')
+  const code = locationId.replace(/^LOC-/, '')
 
   let hash = 0
-  for (let i = 0; i < locationId.length; i++) {
-    hash = (hash * 31 + locationId.charCodeAt(i)) | 0
+  for (let i = 0; i < code.length; i++) {
+    hash = (hash * 31 + code.charCodeAt(i)) | 0
   }
   hash = Math.abs(hash)
 
@@ -55,11 +63,11 @@ export function generateManualCode(locationId: string): string {
     remaining = Math.floor(remaining / ALPHABET.length)
   }
 
-  return `NX-Loc-${numStr}-${token}`
+  return `NX-Loc-${code}-${token}`
 }
 
 /**
- * Parse a manual code string, extracting the location number and token.
+ * Parse a manual code string, extracting the location reference and token.
  *
  * Returns null if the code does not match the expected format.
  */
@@ -67,9 +75,8 @@ export function parseManualCode(code: string): { locationId: string; token: stri
   const match = code.trim().match(MANUAL_CODE_PATTERN)
   if (!match) return null
 
-  const [, numStr, token] = match
-  const locationId = `LOC-${numStr}`
-  return { locationId, token }
+  const [, codeSegment, token] = match
+  return { locationId: `LOC-${codeSegment}`, token }
 }
 
 /**
@@ -108,7 +115,7 @@ export function normalizeManualCode(input: string): string | null {
  */
 export function resolveManualCode(normalizedCode: string): ScanLocation | null {
   if (normalizedCode === TEST_CODE) {
-    return SCAN_LOCATIONS_BY_ID['LOC-000'] ?? null
+    return SCAN_LOCATIONS_BY_ID[TEST_LOCATION_ID] ?? null
   }
   return SCAN_LOCATIONS_BY_MANUAL[normalizedCode] ?? null
 }
@@ -124,7 +131,7 @@ export function resolveCodeInput(input: string): ScanLocation | null {
   if (!trimmed) return null
 
   if (trimmed === TEST_CODE) {
-    return SCAN_LOCATIONS_BY_ID['LOC-000'] ?? null
+    return SCAN_LOCATIONS_BY_ID[TEST_LOCATION_ID] ?? null
   }
 
   const manualLoc = SCAN_LOCATIONS_BY_MANUAL[trimmed]

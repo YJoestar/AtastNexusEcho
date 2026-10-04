@@ -1068,23 +1068,47 @@ email_confirm: true,
       }
 
       case 'list-teams': {
-        const { data: teams } = await supabaseAdmin
+        // Every one of these four reads discarded its error, so a database fault
+        // answered 200 with `teams: []` and the operator was told "ARCHIVE EMPTY
+        // // NO MATCHING FIELD RECORDS" — the worst possible message during a live
+        // event, because it looks like a correct answer.
+        const { data: teams, error: teamsError } = await supabaseAdmin
           .from('teams')
           .select('*')
           .order('created_at', { ascending: false })
 
-        const { data: playerCounts } = await supabaseAdmin
+        if (teamsError) {
+          console.error('list-teams: teams query failed:', teamsError)
+          return dbErrorResponse(teamsError)
+        }
+
+        const { data: playerCounts, error: playerCountsError } = await supabaseAdmin
           .from('players')
           .select('team_id, role')
 
-        const { data: progressData } = await supabaseAdmin
+        if (playerCountsError) {
+          console.error('list-teams: players query failed:', playerCountsError)
+          return dbErrorResponse(playerCountsError)
+        }
+
+        const { data: progressData, error: progressError } = await supabaseAdmin
           .from('team_progress')
           .select('team_id, hints_used, score, started_at')
 
-        const { data: solvedCounts } = await supabaseAdmin
+        if (progressError) {
+          console.error('list-teams: team_progress query failed:', progressError)
+          return dbErrorResponse(progressError)
+        }
+
+        const { data: solvedCounts, error: solvedCountsError } = await supabaseAdmin
           .from('node_progress')
           .select('team_id, status')
           .eq('status', 'SOLVED')
+
+        if (solvedCountsError) {
+          console.error('list-teams: node_progress query failed:', solvedCountsError)
+          return dbErrorResponse(solvedCountsError)
+        }
 
         const playerCountMap: Record<string, { count: number; roles: string[] }> = {}
         for (const p of playerCounts ?? []) {
@@ -2272,17 +2296,6 @@ email_confirm: true,
               puzzle_stage: stage,
               building: building,
             }
-          })
-
-         const now = new Date().toISOString()
-         await logAction('QR_DOWNLOAD', undefined, undefined, {
-           qrCount: enriched.length,
-          })
-
-          await supabaseAdmin.from('game_events').insert({
-            type: 'ADMIN_ACTION',
-            payload: { action: 'QR_DOWNLOAD', qrCount: enriched.length },
-            metadata: { source: 'bureau', timestamp: now },
           })
 
           const qrCodes: string[] = enriched

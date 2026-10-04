@@ -663,3 +663,25 @@ export const PUZZLES_BY_STAGE: Record<number, NodeIndexEntry[]> = ALL_PUZZLES.re
 )
 
 export const PUZZLE_COUNT = ALL_PUZZLES.length
+
+/**
+ * The game's terminal node, discovered by its type rather than by a literal code.
+ *
+ * The Final Protocol screen used to submit to the hardcoded string 'P37'. If an
+ * operator re-coded that node in the database, or added a second finale, the
+ * screen would submit to a node that no longer exists and the game could never be
+ * completed. FINAL_BOSS is already a first-class node type in the content graph
+ * and in the database enum, so the role is what should select it.
+ */
+export const FINAL_NODE: NodeIndexEntry | undefined = ALL_PUZZLES.find(
+  (puzzle: NodeIndexEntry) => puzzle.type === 'FINAL_BOSS',
+)
+
+/**
+ * Every node typed as a finale, in content order. More than one is legitimate if
+ * an operator adds a branching ending, so callers that need "the" finale should
+ * prefer {@link FINAL_NODE}.
+ */
+export const FINAL_NODES: NodeIndexEntry[] = ALL_PUZZLES.filter(
+  (puzzle: NodeIndexEntry) => puzzle.type === 'FINAL_BOSS',
+)

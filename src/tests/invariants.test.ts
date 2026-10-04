@@ -368,3 +368,105 @@ describe('isPlayerSafeRpcMessage', () => {
     }
   })
 })
+describe('QR marker identity is stable and data-driven', () => {
+  const locationsSrc = readFileSync(join(ROOT, 'src/lib/qr/locations.ts'), 'utf8')
+
+  it('does not derive marker identity from an array index', () => {
+    // `LOC-${index + 1}` renumbered every later marker when a puzzle was inserted
+    // or reordered, invalidating every QR sheet already printed and stuck to a wall.
+    expect(locationsSrc).not.toMatch(/forEach\s*\([^)]*\bindex\b/)
+    expect(locationsSrc).not.toMatch(/padStart\(3,\s*'0'\)/)
+  })
+
+  it('keys marker identity on the puzzle code', () => {
+    expect(locationsSrc).toMatch(/function buildLocationId\(puzzleCode: string\)/)
+  })
+
+  it('never claims the Bureau recognises a marker it has no record of', () => {
+    // The scan result carries `error` when the marker is unknown. Telling the
+    // player "the system recognizes the marker" sent them hunting for a
+    // prerequisite that did not exist.
+    const engine = readFileSync(join(ROOT, 'src/hooks/useGameEngine.ts'), 'utf8')
+    expect(engine).toMatch(/function describeUnrecognised\(/)
+    const throwBranch = engine.slice(engine.indexOf('} catch (err) {'))
+    expect(throwBranch.slice(0, 400)).not.toContain('recognizes the marker')
+  })
+
+  it('exposes the marker target to the admin client', () => {
+    // `code` is a legacy label that does not encode its target, so discarding
+    // puzzle_node_id left the Bureau unable to see what a marker pointed at.
+    const admin = readFileSync(join(ROOT, 'src/lib/admin/index.ts'), 'utf8')
+    expect(admin).toMatch(/puzzleNodeId:\s*toOptionalText\(firstPresent\(q, \['puzzle_node_id'\]\)\)/)
+  })
+})
+
+describe('the finale is discovered by type, not by a literal code', () => {
+  it('does not submit to a hardcoded node code', () => {
+    const finalScreen = readFileSync(join(ROOT, 'src/features/player/Final.tsx'), 'utf8')
+    expect(finalScreen).not.toMatch(/FINAL_NODE_ID\s*=\s*'P\d+/)
+    expect(finalScreen).toMatch(/FINAL_NODE\?\.code/)
+  })
+
+  it('resolves the finale from the content graph', () => {
+    const content = readFileSync(join(ROOT, 'src/content/puzzles/index.ts'), 'utf8')
+    expect(content).toMatch(/FINAL_NODE[\s\S]{0,120}type === 'FINAL_BOSS'/)
+  })
+})
+
+describe('team status is translated, never cast', () => {
+  it('maps the database vocabulary onto the UI vocabulary', () => {
+    const machine = readFileSync(join(ROOT, 'src/lib/auth/team-state-machine.ts'), 'utf8')
+    expect(machine).toMatch(/export function toGameStatus\(/)
+    for (const [db, ui] of [['ACTIVE', 'RUNNING'], ['PAUSED', 'PAUSED'], ['COMPLETED', 'ENDED']]) {
+      expect(machine).toMatch(new RegExp(`case '${db}':[\\s\\S]{0,80}'${ui}'`))
+    }
+  })
+
+  it('is used where the raw database status used to be cast', () => {
+    const provider = readFileSync(join(ROOT, 'src/app/providers/AppProvider.tsx'), 'utf8')
+    expect(provider).not.toMatch(/status:\s*state\.team\.status as GameStatus/)
+    expect(provider).toContain('toGameStatus(state.team.status)')
+  })
+
+  it('does not ship invented game parameters as if they were server state', () => {
+    const provider = readFileSync(join(ROOT, 'src/app/providers/AppProvider.tsx'), 'utf8')
+    expect(provider).not.toMatch(/maxTeams:\s*25/)
+    expect(provider).not.toMatch(/playersPerTeam:\s*3/)
+    expect(provider).not.toMatch(/gameDurationMinutes:\s*180/)
+  })
+})
+
+describe('bureau list handlers never discard a query error', () => {
+  it('checks the error on every read inside list-teams', () => {
+    const src = functions.find(f => f.name === 'bureau-operations')!.src
+    const start = src.indexOf("case 'list-teams'")
+    expect(start).toBeGreaterThan(-1)
+    const block = src.slice(start, src.indexOf("case '", start + 10))
+    // Four reads; each must branch on its error or a database fault answers 200
+    // with an empty register and the operator is told the archive is empty.
+    const reads = block.match(/const \{ data: \w+, error: \w+ \} = await/g) ?? []
+    expect(reads.length).toBeGreaterThanOrEqual(4)
+    expect((block.match(/dbErrorResponse\(/g) ?? []).length).toBeGreaterThanOrEqual(4)
+  })
+
+  it('does not file a QR_DOWNLOAD audit record for a pure read', () => {
+    // Now that the audit trail actually renders, a read-time logAction would fill
+    // the ledger with download entries for sheets nobody downloaded.
+    const src = functions.find(f => f.name === 'bureau-operations')!.src
+    const start = src.indexOf("case 'list-qr-codes'")
+    const block = src.slice(start, src.indexOf("case '", start + 10))
+    expect(block).not.toContain('QR_DOWNLOAD')
+  })
+})
+
+describe('admin reads use the key the edge function actually returns', () => {
+  it('reads the audit log under the name the edge function sends', () => {
+    // bureau-operations returns `auditLog`. The client read `audit_log`, so
+    // `?? []` turned the entire audit trail into a permanently empty ledger.
+    const admin = readFileSync(join(ROOT, 'src/lib/admin/index.ts'), 'utf8')
+    const start = admin.indexOf('async getAuditLog(')
+    expect(start).toBeGreaterThan(-1)
+    const block = admin.slice(start, start + 1200)
+    expect(block).toMatch(/result\.auditLog/)
+  })
+})

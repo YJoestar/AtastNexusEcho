@@ -341,6 +341,14 @@ export interface QRCodeEntry {
   code: string
   label: string
   type: string
+  /**
+   * The markerId the scan path resolves against. `code` is a legacy label
+   * (`QR-NODE-02`) that does not encode its target; `puzzleNodeId` is the actual
+   * foreign key `qr_nodes.puzzle_node_id`, and it is what decides which puzzle a
+   * scan unlocks. It used to be discarded here, so the Bureau could see that a
+   * marker existed but never what it pointed at.
+   */
+  puzzleNodeId?: string | null
   puzzleNodeCode: string
   puzzleNodeTitle: string
   puzzleNodeType: string
@@ -528,11 +536,17 @@ export const adminAPI = {
   },
 
   async getAuditLog(limit = 100, actionFilter?: string, search?: string): Promise<AuditLogEntryAdmin[]> {
-    const result = await callBureau<{ audit_log: RawAuditEntry[] }>({
+    const result = await callBureau<{ auditLog?: RawAuditEntry[]; audit_log?: RawAuditEntry[] }>({
       action: 'get-audit-log', limit, actionFilter, search,
     })
 
-    return (result.audit_log ?? []).map(a => ({
+    // The edge function returns `auditLog`. This used to read `audit_log`, which
+    // was always undefined, so `?? []` silently turned the whole audit trail into
+    // an empty ledger and the Bureau's Audit screen always showed its empty state.
+    // Accept both spellings so the two halves cannot drift apart unnoticed again.
+    const entries = result.auditLog ?? result.audit_log ?? []
+
+    return entries.map(a => ({
       id: a.id,
       adminId: a.admin_id,
       action: a.action_type as AdminActionType,
@@ -785,6 +799,7 @@ export const adminAPI = {
           code: toText(firstPresent(q, ['code']), ''),
           label: toText(firstPresent(q, ['label']), ''),
           type: toText(firstPresent(q, ['type']), ''),
+          puzzleNodeId: toOptionalText(firstPresent(q, ['puzzle_node_id'])),
           puzzleNodeCode: toText(firstPresent(pg, ['code']), puzzleCode),
           puzzleNodeTitle: toText(firstPresent(pg, ['title']), 'Unknown Node'),
           puzzleNodeType: toText(firstPresent(pg, ['type']), ''),
@@ -799,7 +814,6 @@ export const adminAPI = {
         }
       })
     },
-
     async getLocation(nodeId: string): Promise<{ location: LocationEntry | null; history: LocationHistoryEntry[] }> {
       const result = await callBureau<{
         location?: Record<string, unknown> | null

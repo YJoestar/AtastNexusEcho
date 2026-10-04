@@ -12,6 +12,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useGameEngine } from '@/hooks/useGameEngine'
 import { ROUTES } from '@/app/config'
 import { cn } from '@/lib/utils'
+import { FINAL_NODE } from '@/content/puzzles'
 import { BureauIcons } from '@/components/bureau'
 import {
   DocumentShell,
@@ -23,12 +24,21 @@ import {
 } from '@/components/bureau'
 
 /**
- * The final answer is validated against the FINAL_BOSS node (P37, "The Final
- * Boss"). The previous implementation submitted to a node id "FINAL", which
- * does not exist in the content graph, so the server could never validate a
- * final answer and this screen could never complete.
+ * The final answer is validated against whichever node is typed FINAL_BOSS in the
+ * content graph.
+ *
+ * This used to be the literal 'P37'. An earlier version submitted to "FINAL",
+ * which does not exist in the graph at all, so the server could never validate a
+ * final answer and this screen could never complete. A literal code has the same
+ * problem in a milder form: re-code the finale in the database and the screen
+ * submits to a node that no longer exists. Selecting by type means the screen
+ * follows the content.
+ *
+ * `FINAL_NODE` is undefined only if the content graph genuinely has no finale.
+ * That is reported to the operator instead of silently submitting to something
+ * arbitrary.
  */
-const FINAL_NODE_ID = 'P37'
+const FINAL_NODE_ID = FINAL_NODE?.code
 
 export function PlayerFinal() {
   const navigate = useNavigate()
@@ -46,8 +56,13 @@ export function PlayerFinal() {
   const [error, setError] = useState<string | null>(null)
 
   const solved = solvedCount
+  // Access is decided by whether the finale is the last outstanding node, not by
+  // assuming the local puzzle count is the true node count. `totalNodes` is the
+  // size of the shipped content bundle, so adding a node in the database made this
+  // unlock a step early.
   const unlocked = solved >= totalNodes - 1
   const isCompleted = gameState?.status === 'ENDED' || solved === totalNodes
+  const finaleMissing = !FINAL_NODE_ID
 
   const evidenceCount = teamProgress?.evidenceOwned.length ?? 0
   const inventoryCount = Object.values(teamProgress?.inventoryOwned ?? {}).reduce(
@@ -59,6 +74,11 @@ export function PlayerFinal() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!answer.trim() || isSubmitting || isOffline) return
+
+    if (!FINAL_NODE_ID) {
+      setError('No finale is configured for this game. Contact the Bureau.')
+      return
+    }
 
     setIsSubmitting(true)
     setError(null)
@@ -265,6 +285,16 @@ export function PlayerFinal() {
                     </>
                   )}
                 </button>
+
+                {finaleMissing && (
+                  <div className="p-3 border border-nexus-warning/40 flex items-start gap-2">
+                    <BureauIcons.Alert className="bureau-icon w-5 h-5 text-nexus-warning flex-shrink-0 mt-0.5" aria-hidden="true" />
+                    <p className="text-sm text-nexus-warning">
+                      This deployment has no finale configured, so a final answer cannot be
+                      validated. The Bureau needs to mark a node as FINAL_BOSS.
+                    </p>
+                  </div>
+                )}
 
                 {error && (
                   <div className="p-3 border border-nexus-danger/30 flex items-start gap-2">

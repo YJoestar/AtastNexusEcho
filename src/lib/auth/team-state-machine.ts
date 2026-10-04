@@ -1,4 +1,4 @@
-import type { TeamStatus } from '@/types/domain'
+import type { GameStatus, TeamStatus } from '@/types/domain'
 
 export const TEAM_TRANSITIONS: Record<TeamStatus, TeamStatus[]> = {
   REGISTERED: ['FORMING', 'RESET', 'ABANDONED', 'DISQUALIFIED'],
@@ -56,3 +56,35 @@ export const TEAM_STATUS_ORDER: TeamStatus[] = [
   'ABANDONED',
   'RESET',
 ]
+
+/**
+ * Translate the database's team status into the coarser `GameStatus` the
+ * player UI speaks.
+ *
+ * The player screens used to be handed the raw database status through an
+ * `as GameStatus` cast. The two vocabularies are not the same — the database
+ * says ACTIVE and COMPLETED, the UI switches on RUNNING and ENDED — so every
+ * live status fell through to its `default` branch and rendered "Unknown", and
+ * the "no active lead" branch could never be reached. A cast hides exactly the
+ * mismatch it creates, so the translation is written down here instead.
+ */
+export function toGameStatus(status: string | null | undefined): GameStatus {
+  switch (status) {
+    case 'ACTIVE':
+      return 'RUNNING'
+    case 'PAUSED':
+      return 'PAUSED'
+    case 'COMPLETED':
+    case 'DISQUALIFIED':
+    case 'ABANDONED':
+      return 'ENDED'
+    case 'REGISTERED':
+    case 'FORMING':
+    case 'READY':
+    case 'WAITING':
+    case 'RESET':
+      return 'NOT_STARTED'
+    default:
+      return 'NOT_STARTED'
+  }
+}

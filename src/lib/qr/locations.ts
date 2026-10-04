@@ -8,8 +8,9 @@
  *   - manualCode: ambiguity-safe code for manual entry (e.g. "NX-Loc-001-ABCD-EFGH")
  *   - resultType: "PUZZLE" for node markers, "LOCATION" for navigation markers
  *
- * Generated deterministically from ALL_PUZZLES so the client and server agree
- * even if puzzles are reordered or new ones are inserted.
+ * Each entry is keyed on the puzzle CODE, never on the node's position in
+ * ALL_PUZZLES, so inserting or reordering a puzzle cannot invalidate the marker
+ * identities of the nodes around it.
  */
 
 import { ALL_PUZZLES } from '@/content/puzzles'
@@ -89,17 +90,16 @@ export interface ScanLocation {
 const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
 
 /**
- * Deterministic token generation from a location ID.
+ * Deterministic token generation from a stable location seed.
  *
- * Produces a stable 8-character token by hashing the locationId and
- * mapping to the ambiguity-safe alphabet. Same input always produces
- * the same output, so the server and client agree without a database
- * lookup.
+ * Produces a stable 8-character token by hashing the seed (the puzzle code) and
+ * mapping to the ambiguity-safe alphabet. Same input always produces the same
+ * output, so the payload never drifts when the game is reordered or extended.
  */
-function generateToken(locationId: string): string {
+function generateToken(seed: string): string {
   let hash = 0
-  for (let i = 0; i < locationId.length; i++) {
-    hash = (hash * 31 + locationId.charCodeAt(i)) | 0
+  for (let i = 0; i < seed.length; i++) {
+    hash = (hash * 31 + seed.charCodeAt(i)) | 0
   }
   hash = Math.abs(hash)
 
@@ -120,12 +120,28 @@ function buildQRPayload(locationId: string, token: string): string {
 }
 
 /**
+ * The test entry's identifiers. Named constants so the registry and the tests
+ * cannot drift apart, and so nothing derives them from an array position.
+ */
+export const TEST_LOCATION_ID = 'LOC-TEST'
+const TEST_CODE_SCAN_NODE = 'P01'
+
+/**
+ * Build the stable location id for a puzzle code.
+ *
+ * Keyed on the puzzle code rather than an ordinal so that adding, removing or
+ * reordering nodes leaves every other marker's identifier — and therefore every
+ * printed QR sheet — valid.
+ */
+function buildLocationId(puzzleCode: string): string {
+  return `LOC-${puzzleCode}`
+}
+
+/**
  * Build the manual entry code for a location.
  */
-function buildManualCode(locationId: string, token: string): string {
-  const num = parseInt(locationId.replace('LOC-', ''), 10)
-  const numStr = num.toString().padStart(3, '0')
-  return `${MANUAL_CODE_PREFIX}${numStr}-${token}`
+function buildManualCode(puzzleCode: string, token: string): string {
+  return `${MANUAL_CODE_PREFIX}${puzzleCode}-${token}`
 }
 
 /**
@@ -143,17 +159,22 @@ function buildingFromLocation(location: string): BuildingName {
 }
 
 /**
- * The canonical location registry: all 47 puzzle nodes + 1 test location.
+ * The canonical location registry: one entry per puzzle node, plus the test entry.
  *
- * Built deterministically from ALL_PUZZLES so the ordering is stable
- * across environments. Each puzzle node gets exactly one location entry.
+ * Marker identity is derived from the puzzle CODE, never from the node's position
+ * in this array. The previous version numbered locations as `LOC-001`, `LOC-002`,
+ * … by array index, which meant inserting or reordering a single puzzle silently
+ * renumbered every later marker and invalidated every QR sheet already printed
+ * and stuck to a wall. Codes are the stable, database-backed identity, so a
+ * marker's payload now survives any change to the order or size of the game.
  */
 export const SCAN_LOCATIONS: ScanLocation[] = (() => {
   const locations: ScanLocation[] = []
 
-  ALL_PUZZLES.forEach((puzzle: NodeIndexEntry, index: number) => {
-    const locationId = `LOC-${(index + 1).toString().padStart(3, '0')}`
-    const token = generateToken(locationId)
+  ALL_PUZZLES.forEach((puzzle: NodeIndexEntry) => {
+    // Stable: the puzzle code is the identity the database also uses.
+    const locationId = buildLocationId(puzzle.code)
+    const token = generateToken(puzzle.code)
     const building = buildingFromLocation(puzzle.location)
     const poi: CampusPOI | undefined = getPOI(puzzle.code)
 
@@ -168,14 +189,14 @@ export const SCAN_LOCATIONS: ScanLocation[] = (() => {
       building,
       position: poi ? poi.position : [0, 0],
       qrPayload: buildQRPayload(locationId, token),
-      manualCode: buildManualCode(locationId, token),
+      manualCode: buildManualCode(puzzle.code, token),
       resultType: 'PUZZLE',
     })
   })
 
   locations.push({
-    locationId: 'LOC-000',
-    scanNodeId: 'P01',
+    locationId: TEST_LOCATION_ID,
+    scanNodeId: TEST_CODE_SCAN_NODE,
     label: 'Test Entry Marker',
     nodeName: 'The Facade',
     nodeType: 'OBSERVATION',
@@ -183,7 +204,7 @@ export const SCAN_LOCATIONS: ScanLocation[] = (() => {
     nodeLocation: '[TEST] — Development Fallback',
     building: 'ADMIN_BUILDING',
     position: [185, 140],
-    qrPayload: `${QR_PAYLOAD_PREFIX}|${QR_PAYLOAD_VERSION}|LOC-000|TESTCODE`,
+    qrPayload: `${QR_PAYLOAD_PREFIX}|${QR_PAYLOAD_VERSION}|${TEST_LOCATION_ID}|TESTCODE`,
     manualCode: TEST_CODE,
     resultType: 'TEST',
   })

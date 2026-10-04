@@ -15,6 +15,7 @@
 import {
   QR_PAYLOAD_PREFIX,
   QR_PAYLOAD_VERSION,
+  TEST_LOCATION_ID,
   type ScanLocation,
   SCAN_LOCATIONS_BY_ID,
 } from './locations'
@@ -42,8 +43,6 @@ export interface QRPayload {
  * Special sentinel for the test code — when the raw input matches TEST_CODE,
  * it bypasses the versioned payload format entirely.
  */
-const TEST_LOCATION_ID = 'LOC-000'
-
 const PAYLOAD_PARTS_COUNT = 4
 
 /**
@@ -105,18 +104,10 @@ export function parseQRPayload(raw: string): QRPayload {
     }
   }
 
-  if (!locationId || !SCAN_LOCATIONS_BY_ID[locationId]) {
-    return {
-      raw,
-      valid: false,
-      version,
-      locationId,
-      token: null,
-      error: `Unknown location ID: ${locationId ?? '(empty)'}`,
-    }
-  }
-
   if (!token || token.length !== 8) {
+    // Format is validated before existence: a marker with a malformed token is a
+    // malformed marker, and reporting it as an unknown location sent operators
+    // hunting for a location that was never missing.
     return {
       raw,
       valid: false,
@@ -124,6 +115,17 @@ export function parseQRPayload(raw: string): QRPayload {
       locationId,
       token,
       error: 'Invalid token: expected 8 characters',
+    }
+  }
+
+  if (!locationId || !SCAN_LOCATIONS_BY_ID[locationId]) {
+    return {
+      raw,
+      valid: false,
+      version,
+      locationId,
+      token,
+      error: `Unknown location ID: ${locationId ?? '(empty)'}`,
     }
   }
 

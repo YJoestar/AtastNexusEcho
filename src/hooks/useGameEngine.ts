@@ -122,6 +122,28 @@ function isTransportFailure(error: unknown): boolean {
   return TRANSPORT_FAILURE.test(message)
 }
 
+/**
+ * Explain a scan that did not discover anything.
+ *
+ * scan_qr_code() returns `{ error }` when it does not recognise the marker at
+ * all, and `{ discovered: false }` with no error when the marker is genuine but
+ * the team has not reached it. Those are different situations and the player is
+ * owed the difference: the previous single message claimed "the system
+ * recognises the marker" even for a QR code that was never in the database,
+ * which sent players hunting for a prerequisite that did not exist.
+ */
+function describeUnrecognised(scanError?: string): string {
+  if (!scanError) {
+    // Recognised marker, target still sealed. Deliberately does not say what the
+    // marker points to, so it cannot be used to scout ahead.
+    return 'ACCESS DENIED. The system recognizes the marker, but whatever it points to remains sealed.'
+  }
+  if (/invalid|unrecogn|not found|unknown/i.test(scanError)) {
+    return 'UNRECOGNISED MARKER. This code is not registered with the Bureau. Check the marker, or enter the manual reference printed beneath it.'
+  }
+  return 'The marker could not be verified. Check the marker and try again.'
+}
+
 export function useGameEngine() {
   const qaContext: QAContextValue | null = useContext(QASimulatorContext)
 
@@ -368,18 +390,23 @@ export function useGameEngine() {
           alreadyClaimed: result.alreadyClaimed,
           message: result.discovered
             ? undefined
-            : 'ACCESS DENIED. The system recognizes the marker, but whatever it points to remains sealed.',
+            : describeUnrecognised(result.error),
           error: result.error,
           markerId: result.markerId,
           manualCode: result.manualCode,
           deploymentStatus: result.deploymentStatus,
           qrCode: result.qrCode,
         }
-      } catch {
+      } catch (err) {
+        // A thrown error means we never got an answer, so we genuinely do not
+        // know whether the Bureau recognises this marker. Saying otherwise would
+        // repeat the same lie in a second place.
         return {
           discovered: false,
           message:
-            'ACCESS DENIED. The system recognizes the marker, but whatever it points to remains sealed.',
+            err instanceof Error && err.message
+              ? `The Bureau link failed: ${err.message}`
+              : 'The Bureau link failed before the marker could be verified. Try again.',
           error: 'scan_failed',
         }
       }

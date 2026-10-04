@@ -12,6 +12,7 @@ import {
   SCAN_LOCATIONS_BY_NODE,
   SCAN_LOCATION_COUNT,
   TEST_CODE,
+  TEST_LOCATION_ID,
 } from '@/lib/qr/locations'
 import {
   parseQRPayload,
@@ -41,10 +42,10 @@ describe('QR Location Registry', () => {
     expect(SCAN_LOCATION_COUNT).toBe(48)
   })
 
-  it('maps P01 to LOC-001', () => {
+  it('maps P01 to LOC-P01', () => {
     const loc = SCAN_LOCATIONS_BY_NODE['P01']
     expect(loc).toBeDefined()
-    expect(loc.locationId).toBe('LOC-001')
+    expect(loc.locationId).toBe('LOC-P01')
     expect(loc.scanNodeId).toBe('P01')
     expect(loc.nodeName).toBe('The Facade')
   })
@@ -56,12 +57,31 @@ describe('QR Location Registry', () => {
     expect(loc.nodeType).toBe('FINAL_BOSS')
   })
 
-  it('all location IDs are unique and sequential', () => {
-    const ids = SCAN_LOCATIONS.map(l => l.locationId).sort()
-    expect(ids).toContain('LOC-000')
-    expect(ids[0]).toBe('LOC-000')
-    expect(ids[1]).toBe('LOC-001')
-    expect(ids[ids.length - 1]).toBe('LOC-047')
+  it('location IDs are unique and derived from the puzzle code, not an ordinal', () => {
+    // This replaced a test that asserted the IDs were "unique and sequential".
+    // Numbering markers by array position meant inserting or reordering one
+    // puzzle silently renumbered every later marker and invalidated every printed
+    // QR sheet. Identity now comes from the puzzle code, so the invariants that
+    // matter are uniqueness and code-derivation — not a sequence.
+    const ids = SCAN_LOCATIONS.map(l => l.locationId)
+    expect(new Set(ids).size).toBe(ids.length)
+    expect(ids).toContain(TEST_LOCATION_ID)
+
+    for (const loc of SCAN_LOCATIONS) {
+      if (loc.resultType === 'TEST') continue
+      expect(loc.locationId).toBe(`LOC-${loc.scanNodeId}`)
+    }
+  })
+
+  it('marker identity survives a change to the order or size of the game', () => {
+    // The regression that motivated the scheme change: reorder the puzzle list and
+    // every marker's payload must be byte-identical, because the payload is a
+    // function of the puzzle code alone. Keyed by locationId, not scanNodeId —
+    // the test entry deliberately shares scanNodeId 'P01' with the first puzzle.
+    const byId = new Map(SCAN_LOCATIONS.map(l => [l.locationId, l.qrPayload]))
+    for (const loc of [...SCAN_LOCATIONS].reverse()) {
+      expect(loc.qrPayload).toBe(byId.get(loc.locationId))
+    }
   })
 
   it('all QR payloads are unique', () => {
@@ -75,7 +95,7 @@ describe('QR Location Registry', () => {
   })
 
   it('test location uses TEST_CODE as manual code', () => {
-    const testLoc = SCAN_LOCATIONS_BY_ID['LOC-000']
+    const testLoc = SCAN_LOCATIONS_BY_ID['LOC-TEST']
     expect(testLoc).toBeDefined()
     expect(testLoc.manualCode).toBe(TEST_CODE)
     expect(testLoc.resultType).toBe('TEST')
@@ -83,13 +103,13 @@ describe('QR Location Registry', () => {
 })
 
 describe('QR Payload Parsing', () => {
-  const testLoc = SCAN_LOCATIONS_BY_ID['LOC-001']
+  const testLoc = SCAN_LOCATIONS_BY_ID['LOC-P01']
 
   it('parses a valid QR payload', () => {
     const result = parseQRPayload(testLoc.qrPayload)
     expect(result.valid).toBe(true)
     expect(result.version).toBe('V1')
-    expect(result.locationId).toBe('LOC-001')
+    expect(result.locationId).toBe('LOC-P01')
     expect(result.token).toBe(testLoc.qrPayload.split('|')[3])
     expect(result.error).toBeNull()
   })
@@ -98,7 +118,7 @@ describe('QR Payload Parsing', () => {
     const payload = parseQRPayload(testLoc.qrPayload)
     const loc = resolvePayload(payload)
     expect(loc).toBeDefined()
-    expect(loc?.locationId).toBe('LOC-001')
+    expect(loc?.locationId).toBe('LOC-P01')
     expect(loc?.scanNodeId).toBe('P01')
   })
 
@@ -109,13 +129,13 @@ describe('QR Payload Parsing', () => {
   })
 
   it('rejects wrong prefix', () => {
-    const result = parseQRPayload('BAD|V1|LOC-001|TOKEN123')
+    const result = parseQRPayload('BAD|V1|LOC-P01|TOKEN123')
     expect(result.valid).toBe(false)
     expect(result.error).toContain('Invalid prefix')
   })
 
   it('rejects wrong version', () => {
-    const result = parseQRPayload('NX|V2|LOC-001|TOKEN123')
+    const result = parseQRPayload('NX|V2|LOC-P01|TOKEN123')
     expect(result.valid).toBe(false)
     expect(result.error).toContain('Unsupported version')
   })
@@ -127,33 +147,33 @@ describe('QR Payload Parsing', () => {
   })
 
   it('rejects wrong token length', () => {
-    const result = parseQRPayload('NX|V1|LOC-001|AB')
+    const result = parseQRPayload('NX|V1|LOC-P01|AB')
     expect(result.valid).toBe(false)
     expect(result.error).toContain('Invalid token')
   })
 
   it('rejects too few parts', () => {
-    const result = parseQRPayload('NX|V1|LOC-001')
+    const result = parseQRPayload('NX|V1|LOC-P01')
     expect(result.valid).toBe(false)
   })
 
   it('isTestCode detects test codes', () => {
     expect(isTestCode(TEST_CODE)).toBe(true)
-    expect(isTestCode('NX-V1-LOC-001-TOKEN')).toBe(false)
+    expect(isTestCode('NX-V1-LOC-P01-TOKEN')).toBe(false)
     expect(isTestCode('')).toBe(false)
   })
 
-  it('resolveTestCode returns LOC-000', () => {
+  it('resolveTestCode returns LOC-TEST', () => {
     const loc = resolveTestCode()
     expect(loc).toBeDefined()
-    expect(loc?.locationId).toBe('LOC-000')
+    expect(loc?.locationId).toBe('LOC-TEST')
   })
 })
 
 describe('Manual Code Generation', () => {
   it('generates consistent codes for the same location', () => {
-    const code1 = generateManualCode('LOC-001')
-    const code2 = generateManualCode('LOC-001')
+    const code1 = generateManualCode('LOC-P01')
+    const code2 = generateManualCode('LOC-P01')
     expect(code1).toBe(code2)
   })
 
@@ -172,10 +192,10 @@ describe('Manual Code Generation', () => {
   })
 
   it('parses a valid manual code', () => {
-    const loc = SCAN_LOCATIONS_BY_ID['LOC-001']
+    const loc = SCAN_LOCATIONS_BY_ID['LOC-P01']
     const parsed = parseManualCode(loc.manualCode)
     expect(parsed).not.toBeNull()
-    expect(parsed?.locationId).toBe('LOC-001')
+    expect(parsed?.locationId).toBe('LOC-P01')
     expect(parsed?.token).toBe(loc.manualCode.split('-').pop())
   })
 
@@ -207,33 +227,33 @@ describe('Manual Code Generation', () => {
   })
 
   it('resolves a canonical manual code to its location', () => {
-    const loc = SCAN_LOCATIONS_BY_ID['LOC-001']
+    const loc = SCAN_LOCATIONS_BY_ID['LOC-P01']
     const resolved = resolveManualCode(loc.manualCode)
     expect(resolved).toBeDefined()
     expect(resolved?.scanNodeId).toBe('P01')
   })
 
-  it('resolves test code to LOC-000', () => {
+  it('resolves test code to LOC-TEST', () => {
     const resolved = resolveManualCode(TEST_CODE)
     expect(resolved).toBeDefined()
-    expect(resolved?.locationId).toBe('LOC-000')
+    expect(resolved?.locationId).toBe('LOC-TEST')
   })
 
   it('resolveCodeInput handles all input formats', () => {
-    const loc = SCAN_LOCATIONS_BY_ID['LOC-001']
+    const loc = SCAN_LOCATIONS_BY_ID['LOC-P01']
 
-    expect(resolveCodeInput(loc.qrPayload)?.locationId).toBe('LOC-001')
-    expect(resolveCodeInput(loc.manualCode)?.locationId).toBe('LOC-001')
-    expect(resolveCodeInput('P01')?.locationId).toBe('LOC-001')
-    expect(resolveCodeInput('QR-P01')?.locationId).toBe('LOC-001')
-    expect(resolveCodeInput(TEST_CODE)?.locationId).toBe('LOC-000')
+    expect(resolveCodeInput(loc.qrPayload)?.locationId).toBe('LOC-P01')
+    expect(resolveCodeInput(loc.manualCode)?.locationId).toBe('LOC-P01')
+    expect(resolveCodeInput('P01')?.locationId).toBe('LOC-P01')
+    expect(resolveCodeInput('QR-P01')?.locationId).toBe('LOC-P01')
+    expect(resolveCodeInput(TEST_CODE)?.locationId).toBe('LOC-TEST')
     expect(resolveCodeInput('GARBAGE')).toBeNull()
   })
 })
 
 describe('Unified Validation Pipeline', () => {
   it('validateQRCode resolves a valid payload', () => {
-    const loc = SCAN_LOCATIONS_BY_ID['LOC-001']
+    const loc = SCAN_LOCATIONS_BY_ID['LOC-P01']
     const result = validateQRCode(loc.qrPayload)
     expect(result.location).not.toBeNull()
     expect(result.error).toBeNull()
@@ -248,7 +268,7 @@ describe('Unified Validation Pipeline', () => {
   })
 
   it('validateManualCode accepts canonical codes', () => {
-    const loc = SCAN_LOCATIONS_BY_ID['LOC-001']
+    const loc = SCAN_LOCATIONS_BY_ID['LOC-P01']
     const result = validateManualCode(loc.manualCode)
     expect(result.location).not.toBeNull()
     expect(result.error).toBeNull()
@@ -274,7 +294,7 @@ describe('Unified Validation Pipeline', () => {
     expect(result.location).not.toBeNull()
     expect(result.error).toBeNull()
     expect(result.inputFormat).toBe('test_code')
-    expect(result.location?.locationId).toBe('LOC-000')
+    expect(result.location?.locationId).toBe('LOC-TEST')
   })
 
   it('validateManualCode rejects unknown codes', () => {
@@ -284,17 +304,17 @@ describe('Unified Validation Pipeline', () => {
   })
 
   it('validateAnyCode handles all input types', () => {
-    const loc = SCAN_LOCATIONS_BY_ID['LOC-001']
+    const loc = SCAN_LOCATIONS_BY_ID['LOC-P01']
 
-    expect(validateAnyCode(loc.qrPayload).location?.locationId).toBe('LOC-001')
-    expect(validateAnyCode(loc.manualCode).location?.locationId).toBe('LOC-001')
-    expect(validateAnyCode('P01').location?.locationId).toBe('LOC-001')
-    expect(validateAnyCode(TEST_CODE).location?.locationId).toBe('LOC-000')
+    expect(validateAnyCode(loc.qrPayload).location?.locationId).toBe('LOC-P01')
+    expect(validateAnyCode(loc.manualCode).location?.locationId).toBe('LOC-P01')
+    expect(validateAnyCode('P01').location?.locationId).toBe('LOC-P01')
+    expect(validateAnyCode(TEST_CODE).location?.locationId).toBe('LOC-TEST')
     expect(validateAnyCode('GARBAGE').location).toBeNull()
   })
 
   it('toQRScanResult produces correct result for discovered marker', () => {
-    const loc = SCAN_LOCATIONS_BY_ID['LOC-001']
+    const loc = SCAN_LOCATIONS_BY_ID['LOC-P01']
     const result = validateQRCode(loc.qrPayload)
     const scanResult = toQRScanResult(result)
     expect(scanResult.discovered).toBe(true)

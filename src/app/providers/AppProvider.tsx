@@ -6,10 +6,11 @@
  */
 
 import { createContext, useContext, useState, useCallback, useEffect, useRef, ReactNode } from 'react'
-import type { Player, Team, Role, TeamStatus, PlayerStatus, TeamProgress, Notification, GameState, NodeProgress, ProgressMetadata, GameStatus, GamePhase } from '@/types'
+import type { Player, Team, Role, TeamStatus, PlayerStatus, TeamProgress, Notification, GameState, NodeProgress, ProgressMetadata, GamePhase } from '@/types'
 import { supabase } from '@/lib/supabase'
 import { gameAPI } from '@/lib/game'
 import { collectDeviceFingerprint, hashDeviceFingerprint } from '@/lib/auth'
+import { toGameStatus } from '@/lib/auth/team-state-machine'
 import { QASimulatorContext } from '@/contexts/QASimulatorContext'
 
 /**
@@ -393,18 +394,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     try {
       const state = await gameAPI.getGameState()
       const gameState: GameState = {
-        status: state.team.status as GameStatus,
+        // Translated, not cast: the database speaks ACTIVE/COMPLETED and the UI
+        // speaks RUNNING/ENDED, so the old `as GameStatus` silently sent every live
+        // status to the UI's `default` branch and rendered "Unknown".
+        status: toGameStatus(state.team.status),
         startedAt: state.team.startedAt ?? null,
         endsAt: state.team.deadline ?? null,
         currentPhase: 'GAMEPLAY' as GamePhase,
-        config: {
-          maxTeams: 25,
-          playersPerTeam: 3,
-          gameDurationMinutes: 180,
-          rollingStartIntervalMinutes: 10,
-          autoAssignRoles: false,
-          requireAllRoles: true,
-        },
       }
       setGameState(gameState)
     } catch (error) {

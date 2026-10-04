@@ -280,6 +280,9 @@ describe('listQRCodes', () => {
       code: 'QR-NODE-02',
       label: '[ADMIN BUILDING] — Main Entrance Facade',
       type: 'NAVIGATION',
+      // The marker's actual target. `code` is a legacy label that does not encode
+      // it, so the Bureau previously could not see what a marker pointed at.
+      puzzleNodeId: 'node-1',
       puzzleNodeCode: 'P01',
       puzzleNodeTitle: 'The Facade',
       puzzleNodeType: 'OBSERVATION',

@@ -91,8 +91,11 @@ export function AdminLocations() {
 
   const filteredQRCodes = useMemo(() => {
     if (selectedBatchName === 'ALL') return qrCodes
-    const batchCodes = qrCodes.filter(q => q.deploymentBatch === selectedBatchName)
-    return batchCodes.length > 0 ? batchCodes : qrCodes
+    // Do not fall back to the full set when a batch has no rows. This used to, so
+    // selecting an empty or renamed batch showed every marker while the header
+    // still named that batch — the operator printed a sheet labelled BATCH-02
+    // containing all 47 markers.
+    return qrCodes.filter(q => q.deploymentBatch === selectedBatchName)
   }, [qrCodes, selectedBatchName])
 
   const batchSummary = useMemo(() => {
@@ -105,8 +108,7 @@ export function AdminLocations() {
         active: qrCodes.filter(q => q.deploymentStatus === 'ACTIVE').length,
       }
     }
-    const batchCodes = qrCodes.filter(q => q.deploymentBatch === selectedBatchName)
-    const set = batchCodes.length > 0 ? batchCodes : qrCodes
+    const set = qrCodes.filter(q => q.deploymentBatch === selectedBatchName)
     return {
       totalMarkers: set.length,
       pages: Math.ceil(set.length / 4),
