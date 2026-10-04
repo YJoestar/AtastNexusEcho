@@ -1,5 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
-import { BadRequestError, readJsonObject, requireUuid } from '../_shared/request.ts'
+import { BadRequestError, readJsonObject, requireString } from '../_shared/request.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -28,7 +28,12 @@ Deno.serve(async (req: Request) => {
     )
 
     const body = await readJsonObject(req)
-    const nodeId = requireUuid(body.nodeId, 'nodeId')
+    const nodeRef = requireString(body.nodeId, 'nodeId', 64)
+    // The app sends a node's code ("P01"); the RPCs want its id. Resolve either.
+    const { data: nodeId, error: resolveError } = await supabaseUser.rpc('resolve_node_ref', { p_ref: nodeRef })
+    if (resolveError || typeof nodeId !== 'string') {
+      return errorResponse(404, 'Node not found')
+    }
 
     const { data, error } = await supabaseUser.rpc('get_player_node_detail', {
       p_node_id: nodeId,

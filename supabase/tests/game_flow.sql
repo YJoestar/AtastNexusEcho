@@ -49,3 +49,21 @@ begin
   reset role;
   raise notice 'game flow test passed';
 end $$;
+
+-- A node can be named by its code or its id (the app sends the code).
+do $$
+declare v_user uuid := '00000000-0000-0000-0000-0000000000f9'; v_id uuid; r uuid;
+begin
+  select id into v_id from puzzle_nodes where code = 'P01';
+  insert into auth.users(id,email) values (v_user,'resolve@test');
+  perform set_config('request.jwt.claim.role','authenticated',true);
+  perform set_config('request.jwt.claim.sub',v_user::text,true);
+  set local role authenticated;
+  r := resolve_node_ref('P01');                if r is distinct from v_id then raise exception 'code did not resolve'; end if;
+  r := resolve_node_ref('p01');                if r is distinct from v_id then raise exception 'lower-case code did not resolve'; end if;
+  r := resolve_node_ref(v_id::text);           if r is distinct from v_id then raise exception 'uuid did not resolve'; end if;
+  r := resolve_node_ref('00000000-0000-0000-0000-000000000000'); if r is not null then raise exception 'unknown uuid resolved'; end if;
+  r := resolve_node_ref('P01; drop table teams'); if r is not null then raise exception 'junk resolved'; end if;
+  reset role;
+  raise notice 'resolve_node_ref test passed';
+end $$;
