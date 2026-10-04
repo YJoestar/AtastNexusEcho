@@ -6,6 +6,7 @@
  */
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
+import { BadRequestError, readJsonObject, requireUuid } from '../_shared/request.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -59,11 +60,13 @@ Deno.serve(async (req: Request) => {
       },
     )
 
-    const { action, teamId, nodeId, nodeCode, reason } = await req.json()
-
-    if (!action) {
+    const body = await readJsonObject(req)
+    const { action, nodeCode, reason } = body as { action?: unknown; nodeCode?: unknown; reason?: unknown }
+    if (typeof action !== 'string' || !action) {
       return errorResponse(400, 'Missing action')
     }
+    const teamId = body.teamId === undefined ? undefined : requireUuid(body.teamId, 'teamId')
+    const nodeId = body.nodeId === undefined ? undefined : requireUuid(body.nodeId, 'nodeId')
 
     let result: unknown = null
 
@@ -148,6 +151,7 @@ Deno.serve(async (req: Request) => {
 
     return jsonResponse(200, { success: true, action, result })
   } catch (err: unknown) {
+    if (err instanceof BadRequestError) return errorResponse(400, err.message)
     console.error('Unhandled error in game-bureau-ops:', err)
     return errorResponse(500, 'Internal server error')
   }

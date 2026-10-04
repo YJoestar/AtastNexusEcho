@@ -34,6 +34,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
 import { encryptLoginCode, decryptLoginCode } from '../_shared/loginCodeCipher.ts'
+import { BadRequestError, readJsonObject } from '../_shared/request.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -90,6 +91,7 @@ class BureauActionError extends Error {
 
 /** Map an action failure onto an HTTP status without leaking internals. */
 function bureauErrorResponse(err: unknown) {
+  if (err instanceof BadRequestError) return jsonResponse(400, { error: err.message })
   const message = err instanceof Error ? err.message : 'Unknown error'
   if (err instanceof BureauActionError) {
     const locked = message.includes('roster is locked') || message.includes('Team not found')
@@ -275,7 +277,10 @@ Deno.serve(async (req: Request) => {
       return attempt.credentials
     }
 
-    const { action, ...params } = await req.json()
+    const { action, ...params } = await readJsonObject(req)
+    if (typeof action !== 'string' || !action) {
+      return jsonResponse(400, { error: 'Missing action' })
+    }
 
     // --- Log admin action ---
     async function logAction(actionType: string, targetTeamId?: string, targetPlayerId?: string, payload?: Record<string, unknown>) {
@@ -2025,6 +2030,7 @@ Deno.serve(async (req: Request) => {
          return jsonResponse(400, { error: `Unknown action: ${action}` })
     }
   } catch (err: unknown) {
+    if (err instanceof BadRequestError) return jsonResponse(400, { error: err.message })
     console.error('Unhandled error in bureau-operations:', err)
     return jsonResponse(500, { error: 'Internal server error' })
   }
