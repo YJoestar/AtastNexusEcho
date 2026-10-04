@@ -3,7 +3,8 @@ import { fireEvent, render, screen, act, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import type { EvidenceLabCatalog } from '@/lib/admin'
 import { buildEvidenceCatalog } from '@/lib/evidenceCatalog'
-import { buildDevelopmentCatalog, matchesFilter, AdminEvidenceLab } from '@/features/admin/EvidenceLab'
+import { AdminEvidenceLab } from '@/features/admin/EvidenceLab'
+import { buildDevelopmentCatalog, matchesFilter, type LabFilter } from '@/features/admin/evidenceLabCatalog'
 import type { CaseArtifact } from '@/features/player/evidence/types'
 
 const CATALOG: EvidenceLabCatalog = {
@@ -134,7 +135,7 @@ describe('matchesFilter', () => {
   const artifacts: CaseArtifact[] = buildEvidenceCatalog(buildDevelopmentCatalog())
 
   function matches(filter: string): CaseArtifact[] {
-    return artifacts.filter(a => matchesFilter(a, filter as any))
+    return artifacts.filter(a => matchesFilter(a, filter as LabFilter))
   }
 
   it('PHOTOGRAPHS filter catches IMAGE and PHOTO types but not others', () => {
@@ -189,7 +190,7 @@ describe('matchesFilter', () => {
 
   it('DAMAGED filter catches items with condition != NORMAL (excluding fragments)', () => {
     const damagedRaw = artifacts.filter(a => {
-      const cond = (a.content as any).condition
+      const cond = (a.content as { condition?: string }).condition
       return cond && cond !== 'NORMAL'
     })
     const filtered = matches('DAMAGED')

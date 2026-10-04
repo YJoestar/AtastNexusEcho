@@ -73,4 +73,4 @@ export {
   type IncidentEntry,
 } from './IncidentLog'
 
-export { BureauIcons } from './BureauIcons'
+export { BureauIcons } from './iconRegistry'

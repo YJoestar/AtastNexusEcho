@@ -12,7 +12,6 @@
 
 import type { SVGProps } from 'react'
 import { cn } from '@/lib/utils'
-import { BoardGlyph, CaseGlyph, CommsGlyph, EvidenceGlyph, LedgerGlyph, ScanGlyph } from '@/components/brand/glyphs'
 
 const base = 'bureau-icon'
 type Props = SVGProps<SVGSVGElement> & { className?: string }
@@ -776,95 +775,4 @@ export function MicrophoneIcon(props: Props) {
       <path d="M8 19v2a4 4 0 0 0 8 0v-2" />
     </Icon>
   )
-}
-
-/* ── Export registry ──────────────────────────────────── */
-
-/* Field glyphs (brand/glyphs.tsx) are the icons of the five investigation
-   spaces. Trophy is retired: a ranking is a ledger, not a prize. */
-const TrophyIcon = LedgerGlyph
-
-export const BureauIcons = {
-  Case: CaseGlyph,
-  Evidence: EvidenceGlyph,
-  Board: BoardGlyph,
-  Scan: ScanGlyph,
-  Comms: CommsGlyph,
-  Ledger: LedgerGlyph,
-  Back: BackIcon,
-  Forward: ForwardIcon,
-  ChevronLeft: ChevronLeftIcon,
-  Close: CloseIcon,
-  Confirm: ConfirmIcon,
-  Check: ConfirmIcon,
-  Add: AddIcon,
-  Send: SendIcon,
-  Copy: CopyIcon,
-  Download: DownloadIcon,
-  Edit: EditIcon,
-  Save: SaveIcon,
-  Refresh: RefreshIcon,
-  Share: ShareIcon,
-  Eraser: EraserIcon,
-  Alert: AlertIcon,
-  AlertTriangle: AlertTriangleIcon,
-  Spinner: SpinnerIcon,
-  Success: SuccessIcon,
-  Error: ErrorIcon,
-  Circle: CircleIcon,
-  Lock: LockIcon,
-  Unlock: UnlockIcon,
-  Shield: ShieldIcon,
-  ShieldQuestion: ShieldQuestionIcon,
-  Eye: EyeIcon,
-  EyeOff: EyeOffIcon,
-  Users: UsersIcon,
-  User: UserIcon,
-  Trophy: TrophyIcon,
-  Flag: FlagIcon,
-  Target: TargetIcon,
-  LogOut: LogOutIcon,
-  MapPin: MapPinIcon,
-  Search: SearchIcon,
-  Filter: FilterIcon,
-  Info: InfoIcon,
-  Help: HelpIcon,
-  File: FileIcon,
-  Image: ImageIcon,
-  Video: VideoIcon,
-  Database: DatabaseIcon,
-  Box: BoxIcon,
-  Package: PackageIcon,
-  Key: KeyIcon,
-  Bell: BellIcon,
-  BellOff: BellOffIcon,
-  Keyboard: KeyboardIcon,
-  QrCode: QrCodeIcon,
-  Camera: CameraIcon,
-  ScanLine: ScanLineIcon,
-  Play: PlayIcon,
-  Pause: PauseIcon,
-  Square: SquareIcon,
-  Rotate: RotateIcon,
-  Radio: RadioIcon,
-  LayoutDashboard: LayoutDashboardIcon,
-  Maximize: MaximizeIcon,
-  Minimize: MinimizeIcon,
-  Wifi: WifiIcon,
-  WifiOff: WifiOffIcon,
-  CloudOff: CloudOffIcon,
-  Server: ServerIcon,
-  ServerCrash: ServerCrashIcon,
-  Clock: ClockIcon,
-  Brain: BrainIcon,
-  Lightbulb: LightbulbIcon,
-  RotateCcw: RotateCcwIcon,
-  RotateCcwIcon: RotateCcwIcon,
-  SkipForward: SkipForwardIcon,
-  Smartphone: SmartphoneIcon,
-  Tablet: TabletIcon,
-  Monitor: MonitorIcon,
-  Wrench: WrenchIcon,
-  Microphone: MicrophoneIcon,
-  Trash: TrashIcon,
 }

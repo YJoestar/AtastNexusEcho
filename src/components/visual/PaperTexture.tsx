@@ -6,7 +6,7 @@
  */
 
 import { useEffect, useRef, type FC, type ReactNode } from 'react'
-import { useEffectSettings } from './VisualEnvironment'
+import { useEffectSettings } from './visualEnvironmentCore'
 
 interface PaperTextureProps {
   children?: ReactNode

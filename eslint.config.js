@@ -14,6 +14,8 @@ export default tseslint.config(
       // Debug decoders left in the repo root; not part of the app or the build.
       '*.cjs',
       '.kilo/**',
+      // Local dev harnesses (untracked, never part of the app or the build).
+      'src/harness/**',
     ],
   },
   {

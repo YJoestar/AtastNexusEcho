@@ -12,7 +12,7 @@
  */
 
 import type { CSSProperties, FC } from 'react'
-import { useEffectSettings, type EffectIntensity } from './VisualEnvironment'
+import { useEffectSettings, type EffectIntensity } from './visualEnvironmentCore'
 import { NoiseField } from './NoiseField'
 
 interface CRTOverlayProps {

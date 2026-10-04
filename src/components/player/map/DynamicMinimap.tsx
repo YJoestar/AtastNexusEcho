@@ -52,6 +52,25 @@ export interface DynamicMinimapProps {
 const DEFAULT_VIEW_RADIUS = 280
 const DEFAULT_SIZE = 200
 
+/** World coordinates → minimap pixels. Shared by drawing and hit-testing. */
+function projectToMinimap(
+  wx: number, wy: number, camX: number, camY: number,
+  orientation: 'north' | 'player', playerRotation: number, size: number, halfView: number,
+): [number, number] {
+  const center = size / 2
+  const dx = wx - camX
+  const dy = wy - camY
+  if (orientation === 'player') {
+    const rad = (playerRotation * Math.PI) / 180
+    const cos = Math.cos(-rad)
+    const sin = Math.sin(-rad)
+    const rx = dx * cos - dy * sin
+    const ry = dx * sin + dy * cos
+    return [center + (rx / halfView) * center, center + (ry / halfView) * center]
+  }
+  return [center + (dx / halfView) * center, center + (dy / halfView) * center]
+}
+
 export const DynamicMinimap: FC<DynamicMinimapProps> = ({
   playerPosition,
   playerRotation = 0,
@@ -90,28 +109,20 @@ export const DynamicMinimap: FC<DynamicMinimapProps> = ({
 
     const pixelRatio = window.devicePixelRatio || 1
     const dprSize = size * pixelRatio
-    canvas.width = dprSize
-    canvas.height = dprSize
-    canvas.style.width = `${size}px`
-    canvas.style.height = `${size}px`
-    ctx.scale(pixelRatio, pixelRatio)
+    // Resizing a canvas clears it and reallocates its bitmap: only do it when the size changed.
+    if (canvas.width !== dprSize || canvas.height !== dprSize) {
+      canvas.width = dprSize
+      canvas.height = dprSize
+      canvas.style.width = `${size}px`
+      canvas.style.height = `${size}px`
+    }
+    ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0)
 
     const center = size / 2
     const halfView = viewRadius
 
-    const worldToScreen = (wx: number, wy: number, camX: number, camY: number): [number, number] => {
-      const dx = wx - camX
-      const dy = wy - camY
-      if (orientation === 'player') {
-        const rad = (playerRotation * Math.PI) / 180
-        const cos = Math.cos(-rad)
-        const sin = Math.sin(-rad)
-        const rx = dx * cos - dy * sin
-        const ry = dx * sin + dy * cos
-        return [center + (rx / halfView) * center, center + (ry / halfView) * center]
-      }
-      return [center + (dx / halfView) * center, center + (dy / halfView) * center]
-    }
+    const worldToScreen = (wx: number, wy: number, camX: number, camY: number) =>
+      projectToMinimap(wx, wy, camX, camY, orientation, playerRotation, size, halfView)
 
     ctx.clearRect(0, 0, size, size)
 
@@ -262,49 +273,62 @@ export const DynamicMinimap: FC<DynamicMinimapProps> = ({
       )
       ctx.stroke()
     }
-  }, [pois, nodeMap, playerRotation, orientation, playerCentered, viewRadius, size, teamMembers, onNodeSelect])
+  }, [pois, playerRotation, orientation, playerCentered, viewRadius, size, teamMembers])
 
+  // Ease the camera toward the player and redraw while it moves. Once it has
+  // arrived the loop stops: a static minimap must not redraw 60 times a second.
   useEffect(() => {
-    if (playerCentered) {
+    let running = true
+    const step = () => {
+      if (!running) return
       const target = playerPosition
-      const dx = target[0] - interpolatedPosRef.current[0]
-      const dy = target[1] - interpolatedPosRef.current[1]
-      const dist = Math.sqrt(dx * dx + dy * dy)
-      if (dist > 0.5) {
-        const t = 0.12
-        interpolatedPosRef.current[0] += dx * t
-        interpolatedPosRef.current[1] += dy * t
+      let moving = false
+      if (playerCentered) {
+        const dx = target[0] - interpolatedPosRef.current[0]
+        const dy = target[1] - interpolatedPosRef.current[1]
+        if (Math.hypot(dx, dy) > 0.5) {
+          interpolatedPosRef.current[0] += dx * 0.12
+          interpolatedPosRef.current[1] += dy * 0.12
+          moving = true
+        } else {
+          interpolatedPosRef.current[0] = target[0]
+          interpolatedPosRef.current[1] = target[1]
+        }
       } else {
         interpolatedPosRef.current[0] = target[0]
         interpolatedPosRef.current[1] = target[1]
       }
-    } else {
-      interpolatedPosRef.current[0] = playerPosition[0]
-      interpolatedPosRef.current[1] = playerPosition[1]
-    }
-
-    if (orientation === 'player') {
-      setCompassRotation(playerRotation)
-    } else {
-      setCompassRotation(0)
-    }
-  }, [playerPosition, playerRotation, playerCentered, orientation])
-
-  useEffect(() => {
-    let running = true
-    const render = () => {
-      if (!running) return
       draw()
-      animationFrameRef.current = requestAnimationFrame(render)
+      if (moving) animationFrameRef.current = requestAnimationFrame(step)
     }
-    render()
+    step()
     return () => {
       running = false
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current)
-      }
+      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current)
     }
-  }, [draw])
+  }, [draw, playerPosition, playerCentered])
+
+  useEffect(() => {
+    setCompassRotation(orientation === 'player' ? playerRotation : 0)
+  }, [playerRotation, orientation])
+
+  const handleCanvasClick = (event: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!onNodeSelect) return
+    const rect = event.currentTarget.getBoundingClientRect()
+    if (rect.width === 0 || rect.height === 0) return
+    const x = ((event.clientX - rect.left) / rect.width) * size
+    const y = ((event.clientY - rect.top) / rect.height) * size
+    const [camX, camY] = interpolatedPosRef.current
+    let best: { code: string; distance: number } | null = null
+    for (const poi of pois) {
+      if (!poi.state?.unlocked) continue
+      const [px, py] = projectToMinimap(poi.position[0], poi.position[1], camX, camY, orientation, playerRotation, size, viewRadius)
+      const distance = Math.hypot(px - x, py - y)
+      // 22 px: a fingertip, not a pixel.
+      if (distance <= 22 && (!best || distance < best.distance)) best = { code: poi.code, distance }
+    }
+    if (best) onNodeSelect(best.code)
+  }
 
   useEffect(() => {
     const handleResize = () => draw()
@@ -318,6 +342,7 @@ export const DynamicMinimap: FC<DynamicMinimapProps> = ({
         ref={canvasRef}
         className="absolute inset-0 w-full h-full"
         aria-label="Team radar minimap"
+        onClick={handleCanvasClick}
       />
       <div
         className="absolute top-1 left-1/2 -translate-x-1/2"

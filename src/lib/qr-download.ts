@@ -9,7 +9,10 @@
  * Uses qrcode's SVG output where possible for crisp vector rendering.
  */
 
+import type { jsPDF } from 'jspdf'
 import { QRCodeEntry } from '@/lib/admin'
+
+type QRCodeLib = { toDataURL: (text: string, options?: Record<string, unknown>) => Promise<string> }
 
 export interface QRPDFResult {
   success: boolean
@@ -136,7 +139,7 @@ export async function generateQRCodeSheet(
 }
 
 function drawPageHeader(
-  doc: any,
+  doc: jsPDF,
   _pageNum: number,
   _totalPages: number,
   totalMarkers: number,
@@ -169,7 +172,7 @@ function drawPageHeader(
   doc.text(`GENERATED / ${formatDate(genDate)}`, PAGE_WIDTH_MM - margin, margin + 10.5, { align: 'right' })
 }
 
-function drawPageFooter(doc: any, pageNum: number, totalPages: number) {
+function drawPageFooter(doc: jsPDF, pageNum: number, totalPages: number) {
   const margin = PAGE_MARGIN_MM
   doc.setFontSize(6)
   doc.setTextColor(120, 120, 120)
@@ -183,12 +186,12 @@ function drawPageFooter(doc: any, pageNum: number, totalPages: number) {
 }
 
 async function drawMarker(
-  doc: any,
+  doc: jsPDF,
   item: QRCodeEntry,
   x: number,
   y: number,
   size: number,
-  QRCode: any,
+  QRCode: QRCodeLib,
 ) {
   const markerId = item.markerId ?? item.code
   const manualCode = item.manualCode ?? item.code

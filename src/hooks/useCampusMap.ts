@@ -71,6 +71,7 @@ export interface UseCampusMapStateParams {
   solvedCodes: Set<string>
   currentNodeId: string | null
   availableNodeIds: string[]
+  /** Unused; kept so existing callers keep compiling. */
   currentNode?: { code: string; location: string } | null
   narrativeLevel?: NarrativeLevel
   nodeProgress?: NodeProgressEntry[]
@@ -81,7 +82,6 @@ export function useCampusMapState(params: UseCampusMapStateParams): MapNodeState
     solvedCodes,
     currentNodeId,
     availableNodeIds,
-    currentNode,
     narrativeLevel = 0,
     nodeProgress = [],
   } = params
@@ -120,7 +120,7 @@ export function useCampusMapState(params: UseCampusMapStateParams): MapNodeState
         status,
       } as MapNodeState
     })
-  }, [solvedCodes, currentNodeId, availableNodeIds, currentNode, narrativeLevel, nodeProgress])
+  }, [solvedCodes, currentNodeId, availableNodeIds, narrativeLevel, nodeProgress])
 }
 
 /**
@@ -131,7 +131,8 @@ export function useCampusMapState(params: UseCampusMapStateParams): MapNodeState
 export function useTeamMemberPositions(
   currentNodeId: string | null,
   availableNodeIds: string[],
-  solvedCodes: Set<string>,
+  // Accepted for call-site compatibility; positions do not depend on what is solved.
+  _solvedCodes?: Set<string>,
 ): TeamMember[] {
   return useMemo(() => {
     const members: TeamMember[] = []
@@ -175,7 +176,7 @@ export function useTeamMemberPositions(
     })
 
     return members
-  }, [currentNodeId, availableNodeIds, solvedCodes])
+  }, [currentNodeId, availableNodeIds])
 }
 
 export function getBuildingForLocation(location: string): BuildingName | null {

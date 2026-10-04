@@ -43,6 +43,7 @@ const mockCanvasContext = {
   rect: vi.fn(),
   setLineDash: vi.fn(),
   scale: vi.fn(),
+  setTransform: vi.fn(),
   translate: vi.fn(),
   rotate: vi.fn(),
   save: vi.fn(),
@@ -60,7 +61,7 @@ const mockCanvasContext = {
   globalAlpha: 1,
 }
 
-HTMLCanvasElement.prototype.getContext = vi.fn(() => mockCanvasContext as any)
+HTMLCanvasElement.prototype.getContext = vi.fn(() => mockCanvasContext) as unknown as HTMLCanvasElement['getContext']
 HTMLCanvasElement.prototype.getBoundingClientRect = vi.fn(() => ({
   left: 0,
   top: 0,

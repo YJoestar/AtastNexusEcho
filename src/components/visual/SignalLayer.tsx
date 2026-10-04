@@ -11,7 +11,7 @@
  */
 
 import { useEffect, type FC } from 'react'
-import { useEffectSettings, type EffectIntensity } from './VisualEnvironment'
+import { useEffectSettings, type EffectIntensity } from './visualEnvironmentCore'
 import { NoiseField } from './NoiseField'
 import { useHorrorLevel } from '@/hooks/useHorrorLevel'
 import { glitch } from '@/lib/vfx/glitch'

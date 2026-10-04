@@ -1,16 +1,13 @@
 export { useAnimation, useGSAP } from '@/hooks/useAnimation'
 export type { AnimationVariant, AnimationOptions } from '@/hooks/useAnimation'
-export {
-  VisualEnvironmentProvider,
-  useEffectSettings,
-  useVisualEnvironment,
-} from '@/components/visual/VisualEnvironment'
+export { VisualEnvironmentProvider } from '@/components/visual/VisualEnvironment'
+export { useEffectSettings, useVisualEnvironment } from '@/components/visual/visualEnvironmentCore'
 export type {
   DeviceProfile,
   EffectIntensity,
   VisualEnvironmentState,
   EffectSettings,
-} from '@/components/visual/VisualEnvironment'
+} from '@/components/visual/visualEnvironmentCore'
 export { CRTOverlay } from '@/components/visual/CRTOverlay'
 export { SignalLayer } from '@/components/visual/SignalLayer'
 export { GlitchLayer } from '@/components/visual/GlitchLayer'

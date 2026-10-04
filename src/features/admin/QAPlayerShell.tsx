@@ -31,7 +31,7 @@ import { MemoryRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { QASimulatorContext } from '@/contexts/QASimulatorContext'
 import type { QAContextValue } from '@/contexts/QASimulatorContext'
 import { AppContext } from '@/app/providers/AppProvider'
-import type { AppContextValue } from '@/app/providers/AppProvider'
+import { DUMMY_APP_CONTEXT } from './qaDummyContext'
 import { PlayerLayout } from '@/features/player/PlayerLayout'
 import { PlayerGame } from '@/features/player/Game'
 import { PlayerNode } from '@/features/player/Node'
@@ -43,25 +43,6 @@ import { PlayerLeaderboard } from '@/features/player/Leaderboard'
 import { PlayerNotifications } from '@/features/player/Notifications'
 import { PlayerFinal } from '@/features/player/Final'
 import { PlayerComplete } from '@/features/player/Complete'
-
-export const DUMMY_APP_CONTEXT: AppContextValue = {
-  player: null,
-  team: null,
-  role: null,
-  isAuthenticated: false,
-  isInitializing: false,
-  login: async () => ({ success: false }),
-  logout: async () => {},
-  refreshGameState: async () => {},
-  refreshTeamProgress: async () => {},
-  gameState: null,
-  teamProgress: null,
-  notifications: [],
-  unreadCount: 0,
-  markNotificationRead: () => {},
-  refreshNotifications: async () => {},
-  markAllNotificationsRead: async () => {},
-}
 
 const qaContextStore: {
   value: QAContextValue | null

@@ -10,22 +10,23 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, renderHook } from '@testing-library/react'
+import { fireEvent, render, renderHook } from '@testing-library/react'
 import { CampusMap } from '@/components/player/map/CampusMap'
 import { DynamicMinimap } from '@/components/player/map/DynamicMinimap'
 import { useCampusMapState, useTeamMemberPositions } from '@/hooks/useCampusMap'
+import type { MapNodeState, TeamMember } from '@/types/campus'
 import { ALL_POIS } from '@/content/campus'
 
 const SAMPLE_NODES = [
   { code: 'P01', knowledge: 'VERIFIED', reality: 'NORMAL', solved: true, isCurrent: false, available: false, building: 'ADMIN_BUILDING', position: [150, 190], title: 'The Facade', location: 'Admin Building', stage: 1 },
   { code: 'P02', knowledge: 'INVESTIGATED', reality: 'SUSPICIOUS', solved: false, isCurrent: true, available: false, building: 'ADMIN_BUILDING', position: [185, 100], title: 'The Clock', location: 'Admin Building', stage: 1 },
   { code: 'P06', knowledge: 'VISITED', reality: 'ANOMALOUS', solved: false, isCurrent: false, available: true, building: 'LIBRARY', position: [380, 150], title: 'The Stacks', location: 'Library', stage: 1 },
-] as any[]
+] as unknown as MapNodeState[]
 
 const SAMPLE_TEAM = [
   { id: 'm1', playerId: 'p1', role: 'OPERATOR', displayName: 'Op', position: [190, 105], building: 'ADMIN_BUILDING', isCurrent: false, isConnected: true },
   { id: 'm2', playerId: 'p2', role: 'OBSERVER', displayName: 'Obs', position: [185, 100], building: 'ADMIN_BUILDING', isCurrent: true, isConnected: true },
-] as any[]
+] as unknown as TeamMember[]
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -61,6 +62,32 @@ describe('CampusMap', () => {
   it('renders without crashing when showFog is false', () => {
     const { container } = render(<CampusMap nodes={SAMPLE_NODES} zoom={1} showFog={false} />)
     expect(container.querySelector('canvas')).not.toBeNull()
+  })
+})
+
+describe('DynamicMinimap tapping', () => {
+  const nodes = SAMPLE_NODES.map(n => ({ ...n, unlocked: n.code !== 'P06' }))
+  const setup = (onNodeSelect: (code: string) => void) => {
+    const { container } = render(
+      <DynamicMinimap playerPosition={ALL_POIS.find(p => p.code === 'P02')!.position} nodes={nodes} size={200} viewRadius={260} onNodeSelect={onNodeSelect} />,
+    )
+    const canvas = container.querySelector('canvas') as HTMLCanvasElement
+    vi.spyOn(canvas, 'getBoundingClientRect').mockReturnValue({ left: 0, top: 0, width: 200, height: 200, right: 200, bottom: 200, x: 0, y: 0, toJSON: () => ({}) })
+    return canvas
+  }
+
+  it('selects the unlocked marker under the finger', () => {
+    const onSelect = vi.fn()
+    // The player stands on P02, so P02 is drawn at the centre of the dial.
+    fireEvent.click(setup(onSelect), { clientX: 100, clientY: 100 })
+    expect(onSelect).toHaveBeenCalledWith('P02')
+  })
+
+  it('ignores a tap on empty ground and on a locked marker', () => {
+    const onSelect = vi.fn()
+    const canvas = setup(onSelect)
+    fireEvent.click(canvas, { clientX: 5, clientY: 195 })
+    expect(onSelect).not.toHaveBeenCalled()
   })
 })
 

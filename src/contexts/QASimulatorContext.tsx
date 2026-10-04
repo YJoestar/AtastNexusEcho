@@ -53,7 +53,7 @@ import type { NodeIndexEntry } from '@/content/puzzles'
 import { validateAnyCode, toQRScanResult } from '@/lib/qr'
 import { adminAPI } from '@/lib/admin'
 import type { PuzzleQAEntry } from '@/lib/admin'
-import { buildDevelopmentCatalog } from '@/features/admin/EvidenceLab'
+import { buildDevelopmentCatalog } from '@/features/admin/evidenceLabCatalog'
 
 export type SimulationType = 'FRESH' | 'PARTIAL' | 'COMPLETE' | 'CUSTOM'
 
