@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { BureauIcons, DocumentShell, FileTabs, Stamp } from '@/components/bureau'
 import { ROUTES } from '@/app/config'
 import { useGameEngine } from '@/hooks/useGameEngine'
+import { useGameAudio } from '@/hooks/useGameAudio'
 import { useInvestigationWorkspace } from '@/hooks/useInvestigationWorkspace'
 import {
   detectEvidenceEvolution,
@@ -101,6 +102,7 @@ export function PlayerEvidenceArchive() {
   const [searchParams, setSearchParams] = useSearchParams()
   const { inventory, isLoading, fetchInventory, team, teamProgress } = useGameEngine()
   const { workspace, updateWorkspace } = useInvestigationWorkspace(team?.id)
+  const audio = useGameAudio()
   const [archiveClass, setArchiveClass] = useState<ArchiveClass>('ALL')
   const [search, setSearch] = useState(() => searchParams.get('q') ?? '')
   const [sort, setSort] = useState<ArchiveSort>('RECOVERED')
@@ -289,6 +291,7 @@ export function PlayerEvidenceArchive() {
     setSearchParams({ artifact: id })
     setMode('INSPECT')
     markInspection(id, artifact.content)
+    audio.pin()
   }
 
   const closeArtifact = () => {
@@ -296,10 +299,14 @@ export function PlayerEvidenceArchive() {
     setMode('ARCHIVE')
   }
 
-  const markArtifact = (id: string, mark: EvidenceMark) => updateWorkspace(current => ({
-    ...current,
-    marks: { ...current.marks, [id]: mark },
-  }))
+  const markArtifact = (id: string, mark: EvidenceMark) => {
+    updateWorkspace(current => ({
+      ...current,
+      marks: { ...current.marks, [id]: mark },
+    }))
+    if (mark === 'IMPORTANT' || mark === 'VERIFIED') audio.pin()
+    else if (mark === 'CONTRADICTION') audio.contradiction()
+  }
 
   const addAnnotation = (id: string, kind: AnnotationKind, text: string, point?: { x: number; y: number }) => {
     updateWorkspace(current => ({

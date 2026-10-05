@@ -20,6 +20,7 @@ import { HINT_PENALTIES } from '@/content/constants'
 import { useEffect, useState, useRef } from 'react'
 import type { ReactNode } from 'react'
 import type { PlayerNodeView } from '@/hooks/useGameEngine'
+import { useGameAudio } from '@/hooks/useGameAudio'
 import { BureauIcons } from '@/components/bureau'
 import {
   DocumentShell,
@@ -36,6 +37,7 @@ export function PlayerNode() {
   const { refreshTeamProgress, refreshGameState } = useApp()
   const engine = useGameEngine()
   const { role, submitAnswer, requestHint, isOffline, fetchNode } = engine
+  const audio = useGameAudio()
   const { showToast, removeToast, toasts } = useDiscoveryToast()
   const [node, setNode] = useState<PlayerNodeView | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -117,6 +119,15 @@ export function PlayerNode() {
     return () => { cancelled = true }
   }, [nodeId, role])
 
+  const waitingActive = node?.unlocked && !node.isSolved && !!node.roleContent && !!role
+  const prevWaitingRef = useRef(waitingActive)
+  useEffect(() => {
+    if (waitingActive && !prevWaitingRef.current) {
+      audio.roleHandoff()
+    }
+    prevWaitingRef.current = waitingActive
+  }, [waitingActive, audio])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!answer.trim() || !nodeId || submitBusyRef.current) return
@@ -136,8 +147,10 @@ export function PlayerNode() {
 
       if (result.queued) {
         showToast('No signal — answer queued and will be sent on reconnect', 'general')
+        audio.failure()
       } else if (result.isCorrect) {
         setJustSolved(true)
+        audio.success()
         if (result.nextNodeId) {
           refreshGameState()
           refreshTeamProgress()
@@ -151,12 +164,15 @@ export function PlayerNode() {
         leaveTimerRef.current = setTimeout(() => {
           navigate(ROUTES.PLAYER_GAME, { replace: true })
         }, 2000)
+      } else {
+        audio.failure()
       }
       setAnswer('')
     } catch (err: unknown) {
       if (!mountedRef.current) return
       const msg = err instanceof Error ? err.message : 'Submission failed'
       setActionError(msg)
+      audio.failure()
     } finally {
       submitBusyRef.current = false
       if (mountedRef.current) setIsSubmitting(false)

@@ -20,6 +20,7 @@ import { BureauIcons, Stamp } from '@/components/bureau'
 import { useGameEngine, type QRScanResult } from '@/hooks/useGameEngine'
 import { useConnection } from '@/hooks/useConnection'
 import { QASimulatorContext } from '@/contexts/QASimulatorContext'
+import { useGameAudio } from '@/hooks/useGameAudio'
 import { ROUTES } from '@/app/config'
 import { cn } from '@/lib/utils'
 
@@ -131,6 +132,7 @@ export function PlayerQR() {
   const isOffline = connection.isOffline
   const qaContext = useContext(QASimulatorContext)
   const isQASimulation = !!qaContext?.isActive
+  const audio = useGameAudio()
 
   const [cameraState, setCameraState] = useState<CameraState>('IDLE')
   const [lastResult, setLastResult] = useState<QRScanResult | null>(null)
@@ -205,7 +207,11 @@ export function PlayerQR() {
         setIsResolving(true)
         try {
           const result = await scanQR(code)
-          if (isMountedRef.current) setLastResult(result)
+          if (isMountedRef.current) {
+            setLastResult(result)
+            if (result.discovered) audio.verified()
+            else audio.error()
+          }
         } catch (err) {
           if (isMountedRef.current) {
             setLastResult({
@@ -213,6 +219,7 @@ export function PlayerQR() {
               message: err instanceof Error ? err.message : 'Scan failed. Try again.',
               error: 'scan_failed',
             })
+            audio.error()
           }
         }
         // Stamped after the round trip settles, not at detection. Stamping at
@@ -225,7 +232,7 @@ export function PlayerQR() {
         if (isMountedRef.current) setIsResolving(false)
       }
     },
-    [isOffline, scanQR],
+    [isOffline, scanQR, audio],
   )
 
   const decodeFrame = useCallback(async () => {
@@ -292,6 +299,7 @@ export function PlayerQR() {
     setCameraState('REQUESTING_CAMERA')
     setLastResult(null)
     lastScannedRef.current = null
+    audio.scannerArm()
 
     if (isQASimulation) {
       armingRef.current = false
@@ -379,7 +387,7 @@ export function PlayerQR() {
         setCameraState('STREAM_FAILED')
       }
     }
-  }, [isOffline, isQASimulation, decodeFrame, releaseCamera])
+  }, [isOffline, isQASimulation, decodeFrame, releaseCamera, audio])
 
   const stopScan = useCallback(() => {
     setCameraState('IDLE')
