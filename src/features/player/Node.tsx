@@ -384,10 +384,27 @@ RETURN TO FIELD
             stock="paper"
             footer={<Stamp variant="incomplete">Sealed</Stamp>}
           >
-            <div className="text-center py-6">
+            <div className="space-y-3 py-4 text-center">
               <p className="text-nexus-textMuted">
-                Solve prerequisite puzzles or scan the correct QR code to unlock this node.
+                This node is sealed. Complete the required steps to unlock it.
               </p>
+              {node.prerequisites.length > 0 && (
+                <div className="font-mono text-xs uppercase tracking-[0.12em] text-nexus-textSubtle">
+                  <p className="mb-1">Required:</p>
+                  <ul className="space-y-1">
+                    {node.prerequisites.map((pr, idx) => (
+                      <li key={idx}>
+                        {pr.type === 'NODE_SOLVED' && `Solve node ${pr.targetId}`}
+                        {pr.type === 'EVIDENCE_OWNED' && `Find evidence ${pr.targetId}`}
+                        {pr.type === 'TIME_ELAPSED' && `Wait ${pr.value ?? ''}`}
+                        {pr.type === 'ROLE_ACTION' && `${pr.role ?? 'Role'} action: ${pr.targetId}`}
+                        {pr.type === 'ADMIN_UNLOCK' && 'Admin unlock required'}
+                        {!['NODE_SOLVED', 'EVIDENCE_OWNED', 'TIME_ELAPSED', 'ROLE_ACTION', 'ADMIN_UNLOCK'].includes(pr.type) && pr.targetId}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           </DocumentShell>
         )}

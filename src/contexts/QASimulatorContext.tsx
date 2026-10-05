@@ -49,7 +49,7 @@ import type {
   EvidenceItem,
 } from '@/types/game-engine'
 import type { NodeProgress } from '@/types'
-import { ALL_PUZZLES, PUZZLES_BY_CODE, PUZZLE_COUNT } from '@/content/puzzles'
+import { ALL_PUZZLES, PUZZLES_BY_CODE, PUZZLE_COUNT, FINAL_NODE } from '@/content/puzzles'
 import type { NodeIndexEntry } from '@/content/puzzles'
 import { adminAPI } from '@/lib/admin'
 import type { PuzzleQAEntry, QRCodeEntry } from '@/lib/admin'
@@ -218,8 +218,8 @@ function generateNodeDetail(
 
   const failurePropagation: FailurePropagation = {
     wrongStep: `Incorrect answer or missed step on ${puzzle.name}`,
-    consequence: 'Team loses time and hints; investigation stalls.',
-    recoveryGuidance: 'Review role briefings and request a hint if stuck.',
+    consequence: 'Incorrect submissions do not advance the node. The team can retry until the correct answer is accepted.',
+    recoveryGuidance: 'Review the available evidence and hints, then submit again.',
   }
 
   const locationClue: LocationClue = {
@@ -275,6 +275,10 @@ function generateNodeDetail(
     storyReveal: `Solving ${puzzle.name} reveals the next piece of the narrative.`,
     whyTeamworkMatters: `The ${role}'s unique perspective on ${puzzle.name} is essential for the team's success.`,
     branchConditions: [],
+    prerequisites: puzzle.prerequisiteNodes.map(targetId => ({
+      type: 'NODE_SOLVED' as const,
+      targetId,
+    })),
     points: puzzle.points,
   }
 }
@@ -651,12 +655,15 @@ export function QASimulatorProvider({ children }: { children: ReactNode }) {
 
   const solvedCount = solvedNodes.size
 
+  const hasFinalBoss = solvedNodes.has(FINAL_NODE?.code ?? '')
+  const isComplete = solvedCount >= PUZZLE_COUNT - 1 || hasFinalBoss
+
   const gameState: GameState = useMemo(
     () => ({
-      status: solvedCount >= PUZZLE_COUNT - 1 ? 'ENDED' : 'RUNNING',
+      status: isComplete ? 'ENDED' : 'RUNNING',
       startedAt: new Date().toISOString(),
       endsAt: new Date(Date.now() + (180 - elapsedMinutes) * 60_000).toISOString(),
-      currentPhase: solvedCount >= PUZZLE_COUNT - 1 ? 'DEBRIEF' : 'GAMEPLAY',
+      currentPhase: isComplete ? 'DEBRIEF' : 'GAMEPLAY',
       config: {
         maxTeams: 25,
         playersPerTeam: 3,
@@ -666,8 +673,8 @@ export function QASimulatorProvider({ children }: { children: ReactNode }) {
         requireAllRoles: true,
       },
     }),
-    [solvedCount, elapsedMinutes],
-  )
+     [isComplete, elapsedMinutes],
+   )
 
   const teamProgress: TeamProgress = useMemo(
     () => ({

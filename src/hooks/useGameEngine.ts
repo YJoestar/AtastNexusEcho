@@ -70,6 +70,7 @@ export interface PlayerNodeView {
   evidenceUnlocked: NodeDetailPlayerView['evidenceUnlocked']
   storyReveal: string
   whyTeamworkMatters: string
+  prerequisites: NodeDetailPlayerView['prerequisites']
 }
 
 export interface MergedInventory {
@@ -321,6 +322,7 @@ export function useGameEngine() {
           evidenceUnlocked: null,
           storyReveal: '',
           whyTeamworkMatters: '',
+          prerequisites: [],
         }
       }
 
@@ -364,9 +366,10 @@ export function useGameEngine() {
           locationClue: sanitizeLocationClue(apiNode.locationClue),
         evidenceUnlocked: apiNode.evidenceUnlocked ?? null,
         storyReveal: apiNode.storyReveal,
-        whyTeamworkMatters: apiNode.whyTeamworkMatters,
-      }
-    },
+          whyTeamworkMatters: apiNode.whyTeamworkMatters,
+          prerequisites: apiNode.prerequisites,
+        }
+      },
     [role, findProgressEntry, teamProgress, setLoading],
   )
 
@@ -683,6 +686,7 @@ export function useGameEngine() {
           evidenceUnlocked: node.evidenceUnlocked,
           storyReveal: node.storyReveal,
           whyTeamworkMatters: node.whyTeamworkMatters,
+          prerequisites: node.prerequisites,
         } as PlayerNodeView
       },
       fetchInventory: qaContext.fetchInventory,

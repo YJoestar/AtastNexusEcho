@@ -101,6 +101,13 @@ export interface EvidenceUnlocked {
   content: string
 }
 
+export interface Prerequisite {
+  type: 'NODE_SOLVED' | 'EVIDENCE_OWNED' | 'FRAGMENT_OWNED' | 'ROLE_ACTION' | 'TIME_ELAPSED' | 'ADMIN_UNLOCK'
+  targetId: string
+  role?: string
+  value?: number | string
+}
+
 export interface BranchCondition {
   condition: string
   nextNode: string
@@ -141,6 +148,7 @@ export interface NodeDetailPlayerView {
   storyReveal: string
   whyTeamworkMatters: string
   branchConditions: BranchCondition[]
+  prerequisites: Prerequisite[]
   points: number
 }
 

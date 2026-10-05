@@ -94,6 +94,31 @@ export function AdminDashboard() {
       }
     }
 
+    // Stall detection: an ACTIVE team with no events in the last 10 minutes
+    const now = Date.now()
+    const lastEventByTeam = new Map<string, string>()
+    for (const event of gameEvents) {
+      if (event.teamId) {
+        const existing = lastEventByTeam.get(event.teamId)
+        if (!existing || new Date(event.timestamp).getTime() > new Date(existing).getTime()) {
+          lastEventByTeam.set(event.teamId, event.timestamp)
+        }
+      }
+    }
+    for (const team of teams) {
+      if (team.status !== 'ACTIVE') continue
+      const last = lastEventByTeam.get(team.id)
+      if (!last) continue
+      const ageMinutes = (now - new Date(last).getTime()) / 60_000
+      if (ageMinutes >= 10) {
+        result.push({
+          severity: 'warning',
+          message: `${team.code} STALLED — ${Math.round(ageMinutes)}m since last activity`,
+          timestamp: last,
+        })
+      }
+    }
+
     // Check for QR or node inconsistencies from recent events
     for (const event of gameEvents.slice(0, 20)) {
       if (event.type === 'QR_SCANNED' && event.metadata?.error) {
