@@ -54,7 +54,22 @@ export interface QRScanResponse {
   qrCode?: string
 }
 
-async function callFunction<T>(name: string, body: unknown = {}): Promise<T> {
+// In-flight request deduplication.
+//
+// During the 30-second polling cycle and after a QR scan, several callbacks
+// fire toward the same endpoint within the same tick:
+//   refreshGameState()   → game-get-state
+//   refreshTeamProgress() → game-node-progress  +  game-get-state
+//   fetchNodeProgress()  → game-node-progress
+//
+// That is two concurrent calls to each of game-get-state and game-node-progress
+// — duplicate requests that double radio and battery usage on mobile for
+// identical responses. A per-key Promise cache collapses concurrent identical
+// calls into one network round-trip; the cache entry is deleted on settle so
+// subsequent polled cycles always fetch fresh data.
+const pendingRequests = new Map<string, Promise<unknown>>()
+
+async function doInvoke<T>(name: string, body: unknown): Promise<T> {
   const { data, error } = await supabase.functions.invoke(name, {
     method: 'POST',
     body: JSON.stringify(body),
@@ -103,6 +118,22 @@ async function callFunction<T>(name: string, body: unknown = {}): Promise<T> {
   }
 
   return data as unknown as T
+}
+
+async function callFunction<T>(name: string, body: unknown = {}): Promise<T> {
+  const cacheKey = `${name}:${JSON.stringify(body ?? {})}`
+
+  const existing = pendingRequests.get(cacheKey)
+  if (existing) return existing as Promise<T>
+
+  const promise = doInvoke<T>(name, body)
+  pendingRequests.set(cacheKey, promise)
+
+  try {
+    return await promise
+  } finally {
+    pendingRequests.delete(cacheKey)
+  }
 }
 
 /**

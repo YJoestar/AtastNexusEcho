@@ -658,6 +658,11 @@ export function QASimulatorProvider({ children }: { children: ReactNode }) {
   const hasFinalBoss = solvedNodes.has(FINAL_NODE?.code ?? '')
   const isComplete = solvedCount >= PUZZLE_COUNT - 1 || hasFinalBoss
 
+  // Cache the base inventory so teamProgress and the inventory memo don't
+  // each rebuild it from scratch. generateInventory is deterministic on
+  // solvedCount alone.
+  const inventoryBase = useMemo(() => generateInventory(solvedCount), [solvedCount])
+
   const gameState: GameState = useMemo(
     () => ({
       status: isComplete ? 'ENDED' : 'RUNNING',
@@ -682,9 +687,9 @@ export function QASimulatorProvider({ children }: { children: ReactNode }) {
       solvedNodes: withSimulatedAttempts(buildDefaultPuzzleProgress(), solvedNodes, attemptCounts),
       currentNodeId,
       availableNodeIds,
-      evidenceOwned: generateInventory(solvedCount).evidence.map(e => e.code),
+      evidenceOwned: inventoryBase.evidence.map(e => e.code),
       inventoryOwned: {},
-      fragmentsOwned: generateInventory(solvedCount).fragments.map(f => f.code),
+      fragmentsOwned: inventoryBase.fragments.map(f => f.code),
       score,
       hintsUsed,
       hintsAvailable: Math.max(0, 3 - hintsUsed),
@@ -694,7 +699,7 @@ export function QASimulatorProvider({ children }: { children: ReactNode }) {
       lastActivityAt: new Date().toISOString(),
       metadata: { branchPath: Array.from(solvedNodes), extraData: {} } as unknown as TeamProgress['metadata'],
     }),
-    [currentNodeId, availableNodeIds, solvedCount, hintsUsed, elapsedMinutes, score, solvedNodes, attemptCounts],
+    [currentNodeId, availableNodeIds, inventoryBase, hintsUsed, elapsedMinutes, score, solvedNodes, attemptCounts],
   )
 
   const allNodesForMap = useMemo(() => {
@@ -744,8 +749,11 @@ export function QASimulatorProvider({ children }: { children: ReactNode }) {
 
   const inventory = useMemo(() => {
     if (!teamProgress) return null
-    return generateInventory(solvedCount, evidenceLabMode, localEvidenceOverrides)
-  }, [teamProgress, solvedCount, evidenceLabMode, localEvidenceOverrides])
+    if (evidenceLabMode || Object.keys(localEvidenceOverrides).length > 0) {
+      return generateInventory(solvedCount, evidenceLabMode, localEvidenceOverrides)
+    }
+    return inventoryBase
+  }, [teamProgress, solvedCount, evidenceLabMode, localEvidenceOverrides, inventoryBase])
 
   const notifications = useMemo(() => generateNotifications(solvedCount, role), [solvedCount, role])
 
