@@ -109,6 +109,15 @@ const EMPTY_LOCATION_CLUE: NonNullable<NodeDetailPlayerView['locationClue']> = {
   explanation: '',
 }
 
+/** Strip destination fields from a location clue so the player cannot see the answer. */
+function sanitizeLocationClue(
+  clue: NodeDetailPlayerView['locationClue'] | null | undefined,
+): NonNullable<NodeDetailPlayerView['locationClue']> {
+  if (!clue) return EMPTY_LOCATION_CLUE
+  const { solution: _solution, nextPhysicalLocation: _next, nextQrNode: _qr, ...rest } = clue
+  return { ...EMPTY_LOCATION_CLUE, ...rest }
+}
+
 /**
  * The server's own rejections are answers ("Rate limited", "Node not
  * accessible", "Game not active") and must reach the player. A transport
@@ -352,7 +361,7 @@ export function useGameEngine() {
         operatorInvestigation: apiNode.operatorInvestigation ?? null,
         coordinationChain: apiNode.coordinationChain ?? null,
         failurePropagation: apiNode.failurePropagation ?? null,
-        locationClue: apiNode.locationClue ?? EMPTY_LOCATION_CLUE,
+          locationClue: sanitizeLocationClue(apiNode.locationClue),
         evidenceUnlocked: apiNode.evidenceUnlocked ?? null,
         storyReveal: apiNode.storyReveal,
         whyTeamworkMatters: apiNode.whyTeamworkMatters,
@@ -670,7 +679,7 @@ export function useGameEngine() {
           operatorInvestigation: node.operatorInvestigation,
           coordinationChain: node.coordinationChain,
           failurePropagation: node.failurePropagation,
-          locationClue: node.locationClue ?? EMPTY_LOCATION_CLUE,
+          locationClue: sanitizeLocationClue(node.locationClue),
           evidenceUnlocked: node.evidenceUnlocked,
           storyReveal: node.storyReveal,
           whyTeamworkMatters: node.whyTeamworkMatters,

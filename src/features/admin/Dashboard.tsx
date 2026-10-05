@@ -426,7 +426,7 @@ export function AdminDashboard() {
                 </div>
               ) : (
                 <div className="divide-y divide-nexus-borderSubtle">
-                  {teams.slice(0, 6).map(team => (
+                  {teams.map(team => (
                     <button key={team.id} type="button" onClick={() => handleTeamClick(team.id)} className="w-full px-3 py-2 text-left transition-colors hover:bg-nexus-surfaceElevated">
                       <div className="flex items-center justify-between gap-2 font-mono">
                         <span className="truncate text-xs font-bold text-nexus-text">{team.code} / {team.name}</span>

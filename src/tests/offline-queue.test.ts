@@ -124,7 +124,7 @@ describe('flush', () => {
     const send = vi.fn()
     const report = await flushSubmissionQueue({ send: send as never, delay: noDelay })
     expect(send).not.toHaveBeenCalled()
-    expect(report).toEqual({ sent: [], results: [], remaining: 0 })
+    expect(report).toEqual({ sent: [], results: [], remaining: 0, deadLetter: [] })
   })
 })
 

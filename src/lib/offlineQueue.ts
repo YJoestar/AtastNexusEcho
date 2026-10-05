@@ -170,6 +170,8 @@ export interface FlushReport {
   results: Array<{ submission: QueuedSubmission; isCorrect: boolean; nextNodeId?: string | null }>
   /** Entries still queued after the flush. */
   remaining: number
+  /** Entries that exceeded max attempts and were dropped. */
+  deadLetter: QueuedSubmission[]
 }
 
 export interface FlushOptions {
@@ -184,6 +186,9 @@ export interface FlushOptions {
 
 const defaultDelay = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms))
 
+/** Retries that reached this count are removed from the queue. */
+export const MAX_QUEUE_ATTEMPTS = 5
+
 /**
  * Replay the queue in order.
  *
@@ -191,6 +196,9 @@ const defaultDelay = (ms: number) => new Promise<void>(resolve => setTimeout(res
  * in order, and a burst of failures almost always means the link is down again
  * rather than that this one entry is bad. Entries stay in the queue with their
  * attempt count incremented, so the next pass retries them.
+ *
+ * Entries that exceed `MAX_QUEUE_ATTEMPTS` are dropped so they cannot
+ * head-of-line block the rest of the queue forever.
  */
 export async function flushSubmissionQueue(options: FlushOptions): Promise<FlushReport> {
   const {
@@ -202,11 +210,10 @@ export async function flushSubmissionQueue(options: FlushOptions): Promise<Flush
 
   const results: FlushReport['results'] = []
   const sent: QueuedSubmission[] = []
-  const queue = readQueue()
+  const deadLetter: QueuedSubmission[] = []
+  let queue = readQueue()
 
   for (const [index, entry] of queue.slice(0, maxToSend).entries()) {
-    // Space the replays, not the acknowledgement: waiting after the last send
-    // only delays the player's own confirmation that it went through.
     if (index > 0 && intervalMs > 0) await delay(intervalMs)
 
     try {
@@ -217,19 +224,24 @@ export async function flushSubmissionQueue(options: FlushOptions): Promise<Flush
         isCorrect: result.isCorrect,
         nextNodeId: result.nextNodeId ?? null,
       })
-      removeSubmission(entry.id)
+      queue = queue.filter(item => item.id !== entry.id)
+      writeQueue(queue)
     } catch {
-      // Keep the entry, remember the failure, and stop this pass: the link is
-      // almost certainly down again, and the remaining entries are in order
-      // behind it.
-      writeQueue(
-        readQueue().map(item =>
-          item.id === entry.id ? { ...item, attempts: item.attempts + 1 } : item,
-        ),
-      )
-      break
+      const nextAttempts = entry.attempts + 1
+      if (nextAttempts >= MAX_QUEUE_ATTEMPTS) {
+        deadLetter.push(entry)
+        queue = queue.filter(item => item.id !== entry.id)
+        writeQueue(queue)
+      } else {
+        writeQueue(
+          queue.map(item =>
+            item.id === entry.id ? { ...item, attempts: nextAttempts } : item,
+          ),
+        )
+        break
+      }
     }
   }
 
-  return { sent, results, remaining: queueSize() }
+  return { sent, results, remaining: queueSize(), deadLetter }
 }
