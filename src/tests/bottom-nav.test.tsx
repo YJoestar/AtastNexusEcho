@@ -30,8 +30,8 @@ const { BottomNav } = await import('@/components/player/BottomNav')
 const { NAV_ITEMS, navDestinationFor, navItemFor, shouldRenderBottomNav } = await import('@/lib/navigation')
 
 describe('navItemFor', () => {
-  it('names the six investigation spaces', () => {
-    expect(NAV_ITEMS.map(item => item.id)).toEqual(['CASE', 'EVIDENCE', 'BOARD', 'SCAN', 'COMMS', 'LOG'])
+  it('names the seven investigation spaces', () => {
+    expect(NAV_ITEMS.map(item => item.id)).toEqual(['CASE', 'FIELD', 'EVIDENCE', 'BOARD', 'SCAN', 'COMMS', 'LOG'])
   })
 
   it('tells Evidence from Board on their shared route', () => {

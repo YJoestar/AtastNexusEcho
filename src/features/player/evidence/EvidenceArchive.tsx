@@ -470,9 +470,14 @@ export function PlayerEvidenceArchive() {
                             {condition !== 'NORMAL' && <span className="text-nexus-warning">{condition}</span>}
                             {(state === 'CONTRADICTED' || state === 'ANOMALOUS') && <span className="text-nexus-danger">{state}</span>}
                           </span>
-                          <span className="mt-1 block truncate font-mono text-[0.68rem] uppercase tracking-[0.08em] text-nexus-textMuted">
-                            {artifact.location ?? 'LOCATION UNKNOWN'}{mark !== 'UNMARKED' ? ` · ${MARK_LABEL[mark]}` : ''}{noteCount ? ` · ${noteCount} NOTE${noteCount > 1 ? 'S' : ''}` : ''}{position ? ' · ON BOARD' : ''}
-                          </span>
+                           <span className="mt-1 block truncate font-mono text-[0.68rem] uppercase tracking-[0.08em] text-nexus-textMuted">
+                             {artifact.location ?? 'LOCATION UNKNOWN'}{mark !== 'UNMARKED' ? ` · ${MARK_LABEL[mark]}` : ''}{noteCount ? ` · ${noteCount} NOTE${noteCount > 1 ? 'S' : ''}` : ''}{position ? ' · ON BOARD' : ''}
+                           </span>
+                           {hasNewInfo && (
+                             <span className="mt-1 block font-mono text-[0.6rem] uppercase tracking-[0.1em] text-nexus-warning">
+                               NEW INFORMATION — NOT YET REVIEWED
+                             </span>
+                           )}
                           {(facts.length > 0 || place) && (
                             <span className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 break-words font-mono text-[0.62rem] uppercase tracking-[0.06em] text-nexus-textSubtle">
                               {facts.map(fact => (

@@ -17,7 +17,7 @@ import { ROUTES } from '@/app/config'
 
 export interface NavItem {
   /** Stable identity: two destinations may share a route (Evidence / Board). */
-  id: 'CASE' | 'EVIDENCE' | 'BOARD' | 'SCAN' | 'COMMS' | 'LOG'
+  id: 'CASE' | 'FIELD' | 'EVIDENCE' | 'BOARD' | 'SCAN' | 'COMMS' | 'LOG'
   path: string
   /** Query string that selects the destination within a shared route. */
   search?: string
@@ -38,6 +38,7 @@ function bureauIcon(name: IconName) {
  */
 export const NAV_ITEMS: NavItem[] = [
   { id: 'CASE', path: ROUTES.PLAYER_GAME, label: 'Case', icon: bureauIcon('Case') },
+  { id: 'FIELD', path: ROUTES.PLAYER_FIELD_MODE, label: 'Field', icon: bureauIcon('Smartphone') },
   { id: 'EVIDENCE', path: ROUTES.PLAYER_EVIDENCE, label: 'Evidence', icon: bureauIcon('Evidence') },
   { id: 'BOARD', path: ROUTES.PLAYER_EVIDENCE, search: '?view=table', label: 'Board', icon: bureauIcon('Board') },
   { id: 'SCAN', path: ROUTES.PLAYER_QR, label: 'Scan', icon: bureauIcon('Scan') },

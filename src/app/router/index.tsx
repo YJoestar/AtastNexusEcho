@@ -30,6 +30,7 @@ const PlayerQR = lazy(() => import('@/features/player/QR').then(m => ({ default:
 const PlayerLeaderboard = lazy(() => import('@/features/player/Leaderboard').then(m => ({ default: m.PlayerLeaderboard })))
 const PlayerNotifications = lazy(() => import('@/features/player/Notifications').then(m => ({ default: m.PlayerNotifications })))
 const PlayerFieldLog = lazy(() => import('@/features/player/FieldLog').then(m => ({ default: m.PlayerFieldLog })))
+const PlayerFieldMode = lazy(() => import('@/features/player/FieldMode').then(m => ({ default: m.FieldMode })))
 const PlayerFinal = lazy(() => import('@/features/player/Final').then(m => ({ default: m.PlayerFinal })))
 const PlayerComplete = lazy(() => import('@/features/player/Complete').then(m => ({ default: m.PlayerComplete })))
 
@@ -148,6 +149,14 @@ export const router = createBrowserRouter([
             element: (
               <ProtectedPlayerRoute>
                 <PlayerFieldLog />
+              </ProtectedPlayerRoute>
+            ),
+          },
+          {
+            path: 'field',
+            element: (
+              <ProtectedPlayerRoute>
+                <PlayerFieldMode />
               </ProtectedPlayerRoute>
             ),
           },
