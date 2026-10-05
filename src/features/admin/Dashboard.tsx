@@ -81,6 +81,33 @@ export function AdminDashboard() {
     }
   }, [teams, gameEvents])
 
+  const alerts = useMemo(() => {
+    const result: Array<{ severity: 'critical' | 'warning' | 'info'; message: string; timestamp?: string }> = []
+    
+    for (const team of teams) {
+      if (team.status === 'DISQUALIFIED') {
+        result.push({ severity: 'critical', message: `${team.code} DISQUALIFIED`, timestamp: team.createdAt })
+      } else if (team.status === 'PAUSED') {
+        result.push({ severity: 'warning', message: `${team.code} SUSPENDED`, timestamp: team.createdAt })
+      } else if (team.status === 'REGISTERED' || team.status === 'FORMING') {
+        result.push({ severity: 'info', message: `${team.code} AWAITING DEPLOYMENT`, timestamp: team.createdAt })
+      }
+    }
+
+    // Check for QR or node inconsistencies from recent events
+    for (const event of gameEvents.slice(0, 20)) {
+      if (event.type === 'QR_SCANNED' && event.metadata?.error) {
+        const teamCode = event.teamId ? teams.find(t => t.id === event.teamId)?.code ?? 'UNKNOWN' : 'UNKNOWN'
+        result.push({ severity: 'warning', message: `QR SCAN FAILED — ${teamCode}`, timestamp: event.timestamp })
+      }
+    }
+
+    return result.sort((a, b) => {
+      const order = { critical: 0, warning: 1, info: 2 }
+      return order[a.severity] - order[b.severity]
+    })
+  }, [teams, gameEvents])
+
   // Only a recorded NODE_SOLVED event is treated as recovered evidence.
   const evidenceRegister = useMemo(() => {
     const byIdentifier = new Map(ALL_PUZZLES.flatMap(puzzle => [[puzzle.id, puzzle], [puzzle.code, puzzle]]))
@@ -355,6 +382,40 @@ export function AdminDashboard() {
                   <dd className="text-right font-bold text-nexus-text">{telemetry.totalNodes.toString().padStart(2, '0')} INDEXED</dd>
                 </div>
               </dl>
+            </TerminalFrame>
+
+            <TerminalFrame title="SYSTEM ALERTS" reference={`${alerts.length} ACTIVE`} variant="system">
+              {alerts.length === 0 ? (
+                <div className="px-3 py-4 font-mono text-xs text-nexus-textSubtle">
+                  <p>NO ACTIVE ALERTS</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-nexus-borderSubtle">
+                  {alerts.slice(0, 8).map((alert, i) => (
+                    <div key={i} className="flex items-center justify-between gap-2 px-3 py-2">
+                      <div className="flex items-center gap-2">
+                        <span className={cn(
+                          'h-2 w-2 rounded-full',
+                          alert.severity === 'critical' && 'bg-nexus-danger',
+                          alert.severity === 'warning' && 'bg-nexus-warning',
+                          alert.severity === 'info' && 'bg-nexus-info',
+                        )} />
+                        <span className={cn(
+                          'font-mono text-xs',
+                          alert.severity === 'critical' && 'text-nexus-danger',
+                          alert.severity === 'warning' && 'text-nexus-warning',
+                          alert.severity === 'info' && 'text-nexus-info',
+                        )}>{alert.message}</span>
+                      </div>
+                      {alert.timestamp && (
+                        <time className="text-[0.56rem] tabular-nums text-nexus-textSubtle">
+                          {new Date(alert.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
+                        </time>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </TerminalFrame>
 
             <TerminalFrame title="FIELD UNIT REGISTER" reference={`${teams.length} PERSONNEL FILES`} variant="register">

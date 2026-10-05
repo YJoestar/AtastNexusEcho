@@ -18,6 +18,7 @@ import { DiscoveryToastContainer } from '@/components/ui/DiscoveryToast'
 import { PuzzleVisual } from '@/components/player/puzzle/PuzzleVisual'
 import { HINT_PENALTIES } from '@/content/constants'
 import { useEffect, useState, useRef } from 'react'
+import type { ReactNode } from 'react'
 import type { PlayerNodeView } from '@/hooks/useGameEngine'
 import { BureauIcons } from '@/components/bureau'
 import {
@@ -260,7 +261,61 @@ RETURN TO FIELD
   const nextHintCost = hintLevel < 3 ? Math.floor(hintPenaltyMap[hintLevel as 0 | 1 | 2] / 60) : 0
 
   const nodeStatusTone: StatusTone =
-    node.status === 'SOLVED' ? 'active' : node.unlocked ? 'warning' : 'inactive'
+    node!.status === 'SOLVED' ? 'active' : node!.unlocked ? 'warning' : 'inactive'
+
+  function RoleWaitingStateInner() {
+    if (!node?.roleContent || !role) return null
+    const chain = node.coordinationChain
+    if (!chain) return null
+
+    const waitingConfig: Record<string, { label: string; description: string; icon: ReactNode }> = {
+      OBSERVER: {
+        label: 'AWAITING YOUR FIELD REPORT',
+        description: 'Inspect the scene and submit your findings. The Analyst is waiting for your observation.',
+        icon: <BureauIcons.Eye className="bureau-icon w-5 h-5" />,
+      },
+      ANALYST: {
+        label: 'AWAITING ANALYST INTERPRETATION',
+        description: 'The Observer has reported. Use their findings to interpret the evidence. The Operator needs your analysis.',
+        icon: <BureauIcons.Search className="bureau-icon w-5 h-5" />,
+      },
+      OPERATOR: {
+        label: 'AWAITING OPERATOR VERIFICATION',
+        description: 'The team has gathered evidence. Verify the combined solution and submit the final answer.',
+        icon: <BureauIcons.Confirm className="bureau-icon w-5 h-5" />,
+      },
+    }
+
+    const config = waitingConfig[role]
+    if (!config) return null
+
+    return (
+      <div className="nexus-panel border-nexus-warning/30 bg-nexus-warningBg/10 p-4">
+        <div className="flex items-start gap-3">
+          <div className="text-nexus-warning mt-0.5">{config.icon}</div>
+          <div>
+            <p className="font-mono text-xs font-bold uppercase tracking-[0.14em] text-nexus-warning">
+              {config.label}
+            </p>
+            <p className="mt-1 text-sm text-nexus-textMuted">
+              {config.description}
+            </p>
+            {role === 'ANALYST' && (
+              <p className="mt-2 text-xs text-nexus-textSubtle">
+                Observer produced: <span className="text-nexus-text">{chain.observerProduces}</span>
+              </p>
+            )}
+            {role === 'OPERATOR' && (
+              <div className="mt-2 space-y-1 text-xs text-nexus-textSubtle">
+                <p>Observer produced: <span className="text-nexus-text">{chain.observerProduces}</span></p>
+                <p>Analyst produced: <span className="text-nexus-text">{chain.analystTransforms}</span></p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="page">
@@ -299,6 +354,11 @@ RETURN TO FIELD
           </div>
           {node.isSolved && <BureauIcons.Flag className="bureau-icon w-6 h-6 text-nexus-accent ml-auto" />}
         </div>
+
+        {/* Role Waiting State — when this role needs another role's input */}
+        {node.unlocked && !node.isSolved && node.roleContent && role && (
+          <RoleWaitingStateInner />
+        )}
 
         {/* Locked State */}
         {isLocked && (

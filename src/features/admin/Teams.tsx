@@ -359,9 +359,14 @@ function TeamDossierRow({
             >
               {team.name}
             </button>
-            <span className="mt-0.5 block text-[0.56rem] uppercase tracking-[0.12em] text-nexus-textSubtle">
-              CASE 037 / FIELD PERSONNEL DOSSIER
-            </span>
+             <span className="mt-0.5 block text-[0.56rem] uppercase tracking-[0.12em] text-nexus-textSubtle">
+               CASE 037 / FIELD PERSONNEL DOSSIER
+             </span>
+             <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[0.56rem] uppercase tracking-[0.1em] text-nexus-textSubtle">
+               <span>{team.playerCount ?? 0} PERSONNEL</span>
+               <span>{team.currentNodeCode ? `NODE ${team.currentNodeCode}` : 'POSITION UNREPORTED'}</span>
+               <span>{team.solvedCount ?? 0} SOLVED</span>
+             </div>
           </div>
         </div>
         <TeamStatusBadge status={team.status} showDot />

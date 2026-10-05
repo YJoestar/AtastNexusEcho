@@ -31,6 +31,7 @@ export function FieldHub() {
     totalNodes,
     allNodesForMap,
     isOffline,
+    inventory,
     queuedCount,
     unreadCount,
     notifications,
@@ -98,6 +99,32 @@ export function FieldHub() {
   const closed = gameStatus === 'ENDED'
   const isPaused = gameStatus === 'PAUSED'
 
+  const pinnedEvidence = useMemo(() => {
+    if (!team || !inventory) return []
+    const entries = Object.entries(workspace.marks)
+      .filter(([, mark]) => mark === 'IMPORTANT' || mark === 'VERIFIED')
+      .map(([id]) => {
+        const code = id.replace('evidence:', '')
+        const item = inventory.evidence.find(e => e.code === code)
+        return item ? { id: item.code, title: item.title } : null
+      })
+      .filter((entry): entry is { id: string; title: string } => entry !== null)
+    return entries.slice(0, 3)
+  }, [team, inventory, workspace.marks])
+
+  const roleStateLabel = useMemo(() => {
+    if (!role || !team) return null
+    if (closed) return 'CASE CLOSED'
+    if (isPaused) return 'CASE SUSPENDED'
+    if (gameStatus !== 'RUNNING') return 'STANDBY'
+    if (!lead) return 'AWAITING ASSIGNMENT'
+    if (status === LeadStatus.ABANDONED) return 'LEAD SEALED'
+    if (status === LeadStatus.PAUSED) return 'LEAD PAUSED'
+    if (status === LeadStatus.COMPLETED) return 'LEAD COMPLETE'
+    if (status === LeadStatus.UNBRIEFED) return 'AWAITING BRIEFING'
+    return 'ACTIVE INVESTIGATION'
+  }, [role, team, closed, isPaused, gameStatus, lead, status])
+
   const leadAction = useMemo(() => {
     if (!lead) {
       if (gameStatus === 'RUNNING') {
@@ -163,6 +190,14 @@ export function FieldHub() {
           </span>
         </p>
 
+        {roleStateLabel && (
+          <div className="flex items-center gap-2 font-mono text-[0.62rem] uppercase tracking-[0.14em] text-nexus-textSubtle">
+            <span className="h-2 w-2 rounded-full bg-nexus-accent" aria-hidden="true" />
+            <span>{roleStateLabel}</span>
+            {role && <span className="text-nexus-textMuted">/ {role}</span>}
+          </div>
+        )}
+
         <AnomalyArtifact seed={`case:${team.code}`} level={narrative.level}>
           <FieldLead
             eyebrow={leadEyebrow}
@@ -183,6 +218,24 @@ export function FieldHub() {
           >
             ▲ {timer.formatted} REMAINING
           </p>
+        )}
+
+        {pinnedEvidence.length > 0 && (
+          <section aria-label="Pinned evidence" className="space-y-2">
+            <h2 className="font-mono text-[0.7rem] uppercase tracking-[0.2em] text-nexus-textSubtle">PINNED EVIDENCE</h2>
+            <div className="space-y-1">
+              {pinnedEvidence.map(item => (
+                <Link
+                  key={item.id}
+                  to={ROUTES.PLAYER_EVIDENCE}
+                  className="flex min-h-12 items-center justify-between border border-nexus-borderSubtle px-3 font-mono text-xs uppercase tracking-[0.12em] text-nexus-textMuted transition-colors active:bg-nexus-surfaceElevated focus-visible:outline-none"
+                >
+                  <span className="truncate">{item.title}</span>
+                  <span className="ml-2 shrink-0 text-[0.62rem] text-nexus-accent">VIEW</span>
+                </Link>
+              ))}
+            </div>
+          </section>
         )}
 
         <section aria-label="New information">
