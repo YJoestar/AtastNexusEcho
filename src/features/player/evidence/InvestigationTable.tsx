@@ -43,6 +43,7 @@ import {
   type InvestigationWorkspace,
   type LinkKind,
 } from '@/lib/investigationWorkspace'
+import { generateId } from '@/lib/utils'
 import { artifactType, type CaseArtifact } from './types'
 import { BoardCard } from './board/BoardCard'
 import { BoardLinks } from './board/BoardLinks'
@@ -64,11 +65,7 @@ const TAP_SLOP = 5
 const PAN_STEP = 80
 const TYPE_FILTERS = ['ALL', 'PHOTOGRAPH', 'SURVEILLANCE', 'DOCUMENT', 'NOTE', 'AUDIO', 'MAP', 'PERSONNEL', 'FRAGMENT'] as const
 
-function newId(): string {
-  return typeof crypto !== 'undefined' && 'randomUUID' in crypto
-    ? crypto.randomUUID()
-    : `id-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
-}
+const newId = generateId
 
 function nextOrder(workspace: InvestigationWorkspace): number {
   return Math.max(0, ...Object.values(workspace.placements).map(placement => placement.order)) + 1

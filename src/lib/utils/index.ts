@@ -19,8 +19,39 @@ export function generateCode(length: number = 6): string {
   return generateLogicCode(length || LOGIN_CODE_LENGTH)
 }
 
+/**
+ * A unique id that works on every origin the app is ever opened on.
+ *
+ * `crypto.randomUUID` is secure-context-only: it is simply undefined on a
+ * plain-HTTP origin, which is exactly how a multi-phone event runs — the Vite
+ * dev server is reached over `http://<lan-ip>:3000`. Calling it unguarded threw
+ * `TypeError: crypto.randomUUID is not a function`, and because it is called
+ * during render (`useRef(generateId())` in the team-creation wizard) or
+ * immediately after a correct answer (the discovery toast), that surfaced as a
+ * dead admin wizard and as a raw JavaScript error on the screen where a player
+ * had just solved a puzzle.
+ *
+ * `crypto.getRandomValues` is NOT secure-context-gated, so it is the primary
+ * source here and keeps the fallback cryptographically strong. Math.random is
+ * the last resort only for browsers that expose neither.
+ */
 export function generateId(): string {
-  return crypto.randomUUID()
+  const c = globalThis.crypto
+
+  if (c && typeof c.randomUUID === 'function') {
+    return c.randomUUID()
+  }
+
+  if (c && typeof c.getRandomValues === 'function') {
+    const bytes = c.getRandomValues(new Uint8Array(16))
+    // RFC 4122 v4 layout: version and variant in the fixed positions.
+    bytes[6] = (bytes[6] & 0x0f) | 0x40
+    bytes[8] = (bytes[8] & 0x3f) | 0x80
+    const hex = Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('')
+    return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`
+  }
+
+  return `id-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`
 }
 
 export function slugify(text: string): string {

@@ -40,6 +40,13 @@ export interface QRScanResponse {
   nodeCode?: string
   nodeTitle?: string
   alreadyClaimed?: boolean
+  /**
+   * Why a recognised marker produced nothing, when the server said so:
+   * 'node_not_open' (this team's puzzle is not at that stage) or
+   * 'node_not_reached' (the marker is real but leads a puzzle the team has not
+   * been given). Absent on success and on an unrecognised code.
+   */
+  reason?: string
   error?: string
   markerId?: string
   manualCode?: string

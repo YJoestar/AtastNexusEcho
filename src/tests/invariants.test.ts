@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { readdirSync, readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { requireBoolean, requireInteger } from '../../supabase/functions/_shared/request'
 import { isPlayerSafeRpcMessage } from '../../supabase/functions/_shared/http'
@@ -369,17 +369,55 @@ describe('isPlayerSafeRpcMessage', () => {
   })
 })
 describe('QR marker identity is stable and data-driven', () => {
-  const locationsSrc = readFileSync(join(ROOT, 'src/lib/qr/locations.ts'), 'utf8')
-
-  it('does not derive marker identity from an array index', () => {
-    // `LOC-${index + 1}` renumbered every later marker when a puzzle was inserted
-    // or reordered, invalidating every QR sheet already printed and stuck to a wall.
-    expect(locationsSrc).not.toMatch(/forEach\s*\([^)]*\bindex\b/)
-    expect(locationsSrc).not.toMatch(/padStart\(3,\s*'0'\)/)
+  it('prints the identifier the database resolves against', () => {
+    // The marker identity a player can actually use is qr_nodes.code. Everything
+    // the scanner accepts is one of code / marker_id / manual_code, matched
+    // exactly, so whatever goes into the image has to be that value verbatim.
+    const sheet = readFileSync(join(ROOT, 'src/lib/qr-download.ts'), 'utf8')
+    expect(sheet).toMatch(/QRCode\.toDataURL\(\s*item\.code/)
+    const marker = readFileSync(join(ROOT, 'src/components/visual/FieldMarker.tsx'), 'utf8')
+    expect(marker).toMatch(/QRCode\.toString\(\s*qrCode\.code/)
   })
 
-  it('keys marker identity on the puzzle code', () => {
-    expect(locationsSrc).toMatch(/function buildLocationId\(puzzleCode: string\)/)
+  it('has exactly one source of truth for what a marker means', () => {
+    // A client-side registry of marker payloads was the second opinion: it
+    // published `NX|V1|LOC-...` payloads and `NX-Loc-...` manual codes, which
+    // scan_qr_code rejects on every row, and the Bureau QA inventory was built
+    // from it — so QA signed off on codes that fail in production. Nothing in
+    // the app may resolve a marker without the database.
+    expect(
+      existsSync(join(ROOT, 'src/lib/qr')),
+      'the client-side marker registry must not come back',
+    ).toBe(false)
+
+    const offenders: string[] = []
+    const walk = (dir: string) => {
+      for (const entry of readdirSync(dir, { withFileTypes: true })) {
+        const full = join(dir, entry.name)
+        if (entry.isDirectory()) {
+          if (entry.name === 'node_modules' || entry.name === 'dist') continue
+          walk(full)
+        } else if (/\.(ts|tsx)$/.test(entry.name) && !entry.name.includes('.test.')) {
+          // Comments are stripped first: this file and the QA simulator both
+          // discuss the retired vocabulary in prose, and documentation of a
+          // removed scheme is not a reintroduction of it.
+          const code = readFileSync(full, 'utf8')
+            .replace(/\/\*[\s\S]*?\*\//g, '')
+            .replace(/^\s*\/\/.*$/gm, '')
+          if (/NX\|V1\||QR_PAYLOAD_PREFIX|NX-Loc-/.test(code)) {
+            offenders.push(full.replace(`${ROOT}\\`, ''))
+          }
+        }
+      }
+    }
+    walk(join(ROOT, 'src'))
+    expect(offenders, 'a second marker vocabulary exists in the app').toEqual([])
+  })
+
+  it('sends the raw payload to the Bureau instead of resolving it locally', () => {
+    const scanner = readFileSync(join(ROOT, 'src/features/player/QR.tsx'), 'utf8')
+    expect(scanner).not.toMatch(/from '@\/lib\/qr'/)
+    expect(scanner).toMatch(/void submitCode\(code\)|await submitCode\(code\)/)
   })
 
   it('never claims the Bureau recognises a marker it has no record of', () => {
@@ -397,6 +435,27 @@ describe('QR marker identity is stable and data-driven', () => {
     // puzzle_node_id left the Bureau unable to see what a marker pointed at.
     const admin = readFileSync(join(ROOT, 'src/lib/admin/index.ts'), 'utf8')
     expect(admin).toMatch(/puzzleNodeId:\s*toOptionalText\(firstPresent\(q, \['puzzle_node_id'\]\)\)/)
+  })
+
+  it('records the resolved marker code, not whatever the player typed', () => {
+    // team_has_scanned compares the event payload against qr_nodes.code. A manual
+    // entry recorded the typed string, so a marker typed rather than scanned was
+    // written to the ledger but stayed invisible to the team through RLS.
+    const fix = migrations.find(m => m.name.startsWith('2026100502'))
+    expect(fix, 'the idempotent marker migration must exist').toBeDefined()
+    // Comments stripped: the migration quotes the old expression in prose to
+    // explain what it replaced.
+    const fixCode = fix!.sql.replace(/^\s*--.*$/gm, '')
+    expect(fixCode).toMatch(/'qrCode', v_qr_node\.code/)
+    expect(fixCode).not.toMatch(/jsonb_build_object\('qrCode', p_qr_code\)/)
+  })
+
+  it('does not write a fresh progress record for every frame the camera reads', () => {
+    const fix = migrations.find(m => m.name.startsWith('2026100502'))!.sql
+    // The AVAILABLE branch used to insert a notification and an event on every
+    // call, with nothing writing node_progress to close the window.
+    expect(fix).toMatch(/INTO v_seen_before/)
+    expect(fix).toMatch(/IF NOT v_seen_before THEN/)
   })
 })
 
@@ -456,6 +515,83 @@ describe('bureau list handlers never discard a query error', () => {
     const start = src.indexOf("case 'list-qr-codes'")
     const block = src.slice(start, src.indexOf("case '", start + 10))
     expect(block).not.toContain('QR_DOWNLOAD')
+  })
+})
+
+describe('a solve is scored exactly once', () => {
+  /**
+   * The definition of submit_puzzle_answer that is actually in force after the
+   * whole migration history has run: the last CREATE OR REPLACE wins, exactly
+   * as in Postgres. Older, broken copies stay in the history and must not be
+   * mistaken for the live one.
+   */
+  function effectiveSubmit(): { file: string; sql: string } {
+    let found: { file: string; sql: string } | null = null
+    for (const m of migrations) {
+      const match = /CREATE OR REPLACE FUNCTION\s+submit_puzzle_answer\s*\([\s\S]*?\$\$;/i.exec(m.sql)
+      if (match) found = { file: m.name, sql: match[0] }
+    }
+    return found!
+  }
+
+  const fn = effectiveSubmit()
+
+  it('found the function it is checking', () => {
+    expect(fn, 'submit_puzzle_answer must be defined in the migration history').toBeTruthy()
+  })
+
+  it('makes the SOLVED transition conditional rather than a blind write', () => {
+    // Three players submitting the same answer on three phones is ordinary, not
+    // exotic. Both transactions used to read IN_PROGRESS and both paid out.
+    // The arbiter has to be the transition, so it must refuse to re-solve.
+    expect(fn.sql).toMatch(/WHERE team_id = v_team_id AND node_id = p_node_id\s*\n\s*AND status <> 'SOLVED'/i)
+  })
+
+  it('gates the payout on having actually won that transition', () => {
+    // Only the transaction that moved the row out of a non-SOLVED status may
+    // touch the score, the unlock or the events.
+    const diagnostics = /GET DIAGNOSTICS v_solved_rowcount = ROW_COUNT/i.exec(fn.sql)
+    expect(diagnostics, 'the row count of the SOLVED update must be read').toBeTruthy()
+    const zeroCheck = /IF v_solved_rowcount = 0 THEN/i.exec(fn.sql)
+    expect(zeroCheck, 'a lost race must be detected').toBeTruthy()
+
+    // ...and the refusal has to come before the score is touched.
+    const zeroAt = zeroCheck!.index
+    const scoreAt = fn.sql.search(/SET score = score \+ v_points_awarded/i)
+    expect(scoreAt).toBeGreaterThan(-1)
+    expect(zeroAt).toBeLessThan(scoreAt)
+  })
+
+  it('claims the attempt counter atomically instead of reading it first', () => {
+    // Reading attempts and then writing attempts + 1 is what let two concurrent
+    // submissions both record attempt_number = 1 while the progress row still
+    // said 1. The value has to come back from the statement that wrote it.
+    expect(fn.sql).toMatch(/ON CONFLICT \(team_id, node_id\) DO UPDATE[\s\S]{0,400}attempts = node_progress\.attempts \+ 1/i)
+    expect(fn.sql).toMatch(/RETURNING attempts, started_at INTO v_attempt_number/i)
+  })
+
+  it('does not let a later write clobber the claimed attempt number', () => {
+    // The old code incremented in one statement and then overwrote it with a
+    // value read before either, which is how two attempts became one.
+    expect(fn.sql).not.toMatch(/SET attempts = v_attempt_number,\s*\n\s*updated_at/i)
+  })
+
+  it('tells the loser the answer was right and the team already has the points', () => {
+    // Silence here reads to a player as "nothing happened", which is how a
+    // player retries and how a team loses confidence in the score.
+    expect(fn.sql).toMatch(/'alreadySolved', true/i)
+  })
+
+  it('ends the run when the team has nothing left it can reach', () => {
+    // P37 unlocks nothing, so before this the finale left the team ACTIVE
+    // forever: clock running, leaderboard unfinalised, no ending screen.
+    expect(fn.sql).toMatch(/SET status = 'COMPLETED'/)
+    expect(fn.sql).toMatch(/'TEAM_COMPLETED'/)
+  })
+
+  it('measures puzzle time against when the node was opened, not the game start', () => {
+    expect(fn.sql).toMatch(/EXTRACT\(EPOCH FROM \(now\(\) - v_started_at\)\)/i)
+    expect(fn.sql).not.toMatch(/time_spent_seconds = time_spent_seconds \+ v_response_time/i)
   })
 })
 

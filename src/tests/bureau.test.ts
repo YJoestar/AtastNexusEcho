@@ -8,7 +8,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { renderHook, act } from '@testing-library/react'
+import { renderHook, act, waitFor } from '@testing-library/react'
 import { useBureau, useBureauRealtime } from '@/hooks/useBureau'
 
 const mockTeams = vi.hoisted(() => [
@@ -130,6 +130,14 @@ const mockGameEvents = vi.hoisted(() => [
   { id: 'event-2', type: 'NODE_SOLVED', timestamp: '2026-09-29T13:45:00Z', teamId: 'team-1', playerId: 'p-1', nodeId: 'node-5', payload: { nodeCode: 'P05' }, metadata: { points: 500 } },
 ])
 
+const mockLocations = vi.hoisted(() => [
+  {
+    id: 'loc-1', nodeId: 'node-1', nodeCode: 'P01', nodeTitle: 'North Entrance',
+    nodeType: 'LOCATION', nodeStage: 1, name: 'NORTH LOBBY', status: 'ACTIVE',
+    createdAt: '2026-09-29T12:00:00Z', updatedAt: '2026-09-29T12:00:00Z',
+  },
+])
+
 vi.mock('@/lib/admin', () => ({
   adminAPI: {
     listTeams: vi.fn().mockResolvedValue(mockTeams),
@@ -155,6 +163,12 @@ vi.mock('@/lib/admin', () => ({
     sendNotification: vi.fn().mockResolvedValue({ teamsNotified: 1 }),
     grantHint: vi.fn().mockResolvedValue({ hintContent: 'Test hint' }),
     createTeamWithPlayers: vi.fn().mockResolvedValue({ success: true, teamId: 'team-new', teamCode: 'NEW001', playerCodes: ['CODE1', 'CODE2'] }),
+    // These were missing, so every `refreshAll` in this file was quietly
+    // throwing on the locations panel and recording an error the assertions
+    // never looked at.
+    listLocations: vi.fn().mockResolvedValue(mockLocations),
+    saveLocation: vi.fn().mockResolvedValue({ success: true, nodeId: 'node-1' }),
+    deleteLocation: vi.fn().mockResolvedValue({ success: true }),
   },
 }))
 
@@ -346,6 +360,99 @@ describe('useBureau Hook', () => {
       expect(result.current.error).toBeNull()
       result.current.clearError()
       expect(result.current.error).toBeNull()
+    })
+  })
+
+  /**
+   * `refreshAll` fires five requests at once. `isLoading` used to be a plain
+   * boolean, so the first response cleared it and the dashboard rendered as
+   * loaded while four of its five panels were still empty. An operator seeing
+   * a populated teams table above a blank state panel reads that as a game
+   * fault, not as a request still in flight.
+   */
+  describe('isLoading counts concurrent requests', () => {
+    it('stays true until the slowest of the parallel fetches returns', async () => {
+      const { adminAPI } = await import('@/lib/admin')
+      let releaseGameState: (() => void) | null = null
+      vi.mocked(adminAPI.getGameState).mockImplementationOnce(() =>
+        new Promise(resolve => {
+          releaseGameState = () => resolve(mockGameState as never)
+        }))
+
+      const { result } = renderHook(() => useBureau())
+
+      act(() => { void result.current.refreshAll() })
+
+      // Teams came back quickly; game state has not.
+      await waitFor(() => expect(result.current.teams).toHaveLength(4))
+      expect(result.current.gameState).toBeNull()
+      // The dashboard must not claim to be loaded yet.
+      expect(result.current.isLoading).toBe(true)
+
+      await act(async () => {
+        releaseGameState?.()
+        await Promise.resolve()
+      })
+
+      await waitFor(() => expect(result.current.isLoading).toBe(false))
+      expect(result.current.gameState).not.toBeNull()
+    })
+
+    it('returns to false when one of several parallel fetches fails', async () => {
+      const { adminAPI } = await import('@/lib/admin')
+      vi.mocked(adminAPI.listLocations).mockRejectedValueOnce(new Error('locations unavailable'))
+
+      const { result } = renderHook(() => useBureau())
+      await act(async () => {
+        await result.current.refreshAll()
+      })
+
+      expect(result.current.error).toBe('locations unavailable')
+      // The others still loaded, and the flag is not stuck on.
+      expect(result.current.isLoading).toBe(false)
+      expect(result.current.teams.length).toBeGreaterThan(0)
+    })
+  })
+
+  describe('location mutations report failure through the bureau', () => {
+    it('records the error when saving a location is refused', async () => {
+      const { adminAPI } = await import('@/lib/admin')
+      vi.mocked(adminAPI.saveLocation).mockRejectedValueOnce(new Error('409 illegal state'))
+
+      const { result } = renderHook(() => useBureau())
+
+      await act(async () => {
+        await expect(result.current.saveLocation({ name: 'NORTH LOBBY' }))
+          .rejects.toThrow('409 illegal state')
+      })
+
+      // It rethrows for the caller and records the reason, so the console stops
+      // reporting whatever unrelated message happened to be there before.
+      expect(result.current.error).toBe('409 illegal state')
+    })
+
+    it('records the error when deleting a location is refused', async () => {
+      const { adminAPI } = await import('@/lib/admin')
+      vi.mocked(adminAPI.deleteLocation).mockRejectedValueOnce(new Error('node still in play'))
+
+      const { result } = renderHook(() => useBureau())
+
+      await act(async () => {
+        await expect(result.current.deleteLocation('node-1'))
+          .rejects.toThrow('node still in play')
+      })
+
+      expect(result.current.error).toBe('node still in play')
+    })
+  })
+
+  describe('team query helpers do not promise filters they cannot deliver', () => {
+    it('offers no stage filter, because the team list carries no stage', async () => {
+      // There used to be a `getTeamsByStage(stage)` that ignored its argument
+      // and returned every started team. Nothing on TeamWithStats holds a stage,
+      // so any caller would have silently received the wrong teams.
+      const { result } = renderHook(() => useBureau())
+      expect('getTeamsByStage' in result.current).toBe(false)
     })
   })
 })

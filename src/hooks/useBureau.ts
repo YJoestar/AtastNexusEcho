@@ -36,15 +36,29 @@ export function useBureau() {
   const [auditLog, setAuditLog] = useState<AuditLogEntryAdmin[]>([])
   const [gameEvents, setGameEvents] = useState<GameEventAdmin[]>([])
   const [locations, setLocations] = useState<LocationEntry[]>([])
-  const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  /**
+   * `isLoading` is a count, not a boolean.
+   *
+   * `refreshAll` fires five requests at once. With a plain boolean, whichever
+   * returned first cleared the flag and the dashboard rendered as "loaded" while
+   * four of its five panels were still empty - so a slow game-state call showed
+   * a populated table with no state above it, which reads as a real outage
+   * rather than a request still in flight.
+   */
+  const [pending, setPending] = useState(0)
+  const isLoading = pending > 0
+
+  const begin = useCallback(() => setPending(count => count + 1), [])
+  const end = useCallback(() => setPending(count => Math.max(0, count - 1)), [])
 
   const clearError = useCallback(() => {
     setError(null)
   }, [])
 
   const fetchTeams = useCallback(async () => {
-    setIsLoading(true)
+    begin()
     setError(null)
     try {
       const data = await adminAPI.listTeams()
@@ -52,12 +66,12 @@ export function useBureau() {
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to load teams')
     } finally {
-      setIsLoading(false)
+      end()
     }
-  }, [])
+  }, [begin, end])
 
   const fetchTeamDetail = useCallback(async (teamId: string) => {
-    setIsLoading(true)
+    begin()
     setError(null)
     try {
       const detail = await adminAPI.getTeam(teamId)
@@ -68,48 +82,60 @@ export function useBureau() {
       setError(msg)
       throw err
     } finally {
-      setIsLoading(false)
+      end()
     }
-  }, [])
+  }, [begin, end])
 
   const fetchGameState = useCallback(async () => {
+    begin()
     try {
       const state = await adminAPI.getGameState()
       setGameState(state)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to load game state')
+    } finally {
+      end()
     }
-  }, [])
+  }, [begin, end])
 
   const fetchLeaderboard = useCallback(async (sortBy = 'rank', sortDir: 'asc' | 'desc' = 'desc') => {
+    begin()
     try {
       const data = await adminAPI.getLeaderboard(sortBy, sortDir)
       setLeaderboard(data)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to load leaderboard')
+    } finally {
+      end()
     }
-  }, [])
+  }, [begin, end])
 
   const fetchAuditLog = useCallback(async (limit = 100, actionFilter?: string, search?: string) => {
+    begin()
     try {
       const data = await adminAPI.getAuditLog(limit, actionFilter, search)
       setAuditLog(data)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to load audit log')
+    } finally {
+      end()
     }
-  }, [])
+  }, [begin, end])
 
    const fetchGameEvents = useCallback(async (limit = 50, teamId?: string) => {
+    begin()
     try {
       const data = await adminAPI.getGameEvents(limit, teamId)
       setGameEvents(data)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to load game events')
+    } finally {
+      end()
     }
-  }, [])
+  }, [begin, end])
 
    const fetchLocations = useCallback(async () => {
-    setIsLoading(true)
+    begin()
     setError(null)
     try {
       const data = await adminAPI.listLocations()
@@ -117,9 +143,9 @@ export function useBureau() {
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to load locations')
     } finally {
-      setIsLoading(false)
+      end()
     }
-  }, [])
+  }, [begin, end])
 
    const saveLocation = useCallback(async (params: {
     nodeId?: string
@@ -129,16 +155,31 @@ export function useBureau() {
     reason?: string
   }) => {
     setError(null)
-    const result = await adminAPI.saveLocation(params)
-    await fetchLocations()
-    return result
+    // A failed write has to reach the operator through the bureau's own error
+    // channel, not only as a rejected promise. These cleared `error` and then
+    // let the rejection escape to whichever caller happened to remember to
+    // catch it, so a rejected location edit could leave the console reporting
+    // the previous, unrelated message.
+    try {
+      const result = await adminAPI.saveLocation(params)
+      await fetchLocations()
+      return result
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to save location')
+      throw err
+    }
   }, [fetchLocations])
 
    const deleteLocation = useCallback(async (nodeId?: string, reason?: string) => {
     setError(null)
-    const result = await adminAPI.deleteLocation(nodeId, reason)
-    await fetchLocations()
-    return result
+    try {
+      const result = await adminAPI.deleteLocation(nodeId, reason)
+      await fetchLocations()
+      return result
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to delete location')
+      throw err
+    }
   }, [fetchLocations])
 
 
@@ -148,10 +189,6 @@ export function useBureau() {
 
   const getTeamsByStatus = useCallback((status: TeamStatus): TeamWithStats[] => {
     return teams.filter(t => t.status === status)
-  }, [teams])
-
-  const getTeamsByStage = useCallback((_stage: number): TeamWithStats[] => {
-    return teams.filter(t => t.gameStartedAt !== null)
   }, [teams])
 
   const refreshAll = useCallback(async () => {
@@ -197,7 +234,6 @@ export function useBureau() {
     refreshAll,
     getTeamById,
     getTeamsByStatus,
-    getTeamsByStage,
     clearError,
     setError,
     BUREAU_REFRESH_INTERVAL,

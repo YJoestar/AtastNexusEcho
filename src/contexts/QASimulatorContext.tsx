@@ -21,6 +21,7 @@ import {
   useMemo,
   useEffect,
   ReactNode,
+  useRef,
 } from 'react'
 import type {
   Player,
@@ -50,9 +51,8 @@ import type {
 import type { NodeProgress } from '@/types'
 import { ALL_PUZZLES, PUZZLES_BY_CODE, PUZZLE_COUNT } from '@/content/puzzles'
 import type { NodeIndexEntry } from '@/content/puzzles'
-import { validateAnyCode, toQRScanResult } from '@/lib/qr'
 import { adminAPI } from '@/lib/admin'
-import type { PuzzleQAEntry } from '@/lib/admin'
+import type { PuzzleQAEntry, QRCodeEntry } from '@/lib/admin'
 import { buildDevelopmentCatalog } from '@/features/admin/evidenceLabCatalog'
 
 export type SimulationType = 'FRESH' | 'PARTIAL' | 'COMPLETE' | 'CUSTOM'
@@ -130,7 +130,41 @@ const QASimulatorContext = createContext<QAContextValue | null>(null)
 export { QASimulatorContext }
 export type { Role }
 
-export function buildDefaultPuzzleProgress(): Record<string, NodeProgress> {
+export /**
+ * Fold the simulator's own progress into a progress record.
+ *
+ * `buildDefaultPuzzleProgress` describes a case nobody has played yet: every
+ * node locked, zero attempts, nothing solved. What the operator sees on the
+ * board has to agree with what the register says, so nodes the run has actually
+ * solved are marked solved and every node carries the attempts it has taken.
+ */
+function withSimulatedAttempts(
+  base: Record<string, NodeProgress>,
+  solved: ReadonlySet<string>,
+  attempts: Record<string, number>,
+): Record<string, NodeProgress> {
+  const now = new Date().toISOString()
+  const next: Record<string, NodeProgress> = {}
+  for (const [code, progress] of Object.entries(base)) {
+    const isSolved = solved.has(code)
+    const attemptCount = attempts[code] ?? 0
+    if (!isSolved && attemptCount === 0 && progress.status === 'LOCKED') {
+      next[code] = progress
+      continue
+    }
+    next[code] = {
+      ...progress,
+      status: isSolved ? 'SOLVED' : progress.status === 'LOCKED' ? 'AVAILABLE' : progress.status,
+      startedAt: progress.startedAt ?? now,
+      solvedAt: isSolved ? (progress.solvedAt ?? now) : null,
+      attempts: attemptCount,
+      hintsUsed: isSolved ? Math.max(progress.hintsUsed, 1) : progress.hintsUsed,
+    }
+  }
+  return next
+}
+
+function buildDefaultPuzzleProgress(): Record<string, NodeProgress> {
   const record: Record<string, NodeProgress> = {}
   for (const puzzle of ALL_PUZZLES) {
     record[puzzle.code] = {
@@ -511,7 +545,13 @@ export function QASimulatorProvider({ children }: { children: ReactNode }) {
   const [evidenceLabMode, setEvidenceLabMode] = useState(false)
   const [localEvidenceOverrides, setLocalEvidenceOverrides] = useState<Record<string, Array<{ solvedAt: number; content: Record<string, unknown> }>>>({})
   const [puzzleQAData, setPuzzleQAData] = useState<Record<string, PuzzleQAEntry>>({})
+  const [qrMarkers, setQrMarkers] = useState<QRCodeEntry[]>([])
   const [isQALoaded, setIsQALoaded] = useState(false)
+  // The ref is the source of truth for counting, the state mirrors it for
+  // rendering. Two submissions in the same tick would both read the same state
+  // snapshot and both report the same attempt number.
+  const attemptCountsRef = useRef<Record<string, number>>({})
+  const [attemptCounts, setAttemptCounts] = useState<Record<string, number>>({})
 
   const isActive = true
   const isAuthenticated = true
@@ -528,6 +568,17 @@ export function QASimulatorProvider({ children }: { children: ReactNode }) {
       setPuzzleQAData(map)
     } catch (_err) {
       // QA data is optional — simulator falls back to generated content
+    }
+
+    // Real markers, so a simulated scan is answered by the same lookup the
+    // server performs. Without this the simulator carried its own client-side
+    // registry of marker payloads, accepted those, and QA signed off on codes
+    // that scan_qr_code rejects on every row.
+    try {
+      setQrMarkers(await adminAPI.listQRCodes())
+    } catch (_err) {
+      // Same: a scan that cannot be resolved is reported as unrecognised, which
+      // is the truthful answer when the marker list is unavailable.
     } finally {
       setIsQALoaded(true)
     }
@@ -610,7 +661,7 @@ export function QASimulatorProvider({ children }: { children: ReactNode }) {
   const teamProgress: TeamProgress = useMemo(
     () => ({
       teamId: 'qa-team',
-      solvedNodes: buildDefaultPuzzleProgress(),
+      solvedNodes: withSimulatedAttempts(buildDefaultPuzzleProgress(), solvedNodes, attemptCounts),
       currentNodeId,
       availableNodeIds,
       evidenceOwned: generateInventory(solvedCount).evidence.map(e => e.code),
@@ -625,7 +676,7 @@ export function QASimulatorProvider({ children }: { children: ReactNode }) {
       lastActivityAt: new Date().toISOString(),
       metadata: { branchPath: Array.from(solvedNodes), extraData: {} } as unknown as TeamProgress['metadata'],
     }),
-    [currentNodeId, availableNodeIds, solvedCount, hintsUsed, elapsedMinutes, score, solvedNodes],
+    [currentNodeId, availableNodeIds, solvedCount, hintsUsed, elapsedMinutes, score, solvedNodes, attemptCounts],
   )
 
   const allNodesForMap = useMemo(() => {
@@ -735,7 +786,19 @@ export function QASimulatorProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      const attemptNumber = solvedNodes.has(nodeId) ? 1 : 1
+      // A real attempt count, by puzzle.
+      //
+      // This used to be `solvedNodes.has(nodeId) ? 1 : 1` - a ternary with two
+      // identical branches, so every submission reported attempt 1 no matter
+      // how many times it had been tried. Combined with a node view that
+      // hardcoded `attempts: 0`, the simulator could not express anything that
+      // depends on the attempt number: the third-attempt hint penalty, an
+      // exhausted-attempts message, an operator watching a counter climb. The
+      // whole point of the QA tool is to reach states production will not
+      // produce on demand.
+      const attemptNumber = (attemptCountsRef.current[nodeId] ?? 0) + 1
+      attemptCountsRef.current = { ...attemptCountsRef.current, [nodeId]: attemptNumber }
+      setAttemptCounts(attemptCountsRef.current)
 
       const pointsAwarded = isCorrect ? puzzle.points : 0
 
@@ -764,7 +827,6 @@ export function QASimulatorProvider({ children }: { children: ReactNode }) {
     },
     [solvedNodes, isLocked, isOffline, puzzleQAData],
   )
-
   const requestHint = useCallback(
     async (_nodeId: string, hintNumber: number): Promise<HintResult> => {
       if (isOffline) {
@@ -790,16 +852,33 @@ export function QASimulatorProvider({ children }: { children: ReactNode }) {
     [isOffline, isLocked],
   )
 
+  /** The shape a simulated scan answers with; mirrors the server's response. */
+interface SimulatedScanResult {
+  discovered: boolean
+  qrLabel?: string
+  nodeCode?: string
+  nodeTitle?: string
+  alreadyClaimed?: boolean
+  message?: string
+  reason?: string
+  error?: string
+  markerId?: string
+  manualCode?: string
+  deploymentStatus?: string
+  qrCode?: string
+}
+
+/**
+   * Resolve a scanned marker the way scan_qr_code does.
+   *
+   * The exact-match rule against qr_nodes.code / marker_id / manual_code is the
+   * production contract, so the simulator uses the real rows and the same rule.
+   * It previously carried its own client-side registry of `NX|V1|...` payloads
+   * and accepted those, which meant a QA pass on the scanner proved the scanner
+   * works against codes that fail on every marker actually on the wall.
+   */
   const scanQR = useCallback(
-    async (qrCode: string): Promise<{
-      discovered: boolean
-      qrLabel?: string
-      nodeCode?: string
-      nodeTitle?: string
-      alreadyClaimed?: boolean
-      message?: string
-      error?: string
-    }> => {
+    async (qrCode: string): Promise<SimulatedScanResult> => {
       if (isOffline) {
         return {
           discovered: false,
@@ -808,20 +887,61 @@ export function QASimulatorProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      const validationResult = validateAnyCode(qrCode)
-      const scanResult = toQRScanResult(validationResult)
+      const submitted = qrCode.trim()
+      const marker = qrMarkers.find(
+        m =>
+          m.code === submitted ||
+          m.markerId === submitted ||
+          m.manualCode === submitted,
+      )
+
+      if (!marker) {
+        return {
+          discovered: false,
+          message:
+            'UNRECOGNISED MARKER. This code is not registered with the Bureau. Check the marker, or enter the manual reference printed beneath it.',
+          error: 'Invalid QR code',
+        }
+      }
+
+      // The server only records a scan for a puzzle this team has actually been
+      // given, and says so plainly rather than pretending the marker is unknown.
+      if (marker.puzzleNodeCode) {
+        const isSolved = solvedNodes.has(marker.puzzleNodeCode)
+        const isOpen =
+          marker.puzzleNodeCode === currentNodeId ||
+          availableNodeIds.includes(marker.puzzleNodeCode)
+
+        if (!isOpen) {
+          return {
+            discovered: false,
+            nodeCode: marker.puzzleNodeCode,
+            alreadyClaimed: isSolved,
+            message: isSolved
+              ? 'ALREADY RECORDED. Your team has used this marker. Nothing further is unlocked here.'
+              : 'SEALED. This marker points to a lead your team has not been given yet.',
+            reason: 'node_not_open',
+          }
+        }
+
+        return {
+          discovered: true,
+          alreadyClaimed: isSolved,
+          nodeCode: marker.puzzleNodeCode,
+          nodeTitle: marker.puzzleNodeTitle,
+        }
+      }
 
       return {
-        discovered: scanResult.discovered,
-        qrLabel: scanResult.qrLabel,
-        nodeCode: scanResult.nodeCode,
-        nodeTitle: scanResult.nodeTitle,
-        alreadyClaimed: scanResult.alreadyClaimed,
-        message: scanResult.message,
-        error: scanResult.error,
+        discovered: true,
+        qrLabel: marker.label,
+        markerId: marker.markerId ?? undefined,
+        manualCode: marker.manualCode ?? undefined,
+        deploymentStatus: marker.deploymentStatus,
+        qrCode: marker.code,
       }
     },
-    [isOffline],
+    [isOffline, qrMarkers, solvedNodes, currentNodeId, availableNodeIds],
   )
 
   const markNotificationRead = useCallback((_id: string) => {
@@ -862,6 +982,8 @@ export function QASimulatorProvider({ children }: { children: ReactNode }) {
     setIsLocked(false)
     setEvidenceLabMode(false)
     setLocalEvidenceOverrides({})
+    attemptCountsRef.current = {}
+    setAttemptCounts({})
     setSimulationType('FRESH')
   }, [])
 

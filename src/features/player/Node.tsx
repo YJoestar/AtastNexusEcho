@@ -54,6 +54,16 @@ export function PlayerNode() {
   const mountedRef = useRef(true)
   const leaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  // `fetchNode` is not a stable dependency: under the QA simulator the engine
+  // hands out a fresh closure on every render. Listing it in this effect's deps
+  // made every load a loop - each pass set fresh `submissions`/`hints` arrays,
+  // which re-rendered, which minted a new closure, which re-ran the effect - and
+  // `setAnswer('')` at the bottom wiped what the player had typed on every pass.
+  // The latest closure is tracked in a ref; the effect keys on what actually
+  // changes the answer.
+  const fetchNodeRef = useRef(fetchNode)
+  fetchNodeRef.current = fetchNode
+
   useEffect(() => {
     mountedRef.current = true
     return () => {
@@ -72,7 +82,7 @@ export function PlayerNode() {
       setError(null)
       setActionError(null)
       try {
-        const nodeData = await fetchNode(nodeId)
+        const nodeData = await fetchNodeRef.current(nodeId)
         if (cancelled) return
         setNode(nodeData)
         setShowHintPanel(false)
@@ -92,7 +102,7 @@ export function PlayerNode() {
 
     void loadNode()
     return () => { cancelled = true }
-  }, [nodeId, role, fetchNode])
+  }, [nodeId, role])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

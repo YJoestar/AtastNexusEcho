@@ -128,7 +128,7 @@ export function buildDevelopmentCatalog(): EvidenceLabCatalog {
       {
         id: 'dev-ev-013', code: 'QR-NODE-QR01', title: 'QR Field Marker — P01', description: 'Physical QR marker recovered from North Entrance.',
         type: 'QR', classification: 'RESTRICTED', condition: 'NORMAL',
-        content: { qr_code: 'NX|V1|LOC-001', qr_label: 'NORTH ENTRANCE', node_code: 'P01', location: 'NORTH ENTRANCE / LOBBY', scan_status: 'VERIFIED' },
+        content: { qr_code: 'QR-NODE-02', qr_label: 'NORTH ENTRANCE', node_code: 'P01', location: 'NORTH ENTRANCE / LOBBY', scan_status: 'VERIFIED' },
         metadata: { source: 'QR-SCAN', case: '037' },
       },
     ],

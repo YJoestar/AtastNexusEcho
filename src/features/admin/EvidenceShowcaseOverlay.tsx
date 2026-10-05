@@ -14,6 +14,7 @@ import { ArtifactInspection } from '@/features/player/evidence/ArtifactInspectio
 import type { CaseArtifact } from '@/features/player/evidence/types'
 import type { AnnotationKind, EvidenceMark } from '@/lib/investigationWorkspace'
 import { SHOWCASE_LABEL } from '@/lib/evidence/showcaseCatalog'
+import { generateId } from '@/lib/utils'
 import type { ShowcaseModel, ShowcaseRecord } from './evidenceShowcaseModel'
 
 interface OverlayProps {
@@ -25,7 +26,7 @@ interface OverlayProps {
   onClose: () => void
 }
 
-const makeId = () => (typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `n-${Date.now()}-${Math.random().toString(36).slice(2)}`)
+const makeId = generateId
 
 export function EvidenceShowcaseOverlay({ record, model, siblings, onSelect, onClose }: OverlayProps) {
   const { admin } = useAdmin()

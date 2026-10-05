@@ -23,7 +23,8 @@ import type { Role, SimulationType } from '@/contexts/QASimulatorContext'
 import type { NodeDetailPlayerView } from '@/types/game-engine'
 import { QAPlayerShell } from '@/features/admin/QAPlayerShell'
 import { DUMMY_APP_CONTEXT } from '@/features/admin/qaDummyContext'
-import { SCAN_LOCATIONS, TEST_CODE, type ScanLocation } from '@/lib/qr'
+import { adminAPI } from '@/lib/admin'
+import type { QRCodeEntry } from '@/lib/admin'
 import { PlayerEvidenceArchive } from '@/features/player/evidence/EvidenceArchive'
 import { AppContext } from '@/app/providers/AppProvider'
 const SIMULATION_TYPES: { value: SimulationType; label: string; description: string }[] = [
@@ -52,6 +53,8 @@ function QAHubInner() {
   const [activeTab, setActiveTab] = useState<'evidence' | 'players' | 'qr' | 'nodes' | 'controls' | 'inspector'>('controls')
   const [devicePreset, setDevicePreset] = useState('desktop')
   const [nodeJumpInput, setNodeJumpInput] = useState('')
+  const [markerInventory, setMarkerInventory] = useState<QRCodeEntry[]>([])
+  const [markerInventoryError, setMarkerInventoryError] = useState<string | null>(null)
 
   const hasInitialized = useRef(false)
 
@@ -61,6 +64,30 @@ function QAHubInner() {
       qa.resetSimulation()
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // The inventory is read from qr_nodes rather than from a client-side registry,
+  // because the registry is a second opinion about what a marker is and the
+  // server is the only authority. When the two disagreed, this table certified
+  // payloads that scan_qr_code rejects on every row.
+  useEffect(() => {
+    if (activeTab !== 'qr' || markerInventory.length > 0) return
+    let cancelled = false
+    void adminAPI
+      .listQRCodes()
+      .then(rows => {
+        if (!cancelled) setMarkerInventory(rows)
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          setMarkerInventoryError(
+            err instanceof Error ? err.message : 'Failed to load the marker register',
+          )
+        }
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [activeTab, markerInventory.length])
 
   const solvedCount = qa.solvedNodes.size
   const totalNodes = ALL_PUZZLES.length
@@ -79,9 +106,16 @@ function QAHubInner() {
   }
 
   const handleSolveCurrent = () => {
-    if (qa.currentNodeId && !qa.solvedNodes.has(qa.currentNodeId)) {
-      qa.submitAnswer(qa.currentNodeId, 'simulation_answer').catch(() => {})
-    }
+    // This used to submit the literal string 'simulation_answer'. That answer
+    // is not any puzzle's accepted answer, so the submission always came back
+    // wrong, its result was discarded into `.catch(() => {})`, and the button
+    // labelled "Solve current node — mark the active node as solved" did
+    // nothing at all. A QA operator clicking it had no way to tell that, and
+    // would reasonably conclude the node was unsolvable.
+    //
+    // `forceSolve` is the honest version of the control: it marks the node
+    // solved, awards the points and advances to the next node.
+    qa.forceSolve()
   }
 
   const handleJumpToNode = () => {
@@ -572,64 +606,84 @@ function QAHubInner() {
             {activeTab === 'qr' && (
               <div className="space-y-4">
                 <h3 className="font-medium text-nexus-text">
-                  QR Code Inventory ({SCAN_LOCATIONS.length} total)
+                  QR Code Inventory ({markerInventory.length} total)
                 </h3>
                 <div className="text-sm text-nexus-textMuted mb-2">
-                  All codes resolve through the unified validation pipeline.
-                  Test code: <code className="font-mono">{TEST_CODE}</code> — always resolves to LOC-000 (maps to P01).
+                  These are the rows the Bureau actually resolves against. A scan is
+                  accepted only when the submitted text matches{' '}
+                  <code className="font-mono">qr_nodes.code</code>,{' '}
+                  <code className="font-mono">marker_id</code> or{' '}
+                  <code className="font-mono">manual_code</code> exactly, so the
+                  printed QR payload and the printed manual reference below are the
+                  complete set of strings a player can use.
                 </div>
+
+                {markerInventoryError && (
+                  <p className="text-sm text-nexus-danger">
+                    Marker inventory unavailable: {markerInventoryError}
+                  </p>
+                )}
 
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-nexus-borderSubtle">
-                        <th className="text-left py-2 px-3 font-medium text-nexus-textMuted">Loc ID</th>
+                        <th className="text-left py-2 px-3 font-medium text-nexus-textMuted">QR Payload</th>
+                        <th className="text-left py-2 px-3 font-medium text-nexus-textMuted">Marker ID</th>
+                        <th className="text-left py-2 px-3 font-medium text-nexus-textMuted">Manual Code</th>
                         <th className="text-left py-2 px-3 font-medium text-nexus-textMuted">Node</th>
                         <th className="text-left py-2 px-3 font-medium text-nexus-textMuted">Name</th>
                         <th className="text-center py-2 px-3 font-medium text-nexus-textMuted">Stage</th>
                         <th className="text-left py-2 px-3 font-medium text-nexus-textMuted">Building</th>
-                        <th className="text-left py-2 px-3 font-medium text-nexus-textMuted">QR Payload</th>
-                        <th className="text-left py-2 px-3 font-medium text-nexus-textMuted">Manual Code</th>
-                        <th className="text-center py-2 px-3 font-medium text-nexus-textMuted">Type</th>
+                        <th className="text-center py-2 px-3 font-medium text-nexus-textMuted">Status</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {SCAN_LOCATIONS.map((loc: ScanLocation) => (
+                      {markerInventory.length === 0 && !markerInventoryError ? (
+                        <tr>
+                          <td colSpan={8} className="py-4 text-center text-nexus-textMuted">
+                            No markers registered. Scan anything and the Bureau will
+                            report it as unregistered.
+                          </td>
+                        </tr>
+                      ) : (
+                        markerInventory.map(m => (
                         <tr
-                          key={loc.locationId}
+                          key={m.id}
                           className="border-b border-nexus-borderSubtle/30 hover:bg-nexus-surfaceElevated/30"
                         >
                           <td className="py-2 px-3">
-                            <code className="font-mono text-xs text-nexus-accent">{loc.locationId}</code>
-                          </td>
-                          <td className="py-2 px-3">
-                            <code className="font-mono text-xs">{loc.scanNodeId}</code>
-                          </td>
-                          <td className="py-2 px-3 text-nexus-textMuted">{loc.nodeName}</td>
-                          <td className="py-2 px-3 text-center">{loc.nodeStage}</td>
-                          <td className="py-2 px-3 text-nexus-textMuted">{loc.building}</td>
-                          <td className="py-2 px-3">
-                            <code className="font-mono text-xs text-nexus-textSubtle break-all">
-                              {loc.qrPayload}
+                            <code className="font-mono text-xs text-nexus-accent break-all">
+                              {m.code}
                             </code>
                           </td>
                           <td className="py-2 px-3">
+                            <code className="font-mono text-xs break-all">{m.markerId ?? '—'}</code>
+                          </td>
+                          <td className="py-2 px-3">
                             <code className="font-mono text-xs text-nexus-textSubtle break-all">
-                              {loc.manualCode}
+                              {m.manualCode ?? '—'}
                             </code>
                           </td>
+                          <td className="py-2 px-3">
+                            <code className="font-mono text-xs">{m.puzzleNodeCode || '—'}</code>
+                          </td>
+                          <td className="py-2 px-3 text-nexus-textMuted">{m.puzzleNodeTitle || m.label}</td>
+                          <td className="py-2 px-3 text-center">{m.puzzleNodeStage ?? '—'}</td>
+                          <td className="py-2 px-3 text-nexus-textMuted">{m.building || '—'}</td>
                           <td className="py-2 px-3 text-center">
                             <span className={cn(
                               'text-xs px-2 py-0.5 rounded',
-                              loc.resultType === 'TEST'
-                                ? 'bg-nexus-infoBg/20 text-nexus-info'
-                                : 'bg-nexus-accentBg/20 text-nexus-accent',
+                              m.deploymentStatus === 'DEPLOYED'
+                                ? 'bg-nexus-accentBg/20 text-nexus-accent'
+                                : 'bg-nexus-warningBg/20 text-nexus-warning',
                             )}>
-                              {loc.resultType}
+                              {m.deploymentStatus || 'UNKNOWN'}
                             </span>
                           </td>
                         </tr>
-                      ))}
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>

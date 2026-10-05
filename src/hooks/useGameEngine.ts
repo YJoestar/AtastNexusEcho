@@ -125,23 +125,37 @@ function isTransportFailure(error: unknown): boolean {
 /**
  * Explain a scan that did not discover anything.
  *
- * scan_qr_code() returns `{ error }` when it does not recognise the marker at
- * all, and `{ discovered: false }` with no error when the marker is genuine but
- * the team has not reached it. Those are different situations and the player is
- * owed the difference: the previous single message claimed "the system
- * recognises the marker" even for a QR code that was never in the database,
- * which sent players hunting for a prerequisite that did not exist.
+ * scan_qr_code() answers three different things with `discovered: false`, and a
+ * player cannot act on any of them unless they are told apart:
+ *
+ *   - an `error`, meaning the code is not a marker the Bureau knows at all;
+ *   - `alreadyClaimed`, meaning this team's team has used this marker before;
+ *   - `reason: node_not_open` / `node_not_reached`, meaning the marker is real
+ *     and points somewhere this team has not got to.
+ *
+ * The previous single message claimed "the system recognises the marker" even
+ * for a QR code that was never in the database, which sent players hunting for a
+ * prerequisite that did not exist.
  */
-function describeUnrecognised(scanError?: string): string {
-  if (!scanError) {
-    // Recognised marker, target still sealed. Deliberately does not say what the
-    // marker points to, so it cannot be used to scout ahead.
-    return 'ACCESS DENIED. The system recognizes the marker, but whatever it points to remains sealed.'
+function describeUnrecognised(scanError?: string, reason?: string, alreadyClaimed?: boolean): string {
+  if (scanError) {
+    if (/invalid|unrecogn|not found|unknown/i.test(scanError)) {
+      return 'UNRECOGNISED MARKER. This code is not registered with the Bureau. Check the marker, or enter the manual reference printed beneath it.'
+    }
+    return 'The marker could not be verified. Check the marker and try again.'
   }
-  if (/invalid|unrecogn|not found|unknown/i.test(scanError)) {
-    return 'UNRECOGNISED MARKER. This code is not registered with the Bureau. Check the marker, or enter the manual reference printed beneath it.'
+  if (alreadyClaimed) {
+    return 'ALREADY RECORDED. Your team has used this marker. Nothing further is unlocked here.'
   }
-  return 'The marker could not be verified. Check the marker and try again.'
+  if (reason === 'node_not_reached') {
+    return 'SEALED. This marker points to a lead your team has not been given yet. Return to the case and work the current lead.'
+  }
+  if (reason === 'node_not_open') {
+    return 'SEALED. Your team has already dealt with this one. Return to the case for the next lead.'
+  }
+  // Recognised marker, no reason given. Deliberately does not say what the marker
+  // points to, so it cannot be used to scout ahead.
+  return 'ACCESS DENIED. The system recognizes the marker, but whatever it points to remains sealed.'
 }
 
 export function useGameEngine() {
@@ -382,6 +396,18 @@ export function useGameEngine() {
       }
       try {
         const result = await gameAPI.scanQR(qrCode)
+
+        // A successful scan writes the team's progress, so the map, the node
+        // list and the counter the player returns to are all stale without this.
+        // Otherwise the only refresh is the 30s poll, and a player who scans a
+        // marker and taps straight back is looking at the state from before they
+        // scanned it. refreshTeamProgress is deliberately not in that poll.
+        if (result.discovered) {
+          void refreshGameState()
+          void refreshTeamProgress()
+          void fetchNodeProgress()
+        }
+
         return {
           discovered: result.discovered,
           qrLabel: result.qrLabel,
@@ -390,7 +416,7 @@ export function useGameEngine() {
           alreadyClaimed: result.alreadyClaimed,
           message: result.discovered
             ? undefined
-            : describeUnrecognised(result.error),
+            : describeUnrecognised(result.error, result.reason, result.alreadyClaimed),
           error: result.error,
           markerId: result.markerId,
           manualCode: result.manualCode,
@@ -411,7 +437,12 @@ export function useGameEngine() {
         }
       }
     },
-    [isOffline],
+    [
+      isOffline,
+      refreshGameState,
+      refreshTeamProgress,
+      fetchNodeProgress,
+    ],
   )
 
   const markAllNotificationsRead = useCallback(async () => {
@@ -425,16 +456,29 @@ export function useGameEngine() {
   useEffect(() => {
     if (!isAuthenticated || isOffline || qaContext?.isActive) return
     void refreshGameState()
+    void refreshTeamProgress()
     void fetchNodeProgress()
 
     const interval = setInterval(() => {
       if (isOffline || qaContext?.isActive) return
       void refreshGameState()
+      // The team aggregate is what drives currentNodeId, availableNodeIds and the
+      // leaderboard the player reads. Polling game state and node progress
+      // without it left the map showing pre-progression nodes after a solve that
+      // happened anywhere other than the Node screen - a QR scan, say.
+      void refreshTeamProgress()
       void fetchNodeProgress()
     }, 30000)
 
     return () => clearInterval(interval)
-  }, [isAuthenticated, isOffline, refreshGameState, fetchNodeProgress, qaContext?.isActive])
+  }, [
+    isAuthenticated,
+    isOffline,
+    refreshGameState,
+    refreshTeamProgress,
+    fetchNodeProgress,
+    qaContext?.isActive,
+  ])
 
   /**
    * Replay answers that were typed while the link was down.
@@ -490,11 +534,21 @@ export function useGameEngine() {
     const currentId = teamProgress?.currentNodeId
     const availableSet = new Set(availableNodeIds)
 
+    // Before the run is wired up the server has no opinion yet and the local
+    // bundle is the only thing that knows where the graph begins. Once the server
+    // HAS an opinion it is the authority: a node the database is holding LOCKED is
+    // shown locked, even where this bundle would call it a root. Deriving
+    // availability from the bundle regardless is how a player is sent to a lead
+    // that will not open, and it is why an operator's unlock or lock never
+    // reached the map.
+    const serverHasAnOpinion = Boolean(currentId) || availableNodeIds.length > 0
+
     return ALL_PUZZLES.map(puzzle => {
       const solved = solvedSet.has(puzzle.code)
       const isCurrent = puzzle.code === currentId
       const isAvailable =
-        (availableSet.has(puzzle.code) || puzzle.prerequisiteNodes.length === 0) &&
+        (availableSet.has(puzzle.code) ||
+          (!serverHasAnOpinion && puzzle.prerequisiteNodes.length === 0)) &&
         !solved &&
         puzzle.code !== currentId
 

@@ -9,8 +9,9 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { act, render, renderHook, waitFor } from '@testing-library/react'
-import { useConnection, type ConnectionState } from '@/hooks/useConnection'
+import { useConnection, __resetConnectionStoreForTests, type ConnectionState } from '@/hooks/useConnection'
 import { OfflineBanner } from '@/components/player/OfflineBanner'
+import { StrictMode } from 'react'
 
 function setOnline(value: boolean) {
   Object.defineProperty(navigator, 'onLine', { value, configurable: true })
@@ -26,9 +27,14 @@ beforeEach(() => {
   setOnline(true)
   fetchStub = vi.fn().mockResolvedValue({ ok: true, status: 200 })
   vi.stubGlobal('fetch', fetchStub)
+  // Connectivity is now one module-level store shared by every consumer, so its
+  // verdict survives between cases unless it is cleared. Without this, a test
+  // inherits the previous test's probe result.
+  __resetConnectionStoreForTests()
 })
 
 afterEach(() => {
+  __resetConnectionStoreForTests()
   vi.unstubAllGlobals()
   vi.restoreAllMocks()
 })
@@ -163,5 +169,135 @@ describe('OfflineBanner copy', () => {
     )
     expect(container.textContent).toContain('SUBMITTED')
     expect(container.textContent).toContain('1 queued answer delivered.')
+  })
+})
+
+/**
+ * Connectivity is a property of the device, not of a component.
+ *
+ * `PlayerLayout` calls the hook and then renders `PlayerHeader`, `OfflineBanner`
+ * and `BottomNav`, which each called it again. Every player screen therefore ran
+ * four independent probes on a 20s interval — five with the game engine mounted
+ * — and because each instance had its own `inFlight` guard those guards
+ * deduplicated nothing. In a room of handsets that is four to five identical
+ * requests per device per interval, all aimed at the one endpoint players need.
+ *
+ * It was also possible to see the header read "online" while the banner
+ * directly beneath it read "reconnecting": the two had probed at different
+ * moments, and which one was right depended on which had finished last.
+ */
+describe('the probe is shared, not per-component', () => {
+  // Five consumers on one screen, as PlayerLayout, its header, the banner and
+  // the nav actually are.
+  function FiveConsumers() {
+    const layout = useConnection()
+    const header = useConnection()
+    const banner = useConnection()
+    const nav = useConnection()
+    const engine = useConnection()
+    return (
+      <div data-testid="statuses">
+        {[layout, header, banner, nav, engine].map(s => s.status).join(',')}
+      </div>
+    )
+  }
+
+  it('probes once for the whole screen, however many components read it', async () => {
+    render(<FiveConsumers />)
+
+    await waitFor(() => expect(fetchStub).toHaveBeenCalled())
+    const afterMount = fetchStub.mock.calls.length
+
+    await act(async () => {
+      await new Promise(resolve => setTimeout(resolve, 40))
+    })
+
+    // Five consumers, one probe. Before this change each one ran its own.
+    expect(afterMount).toBe(1)
+    expect(fetchStub).toHaveBeenCalledTimes(1)
+  })
+
+  it('shows every consumer the same status at the same time', async () => {
+    const { getByTestId } = render(<FiveConsumers />)
+
+    await waitFor(() => expect(getByTestId('statuses').textContent).toBe('online,online,online,online,online'))
+  })
+
+  it('cannot disagree mid-flight: a link drop reaches all consumers at once', async () => {
+    const { getByTestId } = render(<FiveConsumers />)
+    await waitFor(() => expect(getByTestId('statuses').textContent).toBe('online,online,online,online,online'))
+
+    setOnline(false)
+    await act(async () => {
+      fireConnectionEvent('offline')
+    })
+
+    // One event, one shared verdict. There is no window in which the header
+    // believes the link is up and the banner beneath it does not.
+    expect(getByTestId('statuses').textContent).toBe('offline,offline,offline,offline,offline')
+  })
+
+  it('does not re-probe when one consumer replaces another', async () => {
+    // The real navigation case: a detail screen unmounts as the next one
+    // mounts. While the two overlap there is one shared verdict and no second
+    // round trip to re-prove a link that is already known good.
+    const first = renderHook(() => useConnection())
+    await waitFor(() => expect(first.result.current.status).toBe('online'))
+    const afterFirst = fetchStub.mock.calls.length
+
+    const second = renderHook(() => useConnection())
+    await act(async () => {
+      await new Promise(resolve => setTimeout(resolve, 40))
+    })
+
+    expect(fetchStub.mock.calls.length).toBe(afterFirst)
+    expect(second.result.current.status).toBe('online')
+
+    first.unmount()
+    second.unmount()
+  })
+
+  it('re-proves connectivity when the app starts up again after everyone left', async () => {
+    const first = renderHook(() => useConnection())
+    await waitFor(() => expect(first.result.current.status).toBe('online'))
+    const afterFirst = fetchStub.mock.calls.length
+    first.unmount()
+
+    // A full teardown means the app genuinely left the screen. A verdict from
+    // before that gap must not be presented as current.
+    fetchStub.mockResolvedValue({ ok: false, status: 503 })
+    const second = renderHook(() => useConnection())
+    await waitFor(() => expect(second.result.current.status).toBe('unavailable'))
+    expect(fetchStub.mock.calls.length).toBeGreaterThan(afterFirst)
+    second.unmount()
+  })
+
+  it('still honours an explicit retry from the banner', async () => {
+    const { result } = renderHook(() => useConnection())
+    await waitFor(() => expect(result.current.status).toBe('online'))
+    const before = fetchStub.mock.calls.length
+
+    await act(async () => {
+      await result.current.probe()
+    })
+
+    expect(fetchStub.mock.calls.length).toBe(before + 1)
+  })
+
+  it('survives StrictMode double-mounting with one probe, not two', async () => {
+    // The app renders inside <StrictMode>, which mounts, unmounts and remounts
+    // every effect. A teardown that treated that first unmount as "the app has
+    // left" would tear the probe loop down and immediately build a second one.
+    const { result } = renderHook(() => useConnection(), {
+      wrapper: ({ children }) => <StrictMode>{children}</StrictMode>,
+    })
+
+    await waitFor(() => expect(result.current.status).toBe('online'))
+    await act(async () => {
+      await new Promise(resolve => setTimeout(resolve, 40))
+    })
+
+    expect(fetchStub).toHaveBeenCalledTimes(1)
+    expect(result.current.status).toBe('online')
   })
 })

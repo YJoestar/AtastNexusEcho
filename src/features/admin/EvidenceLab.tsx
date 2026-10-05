@@ -4,7 +4,7 @@ import { useAdmin } from '@/app/providers/AdminProvider'
 import { useInvestigationWorkspace } from '@/hooks/useInvestigationWorkspace'
 import { adminAPI, type EvidenceLabCatalog } from '@/lib/admin'
 import { buildEvidenceCatalog } from '@/lib/evidenceCatalog'
-import { cn } from '@/lib/utils'
+import { cn, generateId } from '@/lib/utils'
 import { ArtifactInspection } from '@/features/player/evidence/ArtifactInspection'
 import { InvestigationTable } from '@/features/player/evidence/InvestigationTable'
 import { evidenceImportance } from '@/lib/evidence/importance'
@@ -380,7 +380,7 @@ export function AdminEvidenceLab() {
                 onMarkChange={status => mark(selectedArtifact.id, status)}
                 onAddAnnotation={(kind, text, point) => updateWorkspace(current => ({
                   ...current,
-                  annotations: { ...current.annotations, [selectedArtifact.id]: [...(current.annotations[selectedArtifact.id] ?? []), { id: crypto.randomUUID(), kind, text, createdAt: new Date().toISOString(), ...point }] },
+                  annotations: { ...current.annotations, [selectedArtifact.id]: [...(current.annotations[selectedArtifact.id] ?? []), { id: generateId(), kind, text, createdAt: new Date().toISOString(), ...point }] },
                 }))}
                 onPlaceOnTable={() => placeOnTable(selectedArtifact.id)}
                 isOnTable={!!workspace.placements[selectedArtifact.id]}
@@ -396,7 +396,7 @@ export function AdminEvidenceLab() {
               </div>
               {comparedArtifacts.length === 2 ? (
                 <div className="grid gap-3 xl:grid-cols-2">
-                  {comparedArtifacts.map(artifact => <div key={artifact.id} className="min-w-0 border border-nexus-border p-2"><p className="mb-2 font-mono text-[0.52rem] uppercase text-nexus-accent">{artifact.code} / {artifact.title}</p><ArtifactInspection compact artifact={artifact} mark={workspace.marks[artifact.id] ?? 'UNMARKED'} annotations={workspace.annotations[artifact.id] ?? []} onMarkChange={status => mark(artifact.id, status)} onAddAnnotation={(kind, text, point) => updateWorkspace(current => ({ ...current, annotations: { ...current.annotations, [artifact.id]: [...(current.annotations[artifact.id] ?? []), { id: crypto.randomUUID(), kind, text, createdAt: new Date().toISOString(), ...point }] } }))} onPlaceOnTable={() => placeOnTable(artifact.id)} isOnTable={!!workspace.placements[artifact.id]} /></div>)}
+                  {comparedArtifacts.map(artifact => <div key={artifact.id} className="min-w-0 border border-nexus-border p-2"><p className="mb-2 font-mono text-[0.52rem] uppercase text-nexus-accent">{artifact.code} / {artifact.title}</p><ArtifactInspection compact artifact={artifact} mark={workspace.marks[artifact.id] ?? 'UNMARKED'} annotations={workspace.annotations[artifact.id] ?? []} onMarkChange={status => mark(artifact.id, status)} onAddAnnotation={(kind, text, point) => updateWorkspace(current => ({ ...current, annotations: { ...current.annotations, [artifact.id]: [...(current.annotations[artifact.id] ?? []), { id: generateId(), kind, text, createdAt: new Date().toISOString(), ...point }] } }))} onPlaceOnTable={() => placeOnTable(artifact.id)} isOnTable={!!workspace.placements[artifact.id]} /></div>)}
                 </div>
               ) : <p className="border-y border-nexus-borderSubtle py-6 text-center font-mono text-[0.55rem] uppercase text-nexus-textSubtle">SELECT TWO RECORDS IN THE INDEX</p>}
             </div>

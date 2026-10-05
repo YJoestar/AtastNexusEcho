@@ -1,10 +1,17 @@
 /**
  * NEXUS — Player QR Scanner
  *
- * Camera-based QR scanning with narrative failure states and a unified
- * validation pipeline. All codes (QR payloads, manual codes, test codes)
- * resolve through the same canonical ScanLocation registry, ensuring
- * client and QA simulator always agree.
+ * Camera-based QR scanning with narrative failure states. A decoded payload is
+ * handed to the Bureau unchanged; the server resolves it against `qr_nodes`
+ * (code, marker_id or manual_code) and decides whether the marker is real, and
+ * whether this team is allowed to use it. The scanner deliberately keeps no
+ * registry of its own — a second source of truth for what a marker means is how
+ * a client and a server end up disagreeing about every marker on the wall.
+ *
+ * Camera ownership: the stream, the decode timer and the in-flight lookup all
+ * have exactly one owner, released by `releaseCamera`. `startScan` is re-entrant
+ * in practice (see below), and single-slot refs lose whichever resource they
+ * overwrite.
  */
 
 import { useState, useRef, useEffect, useCallback, useContext } from 'react'
@@ -33,12 +40,20 @@ async function loadJsQr(): Promise<JsQrFn> {
 
 const SCAN_INTERVAL_MS = 250
 
+/**
+ * How long one accepted marker stays suppressed after its lookup settled. This
+ * is a comfort window against a camera that keeps re-reading the same code, NOT
+ * the mechanism that prevents duplicate lookups — `inflightRef` is.
+ */
+const SCAN_DEDUPE_MS = 3000
+
 type CameraState =
   | 'IDLE'
   | 'REQUESTING_CAMERA'
   | 'CAMERA_READY'
   | 'SCANNING'
   | 'UNSUPPORTED'
+  | 'OFFLINE'
   | 'PERMISSION_DENIED'
   | 'NO_CAMERA'
   | 'INSECURE_CONTEXT'
@@ -70,6 +85,16 @@ const CAMERA_STATE_LABELS: Record<CameraState, { title: string; description: str
     title: 'OPTICAL INPUT UNAVAILABLE',
     description: 'This device does not expose the camera interface required for optical acquisition.',
     icon: <BureauIcons.AlertTriangle className="bureau-icon w-16 h-16 text-nexus-danger mx-auto" />,
+  },
+  OFFLINE: {
+    // Deliberately not INSECURE_CONTEXT. `isOffline` is true while the link is
+    // still being established on a cold page load, and telling a player on
+    // campus Wi-Fi that their camera needs TLS sends them to a problem they do
+    // not have while the real one — a link that has not come up yet — resolves
+    // itself in under a second.
+    title: 'BUREAU LINK UNAVAILABLE',
+    description: 'A scan has to be checked with the Bureau, so the reader stays dark until you are back on the network.',
+    icon: <BureauIcons.WifiOff className="bureau-icon w-16 h-16 text-nexus-warning mx-auto" />,
   },
   PERMISSION_DENIED: {
     title: 'OPTICAL ACCESS REFUSED',
@@ -119,30 +144,79 @@ export function PlayerQR() {
   const streamRef = useRef<MediaStream | null>(null)
   const lastScannedRef = useRef<{ code: string; at: number } | null>(null)
   const jsQrRef = useRef<JsQrFn | null>(null)
-  const decodingRef = useRef(false)
+  /** True from the moment arming begins until the camera is released. */
+  const armingRef = useRef(false)
+  /** True while a marker lookup is in flight. The real duplicate-lookup guard. */
+  const inflightRef = useRef(false)
+  const isMountedRef = useRef(true)
+
+  /**
+   * The single owner of the camera, the decode timer and the decoder.
+   *
+   * `startScan` is re-entrant in practice: REACQUIRE SIGNAL is painted while the
+   * permission prompt is still up, so a second getUserMedia can be issued before
+   * the first has resolved. With single-slot refs the newer stream and timer
+   * simply overwrite the older ones, and teardown only ever sees the last value.
+   * The first stream's video track then keeps running with nothing left holding
+   * a reference to stop it: the phone's camera indicator stays lit, the sensor
+   * stays held, and the next attempt to arm the reader commonly fails with
+   * NotReadableError. On a wall of markers at a live event that is a dead
+   * scanner nobody can recover without reloading the page.
+   *
+   * Every path that gives the camera up goes through here, including unmount.
+   */
+  const releaseCamera = useCallback(() => {
+    if (scanIntervalRef.current !== null) {
+      clearInterval(scanIntervalRef.current)
+      scanIntervalRef.current = null
+    }
+    if (videoRef.current) videoRef.current.srcObject = null
+    streamRef.current?.getTracks().forEach(track => track.stop())
+    streamRef.current = null
+    jsQrRef.current = null
+    armingRef.current = false
+  }, [])
 
   const submitCode = useCallback(
     async (code: string) => {
-      if (isOffline) {
-        setLastResult({
-          discovered: false,
-          error: 'offline',
-          message: 'Cannot scan while offline.',
-        })
-        return
-      }
-      setIsResolving(true)
+      // One lookup at a time. The camera keeps decoding frames every 250ms while
+      // the Bureau answers, so without this the same marker is re-submitted as
+      // soon as the previous round trip ends — and on the fallback path a scan
+      // is three sequential PostgREST calls, which on campus Wi-Fi routinely
+      // outlasts the dedupe window.
+      if (inflightRef.current) return
+      inflightRef.current = true
       try {
-        const result = await scanQR(code)
-        setLastResult(result)
-      } catch (err) {
-        setLastResult({
-          discovered: false,
-          message: err instanceof Error ? err.message : 'Scan failed. Try again.',
-          error: 'scan_failed',
-        })
+        if (isOffline) {
+          if (isMountedRef.current) {
+            setLastResult({
+              discovered: false,
+              error: 'offline',
+              message: 'Cannot scan while offline.',
+            })
+          }
+          return
+        }
+        setIsResolving(true)
+        try {
+          const result = await scanQR(code)
+          if (isMountedRef.current) setLastResult(result)
+        } catch (err) {
+          if (isMountedRef.current) {
+            setLastResult({
+              discovered: false,
+              message: err instanceof Error ? err.message : 'Scan failed. Try again.',
+              error: 'scan_failed',
+            })
+          }
+        }
+        // Stamped after the round trip settles, not at detection. Stamping at
+        // detection re-armed the marker while its own request was still open,
+        // which is precisely when a duplicate would do the most damage.
+        lastScannedRef.current = { code, at: Date.now() }
       } finally {
-        setIsResolving(false)
+        inflightRef.current = false
+        if (isMountedRef.current) setIsResolving(false)
       }
     },
     [isOffline, scanQR],
@@ -171,8 +245,10 @@ export function PlayerQR() {
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
 
-    if (!jsQrRef.current || decodingRef.current) return
-    decodingRef.current = true
+    // jsQR is synchronous, so a decode cannot overlap itself. What must not
+    // overlap is the LOOKUP that follows it, which is why the guard lives in
+    // submitCode rather than around this call.
+    if (!jsQrRef.current) return
     let result: { data: string } | null = null
     try {
       result = jsQrRef.current(imageData.data, imageData.width, imageData.height, {
@@ -180,43 +256,51 @@ export function PlayerQR() {
       })
     } catch {
       result = null
-    } finally {
-      decodingRef.current = false
     }
     if (!result?.data) return
 
     const code = result.data.trim()
     if (!code) return
 
-    const now = Date.now()
     const last = lastScannedRef.current
-    if (last && last.code === code && now - last.at < 3000) return
-    lastScannedRef.current = { code, at: now }
+    if (last && last.code === code && Date.now() - last.at < SCAN_DEDUPE_MS) return
 
-    void submitCode(code)
+    await submitCode(code)
   }, [submitCode])
 
   const startScan = useCallback(async () => {
     if (isOffline) {
-      setCameraState('INSECURE_CONTEXT')
+      setCameraState('OFFLINE')
       return
     }
+
+    // An armed camera is handed back before a new one is taken, and a second arm
+    // while the first is still pending is refused outright. Without this the two
+    // races below both end with one of the two cameras unstoppable.
+    if (armingRef.current) return
+    if (streamRef.current || scanIntervalRef.current !== null) {
+      releaseCamera()
+    }
+    armingRef.current = true
 
     setCameraState('REQUESTING_CAMERA')
     setLastResult(null)
     lastScannedRef.current = null
 
     if (isQASimulation) {
+      armingRef.current = false
       setCameraState('CAMERA_READY')
       return
     }
 
     if (typeof window === 'undefined' || !window.isSecureContext) {
+      armingRef.current = false
       setCameraState('INSECURE_CONTEXT')
       return
     }
 
     if (!navigator?.mediaDevices?.getUserMedia) {
+      armingRef.current = false
       setCameraState('UNSUPPORTED')
       return
     }
@@ -227,10 +311,19 @@ export function PlayerQR() {
         video: { facingMode: 'environment' },
       })
 
+      // The player may have closed the scanner, or unmounted, while the prompt
+      // was up. A stream that arrives with nothing waiting for it is released
+      // here rather than parked in a ref nobody will read.
+      if (!isMountedRef.current || !armingRef.current) {
+        stream.getTracks().forEach(track => track.stop())
+        return
+      }
+
       const tracks = stream.getVideoTracks()
       if (tracks.length === 0) {
         stream.getTracks().forEach(track => track.stop())
         streamRef.current = null
+        armingRef.current = false
         setCameraState('NO_CAMERA')
         return
       }
@@ -240,10 +333,8 @@ export function PlayerQR() {
       try {
         jsQrRef.current = await loadPromise
       } catch {
-        jsQrRef.current = null
+        releaseCamera()
         setCameraState('DETECTION_UNAVAILABLE')
-        streamRef.current?.getTracks().forEach(track => track.stop())
-        streamRef.current = null
         return
       }
 
@@ -254,12 +345,8 @@ export function PlayerQR() {
         await videoRef.current.play().catch(() => {})
       }
 
-      if (!streamRef.current) {
-        setCameraState('STREAM_FAILED')
-        return
-      }
-
       setCameraState('SCANNING')
+      armingRef.current = false
 
       scanIntervalRef.current = window.setInterval(() => {
         void decodeFrame()
@@ -267,6 +354,7 @@ export function PlayerQR() {
     } catch (err: unknown) {
       const name = err instanceof Error ? err.name : ''
 
+      armingRef.current = false
       streamRef.current?.getTracks().forEach(track => track.stop())
       streamRef.current = null
 
@@ -285,36 +373,23 @@ export function PlayerQR() {
         setCameraState('STREAM_FAILED')
       }
     }
-  }, [isOffline, isQASimulation, decodeFrame])
+  }, [isOffline, isQASimulation, decodeFrame, releaseCamera])
 
   const stopScan = useCallback(() => {
     setCameraState('IDLE')
     setLastResult(null)
     setShowManualEntry(false)
     setManualCode('')
-
-    if (videoRef.current) {
-      videoRef.current.srcObject = null
-    }
-    streamRef.current?.getTracks().forEach(track => track.stop())
-    streamRef.current = null
-    jsQrRef.current = null
-    if (scanIntervalRef.current) {
-      clearInterval(scanIntervalRef.current)
-      scanIntervalRef.current = null
-    }
-  }, [])
+    releaseCamera()
+  }, [releaseCamera])
 
   useEffect(() => {
+    isMountedRef.current = true
     return () => {
-      if (scanIntervalRef.current) {
-        clearInterval(scanIntervalRef.current)
-        scanIntervalRef.current = null
-      }
-      streamRef.current?.getTracks().forEach(track => track.stop())
-      streamRef.current = null
+      isMountedRef.current = false
+      releaseCamera()
     }
-  }, [])
+  }, [releaseCamera])
 
   const isScanning = cameraState === 'SCANNING'
 
@@ -322,11 +397,14 @@ export function PlayerQR() {
     const stateInfo = CAMERA_STATE_LABELS[cameraState]
     if (cameraState === 'IDLE' || cameraState === 'CAMERA_READY') return null
 
+    // REQUESTING_CAMERA is deliberately absent: arming is now single-flight, so
+    // a retry offered while the permission prompt is up would be a button that
+    // does nothing. It is a progress state, not a failure.
     const isRetryable = [
-      'REQUESTING_CAMERA',
       'INSECURE_CONTEXT',
       'STREAM_FAILED',
       'DETECTION_UNAVAILABLE',
+      'OFFLINE',
     ].includes(cameraState)
 
     return (
@@ -531,10 +609,10 @@ export function PlayerQR() {
                   {lastResult.message
                     ? lastResult.message
                     : lastResult.alreadyClaimed
-                      ? 'This marker has already been claimed by your team.'
+                      ? 'ALREADY RECORDED. Your team has used this marker. Nothing further is unlocked here.'
                       : lastResult.discovered
                         ? 'Proceed to the location to continue.'
-                        : 'The system recognizes the marker, but whatever it points to remains sealed.'}
+                        : 'The marker is registered but this lead is still sealed. Return to the case and work the current lead.'}
                 </p>
               </div>
             </div>

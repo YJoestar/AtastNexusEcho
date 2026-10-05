@@ -18,7 +18,7 @@ import { showcaseCatalog, showcaseEnabled } from '@/lib/evidence/showcaseCatalog
 import { searchArtifacts, type SearchHit } from '@/lib/evidence/search'
 import { deriveSeries, seriesPosition, sortChronologically, captureTimeOf } from '@/lib/evidence/series'
 import { mediumFacts } from '@/lib/evidence/facts'
-import { cn } from '@/lib/utils'
+import { cn, generateId } from '@/lib/utils'
 import { MediumThumb } from './board/MediumThumb'
 
 /** The title is set the way the object itself would be: typed, handwritten, machine-logged. */
@@ -86,11 +86,7 @@ function normalizeApiArtifact(
   }
 }
 
-function makeId(): string {
-  return typeof crypto !== 'undefined' && 'randomUUID' in crypto
-    ? crypto.randomUUID()
-    : `local-${Date.now()}-${Math.random().toString(36).slice(2)}`
-}
+const makeId = generateId
 
 function getNewFieldKeys(
   artifact: CaseArtifact,
