@@ -150,31 +150,60 @@ async function callBureau<T>(body: Record<string, unknown>): Promise<T> {
   })
 
   if (error) {
-    // When the edge function returns a non-2xx status, Supabase wraps the
-    // actual error in error.context. Extract it so the user sees the real
-    // reason instead of a generic "non-2xx status code" string.
     let message = error.message
     let status = 500
 
-    const ctx = (error as { context?: { response?: unknown; status?: number } }).context
+    const ctx = (error as { context?: unknown }).context
     if (ctx) {
-      if (typeof ctx.status === 'number') status = ctx.status
-      const resp = ctx.response
-      if (resp != null) {
-        if (typeof resp === 'string') {
+      if (typeof ctx === 'object' && ctx !== null) {
+        const c = ctx as Record<string, unknown>
+
+        if (typeof c.status === 'number') status = c.status
+
+        let resp = c.response ?? c.body ?? c.data ?? null
+
+        if (resp == null && typeof c.json === 'function') {
           try {
-            const parsed = JSON.parse(resp)
-            if (parsed?.error) message = String(parsed.error)
+            resp = await c.json()
           } catch {
-            message = resp
+            resp = null
           }
-        } else if (typeof resp === 'object') {
-          const b = resp as { error?: string; message?: string }
-          if (b.error) message = b.error
-          else if (b.message) message = b.message
+        }
+
+        if (resp == null && typeof c.text === 'function') {
+          try {
+            resp = await c.text()
+          } catch {
+            resp = null
+          }
+        }
+
+        if (resp != null) {
+          if (typeof resp === 'string') {
+            try {
+              const parsed = JSON.parse(resp)
+              if (parsed?.error) message = String(parsed.error)
+              else if (parsed?.message) message = String(parsed.message)
+              else message = resp
+            } catch {
+              message = resp
+            }
+          } else if (typeof resp === 'object') {
+            const b = resp as { error?: string; message?: string }
+            if (b.error) message = b.error
+            else if (b.message) message = b.message
+          }
         }
       }
     }
+
+    console.error('[callBureau] non-2xx from bureau-operations:', {
+      action: body.action,
+      status,
+      message,
+      rawError: error,
+      context: ctx,
+    })
 
     throw new AdminAPIError(status, message)
   }
