@@ -183,6 +183,17 @@ export interface SubmissionResult {
   queued?: boolean
   /** When the queued entry was stored. */
   queuedAt?: string
+  /**
+   * Set when the answer was right but the node had already been solved, so the
+   * team keeps the points it already has and this submission pays nothing.
+   *
+   * The server decides this atomically (one transaction moves the node out of a
+   * non-solved status and only that one pays out), so it is reported rather than
+   * prevented. The simulator has to behave the same way, or a tester asking
+   * "does a double submit pay twice?" gets the wrong answer from the tool that
+   * is supposed to be checking it.
+   */
+  alreadySolved?: boolean
 }
 
 export interface HintResult {

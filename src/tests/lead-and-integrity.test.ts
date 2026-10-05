@@ -32,7 +32,7 @@ function nodeView(over: Record<string, unknown> = {}) {
 
 describe('the current lead reasons instead of pointing', () => {
   it('uses the authored, role-scoped objective', () => {
-    const lead = buildCaseLead(nodeView())
+    const lead = buildCaseLead(nodeView({ isCurrent: true, isNextUp: true, isSolved: false, unlocked: true }))
     expect(lead?.objective).toBe('The door log says nobody entered. The camera says someone did.')
     expect(lead?.nodeCode).toBe('P12')
     expect(lead?.eyebrow).toBe('LEAD · STAGE 3')
@@ -62,10 +62,9 @@ describe('the current lead reasons instead of pointing', () => {
   })
 
   it('flags a degraded lead rather than dressing a placeholder as briefing', () => {
-    const lead = buildCaseLead(nodeView({ narrativeObjective: '   ' }))
+    const lead = buildCaseLead(nodeView({ narrativeObjective: '   ', isCurrent: true }))
     expect(lead?.degraded).toBe(true)
     expect(lead?.eyebrow).toContain('UNBRIEFED')
-    // Falls back to something the team can act on rather than an empty card.
     expect(lead?.objective).toBe('The Stairwell Register')
   })
 

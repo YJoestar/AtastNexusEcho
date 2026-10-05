@@ -142,6 +142,80 @@ describe('admin authorisation is asked of the database honestly', () => {
   )
 })
 
+describe('SECURITY DEFINER functions keep a pinned search_path', () => {
+  /**
+   * Strip SQL comments, so a migration that *explains* search_path is not read as
+   * one that *sets* it. Several of these files document the rule at length.
+   */
+  const stripSql = (sql: string) =>
+    sql.replace(/\/\*[\s\S]*?\*\//g, '').replace(/--[^\n]*/g, '')
+
+  /**
+   * Every function the migration history defines or replaces, with whether the
+   * definition itself states `SET search_path`, and whether any LATER migration
+   * re-pinned it.
+   *
+   * CREATE OR REPLACE resets a function's SET clauses, so "the history pinned it
+   * once" is not good enough - only the newest definition counts. This is how
+   * submit_puzzle_answer and scan_qr_code lost it: 2026100309 pinned everything,
+   * then 2026100501 and 2026100502 replaced two of them without restating the
+   * clause, and the loss was invisible until someone read pg_proc.
+   */
+  const definitions = (() => {
+    // name -> { definer, pinnedInline, repairedAfter }
+    const map = new Map<string, { definer: boolean; pinnedInline: boolean; repaired: boolean; file: string }>()
+    for (const { name, sql } of migrations) {
+      const code = stripSql(sql)
+      for (const m of code.matchAll(
+        /CREATE\s+OR\s+REPLACE\s+FUNCTION\s+([A-Za-z0-9_.]+)\s*\([\s\S]*?\)\s*([\s\S]*?)\$\$/gi,
+      )) {
+        const [, fn, body = ''] = m
+        map.set(fn, {
+          definer: /SECURITY\s+DEFINER/i.test(body),
+          pinnedInline: /SET\s+search_path/i.test(body),
+          repaired: false,
+          file: name,
+        })
+      }
+      // An ALTER over pg_proc repairs every definer function in the schema, so
+      // record it against the ones already known and against ones defined later.
+      if (/ALTER\s+FUNCTION[\s\S]*?SET\s+search_path/i.test(code)) {
+        for (const entry of map.values()) entry.repaired = true
+      }
+    }
+    return map
+  })()
+
+  const definerFunctions = [...definitions.entries()].filter(([, d]) => d.definer)
+
+  it('finds the definer functions it is meant to be checking', () => {
+    // Guards the guard: an empty or near-empty set means the parser stopped
+    // matching and every rule below would pass vacuously.
+    expect(definerFunctions.length).toBeGreaterThan(10)
+  })
+
+  it.each(definerFunctions)(
+    '%s is left with a pinned search_path by the newest definition',
+    (fn, d) => {
+      // The newest definition either states the clause or a later migration
+      // re-pinned it. Anything else is running on the caller's search_path, where
+      // a role that can create objects ahead of `public` (or in pg_temp) can
+      // shadow a table and have the definer execute the attacker's version.
+      expect(
+        d.pinnedInline || d.repaired,
+        `${fn} is SECURITY DEFINER but its newest definition (${d.file}) neither states SET search_path nor is repaired by a later migration`,
+      ).toBe(true)
+    },
+  )
+
+  it('names the game-critical functions among the ones it protects', () => {
+    const protectedNames = definerFunctions.map(([fn]) => fn)
+    for (const critical of ['submit_puzzle_answer', 'scan_qr_code', 'get_player_node_detail']) {
+      expect(protectedNames, `${critical} must be covered by this check`).toContain(critical)
+    }
+  })
+})
+
 describe('hint numbers agree between the edge function and the database', () => {
   it('accepts exactly as many hints as the schema allows', () => {
     const edge = functions.find(f => f.name === 'game-use-hint')!.src

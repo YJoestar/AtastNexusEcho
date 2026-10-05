@@ -19,6 +19,7 @@ const h = vi.hoisted(() => {
     signInWithPassword: vi.fn(),
     invoke: vi.fn(),
     single: vi.fn(),
+    maybeSingle: vi.fn(),
     removeChannel: vi.fn(),
     channel: vi.fn(),
     unsubscribe: vi.fn(),
@@ -27,7 +28,7 @@ const h = vi.hoisted(() => {
 })
 
 vi.mock('@/lib/supabase', () => {
-  const query = { select: () => query, eq: () => query, single: h.single }
+  const query = { select: () => query, eq: () => query, single: h.single, maybeSingle: h.maybeSingle }
   return {
     supabase: {
       auth: {
@@ -136,6 +137,51 @@ describe('player session', () => {
     const { result } = renderHook(() => useApp(), { wrapper })
     await waitFor(() => expect(result.current.isAuthenticated).toBe(true))
     expect(result.current.player?.displayName).toBe('Alpha')
+  })
+
+  it('restores a finished team, whose own row was once unreadable', async () => {
+    // `select('*, teams(*)')` resolves the embed under the "Players can read own
+    // team" policy, and that policy used to exclude COMPLETED, DISQUALIFIED,
+    // ABANDONED and RESET. PostgREST returns NULL for a to-one embed the caller
+    // cannot read, rather than an error, so there is no status code to branch
+    // on. The client dereferenced it, threw a TypeError, swallowed it, and left
+    // the player signed out - so a team that completed the case could never
+    // load the ending screen, and logging in again was undone by the next
+    // refresh. Migration 2026100503 repairs the policy; this pins the client so
+    // a null embed recovers instead of crashing.
+    h.getSession.mockResolvedValue({ data: { session: { user: { id: 'u1' } } }, error: null })
+    const row = playerRow('p1', 'u1')
+    h.single.mockResolvedValue({ ...row, data: { ...row.data, teams: null } })
+    // The embed was refused, but the row itself is readable.
+    h.maybeSingle.mockResolvedValue({ data: { ...row.data.teams, status: 'COMPLETED' }, error: null })
+
+    const { result } = renderHook(() => useApp(), { wrapper })
+
+    await waitFor(() => expect(result.current.isInitializing).toBe(false))
+    // The player identity survives, so the guard does not bounce them to login,
+    // and the team carries its REAL status rather than a REGISTERED placeholder -
+    // a placeholder would drop a finished team back into gameplay and hide the
+    // ending, and would report a score of 0 against its real total.
+    expect(result.current.player?.displayName).toBe('Alpha')
+    expect(result.current.team?.status).toBe('COMPLETED')
+    expect(result.current.sessionLoadError).toBeNull()
+    expect(result.current.isAuthenticated).toBe(true)
+  })
+
+  it('reports a recoverable error instead of inventing a team when the row cannot be read at all', async () => {
+    // Both the embed and the single re-read refused. There is nothing truthful to
+    // put in `team`, so the recovery has to be visible rather than fabricated.
+    h.getSession.mockResolvedValue({ data: { session: { user: { id: 'u1' } } }, error: null })
+    const row = playerRow('p1', 'u1')
+    h.single.mockResolvedValue({ ...row, data: { ...row.data, teams: null } })
+    h.maybeSingle.mockResolvedValue({ data: null, error: null })
+
+    const { result } = renderHook(() => useApp(), { wrapper })
+
+    await waitFor(() => expect(result.current.sessionLoadError).toBeTruthy())
+    expect(result.current.team).toBeNull()
+    expect(result.current.isAuthenticated).toBe(false)
+    expect(result.current.sessionLoadError).toMatch(/case file/i)
   })
 
   it('signs out when another tab signs out (or refresh fails: SIGNED_OUT)', async () => {

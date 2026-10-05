@@ -11,6 +11,8 @@ export const DUMMY_APP_CONTEXT: AppContextValue = {
   role: null,
   isAuthenticated: false,
   isInitializing: false,
+  sessionLoadError: null,
+  retrySession: async () => {},
   login: async () => ({ success: false }),
   logout: async () => {},
   refreshGameState: async () => {},

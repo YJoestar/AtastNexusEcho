@@ -259,20 +259,61 @@ export function useGameEngine() {
         // Without the server response there is no role-appropriate content to
         // show, so fail closed rather than substituting a different role's
         // block from the local bundle.
+        //
+        // Raised, not swallowed: "could not ask" and "the node is sealed" are
+        // different facts and the player needs different words for them. The
+        // screen renders this as a recoverable error rather than claiming the
+        // node does not exist.
         console.warn('getNode failed:', err)
         setLoading('node', false)
-        return null
+        throw err
       }
 
       const localPuzzle: NodeIndexEntry | undefined = PUZZLES_BY_CODE[nodeId]
       const progressEntry = findProgressEntry(nodeId)
+      const isSolved = progressEntry?.status === 'SOLVED'
 
+      // get_player_node_detail answers {unlocked:false} rather than an error when
+      // the team has not been given the node - a lead that is still sealed, or a
+      // node an operator reset underneath the player. That is a denial, and it
+      // must not collapse into the same "nothing to describe" result as a code
+      // that exists nowhere: the first deserves the sealed-document screen, the
+      // second the explicit not-in-the-register screen. Returning null for both
+      // is what left the player on a blank page.
       if (!apiNode?.unlocked) {
         setLoading('node', false)
-        return null
+        if (!localPuzzle) return null
+        return {
+          code: localPuzzle.code,
+          title: localPuzzle.name,
+          type: localPuzzle.type as PuzzleType,
+          difficulty: localPuzzle.difficulty,
+          estimatedMinutes: parseTimeToMinutes(localPuzzle.time),
+          // The bundle's static location is what the pre-auth map already shows
+          // for a node the team has not opened; the server only publishes the
+          // resolved one to a team that has the node.
+          location: localPuzzle.location,
+          stage: localPuzzle.stage,
+          unlocked: false,
+          isSolved,
+          isCurrent: teamProgress?.currentNodeId === localPuzzle.code,
+          isNextUp: false,
+          attempts: progressEntry?.attempts ?? 0,
+          hintsUsed: progressEntry?.hintsUsed ?? 0,
+          points: localPuzzle.points,
+          status: isSolved ? 'SOLVED' : 'LOCKED',
+          narrativeObjective: '',
+          roleDependencyLevel: '',
+          roleContent: null,
+          operatorInvestigation: null,
+          coordinationChain: null,
+          failurePropagation: null,
+          locationClue: EMPTY_LOCATION_CLUE,
+          evidenceUnlocked: null,
+          storyReveal: '',
+          whyTeamworkMatters: '',
+        }
       }
-
-      const isSolved = progressEntry?.status === 'SOLVED'
 
       const currentNodeId = teamProgress?.currentNodeId
       const availableIds = teamProgress?.availableNodeIds ?? []
@@ -571,8 +612,11 @@ export function useGameEngine() {
   // and data. Player screens are unmodified — they call useGameEngine() which
   // transparently delegates to the simulator instead of gameAPI.
   if (qaContext?.isActive) {
-    const isSolved = (nodeId: string) =>
-      !!qaContext.nodeProgress.some(p => p.nodeId === nodeId || p.nodeCode === nodeId)
+    // From the solved set, not from "a progress row exists". A row also exists for
+    // LOCKED, AVAILABLE and IN_PROGRESS, so the old predicate reported a node the
+    // team had merely been handed as already solved - contradicting fetchNode in
+    // this same file, which checks the status.
+    const isSolved = (nodeId: string) => qaContext.solvedNodes.has(nodeId)
     return {
       player: qaContext.player,
       team: qaContext.team,
@@ -677,7 +721,11 @@ isOffline,
     scanQR,
     markAllNotificationsRead,
     markNotificationRead,
-    isNodeSolved: (nodeId: string) =>
-      !!findProgressEntry(nodeId) || solvedNodes.includes(nodeId),
+    // SOLVED and nothing else. `findProgressEntry` matches on presence, and a
+    // row exists for every node the team has been given - so the old predicate
+    // called a node that was merely open already solved, while fetchNode on the
+    // same data checked the status. Two answers to one question on the same
+    // screen is how a "Node Complete" stamp ends up on an unsolved lead.
+    isNodeSolved: (nodeId: string) => findProgressEntry(nodeId)?.status === 'SOLVED',
   }
 }

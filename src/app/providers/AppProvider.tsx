@@ -7,6 +7,7 @@
 
 import { createContext, useContext, useState, useCallback, useEffect, useRef, ReactNode } from 'react'
 import type { Player, Team, Role, TeamStatus, PlayerStatus, TeamProgress, Notification, GameState, NodeProgress, ProgressMetadata, GamePhase } from '@/types'
+import type { NodeProgressEntry } from '@/types/game-engine'
 import { supabase } from '@/lib/supabase'
 import { gameAPI } from '@/lib/game'
 import { collectDeviceFingerprint, hashDeviceFingerprint } from '@/lib/auth'
@@ -43,6 +44,14 @@ export interface AppContextValue {
   role: Role | null
   isAuthenticated: boolean
   isInitializing: boolean
+  /**
+   * Set when the session is valid but the player's own case file could not be
+   * read - a row that exists and is refused, rather than a player who does not
+   * exist. Distinct from "not signed in", because the recovery is different:
+   * re-reading the file, not signing in again.
+   */
+  sessionLoadError: string | null
+  retrySession: () => Promise<void>
   login: (accessCode: string, deviceInfo?: Record<string, unknown>) => Promise<{ success: boolean; error?: string }>
   logout: () => Promise<void>
   refreshGameState: () => Promise<void>
@@ -72,6 +81,35 @@ function toNotificationType(raw: string): Notification['type'] {
   return NOTIFICATION_TYPES.has(raw) ? (raw as Notification['type']) : 'SYSTEM'
 }
 
+/** A `teams` row, whichever query produced it: the embed or the single re-read. */
+interface TeamRow {
+  id: string
+  name: string
+  code: string
+  status: string
+  created_at: string
+  started_at: string | null
+  completed_at: string | null
+  current_node_id: string | null
+  score: number
+  metadata: unknown
+}
+
+function mapTeamRow(t: TeamRow): Team {
+  return {
+    id: t.id,
+    name: t.name,
+    code: t.code,
+    status: t.status as TeamStatus,
+    createdAt: t.created_at,
+    startedAt: t.started_at,
+    completedAt: t.completed_at,
+    currentNodeId: t.current_node_id,
+    score: t.score,
+    metadata: t.metadata as unknown as Team['metadata'],
+  }
+}
+
 function toNotificationPriority(raw: string): Notification['priority'] {
   return raw === 'LOW' || raw === 'HIGH' || raw === 'CRITICAL' ? raw : 'NORMAL'
 }
@@ -83,6 +121,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [teamProgress, setTeamProgress] = useState<TeamProgress | null>(null)
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [isInitializing, setIsInitializing] = useState(true)
+  const [sessionLoadError, setSessionLoadError] = useState<string | null>(null)
 
   const role = player?.role ?? null
   const isAuthenticated = !!player && !!team
@@ -105,6 +144,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setGameState(null)
     setTeamProgress(null)
     setNotifications([])
+    setSessionLoadError(null)
     safeStorageRemove(PLAYER_SESSION_STORAGE_KEY)
   }, [])
 
@@ -225,24 +265,57 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
 
       const t = playerData.teams
-      const mappedTeam: Team = {
-        id: t.id,
-        name: t.name,
-        code: t.code,
-        status: t.status as TeamStatus,
-        createdAt: t.created_at,
-        startedAt: t.started_at,
-        completedAt: t.completed_at,
-        currentNodeId: t.current_node_id,
-        score: t.score,
-        metadata: t.metadata as unknown as Team['metadata'],
+      if (!t) {
+        // The embed comes back NULL rather than as an error when the caller
+        // cannot read the joined row, so there is no status code to branch on
+        // here. Dereferencing it threw a TypeError that the catch below turned
+        // into "no player", and the guard bounced the player to the login
+        // screen with no explanation - after a login that had just succeeded.
+        //
+        // 2026100503 removes the status filter that caused this (a COMPLETED or
+        // RESET team was unreadable by its own players, so a team that finished
+        // the case could never load the ending screen). The embed is still a
+        // single point of failure, so the team row is re-read on its own: that
+        // is a real recovery, not a guess.
+        const { data: teamRow } = await supabase
+          .from('teams')
+          .select('*')
+          .eq('id', playerData.team_id)
+          .maybeSingle()
+
+        if (!mountedRef.current || authUserIdRef.current !== authUserId) return
+
+        if (!teamRow) {
+          // The player row is real and the token is good; only the case file is
+          // unreadable. Inventing a placeholder team here would be worse than
+          // the bug: a fabricated REGISTERED row sends a team that has finished
+          // the case back into gameplay and hides the ending, and a fabricated
+          // score of 0 silently rewrites what the leaderboard shows. So say what
+          // is true and leave the recovery visible.
+          console.warn('Player found but the team row could not be read')
+          setSessionLoadError(
+            'Your case file could not be read. This is usually temporary — check your connection and try again.',
+          )
+          return
+        }
+
+        setSessionLoadError(null)
+        setPlayer(mappedPlayer)
+        setTeam(mapTeamRow(teamRow))
+        return
       }
-      // Stale: unmounted, or the session moved to another user while we fetched.
       if (!mountedRef.current || authUserIdRef.current !== authUserId) return
+      setSessionLoadError(null)
       setPlayer(mappedPlayer)
-      setTeam(mappedTeam)
+      setTeam(mapTeamRow(t))
     } catch (error) {
       console.error('Failed to load player session:', error)
+      // A transport failure reading the session is recoverable by retrying, and
+      // it is not the same as being signed out. Leaving this null would send a
+      // signed-in player to the login form.
+      if (mountedRef.current && authUserIdRef.current === authUserId) {
+        setSessionLoadError('Could not load your case. Check your connection and try again.')
+      }
     }
   }, [])
 
@@ -377,6 +450,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return attempt
   }, [performLogin])
 
+  // Re-read the session for the signed-in user. The recovery for "your case file
+  // could not be read" is another read, not another login: the token is valid and
+  // the one-time code has already been spent.
+  const retrySession = useCallback(async () => {
+    const authUserId = authUserIdRef.current
+    if (!authUserId) return
+    setIsInitializing(true)
+    try {
+      await loadPlayerSession(authUserId)
+    } finally {
+      if (mountedRef.current) setIsInitializing(false)
+    }
+  }, [loadPlayerSession])
+
   const logout = useCallback(async () => {
     try {
       await supabase.auth.signOut()
@@ -393,6 +480,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!team) return
     try {
       const state = await gameAPI.getGameState()
+      // `getGameState` guarantees the `gameState` key exists, but `team` inside it
+      // is still a runtime value. Dereferencing it unguarded turned a partial
+      // response into a TypeError, which the catch below logged and swallowed -
+      // leaving gameState null and every screen reading "Unknown" forever.
+      if (!state?.team) {
+        console.warn('Game state response carried no team; keeping the last known state')
+        return
+      }
       const gameState: GameState = {
         // Translated, not cast: the database speaks ACTIVE/COMPLETED and the UI
         // speaks RUNNING/ENDED, so the old `as GameStatus` silently sent every live
@@ -413,14 +508,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
     try {
       const progress = await gameAPI.getNodeProgress()
       const solvedNodes: Record<string, NodeProgress> = {}
-      progress.forEach((entry: { nodeId: string; nodeCode: string; title: string; status: string }) => {
+      progress.forEach((entry: NodeProgressEntry) => {
+        // The real values, not placeholders. This map used to hardcode
+        // `attempts: 0, hintsUsed: 0, solvedAt: null` while the server has been
+        // publishing all three, so every figure it holds was a lie after the
+        // first poll - the 30s refresh runs on a timer, not on demand.
         solvedNodes[entry.nodeId] = {
           nodeId: entry.nodeId,
           status: entry.status as NodeProgress['status'],
-          startedAt: null,
-          solvedAt: null,
-          attempts: 0,
-          hintsUsed: 0,
+          startedAt: entry.startedAt,
+          solvedAt: entry.solvedAt,
+          attempts: entry.attempts,
+          hintsUsed: entry.hintsUsed,
           timeSpentSeconds: 0,
           solvedByRole: null,
           submissions: [],
@@ -428,6 +527,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       })
 
       const gameState = await gameAPI.getGameState()
+      if (!gameState?.team) {
+        console.warn('Game state response carried no team; keeping the last known progress')
+        return
+      }
       setTeamProgress({
         teamId: team.id,
         solvedNodes,
@@ -523,6 +626,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     role,
     isAuthenticated,
     isInitializing,
+    sessionLoadError,
+    retrySession,
     login,
     logout,
     gameState,
@@ -561,6 +666,8 @@ export function useApp() {
       role: qaContext.player.role,
       isAuthenticated: qaContext.isAuthenticated,
       isInitializing: qaContext.isInitializing,
+      sessionLoadError: null,
+      retrySession: noopRefresh,
       login: qaContext.login,
       logout: qaContext.logout,
       refreshGameState: qaContext.refreshGameState,

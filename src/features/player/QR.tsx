@@ -178,13 +178,18 @@ export function PlayerQR() {
   }, [])
 
   const submitCode = useCallback(
-    async (code: string) => {
+    async (code: string): Promise<'checked' | 'busy' | 'offline'> => {
       // One lookup at a time. The camera keeps decoding frames every 250ms while
       // the Bureau answers, so without this the same marker is re-submitted as
       // soon as the previous round trip ends — and on the fallback path a scan
       // is three sequential PostgREST calls, which on campus Wi-Fi routinely
       // outlasts the dedupe window.
-      if (inflightRef.current) return
+      //
+      // The caller is told which of the three happened. Manual entry used to fire
+      // this and clear the field unconditionally, so a code typed while the
+      // camera's own lookup was still open vanished with no lookup and no
+      // message: a form that looks broken and reads as "wrong code".
+      if (inflightRef.current) return 'busy'
       inflightRef.current = true
       try {
         if (isOffline) {
@@ -195,7 +200,7 @@ export function PlayerQR() {
               message: 'Cannot scan while offline.',
             })
           }
-          return
+          return 'offline'
         }
         setIsResolving(true)
         try {
@@ -214,6 +219,7 @@ export function PlayerQR() {
         // detection re-armed the marker while its own request was still open,
         // which is precisely when a duplicate would do the most damage.
         lastScannedRef.current = { code, at: Date.now() }
+        return 'checked'
       } finally {
         inflightRef.current = false
         if (isMountedRef.current) setIsResolving(false)
@@ -662,13 +668,15 @@ export function PlayerQR() {
            {showManualEntry && (
              <form
                className="mt-4 flex gap-2"
-               onSubmit={async (e) => {
-                 e.preventDefault()
-                 const code = manualCode.trim()
-                 if (!code) return
-                 void submitCode(code)
-                 setManualCode('')
-               }}
+                onSubmit={async (e) => {
+                  e.preventDefault()
+                  const code = manualCode.trim()
+                  if (!code) return
+                  // Only clear the field once the code has actually been sent.
+                  // Clearing it on a refused-but-not-looked-up submission made
+                  // the player retype the reference for no reason.
+                  if (await submitCode(code) === 'checked') setManualCode('')
+                }}
              >
               <input
                 type="text"

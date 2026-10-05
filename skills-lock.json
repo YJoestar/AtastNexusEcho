@@ -13,6 +13,12 @@
       "skillPath": "dubbing/SKILL.md",
       "computedHash": "4bb155a789dd86a167a3aca522e1d465897ee8f0235b5a1f1faf4c9349386286"
     },
+    "frontend-design": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "skillPath": "skills/frontend-design/SKILL.md",
+      "computedHash": "106acf230014cbb43ca34e6410371321b56ca742f9ee0442e8ec05bf02eb0384"
+    },
     "music": {
       "source": "elevenlabs/skills",
       "sourceType": "github",

@@ -17,7 +17,7 @@ import { ROUTES } from '@/app/config'
 
 export interface NavItem {
   /** Stable identity: two destinations may share a route (Evidence / Board). */
-  id: 'CASE' | 'EVIDENCE' | 'BOARD' | 'SCAN' | 'COMMS'
+  id: 'CASE' | 'EVIDENCE' | 'BOARD' | 'SCAN' | 'COMMS' | 'LOG'
   path: string
   /** Query string that selects the destination within a shared route. */
   search?: string
@@ -42,6 +42,7 @@ export const NAV_ITEMS: NavItem[] = [
   { id: 'BOARD', path: ROUTES.PLAYER_EVIDENCE, search: '?view=table', label: 'Board', icon: bureauIcon('Board') },
   { id: 'SCAN', path: ROUTES.PLAYER_QR, label: 'Scan', icon: bureauIcon('Scan') },
   { id: 'COMMS', path: ROUTES.PLAYER_NOTIFICATIONS, label: 'Comms', icon: bureauIcon('Comms') },
+  { id: 'LOG', path: ROUTES.PLAYER_FIELD_LOG, label: 'Log', icon: bureauIcon('File') },
 ]
 
 /** Which destination a location belongs to. Evidence and Board share a route. */

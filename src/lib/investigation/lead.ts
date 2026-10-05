@@ -25,30 +25,35 @@
 
 import type { PlayerNodeView } from '@/hooks/useGameEngine'
 
+export enum LeadStatus {
+  UNBRIEFED = 'UNBRIEFED',
+  ACTIVE = 'ACTIVE',
+  PAUSED = 'PAUSED',
+  COMPLETED = 'COMPLETED',
+  ABANDONED = 'ABANDONED',
+}
+
 export interface CaseLead {
-  /** Small label above the lead, e.g. "LEAD · STAGE 3". */
+  status: LeadStatus
   eyebrow: string
-  /** The authored objective for this role at this node. */
   objective: string
-  /**
-   * The observable clue that suggests a direction, when the node has one.
-   * Deliberately `clueText` only — never `solution` or `nextPhysicalLocation`.
-   */
   clue: string | null
-  /** Node code, used for routing and for the "open" action. Not a destination. */
   nodeCode: string
-  /** Node title, used for context, not as the lead itself. */
   nodeTitle: string
   stage: number
-  /** True when the authored objective was missing and a structural fallback was used. */
   degraded: boolean
+  sourceNodeId?: string
 }
 
 /** Fields that would turn a lead back into a waypoint if they were ever rendered. */
 const DESTINATION_FIELDS = ['nextPhysicalLocation', 'nextQrNode'] as const
 
-function eyebrowFor(stage: number, hasObjective: boolean): string {
+function eyebrowFor(stage: number, hasObjective: boolean, status: LeadStatus): string {
   const stageLabel = stage > 0 ? `LEAD · STAGE ${stage}` : 'LEAD'
+  if (status === LeadStatus.UNBRIEFED) return `${stageLabel} · UNBRIEFED`
+  if (status === LeadStatus.PAUSED) return `${stageLabel} · PAUSED`
+  if (status === LeadStatus.COMPLETED) return `${stageLabel} · COMPLETED`
+  if (status === LeadStatus.ABANDONED) return `${stageLabel} · ABANDONED`
   return hasObjective ? stageLabel : `${stageLabel} · UNBRIEFED`
 }
 
@@ -58,27 +63,39 @@ function eyebrowFor(stage: number, hasObjective: boolean): string {
  * `null` in, `null` out: a team with no current node has no lead, and the caller
  * renders its own case-closed or case-not-open state rather than inventing one.
  */
-export function buildCaseLead(node: PlayerNodeView | null | undefined): CaseLead | null {
+export function buildCaseLead(
+  node: PlayerNodeView | null | undefined,
+  teamStatus?: string,
+): CaseLead | null {
   if (!node || !node.code) return null
 
   const objective = typeof node.narrativeObjective === 'string' ? node.narrativeObjective.trim() : ''
   const clueText =
     typeof node.locationClue?.clueText === 'string' ? node.locationClue.clueText.trim() : ''
 
-  // A degraded lead says so, rather than dressing up a placeholder as briefing.
   const degraded = objective.length === 0
+  const status = deriveLeadStatus(node, teamStatus)
+  const nodeStage = node.stage ?? 0
 
   return {
-    eyebrow: eyebrowFor(node.stage ?? 0, !degraded),
-    // An empty objective would render an empty card. Fall back to the node title
-    // so the team still knows which thread to pull, and flag it as unbriefed.
+    status,
+    eyebrow: eyebrowFor(nodeStage, !degraded, status),
     objective: degraded ? node.title : objective,
     clue: clueText.length > 0 ? clueText : null,
     nodeCode: node.code,
     nodeTitle: node.title,
-    stage: node.stage ?? 0,
+    stage: nodeStage,
     degraded,
+    sourceNodeId: node.code,
   }
+}
+
+function deriveLeadStatus(node: PlayerNodeView, teamStatus?: string): LeadStatus {
+  if (node.isSolved) return LeadStatus.COMPLETED
+  if (!node.isCurrent && !node.isNextUp) return LeadStatus.ABANDONED
+  if (teamStatus === 'PAUSED') return LeadStatus.PAUSED
+  if (!node.narrativeObjective || node.narrativeObjective.trim().length === 0) return LeadStatus.UNBRIEFED
+  return LeadStatus.ACTIVE
 }
 
 /**

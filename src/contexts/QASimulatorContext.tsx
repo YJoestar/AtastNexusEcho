@@ -76,6 +76,7 @@ export interface QASimulatorControls {
   setRole: (role: Role) => void
   setSimulationType: (type: SimulationType) => void
   jumpToNode: (nodeId: string) => void
+  switchLead: (nodeId: string) => void
   markSolved: (nodeId: string) => void
   markSkipped: (nodeId: string) => void
   resetSimulation: () => void
@@ -536,6 +537,16 @@ export function QASimulatorProvider({ children }: { children: ReactNode }) {
   const [role, setRole] = useState<Role>('OBSERVER')
   const [simulationType, setSimulationType] = useState<SimulationType>('FRESH')
   const [solvedNodes, setSolvedNodes] = useState<Set<string>>(new Set())
+  // Re-synced on every render so it can be read synchronously inside an async
+  // submit. Two submissions in one tick both close over the same `solvedNodes`,
+  // and reading that snapshot is what let a double submit pay out twice.
+  const solvedNodesRef = useRef<Set<string>>(solvedNodes)
+  solvedNodesRef.current = solvedNodes
+  // Markers this team has already claimed, read synchronously for the same
+  // reason: a camera held on one marker fires a lookup repeatedly.
+  const [scannedMarkers, setScannedMarkers] = useState<Set<string>>(new Set())
+  const scannedMarkersRef = useRef<Set<string>>(scannedMarkers)
+  scannedMarkersRef.current = scannedMarkers
   const [currentNodeId, setCurrentNodeId] = useState<string | null>(null)
   const [hintsUsed, setHintsUsed] = useState(0)
   const [score, setScore] = useState(0)
@@ -802,8 +813,23 @@ export function QASimulatorProvider({ children }: { children: ReactNode }) {
 
       const pointsAwarded = isCorrect ? puzzle.points : 0
 
-      if (isCorrect && !solvedNodes.has(nodeId)) {
-        setSolvedNodes(prev => new Set([...prev, nodeId]))
+      // A once-only claim, decided synchronously.
+      //
+      // `solvedNodes` is the state as of this render, so two submissions in the
+      // same tick - a double click, or a retry firing before the first resolves
+      // - both read it as "not solved" and both ran setScore(prev => prev +
+      // points). A double submit paid double, in the very tool a tester would
+      // use to confirm that a double submit does not.
+      //
+      // The server settles this with one transaction that moves the node out of
+      // a non-solved status and pays out only if that transaction changed the
+      // row. The simulator now decides the same claim the same way: the first
+      // caller to get here wins, and the loser is told the truth.
+      const alreadySolved = solvedNodesRef.current.has(nodeId)
+      if (isCorrect && !alreadySolved) {
+        const next = new Set([...solvedNodesRef.current, nodeId])
+        solvedNodesRef.current = next
+        setSolvedNodes(next)
         setScore(prev => prev + pointsAwarded)
 
         const nextCode = puzzle.nextNodes?.[0] ?? null
@@ -813,19 +839,20 @@ export function QASimulatorProvider({ children }: { children: ReactNode }) {
       }
 
       const nextId = puzzle.nextNodes?.[0] ?? null
+      const paidPoints = isCorrect && alreadySolved ? 0 : pointsAwarded
       return {
         isCorrect,
-        pointsAwarded,
+        pointsAwarded: paidPoints,
         attemptNumber,
         nextNodeId: nextId,
         ...(isCorrect
-          ? {}
+          ? (alreadySolved ? { alreadySolved: true } : {})
           : {
               error: 'Incorrect answer',
             }),
       }
     },
-    [solvedNodes, isLocked, isOffline, puzzleQAData],
+[isLocked, isOffline, puzzleQAData],
   )
   const requestHint = useCallback(
     async (_nodeId: string, hintNumber: number): Promise<HintResult> => {
@@ -904,6 +931,23 @@ interface SimulatedScanResult {
         }
       }
 
+      // Whether this team has already claimed this marker. The server keeps
+      // `discovered_by_team_id` on the marker and refuses a repeat with
+      // {discovered:false, alreadyClaimed:true, qrCode}. The simulator used to
+      // answer `discovered: true` for every scan, so a tester holding a camera
+      // steady on one marker was shown a fresh discovery every single time and
+      // would have signed off on duplicate-scan behaviour production refuses.
+      const alreadyClaimed = scannedMarkersRef.current.has(marker.code)
+      if (alreadyClaimed) {
+        return {
+          discovered: false,
+          alreadyClaimed: true,
+          nodeCode: marker.puzzleNodeCode,
+          qrCode: marker.code,
+          message: 'ALREADY RECORDED. Your team has used this marker.',
+        }
+      }
+
       // The server only records a scan for a puzzle this team has actually been
       // given, and says so plainly rather than pretending the marker is unknown.
       if (marker.puzzleNodeCode) {
@@ -924,16 +968,25 @@ interface SimulatedScanResult {
           }
         }
 
+        const claimed = new Set([...scannedMarkersRef.current, marker.code])
+        scannedMarkersRef.current = claimed
+        setScannedMarkers(claimed)
+
         return {
           discovered: true,
-          alreadyClaimed: isSolved,
+          alreadyClaimed: false,
           nodeCode: marker.puzzleNodeCode,
           nodeTitle: marker.puzzleNodeTitle,
         }
       }
 
+      const claimed = new Set([...scannedMarkersRef.current, marker.code])
+      scannedMarkersRef.current = claimed
+      setScannedMarkers(claimed)
+
       return {
         discovered: true,
+        alreadyClaimed: false,
         qrLabel: marker.label,
         markerId: marker.markerId ?? undefined,
         manualCode: marker.manualCode ?? undefined,
@@ -974,6 +1027,9 @@ interface SimulatedScanResult {
 
   const resetSimulation = useCallback(() => {
     setSolvedNodes(prev => (prev.size === 0 ? prev : new Set()))
+    // A new case has claimed nothing.
+    scannedMarkersRef.current = new Set()
+    setScannedMarkers(new Set())
     setCurrentNodeId(null)
     setHintsUsed(0)
     setScore(0)
@@ -1000,6 +1056,13 @@ interface SimulatedScanResult {
   }, [])
 
   const jumpToNode = useCallback((nodeId: string) => {
+    const puzzle = PUZZLES_BY_CODE[nodeId]
+    if (puzzle) {
+      setCurrentNodeId(puzzle.code)
+    }
+  }, [])
+
+  const switchLead = useCallback((nodeId: string) => {
     const puzzle = PUZZLES_BY_CODE[nodeId]
     if (puzzle) {
       setCurrentNodeId(puzzle.code)
@@ -1137,6 +1200,7 @@ interface SimulatedScanResult {
     setRole,
       setSimulationType,
       jumpToNode,
+      switchLead,
       markSolved,
       markSkipped,
       resetSimulation,

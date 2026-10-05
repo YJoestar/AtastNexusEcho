@@ -9,7 +9,7 @@
  * current, available, and locked sites, rendered as ruled rows rather than cards.
  */
 
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useMemo } from 'react'
 import { useGameEngine } from '@/hooks/useGameEngine'
 import { useNarrative } from '@/hooks/useNarrative'
@@ -68,8 +68,19 @@ export function PlayerNavigation() {
   const currentNodes = allNodesForMap.filter(n => n.isCurrent)
   const availableNodes = allNodesForMap.filter(n => n.available && !n.solved && !n.isCurrent)
 
+  const navigate = useNavigate()
+
+  // Router navigation, not `window.location.href`.
+  //
+  // A full document load tears down the app and re-runs session restore, the
+  // game-state fetch and the node-progress fetch before showing anything: on a
+  // phone that is a visible white flash and a second or two of dead screen for a
+  // single tap, and it drops whatever the player had already loaded. Worse, it
+  // lands mid-restore, where the app has a session but no player yet, which is
+  // exactly the window in which the node screen can be reached before the team
+  // has been attached. The rest of this screen already navigates with <Link>.
   const handleNodeSelect = (code: string) => {
-    window.location.href = ROUTES.PLAYER_NODE.replace(':nodeId', code)
+    navigate(ROUTES.PLAYER_NODE.replace(':nodeId', code))
   }
 
   const handleNodeHover = (_code: string | null) => {

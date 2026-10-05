@@ -5,7 +5,8 @@
 - **Typecheck**: `npm run typecheck` (app **and** edge functions — run this, not bare `tsc`)
   - `npm run typecheck:app` — `src/`, via `tsconfig.json`
   - `npm run typecheck:edge` — `supabase/functions/`, via `tsconfig.edge.json` + `deno-shims.d.ts`
-- **Tests**: `npx vitest run` (898 tests, 57 test files)
+- **Tests**: `npx vitest run` (no test count is recorded here on purpose — a
+  number in this file was wrong every time a test was added; read the run output)
 - **Lint**: `npm run lint`
 - **Build**: `npm run build` (typechecks first, then Vite)
 - **Dev**: `npm run dev`

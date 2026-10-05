@@ -51,6 +51,18 @@ export function PlayerNode() {
   const [justSolved, setJustSolved] = useState(false)
   const hintIndexRef = useRef(0)
   const hintBusyRef = useRef(false)
+  // A ref, not the `isSubmitting` state, for the same reason as the hint guard.
+  //
+  // `isSubmitting` is the state as of this render. React batches the update, so
+  // a second click inside the same tick - the ordinary double tap on a phone,
+  // which is exactly how players hit TRANSMIT twice - still reads it as `false`
+  // and starts a second submission. That burns a real attempt on the server,
+  // shows two entries in the attempt log, and arms two leave-timers.
+  //
+  // The server settles the money question atomically (2026100501 pays out only
+  // for the transition that changed the row), so this cannot corrupt
+  // progression. It is still wrong: the player is charged for one guess twice.
+  const submitBusyRef = useRef(false)
   const mountedRef = useRef(true)
   const leaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -106,8 +118,9 @@ export function PlayerNode() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!answer.trim() || isSubmitting || !nodeId) return
+    if (!answer.trim() || !nodeId || submitBusyRef.current) return
 
+    submitBusyRef.current = true
     setIsSubmitting(true)
     setActionError(null)
     try {
@@ -144,6 +157,7 @@ export function PlayerNode() {
       const msg = err instanceof Error ? err.message : 'Submission failed'
       setActionError(msg)
     } finally {
+      submitBusyRef.current = false
       if (mountedRef.current) setIsSubmitting(false)
     }
   }
@@ -216,7 +230,29 @@ RETURN TO FIELD
     )
   }
 
-  if (!node) return null
+  // The engine resolved null: this client cannot describe the node at all. That
+  // happens for a code in neither the server's register nor the local bundle -
+  // a stale link, an operator deleting a node mid-session, a typo in a pasted
+  // URL. It used to `return null`, which is a blank page with no explanation and
+  // no way back: the acceptance test for this screen is "no blank critical
+  // screens", and a puzzle that cannot be opened is still a screen.
+  if (!node) {
+    return (
+      <div className="page">
+        <div className="page-content max-w-md mx-auto text-center py-12">
+          <BureauIcons.Flag className="bureau-icon w-8 h-8 text-nexus-warning mx-auto mb-4" aria-hidden="true" />
+          <h1 className="heading-3 mb-2">NOT IN THE REGISTER</h1>
+          <p className="text-nexus-textMuted mb-6">
+            Node <span className="font-mono">{nodeId}</span> is not part of this case. It may have been
+            sealed, or the link may be from another run.
+          </p>
+          <Link to={ROUTES.PLAYER_GAME} className="nexus-btn nexus-btn-primary w-full touch-target-comfortable">
+            RETURN TO FIELD
+          </Link>
+        </div>
+      </div>
+    )
+  }
 
   const isLocked = !node.unlocked && !node.isSolved
   const hintLevel = hintIndexRef.current

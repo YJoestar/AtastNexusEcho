@@ -109,6 +109,20 @@ describe('PlayerNode', () => {
     expect(screen.getByText('Title N2')).toBeTruthy()
   })
 
+  it('never renders a blank screen when the node cannot be described', async () => {
+    // The engine resolves null for a node this client cannot describe at all:
+    // a code that is in neither the server's register nor the local bundle. The
+    // screen used to `return null` there, so the player was left staring at an
+    // empty page with no explanation and no way back.
+    h.fetchNode.mockResolvedValue(null)
+    const { container } = renderNode()
+
+    await waitFor(() => expect(container.textContent?.trim()).not.toBe(''))
+    expect(screen.getByText(/NOT IN THE REGISTER|NOT IN THE CASE FILE/i)).toBeTruthy()
+    // ...and a way out, so the screen is a dead end with no exit.
+    expect(screen.getByRole('link', { name: /RETURN TO FIELD/i }).getAttribute('href')).toBe('/player/game')
+  })
+
   it('redirects to the field hub after a correct answer when still mounted', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true })
     h.submitAnswer.mockResolvedValue({ isCorrect: true, nextNodeId: null })

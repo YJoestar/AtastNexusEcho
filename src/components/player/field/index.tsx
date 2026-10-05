@@ -9,6 +9,7 @@ import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { BureauIcons } from '@/components/bureau'
 import { cn } from '@/lib/utils'
+import { LeadSelector } from './LeadSelector'
 
 /** The thing the team should be doing right now. One per screen, large. */
 export function FieldLead({
@@ -33,15 +34,15 @@ export function FieldLead({
 }) {
   return (
     <section className="nx-lead" aria-label="Current lead">
-      <p className="font-mono text-[0.68rem] uppercase tracking-[0.2em] text-nexus-accent">{eyebrow}</p>
-      <h1 className="mt-3 font-type text-[1.65rem] font-bold leading-[1.15] text-nexus-text break-words">{title}</h1>
+      <p className="font-mono text-[0.65rem] uppercase tracking-[0.18em] text-nexus-textSubtle">{eyebrow}</p>
+      <h1 className="mt-2 font-type text-[1.55rem] font-medium leading-[1.18] text-nexus-text break-words tracking-tight">{title}</h1>
       {clue && (
-        <blockquote className="mt-3 border-l-2 border-nexus-accent/50 pl-3 font-mono text-[0.82rem] leading-relaxed text-nexus-textMuted">
+        <blockquote className="mt-3 ml-1 border-l border-nexus-borderSubtle pl-3 font-type text-[0.92rem] leading-relaxed text-nexus-textMuted italic">
           {clue}
         </blockquote>
       )}
-      {note && <div className="mt-4 text-[0.95rem] leading-relaxed text-nexus-textMuted">{note}</div>}
-      <div className="mt-6">{action}</div>
+      {note && <div className="mt-3 ml-1 font-mono text-[0.72rem] uppercase tracking-[0.1em] text-nexus-textSubtle">{note}</div>}
+      <div className="mt-5">{action}</div>
     </section>
   )
 }
@@ -53,12 +54,14 @@ export function IntelRow({
   detail,
   tone = 'info',
   count,
+  timestamp,
 }: {
   to: string
   label: string
   detail?: string
   tone?: 'info' | 'warning'
   count?: number
+  timestamp?: string
 }) {
   return (
     <Link
@@ -75,12 +78,37 @@ export function IntelRow({
         {count ?? '·'}
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block font-mono text-[0.78rem] uppercase tracking-[0.1em] text-nexus-text">{label}</span>
-        {detail && <span className="mt-0.5 block truncate text-sm text-nexus-textMuted">{detail}</span>}
+        <div className="flex items-center gap-2">
+          <span className="block font-mono text-[0.72rem] uppercase tracking-[0.1em] text-nexus-text">{label}</span>
+          {timestamp && (
+            <span className="font-mono text-[0.62rem] uppercase tracking-[0.08em] text-nexus-textSubtle">
+              {formatRelativeTime(timestamp)}
+            </span>
+          )}
+        </div>
+        {detail && <span className="mt-0.5 block truncate text-[0.82rem] text-nexus-textMuted">{detail}</span>}
       </span>
       <BureauIcons.Forward className="bureau-icon w-4 h-4 shrink-0 text-nexus-textSubtle" aria-hidden="true" />
     </Link>
   )
+}
+
+function formatRelativeTime(iso: string): string {
+  const date = new Date(iso)
+  const now = new Date()
+  const diffMs = now.getTime() - date.getTime()
+  const absDiff = Math.abs(diffMs)
+
+  const MS_PER_SECOND = 1000
+  const MS_PER_MINUTE = 60 * MS_PER_SECOND
+  const MS_PER_HOUR = 60 * MS_PER_MINUTE
+  const MS_PER_DAY = 24 * MS_PER_HOUR
+
+  if (absDiff < MS_PER_SECOND * 5) return 'JUST NOW'
+  if (absDiff < MS_PER_MINUTE) return `${Math.floor(absDiff / MS_PER_SECOND)}S AGO`
+  if (absDiff < MS_PER_HOUR) return `${Math.floor(absDiff / MS_PER_MINUTE)}M AGO`
+  if (absDiff < MS_PER_DAY) return `${Math.floor(absDiff / MS_PER_HOUR)}H AGO`
+  return `${Math.floor(absDiff / MS_PER_DAY)}D AGO`
 }
 
 /** The case as one strip: a cell for every item, closed ones filled. */
@@ -89,7 +117,7 @@ export function FieldLedger({ cells, closed, total }: { cells: boolean[]; closed
     <div>
       <div className="flex items-baseline justify-between font-mono text-xs uppercase tracking-[0.14em] text-nexus-textMuted">
         <span>CASE LEDGER</span>
-        <span className="tabular-nums text-nexus-text">{closed} / {total} CLOSED</span>
+        <span className="tabular-nums text-nexus-text">{closed} / {total} NODES RESOLVED</span>
       </div>
       <div
         className="mt-2 flex gap-[3px]"
@@ -103,6 +131,7 @@ export function FieldLedger({ cells, closed, total }: { cells: boolean[]; closed
           />
         ))}
       </div>
+      <p className="mt-1.5 font-mono text-[0.62rem] uppercase tracking-[0.16em] text-nexus-textSubtle">CASE PROGRESSION</p>
     </div>
   )
 }
@@ -118,3 +147,5 @@ export function FieldLink({ to, label }: { to: string; label: string }) {
     </Link>
   )
 }
+
+export { LeadSelector }
