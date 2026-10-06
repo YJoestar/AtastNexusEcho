@@ -1,6 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
 import { BadRequestError, readJsonObject, requireString } from '../_shared/request.ts'
-import { dbError, preflightOrMethodError } from '../_shared/http.ts'
+import { dbError, isPlayerSafeRpcMessage, preflightOrMethodError } from '../_shared/http.ts'
 import { AuthError, requireBearerToken, requireVerifiedUser } from '../_shared/auth.ts'
 
 const corsHeaders = {
@@ -54,6 +54,17 @@ Deno.serve(async (req: Request) => {
       console.error('get_player_node_detail error:', error)
       const mapped = dbError(error)
       return errorResponse(mapped.status, mapped.message)
+    }
+
+    // get_player_node_detail reports refusals in its payload (e.g., "Node not accessible")
+    // rather than as a PostgREST error. These messages are written by our own SQL,
+    // so they are passed through — but only after the same safety check dbError applies.
+    if (data && typeof data === 'object' && 'error' in data && data.error) {
+      const rpcError = data.error
+      const message = isPlayerSafeRpcMessage(rpcError)
+        ? rpcError
+        : 'That node could not be retrieved.'
+      return errorResponse(403, message)
     }
 
     return jsonResponse(200, { success: true, node: data })

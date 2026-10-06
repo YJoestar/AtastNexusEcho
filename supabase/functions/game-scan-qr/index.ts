@@ -72,6 +72,18 @@ Deno.serve(async (req: Request) => {
         }
         return jsonResponse(200, { success: true, result: retry.data })
       }
+
+      // Resolution failed: the QR code is genuinely invalid. Return a proper error status.
+      return errorResponse(404, 'Invalid QR code')
+    }
+
+    // Check if the RPC returned an error in its payload (e.g., "No team found")
+    if (data && typeof data === 'object' && 'error' in data && data.error) {
+      const reason = typeof data.error === 'string' ? data.error : 'Unknown error'
+      console.error('scan_qr_code reported a refusal:', reason)
+      return /no team found for player/i.test(reason)
+        ? errorResponse(403, 'This account is not attached to a team')
+        : errorResponse(400, reason)
     }
 
     return jsonResponse(200, { success: true, result: data })

@@ -1,6 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
 import { BadRequestError, readJsonObject, requireInteger, requireString } from '../_shared/request.ts'
-import { dbError, preflightOrMethodError } from '../_shared/http.ts'
+import { dbError, isPlayerSafeRpcMessage, preflightOrMethodError } from '../_shared/http.ts'
 import { AuthError, requireBearerToken, requireVerifiedUser } from '../_shared/auth.ts'
 
 /**
@@ -71,6 +71,15 @@ Deno.serve(async (req: Request) => {
       // an unexplained 500.
       const mapped = dbError(error)
       return errorResponse(mapped.status, mapped.message)
+    }
+
+    // request_hint reports refusals in its payload rather than as a PostgREST error.
+    if (data && typeof data === 'object' && 'error' in data && data.error) {
+      const rpcError = data.error
+      const message = isPlayerSafeRpcMessage(rpcError)
+        ? rpcError
+        : 'Hint could not be retrieved.'
+      return errorResponse(403, message)
     }
 
     return jsonResponse(200, { success: true, result: data })

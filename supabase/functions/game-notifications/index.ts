@@ -1,6 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
 import { BadRequestError, readJsonObject, requireBoolean } from '../_shared/request.ts'
-import { dbError, preflightOrMethodError } from '../_shared/http.ts'
+import { dbError, isPlayerSafeRpcMessage, preflightOrMethodError } from '../_shared/http.ts'
 import { AuthError, requireBearerToken, requireVerifiedUser } from '../_shared/auth.ts'
 
 const corsHeaders = {
@@ -41,6 +41,15 @@ const unreadOnly = body.unreadOnly === undefined ? true : requireBoolean(body.un
       console.error('get_team_notifications error:', error)
       const mapped = dbError(error)
       return errorResponse(mapped.status, mapped.message)
+    }
+
+    // get_team_notifications reports refusals in its payload rather than as a PostgREST error.
+    if (data && typeof data === 'object' && 'error' in data && data.error) {
+      const rpcError = data.error
+      const message = isPlayerSafeRpcMessage(rpcError)
+        ? rpcError
+        : 'Notifications could not be retrieved.'
+      return errorResponse(403, message)
     }
 
     return jsonResponse(200, { success: true, notifications: data })
