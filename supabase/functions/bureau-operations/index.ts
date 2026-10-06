@@ -849,28 +849,34 @@ email_confirm: true,
         // Only teams in pre-game statuses can be started.
         const preGameStatuses = ['REGISTERED', 'FORMING', 'READY', 'WAITING']
         if (!preGameStatuses.includes(currentStatus ?? '')) {
-          return jsonResponse(400, {
+          return jsonResponse(409, {
             error: `Team must be in a pre-game status to start, current status is ${currentStatus}`,
+            currentStatus,
           })
         }
 
-        const now = new Date().toISOString()
+        // If not already WAITING, advance through the pre-game state chain.
+        // The legal sequence enforced by trigger_enforce_team_status_transition is
+        // REGISTERED → FORMING → READY → WAITING. Each step is a one-hop update
+        // so a team that was provisioned in READY, or created + added-to in
+        // FORMING, reaches WAITING before the RPC is invoked.
+        const preGameChain = ['REGISTERED', 'FORMING', 'READY', 'WAITING']
 
-        // If not already WAITING, transition to WAITING first.
-        // Only READY -> WAITING is valid per the status-transition trigger.
-        // REGISTERED and FORMING teams don't have 3 logged-in players yet,
-        // so they would have been rejected by the player check above.
         if (currentStatus !== 'WAITING') {
-          const { error: waitingError } = await supabaseAdmin
-            .from('teams')
-            .update({ status: 'WAITING', updated_at: now })
-            .eq('id', teamId)
-            .in('status', ['READY'])
-
-          if (waitingError) {
-            return jsonResponse(400, {
-              error: `Could not move team to WAITING status: ${dbError(waitingError).message}`,
+          const startIndex = preGameChain.indexOf(currentStatus ?? '')
+          if (startIndex === -1) {
+            return jsonResponse(409, {
+              error: `Team is in ${currentStatus} and cannot be started`,
+              currentStatus,
             })
+          }
+          for (let i = startIndex; i < preGameChain.length - 1; i++) {
+            const refusal = await transitionTeamStatus(
+              teamId,
+              preGameChain[i + 1],
+              [preGameChain[i]],
+            )
+            if (refusal) return refusal
           }
         }
 
@@ -883,7 +889,7 @@ email_confirm: true,
 
         if (rpcError) {
           if (rpcError.message.includes('WAITING')) {
-            return jsonResponse(400, { error: 'Team must be in WAITING status to start' })
+            return jsonResponse(409, { error: 'Team must be in WAITING status to start' })
           }
           return dbErrorResponse(rpcError)
         }
