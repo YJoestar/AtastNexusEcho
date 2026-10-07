@@ -210,17 +210,13 @@ function generateNodeDetail(
 ): NodeDetailPlayerView {
   const roleContent: RoleContent = qaData?.content?.[role.toLowerCase()] as RoleContent | undefined ?? generateRoleContent(puzzle, role)
 
-  const coordinationChain: CoordinationChain = {
-    observerProduces: `Observer reports visual data from ${puzzle.location}`,
-    analystTransforms: `Analyst processes the data into actionable intel`,
-    operatorExecutes: `Operator executes the solution and enters the answer`,
-  }
+  // The server no longer serves the coordination chain or the failure
+  // propagation to players (2026100602): the chain states every role's
+  // expected result in plain language, which is exactly what the team
+  // must say out loud instead of read. The simulator mirrors that.
+  const coordinationChain: CoordinationChain | null = null
 
-  const failurePropagation: FailurePropagation = {
-    wrongStep: `Incorrect answer or missed step on ${puzzle.name}`,
-    consequence: 'Incorrect submissions do not advance the node. The team can retry until the correct answer is accepted.',
-    recoveryGuidance: 'Review the available evidence and hints, then submit again.',
-  }
+  const failurePropagation: FailurePropagation | null = null
 
   const locationClue: LocationClue = {
     format: 'qr',
@@ -262,10 +258,6 @@ function generateNodeDetail(
         ? {
             operatorOwnEvidence: `Operator-only evidence for ${puzzle.name}`,
             operatorTaskDescription: `Coordinate Observer and Analyst findings to solve ${puzzle.name}`,
-            requiredDiscoveries: {
-              observerDiscovery: `Observer must report from ${puzzle.location}`,
-              analystDiscovery: 'Analyst must provide processed data',
-            },
           }
         : null,
     coordinationChain,
@@ -539,6 +531,11 @@ function generateNotifications(solvedCount: number, role: Role): Notification[] 
 
 export function QASimulatorProvider({ children }: { children: ReactNode }) {
   const [role, setRole] = useState<Role>('OBSERVER')
+  // Read synchronously inside submitAnswer: the simulated device is one
+  // player, and which player it is must be the role as of this render,
+  // not the role captured when the callback was minted.
+  const roleRef = useRef<Role>(role)
+  roleRef.current = role
   const [simulationType, setSimulationType] = useState<SimulationType>('FRESH')
   const [solvedNodes, setSolvedNodes] = useState<Set<string>>(new Set())
   // Re-synced on every render so it can be read synchronously inside an async
@@ -785,6 +782,21 @@ export function QASimulatorProvider({ children }: { children: ReactNode }) {
           attemptNumber: 0,
           nextNodeId: null,
           error: 'Node is locked or does not exist',
+        }
+      }
+
+      // The server accepts a conclusion from the Operator alone
+      // (submit_puzzle_answer, 2026100601); the Observer and the
+      // Analyst communicate their results verbally and never submit.
+      // The simulator mirrors that refusal so a QA walk of another
+      // role's view cannot quietly solve a puzzle.
+      if (roleRef.current !== 'OPERATOR') {
+        return {
+          isCorrect: false,
+          pointsAwarded: 0,
+          attemptNumber: 0,
+          nextNodeId: null,
+          error: 'Only the Operator may submit the team\'s conclusion.',
         }
       }
 

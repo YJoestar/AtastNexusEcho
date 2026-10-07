@@ -31,8 +31,9 @@ begin
   -- a spare team for add_player (not yet staffed)
   select team_id into v_team2 from bureau_create_team('SMOKE SPARE');
 
-  -- a player for the last team
-  select id into v_player from players where team_id = v_team and role = 'OBSERVER';
+  -- a player for the last team. The session below submits answers,
+  -- and only the Operator may submit the team's conclusion.
+  select id into v_player from players where team_id = v_team and role = 'OPERATOR';
   insert into auth.users(id, email) values (v_user, 'smoke-player@test') on conflict do nothing;
   update players set auth_user_id = v_user where id = v_player;
   select id into v_node from puzzle_nodes where code = 'P01';
@@ -69,9 +70,26 @@ begin
   begin perform get_leaderboard(); exception when others then failures := failures || format('get_leaderboard: %s', sqlerrm); end;
   begin perform get_available_nodes(); exception when others then failures := failures || format('get_available_nodes: %s', sqlerrm); end;
   begin j := get_player_node_detail(v_node, 'OBSERVER'); exception when others then failures := failures || format('get_player_node_detail: %s', sqlerrm); end;
+  -- The player payload carries no other role's expected result.
+  if j ? 'coordinationChain' then
+    failures := failures || 'get_player_node_detail: coordinationChain leaked into the player payload';
+  end if;
+  if j #> '{operatorInvestigation,requiredDiscoveries}' is not null then
+    failures := failures || 'get_player_node_detail: requiredDiscoveries leaked into the operator payload';
+  end if;
   begin perform scan_qr_code('QR-NODE-02'); exception when others then failures := failures || format('scan_qr_code: %s', sqlerrm); end;
   begin perform request_hint(v_node, 1); exception when others then failures := failures || format('request_hint: %s', sqlerrm); end;
   begin perform submit_puzzle_answer(v_node, 'definitely wrong'); exception when others then failures := failures || format('submit_puzzle_answer: %s', sqlerrm); end;
+  -- The Operator's submission went through above; the Observer's
+  -- and Analyst's are refused with an error payload, not an exception.
+  for r in select auth_user_id from players where team_id = v_team and role in ('OBSERVER', 'ANALYST') loop
+    perform set_config('request.jwt.claim.sub', r.auth_user_id::text, true);
+    j := submit_puzzle_answer(v_node, 'not the operator');
+    if not (j ? 'error') then
+      failures := failures || 'submit_puzzle_answer: a non-operator submitted the team conclusion';
+    end if;
+  end loop;
+  perform set_config('request.jwt.claim.sub', v_user::text, true);
   begin perform mark_notifications_read(); exception when others then failures := failures || format('mark_notifications_read: %s', sqlerrm); end;
   reset role;
 

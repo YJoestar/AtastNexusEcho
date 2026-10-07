@@ -130,6 +130,9 @@ function renderFlow(initialPath = '/player/game') {
  */
 async function startSimulation(initialPath = '/player/game') {
   const view = renderFlow(initialPath)
+  // Only the Operator may submit a conclusion, and the walk below
+  // is driven through the real submission path.
+  await act(async () => { qaApi.setRole('OPERATOR') })
   // Two acts on purpose: FRESH seeding clears the current node, and only the
   // jump after it leaves the team standing on a puzzle.
   await act(async () => {
@@ -200,14 +203,19 @@ afterEach(() => {
 describe('full player flow', () => {
   it('walks from the field hub to a solved puzzle and onward', async () => {
     renderFlow()
+    await act(async () => { qaApi.setRole('OPERATOR') })
 
     // The hub mounts and names the first lead.
     await waitFor(() => expect(screen.getByText(/Case ledger/i)).toBeTruthy())
 
-    
+     
     // The node screen renders the puzzle for the current role.
     const nodeView = renderFlow('/player/game/node/P01')
     await waitFor(() => expect(screen.getAllByText(PUZZLES_BY_CODE['P01'].name).length).toBeGreaterThan(0))
+    // The second render mounted its own simulator provider; it
+    // owns the session from here, so it is the one that must
+    // stand in the Operator's seat.
+    await act(async () => { qaApi.setRole('OPERATOR') })
 
     // A correct answer solves it and awards the node's points.
     const accepted = acceptedFor('P01')
@@ -245,6 +253,7 @@ describe('full player flow', () => {
       )
     }
     render(<Shell />)
+    await act(async () => { qaApi.setRole('OPERATOR') })
     await act(async () => { qaApi.jumpToNode('P01') })
     await waitFor(() => expect(qaApi.currentNodeId).toBe('P01'))
 

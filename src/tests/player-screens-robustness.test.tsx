@@ -16,7 +16,8 @@ const h = vi.hoisted(() => ({
 
 vi.mock('@/hooks/useGameEngine', () => ({
   useGameEngine: () => ({
-    role: 'OBSERVER',
+    // The Operator is the only role that types a conclusion.
+    role: 'OPERATOR',
     isOffline: false,
     fetchNode: h.fetchNode,
     submitAnswer: h.submitAnswer,
@@ -75,13 +76,13 @@ describe('PlayerNode', () => {
   it('keeps the puzzle on screen and shows an inline alert when a submit fails (e.g. expired session)', async () => {
     h.submitAnswer.mockRejectedValue(new Error('JWT expired'))
     renderNode()
-    const input = await screen.findByLabelText('SOLUTION')
+    const input = await screen.findByLabelText('FINAL CONCLUSION')
     fireEvent.change(input, { target: { value: 'abc' } })
     fireEvent.submit(input.closest('form')!)
     const alert = await screen.findByRole('alert')
     expect(alert.textContent).toBe('JWT expired')
-    expect(screen.getByLabelText('SOLUTION').getAttribute('aria-invalid')).toBe('true')
-    expect(screen.getByLabelText('SOLUTION').getAttribute('aria-describedby')).toContain('answer-error')
+    expect(screen.getByLabelText('FINAL CONCLUSION').getAttribute('aria-invalid')).toBe('true')
+    expect(screen.getByLabelText('FINAL CONCLUSION').getAttribute('aria-describedby')).toContain('answer-error')
     expect(screen.queryByText('INVESTIGATION BLOCKED')).toBeNull()
   })
 
@@ -127,7 +128,7 @@ describe('PlayerNode', () => {
     vi.useFakeTimers({ shouldAdvanceTime: true })
     h.submitAnswer.mockResolvedValue({ isCorrect: true, nextNodeId: null })
     renderNode()
-    const input = await screen.findByLabelText('SOLUTION')
+    const input = await screen.findByLabelText('FINAL CONCLUSION')
     fireEvent.change(input, { target: { value: 'abc' } })
     await act(async () => { fireEvent.submit(input.closest('form')!) })
     await act(async () => { vi.advanceTimersByTime(2100) })

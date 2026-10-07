@@ -416,6 +416,7 @@ describe('isPlayerSafeRpcMessage', () => {
       'Node not accessible',
       'Hint not available',
       'Invalid answer format',
+      "Only the Operator may submit the team's conclusion.",
     ]) {
       expect(isPlayerSafeRpcMessage(message), message).toBe(true)
     }
@@ -666,6 +667,63 @@ describe('a solve is scored exactly once', () => {
   it('measures puzzle time against when the node was opened, not the game start', () => {
     expect(fn.sql).toMatch(/EXTRACT\(EPOCH FROM \(now\(\) - v_started_at\)\)/i)
     expect(fn.sql).not.toMatch(/time_spent_seconds = time_spent_seconds \+ v_response_time/i)
+  })
+
+  it('accepts a conclusion from the Operator only', () => {
+    // The role chain is the mechanic: the Observer and the Analyst
+    // speak their results, the Operator types the conclusion. The
+    // gate has to run before the rate limiter and before an attempt
+    // is claimed, so a refusal costs the team nothing.
+    expect(fn.sql).toMatch(/IF v_player_role <> 'OPERATOR' THEN/i)
+    expect(fn.sql).toMatch(/'error', 'Only the Operator may submit the team''s conclusion\.'/)
+    const gateAt = fn.sql.search(/IF v_player_role <> 'OPERATOR' THEN/i)
+    const rateLimitAt = fn.sql.search(/IF v_recent_submissions >= MAX_SUBMISSIONS_PER_MINUTE/i)
+    const claimAt = fn.sql.search(/INSERT INTO node_progress/i)
+    expect(gateAt).toBeGreaterThan(-1)
+    expect(gateAt).toBeLessThan(rateLimitAt)
+    expect(gateAt).toBeLessThan(claimAt)
+  })
+})
+
+describe('the player payload carries no other role\'s expected result', () => {
+  /**
+   * The definition of get_player_node_detail that is actually in
+   * force: the last CREATE OR REPLACE wins, exactly as in Postgres.
+   */
+  function effectiveDetail(): { file: string; sql: string } {
+    let found: { file: string; sql: string } | null = null
+    for (const m of migrations) {
+      const match = /CREATE OR REPLACE FUNCTION\s+get_player_node_detail\s*\([\s\S]*?\$\$;/i.exec(m.sql)
+      if (match) found = { file: m.name, sql: match[0] }
+    }
+    return found!
+  }
+
+  const fn = effectiveDetail()
+
+  it('found the function it is checking', () => {
+    expect(fn, 'get_player_node_detail must be defined in the migration history').toBeTruthy()
+  })
+
+  it('serves no coordination chain to any role', () => {
+    // The chain states every role's expected result in plain
+    // language, which is exactly what the team must say out loud.
+    expect(fn.sql).not.toMatch(/'coordinationChain'/)
+  })
+
+  it('serves no failure propagation to any role', () => {
+    // Help is something a team earns by requesting a hint, not
+    // something the node hands out on load.
+    expect(fn.sql).not.toMatch(/'failurePropagation'/)
+  })
+
+  it('strips the required discoveries from the operator payload', () => {
+    // The Operator's own evidence and task stay; what the Observer
+    // and the Analyst are expected to discover is what they must
+    // communicate verbally, so it does not travel to any client.
+    expect(fn.sql).toMatch(/-\s*'requiredDiscoveries'/)
+    expect(fn.sql).not.toMatch(/requiredDiscoveries\.observerDiscovery/)
+    expect(fn.sql).not.toMatch(/requiredDiscoveries\.analystDiscovery/)
   })
 })
 

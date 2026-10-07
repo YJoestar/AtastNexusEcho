@@ -2,10 +2,19 @@
  * NEXUS — Player Puzzle Node
  * Data-driven puzzle screen with role-specific content.
  *
+ * THE ROLE RULE: only the Operator types. The Observer studies
+ * their material and speaks their conclusion; the Analyst listens,
+ * interprets, and speaks theirs; the Operator combines what was
+ * said with their own evidence and submits the team's final
+ * conclusion. Observer and Analyst screens carry no answer field,
+ * no submit control and no correctness feedback — their results
+ * exist as human knowledge inside the team, by design.
+ *
  * SECURITY: Never displays acceptedAnswer, fullSolution, or
- * server-side validation patterns. Operators receive
- * coordination instructions instead of intermediate outputs.
- * All answer validation happens server-side via gameAPI.submitAnswer.
+ * server-side validation patterns. The server serves each role
+ * only its own material (2026100602) and accepts a submission
+ * from the Operator alone (2026100601). All answer validation
+ * happens server-side via gameAPI.submitAnswer.
  */
 
 import { useParams, Link, useNavigate } from 'react-router-dom'
@@ -52,6 +61,10 @@ export function PlayerNode() {
   // A failed submit or hint keeps the puzzle on screen; only a failed load blocks it.
   const [actionError, setActionError] = useState<string | null>(null)
   const [justSolved, setJustSolved] = useState(false)
+  // A wrong conclusion is reported generically: the team learns
+  // that the reconstruction failed, never which part of the
+  // chain produced it.
+  const [conclusionFailed, setConclusionFailed] = useState(false)
   const hintIndexRef = useRef(0)
   const hintBusyRef = useRef(false)
   // A ref, not the `isSubmitting` state, for the same reason as the hint guard.
@@ -102,6 +115,7 @@ export function PlayerNode() {
         setNode(nodeData)
         setShowHintPanel(false)
         setJustSolved(false)
+        setConclusionFailed(false)
         setSubmissions([])
         setHints([])
         setAnswer('')
@@ -150,6 +164,7 @@ export function PlayerNode() {
         audio.failure()
       } else if (result.isCorrect) {
         setJustSolved(true)
+        setConclusionFailed(false)
         audio.success()
         if (result.nextNodeId) {
           refreshGameState()
@@ -165,6 +180,10 @@ export function PlayerNode() {
           navigate(ROUTES.PLAYER_GAME, { replace: true })
         }, 2000)
       } else {
+        // Deliberately generic. Naming the failing role, the
+        // failing clue or any partial correctness would let the
+        // team skip the reassessment the game is built on.
+        setConclusionFailed(true)
         audio.failure()
       }
       setAnswer('')
@@ -279,30 +298,31 @@ RETURN TO FIELD
   const nodeStatusTone: StatusTone =
     node!.status === 'SOLVED' ? 'active' : node!.unlocked ? 'warning' : 'inactive'
 
-  function RoleWaitingStateInner() {
+  function RoleBriefingInner() {
     if (!node?.roleContent || !role) return null
-    const chain = node.coordinationChain
-    if (!chain) return null
 
-    const waitingConfig: Record<string, { label: string; description: string; icon: ReactNode }> = {
+    // Role briefings describe what the role DOES, never what it
+    // should conclude: the chain's intermediate results exist
+    // only as things the team says out loud.
+    const briefingConfig: Record<string, { label: string; description: string; icon: ReactNode }> = {
       OBSERVER: {
-        label: 'AWAITING YOUR FIELD REPORT',
-        description: 'Inspect the scene and submit your findings. The Analyst is waiting for your observation.',
+        label: 'OBSERVE AND REPORT',
+        description: 'Study the evidence on this screen. When you reach a conclusion, communicate it verbally to your team.',
         icon: <BureauIcons.Eye className="bureau-icon w-5 h-5" />,
       },
       ANALYST: {
-        label: 'AWAITING ANALYST INTERPRETATION',
-        description: 'The Observer has reported. Use their findings to interpret the evidence. The Operator needs your analysis.',
+        label: 'INTERPRET AND REPORT',
+        description: 'Use the information your Observer has communicated to you. Interpret, compare, question — then communicate your conclusion verbally.',
         icon: <BureauIcons.Search className="bureau-icon w-5 h-5" />,
       },
       OPERATOR: {
-        label: 'AWAITING OPERATOR VERIFICATION',
-        description: 'The team has gathered evidence. Verify the combined solution and submit the final answer.',
+        label: 'SYNTHESIZE AND CONCLUDE',
+        description: 'Combine what the team has communicated with your own evidence below, then state the final conclusion.',
         icon: <BureauIcons.Confirm className="bureau-icon w-5 h-5" />,
       },
     }
 
-    const config = waitingConfig[role]
+    const config = briefingConfig[role]
     if (!config) return null
 
     return (
@@ -316,17 +336,6 @@ RETURN TO FIELD
             <p className="mt-1 text-sm text-nexus-textMuted">
               {config.description}
             </p>
-            {role === 'ANALYST' && (
-              <p className="mt-2 text-xs text-nexus-textSubtle">
-                Observer produced: <span className="text-nexus-text">{chain.observerProduces}</span>
-              </p>
-            )}
-            {role === 'OPERATOR' && (
-              <div className="mt-2 space-y-1 text-xs text-nexus-textSubtle">
-                <p>Observer produced: <span className="text-nexus-text">{chain.observerProduces}</span></p>
-                <p>Analyst produced: <span className="text-nexus-text">{chain.analystTransforms}</span></p>
-              </div>
-            )}
           </div>
         </div>
       </div>
@@ -371,9 +380,9 @@ RETURN TO FIELD
           {node.isSolved && <BureauIcons.Flag className="bureau-icon w-6 h-6 text-nexus-accent ml-auto" />}
         </div>
 
-        {/* Role Waiting State — when this role needs another role's input */}
+        {/* Role Briefing — what this role does with the material */}
         {node.unlocked && !node.isSolved && node.roleContent && role && (
-          <RoleWaitingStateInner />
+          <RoleBriefingInner />
         )}
 
         {/* Locked State */}
@@ -441,22 +450,10 @@ RETURN TO FIELD
               </p>
             </div>
 
-            {/* Coordination Chain */}
-            {node.coordinationChain && (
-              <RegisterColumn heading="Team Coordination">
-                <div className="nexus-panel p-3 space-y-2 text-sm">
-                  <p className="text-nexus-textMuted">
-                    <strong>Observer produces:</strong> {node.coordinationChain.observerProduces}
-                  </p>
-                  <p className="text-nexus-textMuted">
-                    <strong>Analyst transforms:</strong> {node.coordinationChain.analystTransforms}
-                  </p>
-                  <p className="text-nexus-textMuted">
-                    <strong>Operator executes:</strong> {node.coordinationChain.operatorExecutes}
-                  </p>
-                </div>
-              </RegisterColumn>
-            )}
+            {/* Coordination between roles is verbal. The chain that
+                describes each role's expected result is deliberately
+                not rendered: reading it would replace the conversation
+                the game depends on. */}
 
             {/* Operator Investigation */}
             {isOperator && node.operatorInvestigation && (
@@ -471,32 +468,12 @@ RETURN TO FIELD
                   <p className="text-nexus-textMuted">
                     <strong>Task:</strong> {node.operatorInvestigation.operatorTaskDescription}
                   </p>
-                  <div className="nexus-panel p-3 mt-2 bg-nexus-bg/70 border-nexus-borderSubtle">
-                    <p className="text-xs uppercase tracking-wider text-nexus-textSubtle mb-1.5">
-                      Required Discoveries
-                    </p>
-                    <p className="text-nexus-textMuted">
-                      • <strong>From Observer:</strong> {node.operatorInvestigation.requiredDiscoveries.observerDiscovery}
-                    </p>
-                    <p className="text-nexus-textMuted mt-1">
-                      • <strong>From Analyst:</strong> {node.operatorInvestigation.requiredDiscoveries.analystDiscovery}
-                    </p>
-                  </div>
                 </div>
               </div>
             )}
 
-            {/* Failure Propagation */}
-            {node.failurePropagation && (
-              <div className="nexus-panel p-3 border-nexus-warning/30">
-                <p className="text-xs uppercase tracking-wider text-nexus-textSubtle mb-1">
-                  Recovery Note
-                </p>
-                <p className="text-xs text-nexus-textMuted">
-                  <strong>If stuck:</strong> {node.failurePropagation.recoveryGuidance}
-                </p>
-              </div>
-            )}
+            {/* Recovery guidance is earned through the hint
+                system, not handed out on load. */}
 
             {/* Hints Panel */}
             {hints.length > 0 && (
@@ -552,11 +529,13 @@ RETURN TO FIELD
           </DocumentShell>
         )}
 
-        {/* Submission Area */}
-        {!isSolved && node.unlocked && (
+        {/* Final Reconstruction — the Operator is the only player
+            who types. The Observer and the Analyst carry no answer
+            field: their results are spoken, not submitted. */}
+        {!isSolved && node.unlocked && isOperator && (
           <DocumentShell
             reference={`Node ${node.code}`}
-            title="SOLUTION TRANSMISSION"
+            title="FINAL RECONSTRUCTION"
             stock="paper"
             footer={
               <Stamp variant={isOffline ? 'anomalous' : 'verified'}>
@@ -564,23 +543,43 @@ RETURN TO FIELD
               </Stamp>
             }
           >
+            {/* Generic failure notice. The team learns only that the
+                conclusion was not verified — never which role, clue
+                or step produced it. */}
+            {conclusionFailed && !actionError && (
+              <div className="nexus-panel p-4 border-nexus-danger/30" role="status">
+                <p className="font-mono text-xs font-bold uppercase tracking-[0.14em] text-nexus-danger">
+                  Conclusion Not Verified
+                </p>
+                <p className="mt-1 text-sm text-nexus-textMuted">
+                  The submitted conclusion does not match the available
+                  evidence. Reassess the investigation.
+                </p>
+              </div>
+            )}
+
             <form onSubmit={handleSubmit} className="space-y-3">
               <div>
-                <label htmlFor="answer" className="label">SOLUTION</label>
+                <label htmlFor="answer" className="label">FINAL CONCLUSION</label>
                 <input
                   id="answer"
                   type="text"
                   value={answer}
-                  onChange={e => setAnswer(e.target.value)}
-                   placeholder={
-                     isOperator ? 'ENTER THE COMBINED SOLUTION…' : 'ENTER YOUR ANSWER…'
-                   }
+                  onChange={e => {
+                    setAnswer(e.target.value)
+                    setConclusionFailed(false)
+                  }}
+                  placeholder="STATE THE TEAM'S CONCLUSION…"
                   className="input font-mono text-lg text-center"
                   autoComplete="off"
                   disabled={isSubmitting}
                   aria-invalid={actionError ? true : undefined}
                   aria-describedby={cn(isOffline && 'answer-offline', actionError && 'answer-error') || undefined}
                 />
+                <p className="mt-1.5 text-xs text-nexus-textSubtle">
+                  You are submitting the team's current reconstruction.
+                  Confirm it with your team before verification.
+                </p>
                 {actionError && (
                   <p id="answer-error" role="alert" className="mt-1.5 text-sm text-nexus-danger">
                     {actionError}
@@ -589,7 +588,7 @@ RETURN TO FIELD
                 {isOffline && (
                   <p id="answer-offline" className="mt-1.5 text-sm text-nexus-warning flex items-center gap-1.5">
                     <BureauIcons.Alert className="bureau-icon w-3.5 h-3.5 flex-shrink-0" aria-hidden="true" />
-                    <span>No signal — your answer will be queued and sent on reconnect</span>
+                    <span>No signal — your conclusion will be queued and sent on reconnect</span>
                   </p>
                 )}
               </div>
@@ -602,12 +601,12 @@ RETURN TO FIELD
                 {isSubmitting ? (
                   <>
                     <BureauIcons.Spinner className="bureau-icon w-5 h-5 animate-spin" aria-hidden="true" />
-                    <span>TRANSMITTING…</span>
+                    <span>VERIFYING…</span>
                   </>
                 ) : (
                   <>
-                    <BureauIcons.Send className="bureau-icon w-5 h-5" aria-hidden="true" />
-                    <span>{isOffline ? 'QUEUE SOLUTION' : 'TRANSMIT'}</span>
+                    <BureauIcons.Confirm className="bureau-icon w-5 h-5" aria-hidden="true" />
+                    <span>{isOffline ? 'QUEUE CONCLUSION' : 'VERIFY CONCLUSION'}</span>
                   </>
                 )}
               </button>
@@ -632,7 +631,7 @@ RETURN TO FIELD
                             ? 'verified'
                             : 'contradicted'
                       } impressed>
-                        {sub.queued ? 'QUEUED' : sub.isCorrect ? 'CORRECT' : 'INCORRECT'}
+                        {sub.queued ? 'QUEUED' : sub.isCorrect ? 'VERIFIED' : 'NOT VERIFIED'}
                       </Stamp>
                     </div>
                   ))}
@@ -684,6 +683,30 @@ RETURN TO FIELD
                 )}
               </div>
             )}
+          </DocumentShell>
+        )}
+
+        {/* Verbal channel — the Observer and the Analyst reason and
+            speak. There is deliberately no field, no control and no
+            feedback here: the application must not replace the
+            conversation. */}
+        {!isSolved && node.unlocked && !isOperator && role && (
+          <DocumentShell
+            reference={`Node ${node.code}`}
+            title={role === 'OBSERVER' ? 'FIELD OBSERVATION' : 'ANALYSIS WORKBENCH'}
+            stock="paper"
+            footer={<Stamp variant="incomplete">Verbal</Stamp>}
+          >
+            <div className="space-y-3 py-2 text-center">
+              <p className="text-sm text-nexus-textMuted">
+                {role === 'OBSERVER'
+                  ? 'Study the evidence above and reason it through. When you reach a conclusion, say it to your team — the Analyst and the Operator depend on hearing it.'
+                  : 'Use what your Observer has told you. Interpret and compare it against the evidence above, then say your conclusion to the team — the Operator depends on hearing it.'}
+              </p>
+              <p className="font-mono text-xs uppercase tracking-[0.14em] text-nexus-textSubtle">
+                No answer is entered on this device
+              </p>
+            </div>
           </DocumentShell>
         )}
       </div>

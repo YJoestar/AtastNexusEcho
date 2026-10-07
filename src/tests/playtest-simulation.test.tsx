@@ -199,6 +199,9 @@ function buildMainChain(): string[] {
 
 async function startSimulation(initialPath = '/player/game') {
   const view = renderFlow(initialPath)
+  // Every walk below is driven through the real submission path,
+  // and only the Operator may submit a conclusion.
+  await act(async () => { qaApi.setRole('OPERATOR') })
   await act(async () => { qaApi.setCustomProgress({ simulationType: 'FRESH' }) })
   await act(async () => { qaApi.jumpToNode('P01') })
   await waitFor(() => expect(qaApi.currentNodeId).toBe('P01'))
@@ -289,10 +292,10 @@ describe('Role chain — Observer → Analyst → Operator', () => {
       expect(detail).not.toBeNull()
       expect(detail!.roleContent).toBeDefined()
       expect(detail!.roleContent?.role).toBe(role)
-      expect(detail!.coordinationChain).toBeDefined()
-      expect(detail!.coordinationChain?.observerProduces).toBeTruthy()
-      expect(detail!.coordinationChain?.analystTransforms).toBeTruthy()
-      expect(detail!.coordinationChain?.operatorExecutes).toBeTruthy()
+      // The chain that describes each role's expected result is
+      // deliberately not served: reading it would replace the
+      // conversation the role chain exists to force.
+      expect(detail!.coordinationChain).toBeNull()
     }
   })
 
@@ -719,6 +722,7 @@ describe('Player screen robustness', () => {
 
   it('survives browser refresh (unmount and remount screens)', async () => {
     const view = renderFlow()
+    await act(async () => { qaApi.setRole('OPERATOR') })
     await act(async () => { qaApi.setCustomProgress({ simulationType: 'FRESH' }) })
     await act(async () => { qaApi.jumpToNode('P01') })
     await waitFor(() => expect(qaApi.currentNodeId).toBe('P01'))

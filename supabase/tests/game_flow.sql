@@ -18,7 +18,8 @@ begin
   perform * from bureau_start_team(v_team, 'flow test');
 
   select id, answer_metadata->>'acceptedAnswer' into v_node, ans from puzzle_nodes where code = 'P01';
-  select auth_user_id into v_user from players where team_id = v_team and role = 'OBSERVER';
+  -- Only the Operator submits the team's conclusion.
+  select auth_user_id into v_user from players where team_id = v_team and role = 'OPERATOR';
   perform set_config('request.jwt.claim.role','authenticated',true);
   perform set_config('request.jwt.claim.sub',v_user::text,true);
   set local role authenticated;
@@ -46,6 +47,17 @@ begin
   if codes ? 'P01' then raise exception 'solved P01 is still advertised as available: %', codes; end if;
   if jsonb_array_length(codes) < 1 then raise exception 'nothing unlocked after solving P01: %', st; end if;
   if not (codes ? (st #>> '{currentNode,code}')) then raise exception 'current node is not among the available nodes: %', st; end if;
+
+  -- The Observer and the Analyst solve their parts mentally and speak
+  -- them; their submission is refused before any attempt is claimed,
+  -- so it costs nothing and records nothing.
+  for p in select auth_user_id from players where team_id = v_team and role in ('OBSERVER', 'ANALYST') loop
+    perform set_config('request.jwt.claim.sub', p.auth_user_id::text, true);
+    again := submit_puzzle_answer(v_node, ans);
+    if not (again ? 'error') then
+      raise exception 'a non-operator submitted the team conclusion: %', again;
+    end if;
+  end loop;
   reset role;
   raise notice 'game flow test passed';
 end $$;

@@ -64,10 +64,6 @@ export interface RoleContent {
 export interface OperatorInvestigation {
   operatorOwnEvidence: string
   operatorTaskDescription: string
-  requiredDiscoveries: {
-    observerDiscovery: string
-    analystDiscovery: string
-  }
 }
 
 export interface CoordinationChain {

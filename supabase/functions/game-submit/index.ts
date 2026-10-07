@@ -102,7 +102,9 @@ const RATE_LIMIT_PATTERNS = /rate limit|too many/i
 function mapRpcErrorToStatus(message: string): number {
   if (RATE_LIMIT_PATTERNS.test(message)) return 429
   if (/no team|not authentic/i.test(message)) return 401
-  if (/forbidden|permission/i.test(message)) return 403
+  // An authenticated Observer or Analyst is permitted but not authorized
+  // to submit: the conclusion is the Operator's to enter. 403, never 401.
+  if (/forbidden|permission|operator/i.test(message)) return 403
   // "not found" is genuinely absent; "not accessible" and "not active" mean the
   // team or node exists but may not be acted on right now, which is a refusal.
   if (/not found/i.test(message)) return 404

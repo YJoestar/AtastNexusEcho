@@ -346,6 +346,7 @@ describe('Edge: forced solve and reveal controls', () => {
 describe('Edge: multi-instance isolation', () => {
   it('two separate simulator providers do not share solved state', async () => {
     const view1 = renderFlow()
+    await act(async () => { qaApi.setRole('OPERATOR') })
     await act(async () => { qaApi.setCustomProgress({ simulationType: 'FRESH' }) })
     await act(async () => { qaApi.jumpToNode('P01') })
     await act(async () => { qaApi.submitAnswer('P01', acceptedFor('P01')) })
@@ -456,6 +457,9 @@ describe('Edge: node access and progression', () => {
 
 async function startSimulation(initialPath = '/player/game') {
   const view = renderFlow(initialPath)
+  // Only the Operator may submit a conclusion, and every scenario
+  // below drives the real submission path.
+  await act(async () => { qaApi.setRole('OPERATOR') })
   await act(async () => { qaApi.setCustomProgress({ simulationType: 'FRESH' }) })
   await act(async () => { qaApi.jumpToNode('P01') })
   await waitFor(() => expect(qaApi.currentNodeId).toBe('P01'))

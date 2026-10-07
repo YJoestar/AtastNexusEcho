@@ -27,7 +27,7 @@ vi.mock('@/hooks/useGameEngine', () => ({
   useGameEngine: () => {
     h.engineReads += 1
     return {
-      role: 'OBSERVER',
+      role: 'OPERATOR',
       isOffline: false,
       // A NEW closure on every render, exactly as the QA engine does.
       fetchNode: (...args: unknown[]) =>

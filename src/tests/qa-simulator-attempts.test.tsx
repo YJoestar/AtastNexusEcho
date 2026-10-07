@@ -11,7 +11,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import { QASimulatorProvider, useQASimulator } from '@/contexts/QASimulatorContext'
 
 const h = vi.hoisted(() => ({ QAData: [] as unknown, QRData: [] as unknown }))
@@ -84,6 +84,8 @@ describe('QA attempt counting', () => {
   it('counts each submission instead of always reporting the first', async () => {
     const { qa } = renderProbe()
     await waitFor(() => expect(qa().role).toBeTruthy())
+    // Only the Operator may submit a conclusion.
+    act(() => { qa().setRole('OPERATOR') })
 
     const results = [] as number[]
     for (const answer of ['wrong-one', 'wrong-two', 'wrong-three']) {
@@ -100,6 +102,7 @@ describe('QA attempt counting', () => {
   it('shows the attempt count on the node once a player has tried', async () => {
     const { qa } = renderProbe()
     await waitFor(() => expect(qa().role).toBeTruthy())
+    act(() => { qa().setRole('OPERATOR') })
 
     await qa().submitAnswer('P01', 'wrong')
     await qa().submitAnswer('P01', 'wrong again')
@@ -113,6 +116,7 @@ describe('QA attempt counting', () => {
   it('reports the real attempt count after a correct answer', async () => {
     const { qa } = renderProbe()
     await waitFor(() => expect(qa().role).toBeTruthy())
+    act(() => { qa().setRole('OPERATOR') })
     const accepted = acceptedAnswerFor('P01') ?? 'NORTH'
 
     await qa().submitAnswer('P01', 'nope')
@@ -125,6 +129,7 @@ describe('QA attempt counting', () => {
   it('clears attempt counts when the simulation restarts', async () => {
     const { qa } = renderProbe()
     await waitFor(() => expect(qa().role).toBeTruthy())
+    act(() => { qa().setRole('OPERATOR') })
 
     await qa().submitAnswer('P01', 'wrong')
     await waitFor(() => expect(qa().teamProgress?.solvedNodes['P01'].attempts).toBe(1))
@@ -136,6 +141,7 @@ describe('QA attempt counting', () => {
   it('keeps attempt counts per puzzle', async () => {
     const { qa } = renderProbe()
     await waitFor(() => expect(qa().role).toBeTruthy())
+    act(() => { qa().setRole('OPERATOR') })
 
     await qa().submitAnswer('P01', 'wrong')
     const other = ALL_PUZZLES.find(p => p.code !== 'P01')?.code

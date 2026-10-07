@@ -5,6 +5,13 @@
  *
  * SECURITY: All role-specific content and coordination data is passed
  * through the existing secure channels — no answers are exposed here.
+ *
+ * ROLE MODEL: Only the Operator types the final conclusion. The
+ * Observer and the Analyst see a verbal-channel panel instead of an
+ * answer field. A failed conclusion is reported generically: the team
+ * learns it was not verified, never which part of the reconstruction
+ * failed. The server enforces the same rule (see migration
+ * 2026100601_operator_only_conclusions.sql).
  */
 
 import { useState } from 'react'
@@ -47,6 +54,7 @@ export function PlayerFinal() {
     teamProgress,
     solvedCount,
     totalNodes,
+    role,
     submitAnswer,
     isOffline,
   } = useGameEngine()
@@ -54,6 +62,10 @@ export function PlayerFinal() {
   const [answer, setAnswer] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // Generic failure notice. Deliberately carries no role, clue or
+  // partial-correctness information.
+  const [conclusionFailed, setConclusionFailed] = useState(false)
+  const isOperator = role === 'OPERATOR'
 
   const solved = solvedCount
   // Access is decided by whether the finale is the last outstanding node, not by
@@ -87,9 +99,15 @@ export function PlayerFinal() {
       setAttempts(prev => [...prev, answer.trim()])
 
       if (result.isCorrect) {
+        setConclusionFailed(false)
         setTimeout(() => {
           navigate(ROUTES.PLAYER_COMPLETE)
         }, 1500)
+      } else {
+        // Same generic signal as the node screens: the
+        // conclusion was not verified. Nothing about which
+        // evidence or which team member produced it.
+        setConclusionFailed(true)
       }
       setAnswer('')
     } catch (err: unknown) {
@@ -240,25 +258,45 @@ export function PlayerFinal() {
               </div>
             </RegisterColumn>
 
-            {/* Answer Submission */}
-            {!isCompleted && (
+            {/* Final Conclusion — typed by the Operator only */}
+            {!isCompleted && isOperator && (
               <form onSubmit={handleSubmit} className="space-y-4">
+                {conclusionFailed && !error && (
+                  <div className="p-3 border border-nexus-danger/30" role="status">
+                    <p className="font-mono text-xs font-bold uppercase tracking-[0.14em] text-nexus-danger">
+                      Conclusion Not Verified
+                    </p>
+                    <p className="text-sm text-nexus-textMuted mt-1">
+                      The submitted conclusion does not match the
+                      available evidence. Reassess the investigation.
+                    </p>
+                  </div>
+                )}
+
                 <FieldGrid columns={1}>
                   <Field
-                    label="Final Code"
+                    label="Final Conclusion"
                     value={
                       <input
                         id="finalAnswer"
                         type="text"
                         value={answer}
-                        onChange={e => setAnswer(e.target.value)}
-                         placeholder="ENTER RESOLVED CASE CODE"
+                        onChange={e => {
+                          setAnswer(e.target.value)
+                          setConclusionFailed(false)
+                        }}
+                         placeholder="ENTER THE TEAM'S FINAL CONCLUSION…"
                         className="input font-mono text-center tracking-wider text-lg"
                         autoComplete="off"
                         disabled={isSubmitting || isOffline}
                       />
                     }
                   />
+                  <p className="text-xs text-nexus-textSubtle">
+                    As the Operator, you are submitting your team's
+                    current reconstruction. Confirm it with your team
+                    before verification.
+                  </p>
                 </FieldGrid>
 
                 {isOffline && (
@@ -276,12 +314,12 @@ export function PlayerFinal() {
                   {isSubmitting ? (
                     <>
                       <BureauIcons.Spinner className="bureau-icon w-5 h-5 animate-spin" />
-                      <span>VERIFYING SOLUTION…</span>
+                      <span>VERIFYING CONCLUSION…</span>
                     </>
                   ) : (
                     <>
-                      <BureauIcons.Unlock className="bureau-icon w-5 h-5" />
-                      <span>SUBMIT SOLUTION</span>
+                      <BureauIcons.Confirm className="bureau-icon w-5 h-5" />
+                      <span>VERIFY CONCLUSION</span>
                     </>
                   )}
                 </button>
@@ -315,7 +353,7 @@ export function PlayerFinal() {
                             {attempt}
                           </code>
                           <Stamp variant="contradicted" impressed>
-                            Rejected
+                            NOT VERIFIED
                           </Stamp>
                         </div>
                       ))}
@@ -323,6 +361,29 @@ export function PlayerFinal() {
                   </RegisterColumn>
                 )}
               </form>
+            )}
+
+            {/* Verbal channel — the Observer and the Analyst
+                reason and speak. There is deliberately no field
+                and no feedback here. */}
+            {!isCompleted && !isOperator && role && (
+              <DocumentShell
+                reference="Final Channel"
+                title={role === 'OBSERVER' ? 'FIELD OBSERVATION' : 'ANALYSIS WORKBENCH'}
+                stock="paper"
+                footer={<Stamp variant="incomplete">Verbal</Stamp>}
+              >
+                <div className="space-y-3 py-2 text-center">
+                  <p className="text-sm text-nexus-textMuted">
+                    {role === 'OBSERVER'
+                      ? 'Study the evidence and reason it through. When you reach a conclusion, say it to your team — the Analyst and the Operator depend on hearing it.'
+                      : 'Use what your Observer has told you. Interpret and compare it against the evidence, then say your conclusion to the team — the Operator depends on hearing it.'}
+                  </p>
+                  <p className="font-mono text-xs uppercase tracking-[0.14em] text-nexus-textSubtle">
+                    No answer is entered on this device
+                  </p>
+                </div>
+              </DocumentShell>
             )}
 
             {/* Completed State */}
