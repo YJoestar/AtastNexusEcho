@@ -177,12 +177,12 @@ DO $$
 DECLARE
   offender TEXT;
 BEGIN
-  SELECT string_agg(pol.polname, ', ' ORDER BY pol.polname)
+  SELECT string_agg(pol.policyname, ', ' ORDER BY pol.policyname)
     INTO offender
   FROM pg_policies pol
   WHERE pol.schemaname = 'public'
     AND pol.qual IS NOT NULL
-    AND pol.polname LIKE 'Admins can%'
+    AND pol.policyname LIKE 'Admins can%'
     AND pol.qual ~* 'admin_users';
 
   IF offender IS NOT NULL THEN

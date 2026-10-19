@@ -14,7 +14,7 @@ UPDATE puzzle_nodes
 SET content = jsonb_set(
   replace(content::text, 'IS:472501', 'IS:44721')::jsonb,
   '{observer,intermediateOutput}',
-  to_jsonb('01001001 01010011 00111010 00110100 00110100 00110111 00110010 00110001')
+  to_jsonb('01001001 01010011 00111010 00110100 00110100 00110111 00110010 00110001'::text)
 ),
 answer_metadata = replace(answer_metadata::text, 'IS:472501', 'IS:44721')::jsonb
 WHERE code = 'P07';
@@ -31,7 +31,7 @@ UPDATE puzzle_nodes
 SET content = jsonb_set(
   content,
   '{analyst,dataPayload}',
-  to_jsonb('CONVERSION: The Roman numeral XVII converts to decimal 17. P06''s pivot of 17 confirms this value.')
+  to_jsonb('CONVERSION: The Roman numeral XVII converts to decimal 17. P06''s pivot of 17 confirms this value.'::text)
 )
 WHERE code = 'P09';
 
@@ -51,19 +51,19 @@ SET content = jsonb_set(
         jsonb_set(
           content,
           '{analyst,dataPayload}',
-          to_jsonb('CONVERSION: Each cipher symbol maps to a digit via the glyph key. The wheel''s symbols yield the code when mapped in order.')
+          to_jsonb('CONVERSION: Each cipher symbol maps to a digit via the glyph key. The wheel''s symbols yield the code when mapped in order.'::text)
         ),
         '{analyst,intermediateOutput}',
-        to_jsonb('The cipher wheel maps symbols to digits via the glyph key: 3-4-2-5.')
+        to_jsonb('The cipher wheel maps symbols to digits via the glyph key: 3-4-2-5.'::text)
       ),
       '{coordinationChain,analystTransforms}',
-      to_jsonb('Analyst maps cipher symbols to digits via the glyph key, deriving 3425.')
+      to_jsonb('Analyst maps cipher symbols to digits via the glyph key, deriving 3425.'::text)
     ),
     '{operatorInvestigation,requiredDiscoveries,analystDiscovery}',
-    to_jsonb('Maps cipher symbols to digits via the glyph key.')
+    to_jsonb('Maps cipher symbols to digits via the glyph key.'::text)
   ),
   '{hints,1}',
-  to_jsonb('Map the cipher wheel symbols to digits using the glyph key.')
+  to_jsonb('Map the cipher wheel symbols to digits using the glyph key.'::text)
 )
 WHERE code = 'P15';
 
@@ -72,7 +72,7 @@ UPDATE puzzle_nodes
 SET answer_metadata = jsonb_set(
   answer_metadata,
   '{fullSolution}',
-  to_jsonb('The cipher wheel symbols map to digits via the glyph key, yielding 3425. Submitting 3425 unlocks P16.')
+  to_jsonb('The cipher wheel symbols map to digits via the glyph key, yielding 3425. Submitting 3425 unlocks P16.'::text)
 )
 WHERE code = 'P15';
 
@@ -89,10 +89,10 @@ SET content = jsonb_set(
   jsonb_set(
     content,
     '{observer,taskPrompt}',
-    to_jsonb('The code is a recurring value from your investigation.')
+    to_jsonb('The code is a recurring value from your investigation.'::text)
   ),
   '{hints,1}',
-  to_jsonb('It has appeared at multiple stations.')
+  to_jsonb('It has appeared at multiple stations.'::text)
 )
 WHERE code = 'P18';
 
@@ -112,18 +112,18 @@ SET content = jsonb_set(
         jsonb_set(
           content,
           '{hints,1}',
-          to_jsonb('Counting A(1) through Z(26), identify the letter at position 24.')
+          to_jsonb('Counting A(1) through Z(26), identify the letter at position 24.'::text)
         ),
         '{hints,2}',
-        to_jsonb('Submit the single-letter binding variable.')
+        to_jsonb('Submit the single-letter binding variable.'::text)
       ),
       '{analyst,whatTheySee}',
-      to_jsonb('Analyzer showing: A(1)...X(24)...Z(26). The binding variable sits at position 24.')
+      to_jsonb('Analyzer showing: A(1)...X(24)...Z(26). The binding variable sits at position 24.'::text)
     ),
     '{coordinationChain,analystTransforms}',
-    to_jsonb('Analyst derives the binding variable as the 24th letter of the alphabet.')
+    to_jsonb('Analyst derives the binding variable as the 24th letter of the alphabet.'::text)
   ),
   '{operatorInvestigation,requiredDiscoveries,analystDiscovery}',
-  to_jsonb('Computes the 24th letter of the alphabet.')
+  to_jsonb('Computes the 24th letter of the alphabet.'::text)
 )
 WHERE code = 'P22';
