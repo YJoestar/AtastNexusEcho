@@ -593,6 +593,74 @@ describe('bureau list handlers never discard a query error', () => {
   })
 })
 
+describe('a refusal is reported with the status that matches what happened', () => {
+  /** Source with comments removed, so prose about 401/403 cannot match itself. */
+  const codeOf = (name: string) =>
+    functions
+      .find(f => f.name === name)!
+      .src.replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/(^|[^:])\/\/.*$/gm, '$1')
+
+  it('answers "no team" with 403, never 401, wherever it can occur', () => {
+    // A valid session that carries no team row is authenticated but not
+    // authorised to act as a player. 403 keeps the caller signed in; a 401 would
+    // bounce them back to a login whose credentials already work. Each function
+    // maps the refusal wording its own RPC actually raises.
+    for (const name of ['game-submit', 'game-get-state', 'game-scan-qr']) {
+      const src = codeOf(name)
+      expect(src, `${name} does not map a no-team refusal`).toMatch(/\/no team\//i)
+      expect(src, `${name} must not answer a no-team refusal with 401`).not.toMatch(
+        /no team[^\n]*\b401\b/i,
+      )
+    }
+  })
+
+  it('does not echo an unrecognised RPC refusal back to the player', () => {
+    // scan_qr_code can answer with text that is not its own; only messages our
+    // SQL wrote may reach the client.
+    expect(codeOf('game-scan-qr')).toMatch(/isPlayerSafeRpcMessage\(/)
+  })
+
+  it('separates "the row is missing" from "the read failed" in reassign-role', () => {
+    // The lock check used to read `team && [...]`: a failed team read returned
+    // no row, the check was skipped, and the role change was authorised during
+    // play. A fault now answers as a fault, and only a truly absent row is 404.
+    const src = codeOf('bureau-operations')
+    const start = src.indexOf("case 'reassign-role'")
+    expect(start).toBeGreaterThan(-1)
+    const block = src.slice(start, src.indexOf("case '", start + 10))
+    expect(block).toMatch(/if \(playerError\) return dbErrorResponse\(playerError\)/)
+    expect(block).toMatch(/if \(teamError\) return dbErrorResponse\(teamError\)/)
+    expect(block).toMatch(/if \(!team\) return jsonResponse\(404/)
+    expect(block).not.toMatch(/if \(team &&/)
+  })
+
+  it('files the create-team audit row once, and only after the team exists', () => {
+    const src = functions.find(f => f.name === 'bureau-operations')!.src
+    const start = src.indexOf("case 'create-team'")
+    expect(start).toBeGreaterThan(-1)
+    const block = src.slice(start, src.indexOf("case '", start + 10))
+    // bureau_create_team writes its own TEAM_CREATE row; a second logAction here
+    // would double-file on success and file at all on failure.
+    expect(block).not.toContain('logAction')
+  })
+
+  it('never lets the client star-select a column-restricted table', () => {
+    // 2026100306 revokes table-wide SELECT on players from `authenticated` and
+    // grants it back column by column, deliberately withholding the credential
+    // and device-binding columns. `SELECT *` references every column, so a
+    // `.from('players').select('*…')` would be refused outright and the session
+    // load would fail with "permission denied for table players". `teams` is not
+    // restricted, so its embeds are free to use `*`.
+    const app = readFileSync(join(ROOT, 'src/app/providers/AppProvider.tsx'), 'utf8')
+    const playersReads = app.match(/\.from\('players'\)[\s\S]{0,200}?\.select\(\s*'([^']*)'/g) ?? []
+    expect(playersReads.length).toBeGreaterThan(0)
+    for (const read of playersReads) {
+      expect(read, 'a players read must name its columns').not.toMatch(/\.select\(\s*'\*/)
+    }
+  })
+})
+
 describe('a solve is scored exactly once', () => {
   /**
    * The definition of submit_puzzle_answer that is actually in force after the

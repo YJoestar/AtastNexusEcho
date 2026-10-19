@@ -44,7 +44,12 @@ Deno.serve(async (req: Request) => {
     if (gameState && typeof gameState === 'object' && 'error' in gameState && gameState.error) {
       const reason = typeof gameState.error === 'string' ? gameState.error : 'No team found for player'
       console.error('get_team_game_state reported a refusal:', reason)
-      return /not found for player/i.test(reason)
+      // get_team_game_state answers exactly two refusals in its payload:
+      // 'No team found for player' (the token carries no team — read it as 403,
+      // authenticated-but-not-authorized) and 'Team not found' (a genuine 404).
+      // The old test was /not found for player/, which matched neither, so both
+      // were answered 404 and the 403 branch was dead code.
+      return /no team/i.test(reason)
         ? errorResponse(403, 'This account is not attached to a team')
         : errorResponse(404, 'Team not found')
     }

@@ -140,7 +140,7 @@ describe('player session', () => {
   })
 
   it('restores a finished team, whose own row was once unreadable', async () => {
-    // `select('*, teams(*)')` resolves the embed under the "Players can read own
+    // The player read's `teams(*)` embed resolves under the "Players can read own
     // team" policy, and that policy used to exclude COMPLETED, DISQUALIFIED,
     // ABANDONED and RESET. PostgREST returns NULL for a to-one embed the caller
     // cannot read, rather than an error, so there is no status code to branch

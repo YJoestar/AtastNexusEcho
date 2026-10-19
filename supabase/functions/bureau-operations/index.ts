@@ -36,6 +36,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
 import { encryptLoginCode, decryptLoginCode } from '../_shared/loginCodeCipher.ts'
 import { BadRequestError, readJsonObject } from '../_shared/request.ts'
 import { preflightOrMethodError, dbError } from '../_shared/http.ts'
+import { clientAddress } from '../_shared/clientKey.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -192,8 +193,11 @@ Deno.serve(async (req: Request) => {
       },
     )
 
-    // Get client IP for audit logging
-    const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
+    // Get client IP for audit logging. The first X-Forwarded-For entry is
+    // client-supplied, so an attacker could forge the address written to the
+    // audit log. clientAddress takes the platform-trusted value instead — the
+    // same helper player-login keys its rate limit on.
+    const clientIp = clientAddress(req.headers)
 
     // Store each issued code encrypted so the admin can display that same code
     // again later without it ever being written to the database in the clear.
@@ -625,9 +629,16 @@ email_confirm: true,
           p_team_name: teamName,
         })
 
-        await logAction('TEAM_CREATE', data?.[0]?.team_id)
-
         if (error) return dbErrorResponse(error)
+
+        // bureau_create_team writes its own TEAM_CREATE audit row, so the edge
+        // function must not record a second one. (It used to log unconditionally
+        // *before* the error check, which also wrote an audit entry for a
+        // creation that had failed.)
+        if (!data || !data[0]) {
+          console.error('bureau_create_team returned no row')
+          return jsonResponse(500, { error: 'Team creation failed' })
+        }
 
         return jsonResponse(200, {
           success: true,
@@ -658,9 +669,18 @@ email_confirm: true,
           p_role: role,
         })
 
-        await logAction('ROLE_ASSIGN', teamId, data?.[0]?.player_id, { displayName, role })
-
         if (error) return dbErrorResponse(error)
+
+        // bureau_add_player does not log on its own, so this is the only audit
+        // row — but it is written only once the call is known to have succeeded.
+        // Logging first recorded a ROLE_ASSIGN entry for a player that was never
+        // added (for example the SQL role-uniqueness RAISE).
+        if (!data || !data[0]) {
+          console.error('bureau_add_player returned no row')
+          return jsonResponse(500, { error: 'Player creation failed' })
+        }
+
+        await logAction('ROLE_ASSIGN', teamId, data[0].player_id, { displayName, role })
 
         return jsonResponse(200, {
           success: true,
@@ -684,9 +704,14 @@ email_confirm: true,
           .from('players')
           .select('team_id')
           .eq('id', playerId)
-          .single()
+          .maybeSingle()
 
-        if (playerError || !playerData) {
+        // Distinguish "no such player" (404) from a database fault (500). The old
+        // `playerError || !playerData` collapsed a failed lookup into the same 404
+        // as a missing row, so an outage looked like a bad id.
+        if (playerError) return dbErrorResponse(playerError)
+
+        if (!playerData) {
           return jsonResponse(404, { error: 'Player not found' })
         }
 
@@ -761,9 +786,14 @@ email_confirm: true,
           .from('teams')
           .select('id, code, name')
           .eq('id', teamId)
-          .single()
+          .maybeSingle()
 
-        if (teamError || !team) {
+        // "No such team" (404) and "the lookup failed" (500) are different
+        // answers. Collapsing them told the Bureau a team did not exist when the
+        // database was simply unreachable.
+        if (teamError) return dbErrorResponse(teamError)
+
+        if (!team) {
           return jsonResponse(404, { error: 'Team not found' })
         }
 
@@ -998,32 +1028,44 @@ email_confirm: true,
         if (!playerId || !newRole) return jsonResponse(400, { error: 'playerId and newRole are required' })
 
         // Check if role is locked
-        const { data: player } = await supabaseAdmin
+        const { data: player, error: playerError } = await supabaseAdmin
           .from('players')
           .select('team_id, role')
           .eq('id', playerId)
-          .single()
+          .maybeSingle()
+
+        if (playerError) return dbErrorResponse(playerError)
 
         if (!player) return jsonResponse(404, { error: 'Player not found' })
 
-        const { data: team } = await supabaseAdmin
+        const { data: team, error: teamError } = await supabaseAdmin
           .from('teams')
           .select('status')
           .eq('id', player.team_id)
-          .single()
+          .maybeSingle()
 
-        if (team && ['ACTIVE', 'PAUSED', 'COMPLETED'].includes(team.status)) {
+        if (teamError) return dbErrorResponse(teamError)
+
+        // A missing team row must not read as "role not locked". This is the
+        // authorization check that keeps roles fixed once the game is running,
+        // and the old `team && [...]` skipped it whenever the lookup returned
+        // nothing — including when the read itself had failed.
+        if (!team) return jsonResponse(404, { error: 'Team not found' })
+
+        if (['ACTIVE', 'PAUSED', 'COMPLETED'].includes(team.status)) {
           return jsonResponse(403, { error: 'Role is locked after game start' })
         }
 
         // Check role uniqueness
-        const { data: existing } = await supabaseAdmin
+        const { data: existing, error: existingError } = await supabaseAdmin
           .from('players')
           .select('id')
           .eq('team_id', player.team_id)
           .eq('role', newRole)
           .neq('id', playerId)
-          .single()
+          .maybeSingle()
+
+        if (existingError) return dbErrorResponse(existingError)
 
         if (existing) return jsonResponse(409, { error: `Role ${newRole} is already assigned to another player` })
 

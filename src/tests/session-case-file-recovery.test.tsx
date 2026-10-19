@@ -1,9 +1,9 @@
 /**
  * Session recovery: a valid session whose case file cannot be read.
  *
- * `AppProvider` restores a session with `.from('players').select('*, teams(*)')`,
- * which PostgREST resolves as a to-one embed evaluated under the caller's RLS
- * policy. A refused row comes back as NULL, not as an error, so there is no
+ * `AppProvider` restores a session by reading the roster row and embedding
+ * `teams(*)`, which PostgREST resolves as a to-one embed evaluated under the
+ * caller's RLS policy. A refused row comes back as NULL, not as an error, so there is no
  * status code to branch on - and the old handler dereferenced it. The TypeError
  * was swallowed, player and team stayed null, `isAuthenticated` was false, and a
  * player who had just logged in successfully was bounced back to the login form

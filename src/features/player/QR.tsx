@@ -353,6 +353,18 @@ export function PlayerQR() {
         return
       }
 
+      // The decoder import is a second await, and EXIT can be tapped while it is
+      // still pending. Stopping the scan releases the camera and unmounts the
+      // <video>; without this re-check the code below would flip the closed
+      // scanner back to SCANNING, which hides the exit control and remounts a
+      // <video> with no source — a black viewfinder with no way out until the
+      // page is reloaded. (The same guard already protects the getUserMedia
+      // await above.)
+      if (!isMountedRef.current || !armingRef.current) {
+        releaseCamera()
+        return
+      }
+
       setCameraState('CAMERA_READY')
 
       if (videoRef.current) {

@@ -101,7 +101,12 @@ const RATE_LIMIT_PATTERNS = /rate limit|too many/i
  */
 function mapRpcErrorToStatus(message: string): number {
   if (RATE_LIMIT_PATTERNS.test(message)) return 429
-  if (/no team|not authentic/i.test(message)) return 401
+  // "No team found for player" is a valid token that carries no team row:
+  // authenticated but not authorized to act as a player. That is 403, never 401
+  // — a 401 would send the caller back to re-authenticate with credentials that
+  // already work. (No SQL in the migration history raises "not authentic"; the
+  // old alternation matched nothing real.)
+  if (/no team/i.test(message)) return 403
   // An authenticated Observer or Analyst is permitted but not authorized
   // to submit: the conclusion is the Operator's to enter. 403, never 401.
   if (/forbidden|permission|operator/i.test(message)) return 403

@@ -1,6 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
 import { BadRequestError, readJsonObject, requireString } from '../_shared/request.ts'
-import { dbError, preflightOrMethodError } from '../_shared/http.ts'
+import { dbError, isPlayerSafeRpcMessage, preflightOrMethodError } from '../_shared/http.ts'
 import { AuthError, requireBearerToken, requireVerifiedUser } from '../_shared/auth.ts'
 
 const corsHeaders = {
@@ -81,9 +81,13 @@ Deno.serve(async (req: Request) => {
     if (data && typeof data === 'object' && 'error' in data && data.error) {
       const reason = typeof data.error === 'string' ? data.error : 'Unknown error'
       console.error('scan_qr_code reported a refusal:', reason)
-      return /no team found for player/i.test(reason)
+      // scan_qr_code answers its refusals in its payload. 'No team found' means
+      // the token carries no team — authenticated but not authorized to scan, so
+      // 403, never a 400 that blames the marker. Any other reason is passed on
+      // only if it is a message our own SQL wrote, so schema text cannot leak.
+      return /no team/i.test(reason)
         ? errorResponse(403, 'This account is not attached to a team')
-        : errorResponse(400, reason)
+        : errorResponse(400, isPlayerSafeRpcMessage(reason) ? reason : 'That code could not be scanned')
     }
 
     return jsonResponse(200, { success: true, result: data })

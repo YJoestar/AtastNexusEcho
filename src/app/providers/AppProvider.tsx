@@ -236,9 +236,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const loadPlayerSession = useCallback(async (authUserId: string) => {
     try {
+      // The roster read names its columns. `*` would also reference the
+      // credential and device-binding columns that 2026100306 withholds from the
+      // `authenticated` role (it grants SELECT column by column), and Postgres
+      // refuses a `SELECT *` that touches a column the role cannot read — so the
+      // whole session load failed with "permission denied for table players" and
+      // the guard bounced the player to login. The list below is exactly the
+      // granted, client-facing set; the withheld fields are read server-side by
+      // bureau-operations, never here.
       const { data: playerData, error } = await supabase
         .from('players')
-        .select('*, teams(*)')
+        .select(
+          'id, team_id, role, display_name, joined_at, is_connected, last_seen_at, created_at, status, auth_user_id, teams(*)',
+        )
         .eq('auth_user_id', authUserId)
         .single()
 
@@ -255,13 +265,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
         joinedAt: playerData.joined_at ?? '',
         isConnected: playerData.is_connected ?? false,
         lastSeenAt: playerData.last_seen_at,
-        deviceInfo: playerData.device_info as unknown as Player['deviceInfo'],
         status: playerData.status as PlayerStatus,
         createdAt: playerData.created_at,
-        loginCodeHash: playerData.login_code_hash,
         authUserId: playerData.auth_user_id,
-        deviceSessionToken: playerData.device_session_token,
-        deviceFingerprintHash: playerData.device_fingerprint_hash,
+        // Credential and device-binding fields are not readable by the client
+        // role at all (2026100306 keeps them off the grant), so they are never
+        // requested and never carried on the session object. Nothing in the UI
+        // reads them; the Bureau reads them server-side through bureau-operations.
+        loginCodeHash: null,
+        deviceSessionToken: null,
+        deviceFingerprintHash: null,
       }
 
       const t = playerData.teams
