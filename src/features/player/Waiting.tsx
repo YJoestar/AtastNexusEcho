@@ -136,17 +136,17 @@ export function PlayerWaiting() {
           <div className="grid grid-cols-3 gap-3 text-center">
             <div className="nexus-ops-panel p-3">
               <BureauIcons.Users className="bureau-icon w-5 h-5 text-nexus-accent mx-auto mb-2" />
-              <p className="text-[0.56rem] uppercase tracking-[0.2em] text-nexus-textSubtle">Team</p>
+              <p className="text-[0.55rem] uppercase tracking-[0.2em] text-nexus-textSubtle">Team</p>
               <p className="font-mono text-lg text-nexus-text">{team.code}</p>
             </div>
             <div className="nexus-ops-panel p-3">
               <BureauIcons.Clock className="bureau-icon w-5 h-5 text-nexus-warning mx-auto mb-2" />
-              <p className="text-[0.56rem] uppercase tracking-[0.2em] text-nexus-textSubtle">Slot</p>
+              <p className="text-[0.55rem] uppercase tracking-[0.2em] text-nexus-textSubtle">Slot</p>
               <p className="font-mono text-lg text-nexus-text">3h</p>
             </div>
             <div className="nexus-ops-panel p-3">
               <BureauIcons.Shield className="bureau-icon w-5 h-5 text-nexus-info mx-auto mb-2" />
-              <p className="text-[0.56rem] uppercase tracking-[0.2em] text-nexus-textSubtle">Role</p>
+              <p className="text-[0.55rem] uppercase tracking-[0.2em] text-nexus-textSubtle">Role</p>
               <p className="text-base font-medium text-nexus-text">{ROLE_LABELS[player.role]}</p>
             </div>
           </div>

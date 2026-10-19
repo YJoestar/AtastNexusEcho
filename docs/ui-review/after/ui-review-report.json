@@ -1,0 +1,177 @@
+{
+  "player-login-mobile": {
+    "audit": {
+      "overflow": [],
+      "hScroll": 0,
+      "fontSize": 7,
+      "fontFamily": 2,
+      "borderRadius": [],
+      "boxShadow": 3
+    },
+    "errors": []
+  },
+  "player-login-desktop": {
+    "audit": {
+      "overflow": [],
+      "hScroll": 0,
+      "fontSize": 7,
+      "fontFamily": 2,
+      "borderRadius": [],
+      "boxShadow": 3
+    },
+    "errors": []
+  },
+  "player-hub-mobile": {
+    "audit": {
+      "overflow": [],
+      "hScroll": 0,
+      "fontSize": 12,
+      "fontFamily": 3,
+      "borderRadius": [
+        "9999px"
+      ],
+      "boxShadow": 3
+    },
+    "errors": [
+      "Failed to load resource: net::ERR_NAME_NOT_RESOLVED",
+      "[callBureau] non-2xx from bureau-operations: [object Object]",
+      "Failed to load resource: the server responded with a status of 404 (Not Found)"
+    ]
+  },
+  "player-hub-desktop": {
+    "audit": {
+      "overflow": [],
+      "hScroll": 0,
+      "fontSize": 12,
+      "fontFamily": 3,
+      "borderRadius": [
+        "9999px"
+      ],
+      "boxShadow": 3
+    },
+    "errors": [
+      "Failed to load resource: net::ERR_NAME_NOT_RESOLVED",
+      "[callBureau] non-2xx from bureau-operations: [object Object]"
+    ]
+  },
+  "player-evidence-mobile": {
+    "audit": {
+      "overflow": [],
+      "hScroll": 0,
+      "fontSize": 15,
+      "fontFamily": 4,
+      "borderRadius": [
+        "9999px",
+        "3px",
+        "2px"
+      ],
+      "boxShadow": 6
+    },
+    "errors": [
+      "Failed to load resource: net::ERR_NAME_NOT_RESOLVED",
+      "[callBureau] non-2xx from bureau-operations: [object Object]"
+    ]
+  },
+  "player-evidence-desktop": {
+    "audit": {
+      "overflow": [],
+      "hScroll": 0,
+      "fontSize": 15,
+      "fontFamily": 4,
+      "borderRadius": [
+        "9999px",
+        "3px",
+        "2px"
+      ],
+      "boxShadow": 6
+    },
+    "errors": [
+      "Failed to load resource: net::ERR_NAME_NOT_RESOLVED",
+      "[callBureau] non-2xx from bureau-operations: [object Object]"
+    ]
+  },
+  "player-inventory-mobile": {
+    "audit": {
+      "overflow": [],
+      "hScroll": 0,
+      "fontSize": 10,
+      "fontFamily": 3,
+      "borderRadius": [],
+      "boxShadow": 2
+    },
+    "errors": [
+      "Failed to load resource: net::ERR_NAME_NOT_RESOLVED",
+      "[callBureau] non-2xx from bureau-operations: [object Object]"
+    ]
+  },
+  "player-navigation-mobile": {
+    "audit": {
+      "overflow": [],
+      "hScroll": 0,
+      "fontSize": 12,
+      "fontFamily": 4,
+      "borderRadius": [],
+      "boxShadow": 3
+    },
+    "errors": [
+      "Failed to load resource: net::ERR_NAME_NOT_RESOLVED",
+      "[callBureau] non-2xx from bureau-operations: [object Object]"
+    ]
+  },
+  "player-qr-mobile": {
+    "audit": {
+      "overflow": [],
+      "hScroll": 0,
+      "fontSize": 10,
+      "fontFamily": 3,
+      "borderRadius": [],
+      "boxShadow": 3
+    },
+    "errors": [
+      "Failed to load resource: net::ERR_NAME_NOT_RESOLVED",
+      "[callBureau] non-2xx from bureau-operations: [object Object]"
+    ]
+  },
+  "player-leaderboard-mobile": {
+    "audit": {
+      "overflow": [],
+      "hScroll": 0,
+      "fontSize": 13,
+      "fontFamily": 4,
+      "borderRadius": [],
+      "boxShadow": 2
+    },
+    "errors": [
+      "Failed to load resource: net::ERR_NAME_NOT_RESOLVED",
+      "[callBureau] non-2xx from bureau-operations: [object Object]"
+    ]
+  },
+  "player-notifications-mobile": {
+    "audit": {
+      "overflow": [],
+      "hScroll": 0,
+      "fontSize": 12,
+      "fontFamily": 2,
+      "borderRadius": [],
+      "boxShadow": 3
+    },
+    "errors": [
+      "Failed to load resource: net::ERR_NAME_NOT_RESOLVED",
+      "[callBureau] non-2xx from bureau-operations: [object Object]"
+    ]
+  },
+  "bureau-workstation-desktop": {
+    "audit": {
+      "overflow": [],
+      "hScroll": 0,
+      "fontSize": 10,
+      "fontFamily": 2,
+      "borderRadius": [],
+      "boxShadow": 1
+    },
+    "errors": [
+      "Failed to load resource: net::ERR_NAME_NOT_RESOLVED",
+      "[callBureau] non-2xx from bureau-operations: [object Object]"
+    ]
+  }
+}

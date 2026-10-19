@@ -463,6 +463,26 @@ export function BellOffIcon(props: Props) {
   )
 }
 
+export function SoundIcon(props: Props) {
+  return (
+    <Icon {...props}>
+      <path d="M4 9h4l5-4v14l-5-4H4z" />
+      <path d="M16 9c1.2 1.2 1.2 4.8 0 6" />
+      <path d="M18.5 6.5c2.5 2.5 2.5 8.5 0 11" />
+    </Icon>
+  )
+}
+
+export function SoundOffIcon(props: Props) {
+  return (
+    <Icon {...props}>
+      <path d="M1 1l22 22" />
+      <path d="M4 9h4l5-4v14l-5-4H4z" />
+      <path d="M16 9.5l5 5m0-5l-5 5" />
+    </Icon>
+  )
+}
+
 export function KeyboardIcon(props: Props) {
   return (
     <Icon {...props}>

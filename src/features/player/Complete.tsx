@@ -65,7 +65,7 @@ export function PlayerComplete() {
   }
 
   return (
-    <div className="page">
+    <div className="page nx-wake">
       <div className="page-content max-w-2xl mx-auto space-y-6">
         {/* Completion Banner */}
         <DocumentShell

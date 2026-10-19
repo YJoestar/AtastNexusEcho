@@ -6,12 +6,11 @@
  * StateMarker, Stamp, StatusMark. Bureau glyphs instead of emoji/lucide.
  */
 
-import { Link } from 'react-router-dom'
 import { useGameEngine } from '@/hooks/useGameEngine'
-import { ROUTES } from '@/app/config'
 import { cn } from '@/lib/utils'
 import { useState, useEffect } from 'react'
 import { BureauIcons } from '@/components/bureau'
+import { ScreenHeader } from '@/components/player/ScreenHeader'
 import {
   DocumentShell,
   RegisterColumn,
@@ -52,24 +51,17 @@ export function PlayerLeaderboard() {
   }
 
   return (
-    <div className="page">
+    <div className="page nx-wake">
       <div className="page-content max-w-2xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-4">
-          <Link
-            to={ROUTES.PLAYER_GAME}
-            className="p-2 border border-nexus-borderSubtle text-nexus-textMuted hover:text-nexus-text hover:bg-nexus-surfaceElevated touch-target-primary"
-             aria-label="RETURN TO FIELD"
-          >
-            <BureauIcons.Back className="bureau-icon w-5 h-5" />
-          </Link>
-          <div className="flex-1 min-w-0">
-            <h1 className="heading-3">FIELD OPERATIONS RECORD</h1>
-            <p className="text-nexus-textMuted text-sm">
+        <ScreenHeader
+          title="FIELD OPERATIONS RECORD"
+          subtitle={
+            <p className="text-sm text-nexus-textMuted">
               {lastRefresh.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </p>
-          </div>
-        </div>
+          }
+        />
 
         {/* Current Team Highlight */}
         {team && (
@@ -119,11 +111,11 @@ export function PlayerLeaderboard() {
                       <div className={cn('min-w-0 border-l-2 pl-3', isCurrentTeam ? 'border-nexus-accent' : 'border-transparent')}>
                         <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
                           <span className="font-mono text-xs font-bold text-nexus-accent">{rankMark}</span>
-                          <span className="font-mono text-[0.56rem] text-nexus-textSubtle">{entry.teamCode}</span>
+                          <span className="font-mono text-[0.55rem] text-nexus-textSubtle">{entry.teamCode}</span>
                           <span className="break-words font-medium text-nexus-text">{entry.teamName}</span>
                           {isCurrentTeam && <Stamp variant="verified">YOUR UNIT</Stamp>}
                         </div>
-                        <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 border-t border-nexus-borderSubtle pt-2 font-mono text-[0.56rem] sm:grid-cols-3">
+                        <div className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 border-t border-nexus-borderSubtle pt-2 font-mono text-[0.55rem] sm:grid-cols-3">
                           <span className="text-nexus-textMuted">SCORE / <b className="text-nexus-text">{entry.score.toLocaleString()}</b></span>
                           <span className="text-nexus-textMuted">ELAPSED / <b className="text-nexus-text">{formatTime(entry.elapsedMinutes)}</b></span>
                           <span className="text-nexus-textMuted">CASE / <b className="text-nexus-text">{isCompleted ? 'CLOSED' : 'ACTIVE'}</b></span>

@@ -16,6 +16,7 @@ import { useNarrative } from '@/hooks/useNarrative'
 import { useCampusMapState, useTeamMemberPositions } from '@/hooks/useCampusMap'
 import { ROUTES } from '@/app/config'
 import { BureauIcons } from '@/components/bureau'
+import { ScreenHeader } from '@/components/player/ScreenHeader'
 import {
   DocumentShell,
   RegisterColumn,
@@ -88,32 +89,21 @@ export function PlayerNavigation() {
   }
 
   return (
-    <div className="page" data-horror={narrative.level}>
+    <div className="page nx-wake" data-horror={narrative.level}>
       <div className="page-content max-w-6xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <Link
-              to={ROUTES.PLAYER_GAME}
-              className="p-2 border border-nexus-borderSubtle text-nexus-textMuted hover:text-nexus-text touch-target-primary"
-              aria-label="Back to game"
-            >
-              <BureauIcons.Back className="bureau-icon w-5 h-5" />
-            </Link>
-            <div>
-              <h1 className="heading-3">Site Map</h1>
-              <p className="text-nexus-textMuted text-sm">
-                {narrative.observation}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="font-mono text-sm tabular-nums text-nexus-textMuted">
-              {solvedCount} / {totalNodes}
-            </span>
-            <Stamp variant="archived">Case 037</Stamp>
-          </div>
-        </div>
+        <ScreenHeader
+          title="Site Map"
+          subtitle={<p className="text-sm text-nexus-textMuted">{narrative.observation}</p>}
+          actions={
+            <>
+              <span className="whitespace-nowrap font-mono text-sm tabular-nums text-nexus-textMuted">
+                {solvedCount} / {totalNodes}
+              </span>
+              <Stamp variant="archived">Case 037</Stamp>
+            </>
+          }
+        />
 
         {/* Campus Map + Minimap */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

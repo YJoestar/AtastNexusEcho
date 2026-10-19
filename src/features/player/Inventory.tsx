@@ -12,6 +12,7 @@ import { useGameEngine } from '@/hooks/useGameEngine'
 import { ROUTES } from '@/app/config'
 import { useInvestigationWorkspace } from '@/hooks/useInvestigationWorkspace'
 import { BureauIcons, FileTabs } from '@/components/bureau'
+import { ScreenHeader } from '@/components/player/ScreenHeader'
 import {
   DocumentShell,
   RegisterColumn,
@@ -131,7 +132,7 @@ export function PlayerInventory() {
 
   if (isLoading('inventory') && !inventory) {
     return (
-      <div className="page">
+      <div className="page nx-wake">
         <div className="page-content max-w-2xl mx-auto py-12">
           <DocumentShell
             reference="Inventory"
@@ -153,32 +154,30 @@ export function PlayerInventory() {
     <div className="page">
       <div className="page-content max-w-2xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-2">
-          <Link
-            to={ROUTES.PLAYER_GAME}
-            className="p-2 border border-nexus-borderSubtle text-nexus-textMuted hover:text-nexus-text hover:bg-nexus-surfaceElevated touch-target-primary"
-            aria-label="RETURN TO FIELD"
-          >
-            <BureauIcons.Back className="bureau-icon w-5 h-5" />
-          </Link>
-          <div className="flex-1 min-w-0">
-            <h1 className="heading-3 leading-tight text-[0.95rem]">RECOVERED OBJECT REGISTER</h1>
-            <p className="font-mono text-[0.56rem] uppercase tracking-[0.12em] text-nexus-textMuted">
+        <ScreenHeader
+          title="RECOVERED OBJECT REGISTER"
+          titleClassName="leading-tight text-[0.95rem]"
+          subtitle={
+            <p className="font-mono text-[0.625rem] uppercase tracking-[0.12em] text-nexus-textMuted">
               {filteredItems.length.toString().padStart(2, '0')} OBJECTS / {fragments.length.toString().padStart(2, '0')} FRAGMENTS
             </p>
-          </div>
-          <Link to={ROUTES.PLAYER_EVIDENCE} className="min-h-10 border border-nexus-accent px-2 py-2 font-mono text-[0.5rem] uppercase text-nexus-accent">
-            CASE ARCHIVE
-          </Link>
-          <button
-            onClick={() => fetchInventory()}
-            className="p-2 border border-nexus-borderSubtle text-nexus-textMuted hover:text-nexus-text hover:bg-nexus-surfaceElevated touch-target-primary"
-            aria-label="Recalibrate inventory"
-            title="RECALIBRATE"
-          >
-            <BureauIcons.Refresh className="bureau-icon w-4 h-4" />
-          </button>
-        </div>
+          }
+          actions={
+            <>
+              <Link to={ROUTES.PLAYER_EVIDENCE} className="min-h-10 border border-nexus-accent px-2 py-2 font-mono text-[0.625rem] uppercase text-nexus-accent transition-colors duration-fast hover:bg-nexus-surfaceElevated">
+                CASE ARCHIVE
+              </Link>
+              <button
+                onClick={() => fetchInventory()}
+                className="p-2 border border-nexus-borderSubtle text-nexus-textMuted hover:text-nexus-text hover:bg-nexus-surfaceElevated touch-target-primary transition-colors duration-fast"
+                aria-label="Recalibrate inventory"
+                title="RECALIBRATE"
+              >
+                <BureauIcons.Refresh className="bureau-icon w-4 h-4" />
+              </button>
+            </>
+          }
+        />
 
         {/* Search & Filter */}
         <RegisterColumn heading="ARCHIVE QUERY / OBJECT CLASS">
@@ -210,8 +209,8 @@ export function PlayerInventory() {
                   trailing={
                     <div className="flex flex-wrap items-center justify-end gap-1">
                       {frag.type && <Stamp variant="anomalous" impressed>{frag.type}</Stamp>}
-                      <Link to={`${ROUTES.PLAYER_EVIDENCE}?artifact=${encodeURIComponent(`fragment:${frag.code}`)}`} className="min-h-9 border border-nexus-accent px-2 py-2 font-mono text-[0.5rem] uppercase text-nexus-accent">EXAMINE</Link>
-                      <button type="button" onClick={() => placeItemOnTable(frag.code, 'fragment')} disabled={!!workspace.placements[`fragment:${frag.code}`]} className="min-h-9 border border-nexus-border px-2 font-mono text-[0.5rem] uppercase text-nexus-textSubtle disabled:opacity-45">
+                      <Link to={`${ROUTES.PLAYER_EVIDENCE}?artifact=${encodeURIComponent(`fragment:${frag.code}`)}`} className="min-h-9 border border-nexus-accent px-2 py-2 font-mono text-[0.55rem] uppercase text-nexus-accent">EXAMINE</Link>
+                      <button type="button" onClick={() => placeItemOnTable(frag.code, 'fragment')} disabled={!!workspace.placements[`fragment:${frag.code}`]} className="min-h-9 border border-nexus-border px-2 font-mono text-[0.55rem] uppercase text-nexus-textSubtle disabled:opacity-45">
                         {workspace.placements[`fragment:${frag.code}`] ? 'ON TABLE' : 'PLACE'}
                       </button>
                     </div>
@@ -253,7 +252,7 @@ export function PlayerInventory() {
                         </span>
                       )}
                       <button
-                        className="min-h-9 border border-nexus-borderSubtle px-2 font-mono text-[0.5rem] uppercase text-nexus-textSubtle hover:text-nexus-text"
+                        className="min-h-9 border border-nexus-borderSubtle px-2 font-mono text-[0.55rem] uppercase text-nexus-textSubtle hover:text-nexus-text"
                         type="button"
                         onClick={() => placeItemOnTable(item.code)}
                         disabled={!!workspace.placements[`inventory:${item.code}`]}
@@ -263,7 +262,7 @@ export function PlayerInventory() {
                       </button>
                       <Link
                         to={`${ROUTES.PLAYER_EVIDENCE}?artifact=${encodeURIComponent(`inventory:${item.code}`)}`}
-                        className="min-h-9 border border-nexus-accent px-2 py-2 font-mono text-[0.5rem] uppercase text-nexus-accent"
+                        className="min-h-9 border border-nexus-accent px-2 py-2 font-mono text-[0.55rem] uppercase text-nexus-accent"
                       >
                         EXAMINE
                       </Link>

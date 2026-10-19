@@ -87,7 +87,7 @@ export function CompareStation({ artifacts, pair, workspace, onUpdate, renderRec
       {announced.length > 0 && (
         <div role="status" className="space-y-1">
           {announced.map(clue => (
-            <p key={clue.id} className="border-l-2 border-nexus-warning bg-nexus-warningBg/20 px-3 py-2 font-mono text-[0.58rem] uppercase tracking-[0.1em] text-nexus-warning">
+            <p key={clue.id} className="border-l-2 border-nexus-warning bg-nexus-warningBg/20 px-3 py-2 font-mono text-[0.55rem] uppercase tracking-[0.1em] text-nexus-warning">
               {DISCOVERY_NOTICE[clue.category]} / {clue.evidence.join(' ↔ ')}
             </p>
           ))}
@@ -105,7 +105,7 @@ export function CompareStation({ artifacts, pair, workspace, onUpdate, renderRec
       {mode === 'TIMELINE' && <TimelineView a={a} b={b} />}
 
       <section aria-label="Recorded findings" className="border-t border-nexus-borderSubtle pt-2">
-        <h3 className="font-mono text-[0.52rem] uppercase tracking-[0.14em] text-nexus-textSubtle">
+        <h3 className="font-mono text-[0.55rem] uppercase tracking-[0.14em] text-nexus-textSubtle">
           RECORDED FINDINGS FOR THIS PAIR / {recorded.length.toString().padStart(2, '0')}
         </h3>
         {recorded.length === 0 ? (
@@ -114,7 +114,7 @@ export function CompareStation({ artifacts, pair, workspace, onUpdate, renderRec
           <ul className="mt-1 space-y-2">
             {recorded.map(clue => (
               <li key={clue.id} className="grid grid-cols-[auto_1fr] gap-x-3 text-sm">
-                <span className="font-mono text-[0.52rem] uppercase text-nexus-warning">
+                <span className="font-mono text-[0.55rem] uppercase text-nexus-warning">
                   {clue.category} / {clueStatus(clue, workspace.discoveries, workspace.hypotheses, idByCode)}
                 </span>
                 <span className="text-nexus-textMuted">{clue.meaning}</span>

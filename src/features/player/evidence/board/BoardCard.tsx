@@ -106,7 +106,7 @@ function BoardCardImpl(props: BoardCardProps) {
           className="min-w-0 flex-1 text-left"
           aria-pressed={isSelected}
         >
-          <span className="block font-mono text-[0.5rem] uppercase tracking-[0.14em] opacity-70">
+          <span className="block font-mono text-[0.55rem] uppercase tracking-[0.14em] opacity-70">
             {MEDIUM_LABEL[medium] ?? medium} / {artifact.code}
           </span>
           <span className="mt-0.5 block break-words font-type text-[0.82rem] font-bold leading-tight">{artifact.title}</span>

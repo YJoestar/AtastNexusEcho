@@ -20,7 +20,9 @@ import { useGameEngine } from '@/hooks/useGameEngine'
 import { ROUTES } from '@/app/config'
 import { cn } from '@/lib/utils'
 import { FINAL_NODE } from '@/content/puzzles'
+import { FINAL_READINESS_TARGETS } from '@/content/constants'
 import { BureauIcons } from '@/components/bureau'
+import { ScreenHeader } from '@/components/player/ScreenHeader'
 import {
   DocumentShell,
   Field,
@@ -119,30 +121,19 @@ export function PlayerFinal() {
   }
 
   const requirements = [
-    { label: 'Evidence Verified', count: evidenceCount, required: 5 },
-    { label: 'Inventory Items', count: inventoryCount, required: 3 },
-    { label: 'Decoded Fragments', count: fragmentsCount, required: 7 },
+    { label: 'Evidence Verified', count: evidenceCount, required: FINAL_READINESS_TARGETS.evidence },
+    { label: 'Inventory Items', count: inventoryCount, required: FINAL_READINESS_TARGETS.inventoryItems },
+    { label: 'Decoded Fragments', count: fragmentsCount, required: FINAL_READINESS_TARGETS.fragments },
   ]
 
   return (
-    <div className="page">
+    <div className="page nx-wake">
       <div className="page-content max-w-2xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-4">
-          <Link
-            to={ROUTES.PLAYER_GAME}
-            className="p-2 border border-nexus-borderSubtle text-nexus-textMuted hover:text-nexus-text touch-target-primary"
-            aria-label="RETURN TO FIELD"
-          >
-            <BureauIcons.Back className="bureau-icon w-5 h-5" />
-          </Link>
-          <div>
-            <h1 className="heading-3">Final Protocol</h1>
-            <p className="text-nexus-textMuted text-sm">
-              The culminating investigation challenge
-            </p>
-          </div>
-        </div>
+        <ScreenHeader
+          title="Final Protocol"
+          subtitle={<p className="text-sm text-nexus-textMuted">The culminating investigation challenge</p>}
+        />
 
         {/* Phase Indicator */}
         <DocumentShell

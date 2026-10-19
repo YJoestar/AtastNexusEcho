@@ -53,7 +53,7 @@ export function PlayerNotifications() {
   )
 
   return (
-    <div className="page">
+    <div className="page nx-wake">
       <div className="page-content max-w-2xl mx-auto">
         <header className="mb-5 flex items-center gap-3 border-b border-nexus-border pb-3">
           <div className="min-w-0 flex-1">
@@ -106,7 +106,7 @@ export function PlayerNotifications() {
                   <div className="flex items-center gap-2 flex-wrap">
                     {!n.isRead && <StateMarker glyph="●" tone="active" label="UNREAD" />}
                     <Stamp variant={stamp.variant} impressed>{stamp.label}</Stamp>
-                    <time className="font-mono text-[0.58rem] uppercase tracking-[0.1em] text-nexus-textSubtle">
+                    <time className="font-mono text-[0.55rem] uppercase tracking-[0.1em] text-nexus-textSubtle">
                       {formatDateTime(n.createdAt)}
                     </time>
                   </div>
@@ -129,7 +129,7 @@ export function PlayerNotifications() {
         )}
 
         <div className="mt-6 flex items-center justify-center gap-2 text-xs text-nexus-textSubtle">
-          <span className="font-mono text-[0.52rem] uppercase tracking-[0.12em]">
+          <span className="font-mono text-[0.55rem] uppercase tracking-[0.12em]">
             DISTRIBUTION / TEAM CHANNEL ONLY / PLAYER RECORDS WITHHELD
           </span>
         </div>

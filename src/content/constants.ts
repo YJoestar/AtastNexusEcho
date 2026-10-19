@@ -42,3 +42,16 @@ export const ANTI_SPAM_COOLDOWN_SECONDS = 3 as const
 export const DEFAULT_GAME_DURATION_MINUTES = 180 as const
 
 export const LOGIN_CODE_TTL_MINUTES = 15 as const
+
+/**
+ * Display-only readiness indicators shown on the player's Final Protocol
+ * checklist. These do NOT gate submission — the finale unlocks when every
+ * other node is solved (see PlayerFinal), and the server validates the
+ * answer. They exist so the team can see how much material they have
+ * gathered before walking into the culminating challenge.
+ */
+export const FINAL_READINESS_TARGETS = {
+  evidence: 5,
+  inventoryItems: 3,
+  fragments: 7,
+} as const

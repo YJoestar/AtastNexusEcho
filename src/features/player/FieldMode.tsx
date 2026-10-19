@@ -7,9 +7,11 @@
 
 import { useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
+import { useApp } from '@/app/providers'
 import { useGameEngine } from '@/hooks/useGameEngine'
 import { useInvestigationWorkspace } from '@/hooks/useInvestigationWorkspace'
 import { ROUTES } from '@/app/config'
+import { formatTime } from '@/lib/time'
 import { cn } from '@/lib/utils'
 import { BureauIcons } from '@/components/bureau'
 
@@ -19,6 +21,7 @@ export function FieldMode() {
     gameState,
     inventory,
   } = useGameEngine()
+  const { notifications } = useApp()
   const { workspace } = useInvestigationWorkspace(team?.id)
 
   const [showLog, setShowLog] = useState(false)
@@ -47,6 +50,15 @@ export function FieldMode() {
     const item = inventory?.evidence.find(e => e.code === code.replace('evidence:', ''))
     return item ? item.title : code.replace('evidence:', '')
   }, [inventory, workspace.revelations])
+
+  // The field log is the team's real activity feed — the newest bureau
+  // notifications, newest first. Nothing is synthesised: an empty case
+  // honestly reads as an empty log.
+  const fieldLog = useMemo(() => {
+    return [...notifications]
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 4)
+  }, [notifications])
 
   if (!team) return null
 
@@ -123,11 +135,32 @@ export function FieldMode() {
             {showLog && (
               <section aria-label="Field log" className="space-y-2">
                 <h2 className="font-mono text-[0.7rem] uppercase tracking-[0.2em] text-nexus-textSubtle">RECENT ACTIVITY</h2>
-                <div className="border border-nexus-borderSubtle p-3">
-                  <p className="font-mono text-xs text-nexus-textMuted">
-                    Field log entries will appear here as the team progresses.
-                  </p>
-                </div>
+                {fieldLog.length > 0 ? (
+                  <ol className="border border-nexus-borderSubtle">
+                    {fieldLog.map(entry => (
+                      <li key={entry.id} className="flex items-start gap-3 border-b border-nexus-borderSubtle/40 p-3 last:border-b-0">
+                        <time
+                          className="shrink-0 font-mono text-[0.625rem] tabular-nums text-nexus-textSubtle"
+                          dateTime={entry.createdAt}
+                        >
+                          {formatTime(entry.createdAt)}
+                        </time>
+                        <div className="min-w-0">
+                          <p className="truncate font-mono text-xs uppercase tracking-[0.1em] text-nexus-textMuted">{entry.title}</p>
+                          {entry.message && (
+                            <p className="truncate text-xs text-nexus-textSubtle">{entry.message}</p>
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
+                ) : (
+                  <div className="border border-nexus-borderSubtle p-3">
+                    <p className="font-mono text-xs text-nexus-textMuted">
+                      NO ACTIVITY RECORDED — the log fills as the case moves.
+                    </p>
+                  </div>
+                )}
               </section>
             )}
           </div>

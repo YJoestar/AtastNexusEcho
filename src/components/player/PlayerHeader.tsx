@@ -9,6 +9,7 @@ import { useApp } from '@/app/providers'
 import { useConnection, type ConnectionStatus } from '@/hooks/useConnection'
 import { useSubmissionQueue } from '@/hooks/useSubmissionQueue'
 import { useGameTimer } from '@/hooks/useGameTimer'
+import { useAudioMute } from '@/hooks/useGameAudio'
 import { ROUTES, ROLE_THEMES } from '@/app/config'
 import { cn } from '@/lib/utils'
 import { BureauIcons } from '@/components/bureau'
@@ -36,6 +37,7 @@ export function PlayerHeader() {
   const { player, team, gameState, isInitializing } = useApp()
   const connection = useConnection()
   const { count: queuedCount } = useSubmissionQueue()
+  const audioMute = useAudioMute()
   const timer = useGameTimer(gameState?.endsAt)
 
   if (!player || !team || isInitializing) {
@@ -70,6 +72,18 @@ export function PlayerHeader() {
               aria-hidden="true"
             />
           </span>
+          <button
+            type="button"
+            onClick={audioMute.toggle}
+            aria-pressed={audioMute.muted}
+            aria-label={audioMute.muted ? 'Sound muted' : 'Sound on'}
+            title={audioMute.muted ? 'SOUND MUTED' : 'SOUND ON'}
+            className="flex items-center justify-center text-nexus-textMuted transition-colors duration-fast hover:text-nexus-text"
+          >
+            {audioMute.muted
+              ? <BureauIcons.SoundOff className="bureau-icon w-4 h-4" aria-hidden="true" />
+              : <BureauIcons.Sound className="bureau-icon w-4 h-4" aria-hidden="true" />}
+          </button>
           {queuedCount > 0 && (
             <span
               className="min-w-[18px] h-[18px] px-1 border border-nexus-warning text-nexus-warning text-[10px] font-bold flex items-center justify-center bg-nexus-bg"

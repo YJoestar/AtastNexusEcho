@@ -15,6 +15,7 @@
  */
 
 import { useState, useRef, useEffect, useCallback, useContext } from 'react'
+import { ScreenHeader } from '@/components/player/ScreenHeader'
 import { Link } from 'react-router-dom'
 import { BureauIcons, Stamp } from '@/components/bureau'
 import { useGameEngine, type QRScanResult } from '@/hooks/useGameEngine'
@@ -441,24 +442,17 @@ export function PlayerQR() {
   }
 
   return (
-    <div className="page">
+    <div className="page nx-wake">
       <div className="page-content max-w-2xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-4">
-          <Link
-            to={ROUTES.PLAYER_GAME}
-            className="p-2 border border-nexus-borderSubtle text-nexus-textMuted hover:text-nexus-text touch-target-primary"
-            aria-label="RETURN TO FIELD"
-          >
-            <BureauIcons.Back className="bureau-icon w-5 h-5" />
-          </Link>
-          <div>
-            <h1 className="heading-3">FIELD SCANNER</h1>
-            <p className="font-mono text-[0.56rem] uppercase tracking-[0.14em] text-nexus-textMuted">
+        <ScreenHeader
+          title="FIELD SCANNER"
+          subtitle={
+            <p className="font-mono text-[0.625rem] uppercase tracking-[0.14em] text-nexus-textMuted">
               FH-037 / Optical acquisition module
             </p>
-          </div>
-        </div>
+          }
+        />
 
         {/* Scanner View */}
         <div className="relative aspect-square min-h-[320px] overflow-hidden border border-nexus-border bg-nexus-bg" data-device="field-scanner">
@@ -472,7 +466,7 @@ export function PlayerQR() {
                 <span className="absolute bottom-0 right-0 h-4 w-4 border-b-2 border-r-2 border-nexus-accent" />
                 <BureauIcons.QrCode className="bureau-icon h-10 w-10 text-nexus-accent" />
               </div>
-              <p className="mb-2 font-mono text-[0.56rem] uppercase tracking-[0.18em] text-nexus-accent">
+              <p className="mb-2 font-mono text-[0.55rem] uppercase tracking-[0.18em] text-nexus-accent">
                 {CAMERA_STATE_LABELS[cameraState].title}
               </p>
               <p className="mb-6 max-w-xs text-sm text-nexus-textMuted">
@@ -536,7 +530,7 @@ export function PlayerQR() {
                         <div className="absolute -bottom-2 -right-2 w-8 h-8 border-b-4 border-r-4 border-nexus-accent" />
                       </div>
                       <div className="absolute left-4 right-4 top-1/2 h-px bg-nexus-accent animate-scanner-pulse" />
-                      <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-mono text-[0.5rem] uppercase tracking-[0.16em] text-nexus-accent/80">
+                      <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-mono text-[0.55rem] uppercase tracking-[0.16em] text-nexus-accent/80">
                         {isResolving ? 'VERIFY' : 'ACQUIRE'}
                       </span>
                     </div>
@@ -603,7 +597,7 @@ export function PlayerQR() {
 
                 {lastResult.manualCode && (
                   <>
-                    <p className="font-mono text-[0.56rem] uppercase tracking-[0.14em] text-nexus-textSubtle">
+                    <p className="font-mono text-[0.55rem] uppercase tracking-[0.14em] text-nexus-textSubtle">
                       MANUAL REFERENCE
                     </p>
                     <p className="font-mono text-base font-bold tracking-[0.08em] text-nexus-text mt-0.5 mb-2 break-all">

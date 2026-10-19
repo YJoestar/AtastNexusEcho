@@ -169,7 +169,7 @@ export function PlayerFieldLog() {
   })
 
   return (
-    <div className="page">
+    <div className="page nx-wake">
       <div className="page-content max-w-2xl mx-auto">
         <header className="mb-5 flex items-center gap-3 border-b border-nexus-border pb-3">
           <div className="min-w-0 flex-1">
@@ -197,7 +197,7 @@ export function PlayerFieldLog() {
             {dateGroups.map(dateKey => (
               <div key={dateKey} className="px-1 py-2 border-b border-nexus-borderSubtle/50 bg-nexus-surfaceElevated/50">
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="font-mono text-[0.52rem] uppercase tracking-[0.18em] text-nexus-textSubtle">
+                  <span className="font-mono text-[0.55rem] uppercase tracking-[0.18em] text-nexus-textSubtle">
                     {dateKey}
                   </span>
                   <span className="h-px flex-1 bg-nexus-borderSubtle" aria-hidden="true" />
@@ -212,7 +212,7 @@ export function PlayerFieldLog() {
                     >
                       <div className="flex items-start gap-3">
                         <time
-                          className="font-mono text-[0.58rem] uppercase tracking-[0.1em] text-nexus-textSubtle shrink-0 mt-0.5"
+                          className="font-mono text-[0.55rem] uppercase tracking-[0.1em] text-nexus-textSubtle shrink-0 mt-0.5"
                           aria-label={entry.timestamp}
                         >
                           {formatTime(entry.timestamp)}
@@ -246,7 +246,7 @@ export function PlayerFieldLog() {
         )}
 
         <div className="mt-6 flex items-center justify-center gap-2 text-xs text-nexus-textSubtle">
-          <span className="font-mono text-[0.52rem] uppercase tracking-[0.12em]">
+          <span className="font-mono text-[0.55rem] uppercase tracking-[0.12em]">
             FIELD RECORD / TEAM SCOPE ONLY / NOT A COMMS CHANNEL
           </span>
         </div>

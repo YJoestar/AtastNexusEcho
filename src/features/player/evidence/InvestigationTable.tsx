@@ -547,7 +547,7 @@ export function InvestigationTable({ artifacts, workspace, onUpdate, onInspect }
       <header className="flex flex-wrap items-end justify-between gap-3 border-b border-nexus-border pb-2">
         <div>
           <h2 className="font-mono text-xs font-bold uppercase tracking-[0.16em] text-nexus-text">INVESTIGATION TABLE</h2>
-          <p className="mt-1 font-mono text-[0.52rem] uppercase tracking-[0.12em] text-nexus-textSubtle">
+          <p className="mt-1 font-mono text-[0.55rem] uppercase tracking-[0.12em] text-nexus-textSubtle">
             {placed.length.toString().padStart(2, '0')} PLACED / {artifacts.length.toString().padStart(2, '0')} CASE OBJECTS / {liveLinks.length.toString().padStart(2, '0')} LINKS / SAVED ON THIS DEVICE
           </p>
         </div>
@@ -558,7 +558,7 @@ export function InvestigationTable({ artifacts, workspace, onUpdate, onInspect }
           type="button"
           onClick={() => setToolsOpen(open => !open)}
           aria-expanded={toolsOpen}
-          className="min-h-10 w-full border border-nexus-border px-3 text-left font-mono text-[0.58rem] uppercase tracking-[0.12em] text-nexus-textMuted"
+          className="min-h-10 w-full border border-nexus-border px-3 text-left font-mono text-[0.55rem] uppercase tracking-[0.12em] text-nexus-textMuted"
         >
           {toolsOpen ? '[ − ] HIDE TABLE TOOLS' : `[ + ] TABLE TOOLS / SEARCH / ADD OBJECTS / ${unplaced.length} IN ARCHIVE`}
         </button>
@@ -583,7 +583,7 @@ export function InvestigationTable({ artifacts, workspace, onUpdate, onInspect }
 
       {unplaced.length > 0 && (
         <div className="flex flex-wrap items-center gap-2 border-b border-nexus-borderSubtle pb-3">
-          <label htmlFor="table-artifact" className="font-mono text-[0.52rem] uppercase tracking-[0.12em] text-nexus-textSubtle">ADD RECOVERED OBJECT</label>
+          <label htmlFor="table-artifact" className="font-mono text-[0.55rem] uppercase tracking-[0.12em] text-nexus-textSubtle">ADD RECOVERED OBJECT</label>
           <select id="table-artifact" value={placeCode} onChange={event => setPlaceCode(event.target.value)} className="min-h-10 min-w-0 flex-1 border border-nexus-border bg-nexus-bg px-2 font-mono text-xs text-nexus-text">
             <option value="">SELECT FROM CASE ARCHIVE</option>
             {unplaced.map(artifact => <option key={artifact.id} value={artifact.id}>{artifact.code} / {artifact.title}</option>)}
@@ -664,7 +664,7 @@ export function InvestigationTable({ artifacts, workspace, onUpdate, onInspect }
 
             {placed.length === 0 && (
               <div className="pointer-events-none absolute left-1/2 top-1/2 w-72 -translate-x-1/2 -translate-y-1/2 border-l border-[#b5ae96] pl-4 font-mono">
-                <p className="text-[0.56rem] uppercase tracking-[0.16em] text-[#d3b87b]">TABLE / UNSET</p>
+                <p className="text-[0.55rem] uppercase tracking-[0.16em] text-[#d3b87b]">TABLE / UNSET</p>
                 <p className="mt-2 text-xs text-[#c0bcaf]">No objects placed. The archive remains intact.</p>
                 <p className="mt-1 text-xs text-[#9a9684]">Open a record and tap ADD TO BOARD, or use the board tools, then arrange and connect records here.</p>
               </div>
@@ -672,7 +672,7 @@ export function InvestigationTable({ artifacts, workspace, onUpdate, onInspect }
           </div>
 
           {(selected.length > 0 || selectedLink) && (
-            <div className={`absolute inset-x-3 bottom-3 flex items-center justify-between gap-2 border border-[#d3b87b]/60 bg-[#17160f]/95 px-3 py-2 font-mono text-[0.58rem] uppercase text-[#e0d6b8] ${wide ? 'hidden' : ''}`}>
+            <div className={`absolute inset-x-3 bottom-3 flex items-center justify-between gap-2 border border-[#d3b87b]/60 bg-[#17160f]/95 px-3 py-2 font-mono text-[0.55rem] uppercase text-[#e0d6b8] ${wide ? 'hidden' : ''}`}>
               <span>{selectedLink ? 'LINK SELECTED' : `${selected.length} SELECTED`}</span>
               <span className="flex gap-1">
                 <button type="button" className="min-h-10 border border-[#d3b87b]/50 px-3" onClick={() => inspectorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
@@ -710,7 +710,7 @@ export function InvestigationTable({ artifacts, workspace, onUpdate, onInspect }
             onClear={clearSelection}
           />
           {staleCount > 0 && (
-            <div className="mt-2 flex items-center justify-between gap-2 border border-nexus-border p-2 font-mono text-[0.52rem] uppercase text-nexus-textSubtle">
+            <div className="mt-2 flex items-center justify-between gap-2 border border-nexus-border p-2 font-mono text-[0.55rem] uppercase text-nexus-textSubtle">
               <span>{staleCount} LINK{staleCount > 1 ? 'S' : ''} POINT AT OBJECTS NOT IN THIS CASE FILE</span>
               <button
                 type="button"
@@ -725,7 +725,7 @@ export function InvestigationTable({ artifacts, workspace, onUpdate, onInspect }
       </div>
 
       {undoEntry && (
-        <div role="status" className="flex items-center justify-between gap-3 border border-nexus-borderStrong bg-nexus-surfaceElevated px-3 py-2 font-mono text-[0.58rem] uppercase text-nexus-textMuted">
+        <div role="status" className="flex items-center justify-between gap-3 border border-nexus-borderStrong bg-nexus-surfaceElevated px-3 py-2 font-mono text-[0.55rem] uppercase text-nexus-textMuted">
           <span>{undoEntry.label}</span>
           <button type="button" className="min-h-8 border border-nexus-accent px-3 text-nexus-accent" onClick={() => { undoEntry.undo(); setUndoEntry(null) }}>UNDO</button>
         </div>

@@ -61,7 +61,7 @@ function NoteList({
 
   return (
     <div className="space-y-2">
-      <h4 className="font-mono text-[0.52rem] uppercase tracking-[0.14em] text-nexus-textSubtle">
+      <h4 className="font-mono text-[0.55rem] uppercase tracking-[0.14em] text-nexus-textSubtle">
         INVESTIGATOR NOTES / {notes.length.toString().padStart(2, '0')}
       </h4>
       {notes.length === 0 && <p className="font-mono text-[0.6rem] text-nexus-textSubtle">No investigator notes recorded.</p>}
@@ -89,7 +89,7 @@ function NoteList({
             ) : (
               <>
                 <p className="mt-1 whitespace-pre-wrap break-words text-sm text-nexus-text">{note.text}</p>
-                <div className="mt-1 flex gap-3 font-mono text-[0.5rem] uppercase">
+                <div className="mt-1 flex gap-3 font-mono text-[0.55rem] uppercase">
                   <button type="button" className="min-h-8 text-nexus-textMuted underline-offset-2 hover:underline" onClick={() => setEditing({ id: note.id, text: note.text })} aria-label="Edit note">EDIT</button>
                   <button type="button" className="min-h-8 text-nexus-textMuted underline-offset-2 hover:underline" onClick={() => onDeleteNote(targetKey, note.id)} aria-label="Delete note">DELETE</button>
                 </div>
@@ -166,25 +166,25 @@ export function BoardInspector(props: BoardInspectorProps) {
       {selectedLink ? (
         <section className="space-y-3" aria-label="Selected relationship">
           <header>
-            <p className="font-mono text-[0.52rem] uppercase tracking-[0.14em] text-nexus-textSubtle">RELATIONSHIP / PLAYER-FILED</p>
+            <p className="font-mono text-[0.55rem] uppercase tracking-[0.14em] text-nexus-textSubtle">RELATIONSHIP / PLAYER-FILED</p>
             <h3 className="mt-1 font-mono text-xs font-bold uppercase text-nexus-text">
               {artifactById.get(selectedLink.from)?.code ?? selectedLink.from} ↔ {artifactById.get(selectedLink.to)?.code ?? selectedLink.to}
             </h3>
           </header>
-          <label className="block font-mono text-[0.52rem] uppercase tracking-[0.12em] text-nexus-textSubtle">
+          <label className="block font-mono text-[0.55rem] uppercase tracking-[0.12em] text-nexus-textSubtle">
             RELATIONSHIP TYPE
             <select value={selectedLink.kind} onChange={event => onUpdateLink(selectedLink.id, { kind: event.target.value as LinkKind })} className={`${fieldClass} mt-1`}>
               {LINK_KINDS.map(option => <option key={option} value={option}>{option}</option>)}
             </select>
             <span className="mt-1 block normal-case tracking-normal text-nexus-textMuted">{KIND_HELP[selectedLink.kind]}</span>
           </label>
-          <label className="block font-mono text-[0.52rem] uppercase tracking-[0.12em] text-nexus-textSubtle">
+          <label className="block font-mono text-[0.55rem] uppercase tracking-[0.12em] text-nexus-textSubtle">
             STATUS
             <select value={selectedLink.status} onChange={event => onUpdateLink(selectedLink.id, { status: event.target.value as LinkStatus })} className={`${fieldClass} mt-1`}>
               {LINK_STATUSES.map(option => <option key={option} value={option}>{LINK_STATUS_STYLE[option].glyph} {option}</option>)}
             </select>
           </label>
-          <label className="block font-mono text-[0.52rem] uppercase tracking-[0.12em] text-nexus-textSubtle">
+          <label className="block font-mono text-[0.55rem] uppercase tracking-[0.12em] text-nexus-textSubtle">
             BASIS
             <input value={selectedLink.note} maxLength={300} onChange={event => onUpdateLink(selectedLink.id, { note: event.target.value })} placeholder="WHY DO THESE BELONG TOGETHER?" className={`${fieldClass} mt-1 font-sans normal-case tracking-normal`} />
           </label>
@@ -208,22 +208,22 @@ export function BoardInspector(props: BoardInspectorProps) {
       ) : selectedArtifacts.length >= 2 ? (
         <section className="space-y-3" aria-label="Link evidence">
           <header>
-            <p className="font-mono text-[0.52rem] uppercase tracking-[0.14em] text-nexus-textSubtle">LINK EVIDENCE / {selectedArtifacts.length} SELECTED</p>
+            <p className="font-mono text-[0.55rem] uppercase tracking-[0.14em] text-nexus-textSubtle">LINK EVIDENCE / {selectedArtifacts.length} SELECTED</p>
             <p className="mt-1 break-words font-mono text-xs text-nexus-text">{selectedArtifacts.map(a => a.code).join(' ↔ ')}</p>
           </header>
-          <label className="block font-mono text-[0.52rem] uppercase tracking-[0.12em] text-nexus-textSubtle">
+          <label className="block font-mono text-[0.55rem] uppercase tracking-[0.12em] text-nexus-textSubtle">
             RELATIONSHIP TYPE
             <select value={kind} onChange={event => setKind(event.target.value as LinkKind)} className={`${fieldClass} mt-1`}>
               {LINK_KINDS.map(option => <option key={option} value={option}>{option}</option>)}
             </select>
             <span className="mt-1 block normal-case tracking-normal text-nexus-textMuted">{KIND_HELP[kind]}</span>
           </label>
-          <label className="block font-mono text-[0.52rem] uppercase tracking-[0.12em] text-nexus-textSubtle">
+          <label className="block font-mono text-[0.55rem] uppercase tracking-[0.12em] text-nexus-textSubtle">
             PLAYER HYPOTHESIS
             <input value={note} onChange={event => setNote(event.target.value)} maxLength={300} placeholder="RECORD A SUSPECTED RELATION…" className={`${fieldClass} mt-1 font-sans normal-case tracking-normal`} />
           </label>
           {selectedArtifacts.length > 2 && (
-            <p className="font-mono text-[0.5rem] uppercase text-nexus-textSubtle">Object 1 is linked to each of the others.</p>
+            <p className="font-mono text-[0.55rem] uppercase text-nexus-textSubtle">Object 1 is linked to each of the others.</p>
           )}
           {existing && selectedArtifacts.length === 2 && (
             <p className="font-mono text-[0.55rem] uppercase text-nexus-warning">ALREADY LINKED / {existing.kind} / {existing.status}</p>
@@ -242,7 +242,7 @@ export function BoardInspector(props: BoardInspectorProps) {
       ) : selectedArtifacts.length === 1 && first ? (
         <section className="space-y-3" aria-label="Selected object">
           <header>
-            <p className="font-mono text-[0.52rem] uppercase tracking-[0.14em] text-nexus-textSubtle">
+            <p className="font-mono text-[0.55rem] uppercase tracking-[0.14em] text-nexus-textSubtle">
               {artifactType(first)} / {first.code} / COND: {artifactCondition(first)}
             </p>
             <h3 className="mt-1 break-words font-type text-sm font-bold text-nexus-text">{first.title}</h3>
@@ -253,12 +253,12 @@ export function BoardInspector(props: BoardInspectorProps) {
             <button type="button" className={`${buttonClass} border-nexus-border text-nexus-text`} onClick={() => onFocus(first.id)}>FOCUS</button>
             <button type="button" className={`${buttonClass} border-nexus-border text-nexus-textMuted`} onClick={onClear}>CLEAR</button>
           </div>
-          <p className="font-mono text-[0.5rem] uppercase text-nexus-textSubtle">Select a second object to link it.</p>
+          <p className="font-mono text-[0.55rem] uppercase text-nexus-textSubtle">Select a second object to link it.</p>
           <NoteList targetKey={first.id} {...props} />
         </section>
       ) : (
         <section className="space-y-2" aria-label="Board help">
-          <p className="font-mono text-[0.52rem] uppercase tracking-[0.14em] text-nexus-textSubtle">NOTHING SELECTED</p>
+          <p className="font-mono text-[0.55rem] uppercase tracking-[0.14em] text-nexus-textSubtle">NOTHING SELECTED</p>
           <p className="text-xs leading-relaxed text-nexus-textMuted">
             Tap an object to select it. Select two or more to file a relationship. Drag the table to pan, pinch or scroll to zoom.
           </p>
@@ -266,7 +266,7 @@ export function BoardInspector(props: BoardInspectorProps) {
       )}
 
       <section className="border-t border-nexus-borderSubtle pt-2" aria-label="Filed relationships">
-        <h3 className="font-mono text-[0.52rem] uppercase tracking-[0.14em] text-nexus-textSubtle">
+        <h3 className="font-mono text-[0.55rem] uppercase tracking-[0.14em] text-nexus-textSubtle">
           PLAYER-FILED HYPOTHESES / NOT SYSTEM-VERIFIED / {workspace.hypotheses.length.toString().padStart(2, '0')}
         </h3>
         {workspace.hypotheses.length === 0 ? (

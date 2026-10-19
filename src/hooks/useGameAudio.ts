@@ -4,7 +4,14 @@
  * Lightweight procedural audio via Web Audio API.
  * No external assets. Sounds are short synth events that reinforce state
  * changes without becoming music or atmosphere by themselves.
+ *
+ * The player can mute every event (the toggle lives in the handset header);
+ * the choice persists on the device. Muting gates the synth at the source,
+ * so no oscillator or noise buffer is even created while muted.
  */
+import { useEffect, useReducer } from 'react'
+
+const MUTE_KEY = 'nexus_audio_muted'
 
 const CTX =
   typeof window !== 'undefined'
@@ -14,6 +21,33 @@ const CTX =
       })()
     : null
 
+let muted =
+  typeof window !== 'undefined'
+    ? (() => { try { return window.localStorage.getItem(MUTE_KEY) === '1' } catch { return false } })()
+    : false
+
+const muteListeners = new Set<() => void>()
+
+/** Persist and publish a new mute state. */
+export function setAudioMuted(next: boolean) {
+  if (next === muted) return
+  muted = next
+  if (typeof window !== 'undefined') {
+    try { window.localStorage.setItem(MUTE_KEY, next ? '1' : '0') } catch { /* storage denied — state holds for this session */ }
+  }
+  muteListeners.forEach((notify) => notify())
+}
+
+/** React view of the mute state: current value + toggle. */
+export function useAudioMute() {
+  const [, rerender] = useReducer((n: number) => n + 1, 0)
+  useEffect(() => {
+    muteListeners.add(rerender)
+    return () => { muteListeners.delete(rerender) }
+  }, [])
+  return { muted, toggle: () => setAudioMuted(!muted) }
+}
+
 function resume() {
   if (CTX && typeof (CTX as unknown as { resume?: () => Promise<void> }).resume === 'function') {
     void (CTX as unknown as { resume: () => Promise<void> }).resume()
@@ -21,7 +55,7 @@ function resume() {
 }
 
 function tone(freq: number, duration = 0.12, type: OscillatorType = 'square', gain = 0.04) {
-  if (!CTX) return
+  if (!CTX || muted) return
   resume()
   const t = CTX.currentTime
   const osc = CTX.createOscillator()
@@ -37,7 +71,7 @@ function tone(freq: number, duration = 0.12, type: OscillatorType = 'square', ga
 }
 
 function noise(duration = 0.18, gain = 0.02) {
-  if (!CTX) return
+  if (!CTX || muted) return
   resume()
   const t = CTX.currentTime
   const bufferSize = Math.floor(CTX.sampleRate * duration)

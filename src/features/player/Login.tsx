@@ -197,10 +197,10 @@ export function PlayerLogin() {
           </div>
 
           <div className="nexus-handset-footer">
-            <span className="font-mono text-[0.52rem] uppercase tracking-[0.22em] text-nexus-textSubtle">
+            <span className="font-mono text-[0.55rem] uppercase tracking-[0.22em] text-nexus-textSubtle">
               NEXUS ECHO FIELD OPERATIONS
             </span>
-            <span className="font-mono text-[0.56rem] text-nexus-textSubtle">
+            <span className="font-mono text-[0.55rem] text-nexus-textSubtle">
               CASE 037
             </span>
           </div>

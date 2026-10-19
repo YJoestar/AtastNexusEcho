@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, useCallback } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { BureauIcons, DocumentShell, FileTabs, Stamp } from '@/components/bureau'
+import { ScreenHeader } from '@/components/player/ScreenHeader'
 import { ROUTES } from '@/app/config'
 import { useGameEngine } from '@/hooks/useGameEngine'
 import { useGameAudio } from '@/hooks/useGameAudio'
@@ -359,7 +360,7 @@ export function PlayerEvidenceArchive() {
 
   if (isLoading('inventory') && !inventory && artifacts.length === 0) {
     return (
-      <div className="page">
+      <div className="page nx-wake">
         <div className="page-content mx-auto max-w-4xl py-12">
           <DocumentShell reference="ARCHIVE QUERY / CASE 037" title="INDEXING RECOVERED MATERIAL" stock="digital" footer={<Stamp variant="incomplete">RETRIEVAL PENDING</Stamp>}>
             <p className="font-mono text-xs uppercase tracking-[0.14em] text-nexus-textMuted" role="status" aria-live="polite">READING TEAM EVIDENCE INDEX…</p>
@@ -372,21 +373,26 @@ export function PlayerEvidenceArchive() {
   return (
     <div className="page">
       <div className="page-content mx-auto max-w-5xl space-y-4">
-        <header className="flex items-center gap-3 border-b border-nexus-border pb-3">
-          <div className="min-w-0 flex-1">
+        <ScreenHeader
+          eyebrow={
             <p className="font-mono text-[0.68rem] uppercase tracking-[0.18em] text-nexus-textSubtle">CASE {team?.code ?? 'UNASSIGNED'} · RECOVERED</p>
-            <h1 className="mt-1 font-mono text-lg font-bold text-nexus-text">{mode === 'TABLE' ? 'CASE BOARD' : mode === 'COMPARE' ? 'COMPARISON' : mode === 'INSPECT' ? 'EXAMINATION' : 'EVIDENCE'}</h1>
-          </div>
-          <Link
-            to={ROUTES.PLAYER_INVENTORY}
-            className="flex min-h-12 items-center border border-nexus-accent px-3 font-mono text-[0.68rem] uppercase text-nexus-accent"
-          >
-            OBJECTS
-          </Link>
-          <button type="button" onClick={() => void fetchInventory()} className="flex min-h-12 min-w-12 items-center justify-center border border-nexus-borderSubtle text-nexus-textSubtle hover:text-nexus-text" aria-label="Re-query case archive" title="Re-query archive">
-            <BureauIcons.Refresh className="bureau-icon h-4 w-4" />
-          </button>
-        </header>
+          }
+          title={mode === 'TABLE' ? 'CASE BOARD' : mode === 'COMPARE' ? 'COMPARISON' : mode === 'INSPECT' ? 'EXAMINATION' : 'EVIDENCE'}
+          actions={
+            <>
+              <Link
+                to={ROUTES.PLAYER_INVENTORY}
+                className="flex min-h-12 items-center border border-nexus-accent px-3 font-mono text-[0.68rem] uppercase text-nexus-accent transition-colors duration-fast hover:bg-nexus-surfaceElevated"
+              >
+                OBJECTS
+              </Link>
+              <button type="button" onClick={() => void fetchInventory()} className="flex min-h-12 min-w-12 items-center justify-center border border-nexus-borderSubtle text-nexus-textSubtle transition-colors duration-fast hover:text-nexus-text" aria-label="Re-query case archive" title="Re-query archive">
+                <BureauIcons.Refresh className="bureau-icon h-4 w-4" />
+              </button>
+            </>
+          }
+          className="border-b border-nexus-border pb-3"
+        />
 
         {mode !== 'INSPECT' && (
           <FileTabs
@@ -515,8 +521,8 @@ export function PlayerEvidenceArchive() {
             </section>
 
             <aside className="hidden border-l border-nexus-borderSubtle pl-3 lg:block">
-              <p className="font-mono text-[0.52rem] uppercase tracking-[0.14em] text-nexus-textSubtle">CASE STATE / LOCAL WORKSPACE</p>
-              <dl className="mt-2 space-y-2 font-mono text-[0.58rem]">
+              <p className="font-mono text-[0.55rem] uppercase tracking-[0.14em] text-nexus-textSubtle">CASE STATE / LOCAL WORKSPACE</p>
+              <dl className="mt-2 space-y-2 font-mono text-[0.55rem]">
                 <SummaryField label="EVIDENCE" value={String(artifacts.filter(item => item.source === 'EVIDENCE').length).padStart(2, '0')} />
                 <SummaryField label="OBJECTS" value={String(artifacts.filter(item => item.source === 'INVENTORY').length).padStart(2, '0')} />
                 <SummaryField label="FRAGMENTS" value={String(artifacts.filter(item => item.source === 'FRAGMENT').length).padStart(2, '0')} />
@@ -540,7 +546,7 @@ export function PlayerEvidenceArchive() {
                     </div>
                   )
                 })}
-              <p className="mt-4 border-t border-nexus-borderSubtle pt-2 font-mono text-[0.5rem] uppercase leading-relaxed text-nexus-textSubtle">
+              <p className="mt-4 border-t border-nexus-borderSubtle pt-2 font-mono text-[0.55rem] uppercase leading-relaxed text-nexus-textSubtle">
                 PERSONAL NOTES AND TABLE LAYOUT ARE SAVED ON THIS DEVICE. SERVER EVIDENCE IS READ-ONLY.
               </p>
             </aside>
@@ -583,9 +589,9 @@ export function PlayerEvidenceArchive() {
             <div className="flex items-center justify-between gap-2 border-b border-nexus-border pb-2">
               <div>
                 <h2 className="font-mono text-xs font-bold uppercase tracking-[0.14em] text-nexus-text">SIDE-BY-SIDE EXAMINATION</h2>
-                <p className="mt-1 font-mono text-[0.5rem] uppercase text-nexus-textSubtle">NO RELATION IS ASSUMED / COMPARISON IS PLAYER-LED</p>
+                <p className="mt-1 font-mono text-[0.55rem] uppercase text-nexus-textSubtle">NO RELATION IS ASSUMED / COMPARISON IS PLAYER-LED</p>
               </div>
-              <button type="button" onClick={() => setMode('ARCHIVE')} className="min-h-10 border border-nexus-border px-2 font-mono text-[0.52rem] uppercase text-nexus-textSubtle">RETURN TO INDEX</button>
+              <button type="button" onClick={() => setMode('ARCHIVE')} className="min-h-10 border border-nexus-border px-2 font-mono text-[0.55rem] uppercase text-nexus-textSubtle">RETURN TO INDEX</button>
             </div>
             {comparedArtifacts.length === 2 ? (
               <CompareStation
@@ -595,7 +601,7 @@ export function PlayerEvidenceArchive() {
                 onUpdate={updateWorkspace}
                 renderRecord={artifact => (
                   <>
-                    <button type="button" onClick={() => openArtifact(artifact.id, artifact)} className="mb-2 text-left font-mono text-[0.58rem] uppercase text-nexus-accent">OPEN FULL RECORD / {artifact.code} →</button>
+                    <button type="button" onClick={() => openArtifact(artifact.id, artifact)} className="mb-2 text-left font-mono text-[0.55rem] uppercase text-nexus-accent">OPEN FULL RECORD / {artifact.code} →</button>
                     <ArtifactInspection
                       compact
                       catalog={artifacts}
@@ -637,7 +643,7 @@ export function PlayerEvidenceArchive() {
 function SummaryField({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between gap-2 border-b border-nexus-borderSubtle pb-1">
-      <dt className="text-[0.52rem] uppercase text-nexus-textSubtle">{label}</dt>
+      <dt className="text-[0.55rem] uppercase text-nexus-textSubtle">{label}</dt>
       <dd className="font-bold tabular-nums text-nexus-text">{value}</dd>
     </div>
   )

@@ -804,6 +804,13 @@
     border-radius: 0 !important;
   }
 
+  /* The catch-all above also matches `rounded-full`; restore true circles so
+     spinner rings and status dots stay round. Must stay after the reset. */
+  .rounded-full,
+  [class*='rounded-full'] {
+    border-radius: 9999px !important;
+  }
+
   .shadow-panel,
   .shadow-panel-elevated,
   .shadow-lit,
@@ -1519,6 +1526,9 @@
     color: var(--nx-text);
     text-align: center;
     letter-spacing: 0.18em;
+  }
+  .handset-input::placeholder {
+    color: var(--nx-text-subtle);
   }
   .handset-input:focus-visible {
     outline: none;

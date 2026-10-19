@@ -39,6 +39,7 @@ import {
   Stamp,
   type StatusTone,
 } from '@/components/bureau'
+import { ScreenHeader } from '@/components/player/ScreenHeader'
 
 export function PlayerNode() {
   const { nodeId } = useParams<{ nodeId: string }>()
@@ -242,7 +243,7 @@ export function PlayerNode() {
 
   if (loading) {
     return (
-      <div className="page">
+      <div className="page nx-wake">
         <div className="page-content max-w-md mx-auto text-center py-12">
           <BureauIcons.Spinner className="bureau-icon w-8 h-8 text-nexus-accent animate-spin mx-auto mb-4" aria-hidden="true" />
           <p className="text-nexus-textMuted">LOADING INVESTIGATION NODE…</p>
@@ -253,7 +254,7 @@ export function PlayerNode() {
 
   if (error) {
     return (
-      <div className="page">
+      <div className="page nx-wake">
         <div className="page-content max-w-md mx-auto text-center py-12">
           <BureauIcons.Flag className="bureau-icon w-8 h-8 text-nexus-warning mx-auto mb-4" aria-hidden="true" />
           <h3 className="heading-4 mb-2">INVESTIGATION BLOCKED</h3>
@@ -274,7 +275,7 @@ RETURN TO FIELD
   // screens", and a puzzle that cannot be opened is still a screen.
   if (!node) {
     return (
-      <div className="page">
+      <div className="page nx-wake">
         <div className="page-content max-w-md mx-auto text-center py-12">
           <BureauIcons.Flag className="bureau-icon w-8 h-8 text-nexus-warning mx-auto mb-4" aria-hidden="true" />
           <h1 className="heading-3 mb-2">NOT IN THE REGISTER</h1>
@@ -346,22 +347,15 @@ RETURN TO FIELD
     <div className="page">
       <div className="page-content max-w-2xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex items-center gap-4">
-          <Link
-            to={ROUTES.PLAYER_GAME}
-            className="p-2 border border-nexus-borderSubtle text-nexus-textMuted hover:text-nexus-text touch-target-primary"
-            aria-label="RETURN TO FIELD"
-          >
-            <BureauIcons.Back className="bureau-icon w-5 h-5" aria-hidden="true" />
-          </Link>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
+        <ScreenHeader
+          title={node.title}
+          eyebrow={
+            <div className="mb-1 flex items-center gap-2">
               <StateMarker glyph="◦" tone={nodeStatusTone} label={node.status} />
-              <span className="text-sm text-nexus-textMuted font-mono">Node: {node.code}</span>
+              <span className="font-mono text-sm text-nexus-textMuted">Node: {node.code}</span>
             </div>
-            <h1 className="heading-3 truncate">{node.title}</h1>
-          </div>
-        </div>
+          }
+        />
 
         {/* Role Indicator + Coordination Info */}
         <div className={cn('nexus-ops-panel flex items-center gap-4', roleTheme?.bg)}>

@@ -324,7 +324,7 @@ export function Workstation() {
 
   return (
     <VisualEnvironmentProvider profile="BUREAU_PC" horrorLevel={narrativeLevel} signalStrength={connectionInfo.signalStrength} isConnected={isConnected}>
-      <div data-horror={narrativeLevel} data-workstation className="relative flex h-screen min-h-0 flex-col overflow-hidden bg-[#060607] font-mono text-nexus-text antialiased">
+      <div data-horror={narrativeLevel} data-workstation className="relative flex h-screen min-h-0 flex-col overflow-hidden bg-nexus-bg font-mono text-nexus-text antialiased">
         {/* ── system bar ── */}
         <header className="relative z-[60] flex h-9 shrink-0 items-center justify-between gap-4 border-b border-nexus-border bg-nexus-surfaceElevated px-3 text-[0.58rem] uppercase tracking-[0.14em]">
           <div className="flex min-w-0 items-center gap-4">
