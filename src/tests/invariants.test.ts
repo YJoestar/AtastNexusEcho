@@ -806,3 +806,43 @@ describe('admin reads use the key the edge function actually returns', () => {
     expect(block).toMatch(/result\.auditLog/)
   })
 })
+
+describe('two migration defects that shipped once cannot ship again', () => {
+  /**
+   * Comments explain these defects at length, so a naive source match finds
+   * the explanation and calls it the bug. Strip comments first, exactly as the
+   * search_path suite does.
+   */
+  const stripComments = (sql: string) =>
+    sql.replace(/\/\*[\s\S]*?\*\//g, '').replace(/--[^\n]*/g, '')
+
+  it('never names the catalog column and the view column interchangeably', () => {
+    // `pg_policy` is the catalog: its column is `polname`. `pg_policies` is the
+    // view: its column is `policyname`. 2026100401 once used `policyname`
+    // against a `pg_policy` alias, and the guard that was supposed to catch a
+    // dead admin policy raised `column pol.policyname does not exist` instead.
+    for (const m of migrations) {
+      const sql = stripComments(m.sql)
+      if (/\bpg_policy\b/.test(sql)) {
+        expect(sql, `${m.name} reads pg_policy (column polname) but names policyname`)
+          .not.toMatch(/\.policyname\b/)
+      }
+      if (/\bpg_policies\b/.test(sql)) {
+        expect(sql, `${m.name} reads pg_policies (column policyname) but names polname`)
+          .not.toMatch(/\b[A-Za-z_]+\.polname\b/)
+      }
+    }
+  })
+
+  it('never hands an untyped string literal to to_jsonb', () => {
+    // An untyped literal makes to_jsonb(unknown) ambiguous, so 2026100507's
+    // content overrides failed to apply until every literal was written
+    // `to_jsonb('...'::text)`.
+    for (const m of migrations) {
+      const sql = stripComments(m.sql)
+      const offenders = [...sql.matchAll(/to_jsonb\s*\(\s*'((?:[^']|'')*)'\s*\)/g)].map(hit => hit[0])
+      expect(offenders, `${m.name}: to_jsonb('<literal>') needs an explicit ::text cast`)
+        .toEqual([])
+    }
+  })
+})
