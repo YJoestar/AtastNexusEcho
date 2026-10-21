@@ -522,11 +522,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const progress = await gameAPI.getNodeProgress()
       const solvedNodes: Record<string, NodeProgress> = {}
       progress.forEach((entry: NodeProgressEntry) => {
-        // The real values, not placeholders. This map used to hardcode
-        // `attempts: 0, hintsUsed: 0, solvedAt: null` while the server has been
-        // publishing all three, so every figure it holds was a lie after the
-        // first poll - the 30s refresh runs on a timer, not on demand.
-        solvedNodes[entry.nodeId] = {
+        // Keyed by the node's CODE, not its UUID.
+        //
+        // The server publishes both (`nodeId` is `np.node_id::text`, a UUID;
+        // `code` is the human code such as "P01"). Every reader of this map
+        // addresses nodes by code - `teamProgress.solvedNodes[puzzle.code]` -
+        // so a UUID key made every per-node lookup miss and every node's
+        // attempts / hintsUsed / solvedAt silently read as 0 / 0 / null.
+        //
+        // The UUID remains the fallback for a row that somehow carries no code,
+        // so a lookup can never key on an empty string and collide.
+        const key = entry.nodeCode || entry.nodeId
+        solvedNodes[key] = {
           nodeId: entry.nodeId,
           status: entry.status as NodeProgress['status'],
           startedAt: entry.startedAt,
@@ -553,7 +560,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
         inventoryOwned: {},
         fragmentsOwned: [],
         score: gameState.team.score,
-        hintsUsed: 0,
+        // Summed from the per-node records the server DOES publish rather than
+        // hardcoded to 0. The game-state payload carries no team-level hint
+        // count, but every node's own `hintsUsed` was already fetched above, so
+        // a hardcoded zero under-reported a real, already-available figure.
+        hintsUsed: Object.values(solvedNodes).reduce((total, node) => total + node.hintsUsed, 0),
         hintsAvailable: 3,
         timeElapsedMinutes: gameState.team.startedAt
           ? Math.floor((Date.now() - new Date(gameState.team.startedAt).getTime()) / 60000)

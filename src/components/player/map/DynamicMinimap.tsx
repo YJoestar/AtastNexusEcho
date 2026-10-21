@@ -212,7 +212,13 @@ export const DynamicMinimap: FC<DynamicMinimapProps> = ({
 
         if (distToPlayer > halfView * 0.8) {
           const angle = Math.atan2(dyToPlayer, dxToPlayer)
-          const edgeDist = center * 0.85
+          // Pin the out-of-range teammate toward the radar edge. `targetX/Y` and
+          // `camX/Y` are WORLD coordinates and `halfView` is the world radius the
+          // minimap covers, so the clamp radius must be world units too. It used
+          // to be `center * 0.85`, where `center` is half the canvas in PIXELS -
+          // mixing the two spaces, so a marker was pushed to a world offset that
+          // had nothing to do with the edge and drew far outside the dial.
+          const edgeDist = halfView * 0.85
           targetX = camX + Math.cos(angle) * edgeDist
           targetY = camY + Math.sin(angle) * edgeDist
           clamped = true

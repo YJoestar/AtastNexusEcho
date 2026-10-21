@@ -1084,6 +1084,12 @@ export interface PuzzleQAEntry {
   branches: { nextNodes: string[]; unlocks: string } | null
   content: Record<string, unknown>
   answerMetadata: Record<string, unknown> | null
+  /**
+   * The node's `metadata` column: `storyReveal`, `whyTeamworkMatters`,
+   * `locationClue` and `evidenceUnlocked` live here. The QA emulation needs it
+   * to show what the team actually stores rather than a placeholder.
+   */
+  metadata: Record<string, unknown> | null
   evidence: EvidenceQAEntry[]
   audioEvidence: AudioEvidenceQAEntry[]
 }

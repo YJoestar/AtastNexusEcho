@@ -244,8 +244,87 @@ describe('PuzzleVisual registry', () => {
     expect(screen.getAllByText('Held by a teammate')).toHaveLength(2)
   })
 
-  it('falls back to a readable feed for an unknown type instead of rendering nothing', () => {
+  it('draws the terminal readout with each machine line', () => {
+    render(
+      <PuzzleVisual
+        type="terminal"
+        dataPayload="ACCESS REGISTER"
+        interactiveData={{ lines: [{ source: '01', text: 'FIELD ONE: CALL MARK', flag: false }] }}
+      />,
+    )
+    expect(screen.getByText('Terminal Readout')).toBeTruthy()
+    expect(screen.getByText('01')).toBeTruthy()
+    expect(screen.getByText('FIELD ONE: CALL MARK')).toBeTruthy()
+  })
+
+  it('draws the telemetry board and dims a sealed reading', () => {
+    render(
+      <PuzzleVisual
+        type="telemetry"
+        dataPayload="CONVERGENCE LOCK"
+        interactiveData={{
+          metrics: [
+            { label: 'CHANNEL P22', value: 'GREEN', state: 'lit' },
+            { label: 'CHANNEL P28', value: 'SEALED', state: 'sealed' },
+          ],
+        }}
+      />,
+    )
+    expect(screen.getByText('Telemetry Board')).toBeTruthy()
+    expect(screen.getByText('CHANNEL P22')).toBeTruthy()
+    expect(screen.getByText('GREEN')).toBeTruthy()
+    expect(screen.getByText('SEALED')).toBeTruthy()
+  })
+
+  it('draws the chart bars with their values', () => {
     const { container } = render(
+      <PuzzleVisual
+        type="chart"
+        dataPayload="DEPENDENCY DEPTH"
+        interactiveData={{ bars: [{ label: 'S', value: 1 }, { label: 'E', value: 9, flag: true }] }}
+      />,
+    )
+    expect(screen.getByText('Chart Readout')).toBeTruthy()
+    expect(screen.getByText('S')).toBeTruthy()
+    expect(container.querySelectorAll('.bg-nexus-warning').length).toBeGreaterThan(0)
+  })
+
+  it('draws the execution trace and flags the suspect step', () => {
+    render(
+      <PuzzleVisual
+        type="console"
+        dataPayload="EXECUTION TRACE"
+        interactiveData={{
+          steps: [
+            { index: '0', register: '1', input: '1', state: '1', flag: false },
+            { index: '1', register: '1', input: '1', state: '2', flag: true },
+          ],
+        }}
+      />,
+    )
+    expect(screen.getByText('Execution Trace')).toBeTruthy()
+    expect(screen.getByText('SUSPECT')).toBeTruthy()
+  })
+
+  it('draws the timeline events in running order', () => {
+    render(
+      <PuzzleVisual
+        type="timeline"
+        dataPayload="NIGHT OF THE SEAL"
+        interactiveData={{
+          events: [
+            { time: '04:15', label: 'Camera array dark' },
+            { time: '04:17', label: 'East door activity', flag: true },
+          ],
+        }}
+      />,
+    )
+    expect(screen.getByText('Timeline')).toBeTruthy()
+    expect(screen.getByText('04:15')).toBeTruthy()
+    expect(screen.getByText('East door activity')).toBeTruthy()
+  })
+
+  it('falls back to a readable feed for an unknown type instead of rendering nothing', () => {    const { container } = render(
       <PuzzleVisual type="something-new" dataPayload="UNKNOWN PAYLOAD" interactiveData={null} />,
     )
     expect(screen.getByText('Data Feed')).toBeTruthy()
@@ -261,5 +340,26 @@ describe('PuzzleVisual registry', () => {
       />,
     )
     expect(container.textContent).not.toContain('Submit: 3425')
+  })
+
+  it('gives each node its own renderer boundary, so node state cannot leak', () => {
+    // PuzzleVisual used to call the chosen renderer as a plain function, which
+    // attaches the renderer's hooks to PuzzleVisual itself. A renderer's own
+    // useState (the symbol board keeps placements) then lived on the parent and
+    // could survive, or reorder against, a different node's renderer. Rendering
+    // as an element gives each renderer its own fiber: switching node types must
+    // reset the symbol board's placements.
+    const panel = (
+      <PuzzleVisual type="puzzle" dataPayload="PANEL" interactiveData={{ symbols: ['A', 'B'], hint: 'x' }} />
+    )
+    const { rerender } = render(panel)
+    fireEvent.click(screen.getByLabelText('slot 1 empty'))
+    fireEvent.click(screen.getByLabelText('place A'))
+    expect(screen.getByLabelText('slot 1 holding A')).toBeTruthy()
+
+    rerender(<PuzzleVisual type="chart" dataPayload="CHART" interactiveData={{ bars: [] }} />)
+    rerender(panel)
+
+    expect(screen.getByLabelText('slot 1 empty')).toBeTruthy()
   })
 })

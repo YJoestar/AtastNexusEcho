@@ -24,13 +24,11 @@ export function useCaseLead({
   allNodes,
   teamStatus,
   currentNodeId,
-  solvedNodes,
 }: {
   leadNode: PlayerNodeView | null
   allNodes: MapNodeEntry[]
   teamStatus?: string
   currentNodeId?: string | null
-  solvedNodes: string[]
 }): UseCaseLeadResult {
   const lead = useMemo(
     () => buildCaseLead(leadNode, teamStatus),
@@ -41,10 +39,14 @@ export function useCaseLead({
 
   const otherLeads = useMemo(
     () =>
+      // `allNodes` entries already carry `solved`, so filtering on it here is
+      // enough. A former `solvedNodes: string[]` parameter was removed: the only
+      // caller passed a hardcoded `[]`, so the extra `includes` test could never
+      // fire and merely implied a filter that was not in fact applied.
       allNodes.filter(
-        n => n.available && !n.solved && n.code !== currentNodeId && !solvedNodes.includes(n.code),
+        n => n.available && !n.solved && n.code !== currentNodeId,
       ),
-    [allNodes, currentNodeId, solvedNodes],
+    [allNodes, currentNodeId],
   )
 
   return { lead, otherLeads, status }

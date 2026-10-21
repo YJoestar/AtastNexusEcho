@@ -660,6 +660,11 @@ export function useGameEngine() {
         const isCurrent = nodeId === qaContext.currentNodeId
         const isNextUp = qaContext.availableNodeIds.includes(nodeId)
         const status: NodeStatus = isSolved ? 'SOLVED' : isCurrent ? 'IN_PROGRESS' : isNextUp ? 'AVAILABLE' : 'LOCKED'
+        // The simulator already tracks real per-node attempts and hints; the QA
+        // branch used to hardcode both to 0, so a tester using the very tool
+        // built to reach rare states could never see an attempt count or a hint
+        // count on a node. Read them from the simulator's own progress rows.
+        const qaProgress = qaContext.nodeProgress.find(p => p.nodeId === nodeId || p.nodeCode === nodeId)
         return {
           code: node.code,
           title: node.title,
@@ -672,8 +677,8 @@ export function useGameEngine() {
           isSolved,
           isCurrent,
           isNextUp,
-          attempts: 0,
-          hintsUsed: 0,
+          attempts: qaProgress?.attempts ?? 0,
+          hintsUsed: qaProgress?.hintsUsed ?? 0,
           points: node.points,
           status,
           narrativeObjective: node.narrativeObjective,

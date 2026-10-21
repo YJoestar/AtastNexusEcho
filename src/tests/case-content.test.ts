@@ -16,6 +16,7 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { CONTENT_VISUAL_TYPES, isDedicatedVisualType } from '@/components/player/puzzle/visualTypes'
 
 const ROOT = join(__dirname, '../..')
 const MIGRATIONS = join(ROOT, 'supabase/migrations')
@@ -27,6 +28,21 @@ const REBUILD_FILES = [
   '2026100605_investigation_rebuild_stage3.sql',
   '2026100606_investigation_rebuild_stage4.sql',
   '2026100607_investigation_rebuild_stage5.sql',
+]
+
+/**
+ * Repair migrations applied after the rebuild. The 2026-10 audit found gates
+ * whose answer did not match the evidence their own migration printed (P27b,
+ * P29, P37). Each repair rewrites the gate forward, so it must be read as the
+ * newest UPDATE for its code - otherwise the validator would keep checking the
+ * broken text the repair replaced.
+ */
+const REPAIR_FILES = [
+  '2026100610_finale_disposition_alignment.sql',
+  '2026100611_repair_p27b_answer_target.sql',
+  '2026100612_repair_p29_identity_format.sql',
+  '2026100613_repair_token_provenance.sql',
+  '2026100614_presented_evidence_redaction.sql',
 ]
 
 /** The migrations that introduced the gates players meet today. */
@@ -152,14 +168,22 @@ function parseUpdates(sql: string, file: string, out: Map<string, Gate>): void {
     const content = columnJson(body, 'content')
     const answer = columnJson(body, 'answer_metadata')
     const metadata = columnJson(body, 'metadata')
-    if (!content || !answer || !metadata) {
-      throw new Error(`${file}: update for ${code} is missing one of content / answer_metadata / metadata`)
+    // A rebuild migration rewrites a whole gate; a repair migration (2026-10
+    // audit) may touch only one column and inherit the rest. Merge so the
+    // newest writer for each column wins and a partial repair is still read as
+    // the gate's real, current text.
+    const previous = out.get(code)
+    if (!content && !answer && !metadata) {
+      throw new Error(`${file}: update for ${code} sets none of content / answer_metadata / metadata`)
+    }
+    if (!previous && (!content || !answer || !metadata)) {
+      throw new Error(`${file}: update for ${code} introduces a gate but is missing one of content / answer_metadata / metadata`)
     }
     out.set(code, {
       code,
-      content: JSON.parse(content) as Record<string, unknown>,
-      answer: JSON.parse(answer) as Record<string, unknown>,
-      metadata: JSON.parse(metadata) as Record<string, unknown>,
+      content: content ? (JSON.parse(content) as Record<string, unknown>) : previous!.content,
+      answer: answer ? (JSON.parse(answer) as Record<string, unknown>) : previous!.answer,
+      metadata: metadata ? (JSON.parse(metadata) as Record<string, unknown>) : previous!.metadata,
       file,
       rebuilt: true,
     })
@@ -173,7 +197,7 @@ for (const name of SEED_FILES) {
 }
 
 const gates = new Map(seedGates)
-for (const name of REBUILD_FILES) {
+for (const name of [...REBUILD_FILES, ...REPAIR_FILES]) {
   const sql = readIfPresent(name)
   if (sql) parseUpdates(sql, name, gates)
 }
@@ -262,6 +286,62 @@ describe('case content: shape', () => {
     }
   })
 
+  /**
+   * The case x role matrix.
+   *
+   * The three-role chain is not enforced by the server - by design the Observer
+   * and the Analyst speak their results and the application never receives
+   * them, so only the Operator can submit (2026100601). The chain therefore
+   * lives entirely in the CONTENT: each role is handed a different slice of the
+   * evidence and must hand its result to the next. That makes "this gate has
+   * three meaningful roles" a property of the content that can regress silently
+   * - a role block left as a placeholder still passes every shape check above.
+   *
+   * These tests hold each of the 47 gates x 3 roles to the chain's contract.
+   */
+  const roleOf = (gate: Gate, role: string) =>
+    (gate.content[role] ?? {}) as Record<string, unknown>
+
+  it.each(cases)('%s: every role states what it sees, and what it hands on', (_code, gate) => {
+    for (const role of ROLE_KEYS) {
+      const block = roleOf(gate, role)
+      // `whatTheySee` is the evidence only this role is given; `dataPayload` is
+      // its instrument; `taskPrompt` is what it must do; `intermediateOutput` is
+      // what it passes along. A block missing any of them is not a station in
+      // the chain, it is decoration.
+      for (const field of ['whatTheySee', 'dataPayload', 'taskPrompt', 'intermediateOutput']) {
+        const value = block[field]
+        expect(typeof value, `${gate.code}.${role}.${field} must be a non-empty string`).toBe('string')
+        expect((value as string).trim().length, `${gate.code}.${role}.${field} is empty`).toBeGreaterThan(0)
+      }
+    }
+  })
+
+  it.each(cases)('%s: the chain names all three hand-offs', (_code, gate) => {
+    const chain = gate.content.coordinationChain as Record<string, unknown>
+    // Observer produces -> Analyst transforms -> Operator executes. Each step
+    // must be a real sentence, not a placeholder.
+    for (const key of ['observerProduces', 'analystTransforms', 'operatorExecutes']) {
+      expect(typeof chain[key], `coordinationChain.${key}`).toBe('string')
+      expect((chain[key] as string).trim().length, `coordinationChain.${key} is empty`).toBeGreaterThan(10)
+    }
+  })
+
+  it.each(cases)('%s: no two roles are handed the same instrument', (_code, gate) => {
+    // If two roles carry an identical dataPayload, one of them is redundant and
+    // the gate can be solved without it. Identical prose across roles is the
+    // signature of a collapsed chain.
+    const payloads = ROLE_KEYS.map(role => normalize(String(roleOf(gate, role).dataPayload ?? '')))
+    const unique = new Set(payloads)
+    expect(unique.size, `${gate.code}: two roles carry an identical dataPayload`).toBe(ROLE_KEYS.length)
+  })
+
+  it.each(cases)('%s: no two roles are handed the same observation', (_code, gate) => {
+    const seen = ROLE_KEYS.map(role => normalize(String(roleOf(gate, role).whatTheySee ?? '')))
+    const unique = new Set(seen)
+    expect(unique.size, `${gate.code}: two roles are given identical evidence`).toBe(ROLE_KEYS.length)
+  })
+
   it.each(cases)('%s has exactly three non-empty hints', (_code, gate) => {
     const hints = gate.content.hints
     expect(Array.isArray(hints), 'hints must be an array').toBe(true)
@@ -269,6 +349,19 @@ describe('case content: shape', () => {
     for (const hint of hints as unknown[]) {
       expect(typeof hint).toBe('string')
       expect((hint as string).trim().length).toBeGreaterThan(0)
+    }
+  })
+
+  it.each(cases)('%s declares only visualTypes the player can draw', (_code, gate) => {
+    for (const role of ROLE_KEYS) {
+      const block = gate.content[role] as Record<string, unknown> | undefined
+      const type = block?.visualType
+      if (type === undefined) continue
+      expect(typeof type, `${role}.visualType must be a string`).toBe('string')
+      expect(
+        isDedicatedVisualType(type as string),
+        `${gate.code}.${role}: visualType "${String(type)}" has no renderer and would degrade to prose`,
+      ).toBe(true)
     }
   })
 
@@ -288,10 +381,41 @@ describe('case content: shape', () => {
 })
 
 describe('case content: the answer never reaches a player', () => {
+  /**
+   * A gate whose `acceptedAnswer` is a non-prose sentinel (###NN###) is a
+   * decision gate: its real answers live in `acceptedAnswers` and the case
+   * deliberately PRESENTS them, because the player is choosing between named
+   * options rather than deducing one. The finale (P37) is the only such gate.
+   * Its `acceptedAnswers` are the labels on the console, so they are allowed to
+   * appear in the text that asks the question - that is the whole point of the
+   * sentinel. Every other gate's answer set is still checked in full.
+   */
+  const isDecisionGate = (answer: Record<string, unknown>) =>
+    typeof answer.acceptedAnswer === 'string' && /^#{2,}\w+#{2,}$/.test(answer.acceptedAnswer.trim())
+
+  /**
+   * A gate whose `answer_metadata.presentedEvidence` is true is a
+   * presented-evidence gate: its answer IS a record entry the team reads off a
+   * register, so the gate is meant to print it. The server honours the same
+   * declaration by suppressing redaction for that gate only
+   * (2026100614_presented_evidence_redaction.sql). P04, M01 and P21 are the
+   * only such gates; every other gate must still hide its answer completely.
+   *
+   * The exemption is deliberate and narrow: it does not relax the token's
+   * `acceptedAnswer`, and a gate that is NOT declared still fails this test the
+   * moment its answer appears in its own text.
+   */
+  const isPresentedEvidence = (answer: Record<string, unknown>) =>
+    answer.presentedEvidence === true
+
   it.each(cases)('%s does not contain its answer in any visible string', (_code, gate) => {
+    const decisionGate = isDecisionGate(gate.answer)
+    const presented = isPresentedEvidence(gate.answer)
     const answers = [
-      gate.answer.acceptedAnswer,
-      ...(Array.isArray(gate.answer.acceptedAnswers) ? gate.answer.acceptedAnswers : []),
+      ...(decisionGate || presented ? [] : [gate.answer.acceptedAnswer]),
+      ...(Array.isArray(gate.answer.acceptedAnswers) && !decisionGate && !presented
+        ? gate.answer.acceptedAnswers
+        : []),
     ].filter((v): v is string => typeof v === 'string')
 
     for (const answer of answers) {
@@ -304,6 +428,36 @@ describe('case content: the answer never reaches a player', () => {
         ).toBe(false)
       }
     }
+  })
+
+  it('P37 accepts every disposition its console actually prints', () => {
+    const gate = gates.get('P37')
+    expect(gate, 'P37 missing').toBeTruthy()
+    expect(isDecisionGate(gate!.answer), 'P37 must stay a decision gate').toBe(true)
+
+    const accepted = (gate!.answer.acceptedAnswers as string[]).map(normalize)
+    const operator = (gate!.content.operator as Record<string, unknown>).dataPayload as string
+    // The console prints its verdicts between the field markers. Every word it
+    // shows must be in the servable set, or a team that reads the screen and
+    // types what it sees is rejected - which is the exact defect this repairs.
+    const shown = operator.match(/\b(ERASE|KEEP|RELEASE|DELETE|RETAIN|SHARE)\b/g) ?? []
+    expect(shown.length, 'the console prints no verdicts').toBeGreaterThan(0)
+    for (const word of shown) {
+      expect(accepted, `${word} is printed on the console but not accepted`).toContain(normalize(word))
+    }
+    // The console must name at least one word that is directly typeable.
+    expect(shown.some(w => accepted.includes(normalize(w))), 'no typeable verdict').toBe(true)
+  })
+
+  it('only the three declared gates print their own answer', () => {
+    // The presentedEvidence exemption is the one place the redaction rule is
+    // intentionally suspended. Pin the exact set so a future edit cannot quietly
+    // exempt a deduction gate and hand its answer to the player.
+    const presented = [...gates.values()]
+      .filter(g => g.answer.presentedEvidence === true)
+      .map(g => g.code)
+      .sort()
+    expect(presented).toEqual(['M01', 'P04', 'P21'])
   })
 })
 
@@ -334,21 +488,65 @@ describe('case content: mechanics are preserved', () => {
 })
 
 describe('case content: the sources are clean', () => {
-  it.each(REBUILD_FILES)('%s is ASCII-only', (name) => {
+  it('keeps the shipped-type list in step with the migrations', () => {
+    const shipped = new Set<string>()
+    for (const gate of gates.values()) {
+      for (const role of ROLE_KEYS) {
+        const block = gate.content[role] as Record<string, unknown> | undefined
+        if (typeof block?.visualType === 'string') shipped.add(block.visualType)
+      }
+    }
+    const declared = new Set<string>(CONTENT_VISUAL_TYPES)
+    const undeclared = [...shipped].filter(type => !declared.has(type)).sort()
+    expect(
+      undeclared,
+      `visualType shipped by content but absent from CONTENT_VISUAL_TYPES: ${undeclared.join(', ')}`,
+    ).toEqual([])
+  })
+
+  it.each([...REBUILD_FILES, ...REPAIR_FILES])('%s is ASCII-only', (name) => {
     const sql = readIfPresent(name)
     if (sql === null) return
     const offenders = [...sql].filter(ch => ch.charCodeAt(0) > 126)
     expect(offenders, `non-ASCII characters in ${name}`).toEqual([])
   })
 
-  it.each(REBUILD_FILES)('%s contains no destructive or schema-changing SQL', (name) => {
+  it.each([...REBUILD_FILES, ...REPAIR_FILES])('%s contains no destructive or schema-changing SQL', (name) => {
     const sql = readIfPresent(name)
     if (sql === null) return
     const stripped = stripComments(sql)
-    expect(stripped, `${name} must not drop, truncate or delete`).not.toMatch(/\b(DROP|TRUNCATE|DELETE)\b/i)
-    const statements = stripped.match(/^\s*(?:UPDATE|INSERT|ALTER|CREATE|DELETE|DROP|TRUNCATE|GRANT|REVOKE)\b[^\n;]*/gim) ?? []
+    // Strip string literals first: a gate's answer or prose may legitimately
+    // contain a word like DELETE (the finale's dispositions do), and that is
+    // content, not SQL. What must never appear is the STATEMENT.
+    const code = stripped.replace(/\$[A-Za-z0-9_]*\$[\s\S]*?\$[A-Za-z0-9_]*\$/g, "''")
+      .replace(/'(?:[^']|'')*'/g, "''")
+    expect(code, `${name} must not drop, truncate or delete`).not.toMatch(/\b(DROP|TRUNCATE|DELETE)\b/i)
+    const statements = code.match(/^\s*(?:UPDATE|INSERT|ALTER|CREATE|DELETE|DROP|TRUNCATE|GRANT|REVOKE)\b[^\n;]*/gim) ?? []
     for (const statement of statements) {
-      expect(statement.trim().toUpperCase(), `${name}: unexpected statement`).toMatch(/^UPDATE\s+PUZZLE_NODES\b/)
+      const upper = statement.trim().replace(/\s+/g, ' ').toUpperCase()
+      // A repair migration may touch content (UPDATE puzzle_nodes), and it may
+      // redefine a server FUNCTION body - 2026100614 teaches
+      // get_player_node_detail to honour a gate's presented-evidence
+      // declaration, which is a behaviour repair, not a schema change.
+      //
+      // CREATE OR REPLACE FUNCTION is allowed; every other CREATE (TABLE,
+      // POLICY, INDEX, TYPE, EXTENSION) is not. The REVOKE/GRANT that must
+      // accompany it are allowed too, because CREATE OR REPLACE does not
+      // preserve a function's EXECUTE grants and dropping them would be the
+      // real security regression - but they are pinned to that one function so
+      // a repair cannot widen privileges anywhere else.
+      const isContentUpdate = /^UPDATE PUZZLE_NODES\b/.test(upper)
+      const isFunctionBody = /^CREATE OR REPLACE FUNCTION\b/.test(upper)
+      const isGrantLockdown =
+        /^(?:REVOKE EXECUTE ON FUNCTION|GRANT EXECUTE ON FUNCTION) GET_PLAYER_NODE_DETAIL\(UUID, TEXT\)/.test(upper)
+      expect(
+        isContentUpdate || isFunctionBody || isGrantLockdown,
+        `${name}: unexpected statement: ${upper.slice(0, 80)}`,
+      ).toBe(true)
+      // No statement may smuggle a schema change in behind an allowed verb.
+      expect(upper, `${name}: schema change smuggled into a statement`).not.toMatch(
+        /\b(ALTER|DROP|TRUNCATE|DELETE)\b/,
+      )
     }
   })
 })

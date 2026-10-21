@@ -8,6 +8,21 @@
 import { useRef, useCallback } from 'react'
 import gsap from 'gsap'
 
+/**
+ * GSAP does not accept a raw CSS `cubic-bezier(...)` string as an ease: it looks
+ * the string up in the ease registry, finds nothing, and silently falls back to
+ * `power1.out`. Every timeline below used to pass
+ * `'cubic-bezier(0.16, 0.84, 0.44, 1)'` as its default ease, so the intended
+ * snappy, strongly decelerating curve was never applied anywhere - the motion
+ * ran on GSAP's default and no error was raised.
+ *
+ * `power3.out` is that curve expressed as a GSAP ease (fast onset, strong
+ * deceleration), so the motion the timelines describe is the motion they now
+ * actually produce. Anything needing the literal bezier would have to register
+ * it through CustomEase; a built-in is the honest choice here.
+ */
+const SNAP_OUT = 'power3.out'
+
 export type AnimationVariant =
   | 'boot'
   | 'stamp'
@@ -32,7 +47,7 @@ export function useAnimation(variant: AnimationVariant, options?: AnimationOptio
 
     const tl = gsap.timeline({
       defaults: {
-        ease: 'cubic-bezier(0.16, 0.84, 0.44, 1)',
+        ease: SNAP_OUT,
       },
       onComplete: options?.onComplete,
     })
@@ -63,7 +78,7 @@ export function useAnimation(variant: AnimationVariant, options?: AnimationOptio
             y: 0,
             clipPath: 'inset(0 0 0 0)',
             duration: 0.5,
-            ease: 'cubic-bezier(0.25, 0.1, 0.25, 1)',
+            ease: SNAP_OUT,
           },
         )
         break
@@ -100,7 +115,7 @@ export function useAnimation(variant: AnimationVariant, options?: AnimationOptio
   const animateStagger = useCallback((targets: Element[]) => {
     if (!targets.length) return
 
-    const tl = gsap.timeline({ defaults: { ease: 'cubic-bezier(0.16, 0.84, 0.44, 1)' } })
+    const tl = gsap.timeline({ defaults: { ease: SNAP_OUT } })
     tl.fromTo(
       targets,
       { opacity: 0, y: 6 },

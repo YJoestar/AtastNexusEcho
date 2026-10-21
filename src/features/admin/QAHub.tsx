@@ -283,7 +283,9 @@ function QAHubInner() {
       <div className="page-content max-w-7xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <p className="font-mono text-[0.56rem] uppercase tracking-[0.18em] text-nexus-textSubtle">ISOLATED MEMORY / NO PRODUCTION STATE</p>
+            <p className="font-mono text-[0.56rem] uppercase tracking-[0.18em] text-nexus-textSubtle">
+              ISOLATED MEMORY / {qa.qaLoadError ? 'STORED STATE UNREACHABLE' : 'READ-ONLY MIRROR OF STORED STATE'} / NO PRODUCTION WRITES
+            </p>
             <h1 className="mt-1 font-mono text-xl font-bold text-nexus-text">FIELD DEVICE EMULATION</h1>
           </div>
           <div className="flex items-center gap-2">
@@ -311,6 +313,26 @@ function QAHubInner() {
         </div>
 
         <div className="border-t border-nexus-border">
+          {qa.qaLoadError ? (
+            <div
+              role="alert"
+              className="mb-4 border border-nexus-danger/50 bg-nexus-dangerBg/20 p-3 text-sm"
+            >
+              <p className="font-medium text-nexus-danger">STORED CONTENT UNAVAILABLE</p>
+              <p className="mt-1 text-nexus-textMuted">
+                The emulation could not read the stored puzzle rows, so every screen below shows
+                placeholder prose rather than production state. Nothing here can be certified.
+              </p>
+              <p className="mt-2 font-mono text-xs text-nexus-textSubtle">{qa.qaLoadError}</p>
+            </div>
+          ) : (
+            <p
+              role="status"
+              className="mb-4 font-mono text-[0.62rem] uppercase tracking-[0.16em] text-nexus-textSubtle"
+            >
+              {qa.qaLoadedCodes} STORED NODE ROWS LOADED / NARRATIVE READ FROM PRODUCTION CONTENT
+            </p>
+          )}
           <nav className="flex gap-4" role="tablist">
             <button
               onClick={() => setActiveTab('controls')}
@@ -832,12 +854,32 @@ function KeyboardShortcuts({
 }) {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement) return
+      // A tester types into the emulator constantly - an answer field, the
+      // jump-to-node box, any future control. A shortcut must never fire while a
+      // control has focus, or the emulator will solve or reset the run out from
+      // under the person using it. `isContentEditable` closes the same hole for
+      // rich fields; a target that is not an element (e.g. document) is not a
+      // control and falls through.
+      const target = e.target
+      if (target instanceof HTMLElement) {
+        if (
+          target.isContentEditable ||
+          target instanceof HTMLInputElement ||
+          target instanceof HTMLTextAreaElement ||
+          target instanceof HTMLSelectElement
+        ) {
+          return
+        }
+      }
       if (e.code === 'Space') {
         e.preventDefault()
         onSolve()
       }
-      if (e.ctrlKey && e.key === 'r') {
+      // Ctrl+R is the browser's own reload, and a tester will reach for it. The
+      // hub advertises Ctrl+R as "reset simulation", so it must actually take
+      // Ctrl+R away from the browser - but only inside the emulation surface,
+      // never in a way that traps the operator on a broken screen.
+      if (e.ctrlKey && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'r') {
         e.preventDefault()
         onReset()
       }
@@ -912,6 +954,31 @@ function PuzzleDetailViewer({ nodeId, role, getNode }: PuzzleDetailViewerProps) 
 
       {loading && (
         <div className="text-xs text-nexus-textSubtle">Loading puzzle content...</div>
+      )}
+
+      {/*
+        The simulator computes `contentIsReal` - whether the stored row actually
+        carried a block for this role - and nothing ever read it. A tester could
+        therefore be reading fully synthesised prose while the screen said
+        "NARRATIVE READ FROM PRODUCTION CONTENT", and certify a node against
+        text no player will ever see. Say which it is, per role.
+      */}
+      {detail && detail.contentIsReal === false && (
+        <p
+          role="status"
+          className="border border-nexus-warning/50 bg-nexus-warningBg/20 p-2 font-mono text-xs text-nexus-warning"
+        >
+          SYNTHETIC {role} CONTENT — the stored row carries no {role.toLowerCase()} block for this
+          node, so the text below is generated placeholder. Do not certify it.
+        </p>
+      )}
+      {detail && detail.contentIsReal === true && (
+        <p
+          role="status"
+          className="font-mono text-[0.58rem] uppercase tracking-[0.14em] text-nexus-textSubtle"
+        >
+          STORED {role} CONTENT — read from the production row
+        </p>
       )}
 
       {detail && detail.roleContent && (

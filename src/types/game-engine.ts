@@ -146,6 +146,13 @@ export interface NodeDetailPlayerView {
   branchConditions: BranchCondition[]
   prerequisites: Prerequisite[]
   points: number
+  /**
+   * QA emulation only. True when every narrative field came from the stored
+   * `puzzle_nodes` row; false when the row could not be read and the simulator
+   * fell back to placeholder prose. Absent on the real server payload, where
+   * there is no fallback to distinguish.
+   */
+  contentIsReal?: boolean
 }
 
 export interface TeamGameState {

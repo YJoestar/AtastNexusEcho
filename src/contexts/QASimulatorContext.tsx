@@ -122,6 +122,14 @@ export interface QAContextValue extends QASimulatorState, QASimulatorControls {
   fetchNodeProgress: () => Promise<void>
   isInitializing: boolean
   isAuthenticated: boolean
+  /**
+   * Non-null when the emulation could not read the stored node rows. The hub
+   * must show this: without it, placeholder prose is indistinguishable from
+   * real content and QA can certify a case it never actually loaded.
+   */
+  qaLoadError: string | null
+  /** How many stored node rows the emulation successfully loaded. */
+  qaLoadedCodes: number
   logout: () => Promise<void>
   login: (accessCode: string, deviceInfo?: Record<string, unknown>) => Promise<{ success: boolean; error?: string }>
 }
@@ -202,13 +210,43 @@ function generateRoleContent(puzzle: NodeIndexEntry, role: Role): RoleContent {
   }
 }
 
-function generateNodeDetail(
+/**
+ * Read a non-empty string out of an untyped bag. Content ships as JSONB, so
+ * every read has to tolerate a missing key, a null or a wrong type.
+ */
+function pickString(source: Record<string, unknown> | null | undefined, key: string): string | undefined {
+  const value = source?.[key]
+  return typeof value === 'string' && value.trim().length > 0 ? value : undefined
+}
+
+function pickObject(
+  source: Record<string, unknown> | null | undefined,
+  key: string,
+): Record<string, unknown> | undefined {
+  const value = source?.[key]
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : undefined
+}
+
+export function generateNodeDetail(
   puzzle: NodeIndexEntry,
   role: Role,
   solved: boolean,
   qaData?: PuzzleQAEntry,
 ): NodeDetailPlayerView {
-  const roleContent: RoleContent = qaData?.content?.[role.toLowerCase()] as RoleContent | undefined ?? generateRoleContent(puzzle, role)
+  // The emulation exists to show what the Bureau actually stores. When the real
+  // row is available every narrative field is read from it; the synthetic
+  // strings are a last resort for a node the QA feed could not reach, and are
+  // labelled as such so a tester can never mistake placeholder for content.
+  const storedContent = qaData?.content ?? undefined
+  const storedMetadata = qaData?.metadata ?? undefined
+
+  const roleContent: RoleContent =
+    (pickObject(storedContent, role.toLowerCase()) as RoleContent | undefined) ??
+    generateRoleContent(puzzle, role)
+
+  const contentIsReal = Boolean(pickObject(storedContent, role.toLowerCase()))
 
   // The server no longer serves the coordination chain or the failure
   // propagation to players (2026100602): the chain states every role's
@@ -218,60 +256,107 @@ function generateNodeDetail(
 
   const failurePropagation: FailurePropagation | null = null
 
-  const locationClue: LocationClue = {
-    format: 'qr',
-    clueText: `Physical marker found at ${puzzle.location}`,
-    solution: `[Simulated]`,
-    nextPhysicalLocation: puzzle.nextNodes?.[0]
-      ? PUZZLES_BY_CODE[puzzle.nextNodes[0]]?.location ?? 'Unknown'
-      : 'Investigation continues',
-    nextQrNode: puzzle.nextNodes?.[0] ?? null,
-    explanation: `${puzzle.name} leads to the next stage.`,
-  }
-
-  const evidenceUnlocked: EvidenceUnlocked | null = solved
+  // The stored clue is the real physical step; only fall back to a synthetic
+  // marker when the node carries none.
+  const storedClue = pickObject(storedMetadata, 'locationClue')
+  const locationClue: LocationClue = storedClue
     ? {
-        id: `ev-${puzzle.code}`,
-        category: puzzle.type,
-        title: `${puzzle.name} — Evidence`,
-        state: solved ? 'DISCOVERED' : 'LOCKED',
-        timestamp: new Date().toISOString(),
-        source: puzzle.code,
-        content: `Simulated evidence from ${puzzle.name} at ${puzzle.location}.`,
+        format: pickString(storedClue, 'format') ?? 'qr',
+        clueText: pickString(storedClue, 'clueText') ?? 'No clue recorded.',
+        solution: pickString(storedClue, 'solution') ?? '',
+        nextPhysicalLocation: pickString(storedClue, 'nextPhysicalLocation') ?? 'Investigation continues',
+        nextQrNode: pickString(storedClue, 'nextQrNode') ?? null,
+        explanation: pickString(storedClue, 'explanation') ?? '',
       }
+    : {
+        format: 'qr',
+        clueText: `Physical marker found at ${puzzle.location}`,
+        solution: `[Simulated]`,
+        nextPhysicalLocation: puzzle.nextNodes?.[0]
+          ? PUZZLES_BY_CODE[puzzle.nextNodes[0]]?.location ?? 'Unknown'
+          : 'Investigation continues',
+        nextQrNode: puzzle.nextNodes?.[0] ?? null,
+        explanation: `${puzzle.name} leads to the next stage.`,
+      }
+
+  // Real per-role evidence: the node's own `evidenceUnlocked` describes what
+  // solving it opens, and the linked `evidence` rows carry the file itself.
+  const storedEvidence = pickObject(storedMetadata, 'evidenceUnlocked')
+  const linkedEvidence = qaData?.evidence?.[0]
+  const evidenceUnlocked: EvidenceUnlocked | null = solved
+    ? storedEvidence
+      ? {
+          id: pickString(storedEvidence, 'id') ?? `ev-${puzzle.code}`,
+          category: pickString(storedEvidence, 'category') ?? puzzle.type,
+          title: pickString(storedEvidence, 'title') ?? `${puzzle.name} — Evidence`,
+          state: 'DISCOVERED',
+          timestamp: new Date().toISOString(),
+          source: pickString(storedEvidence, 'source') ?? puzzle.code,
+          content:
+            pickString(linkedEvidence?.content, 'text') ??
+            pickString(storedEvidence, 'description') ??
+            pickString(storedEvidence, 'title') ??
+            `Evidence unlocked by ${puzzle.name}.`,
+        }
+      : {
+          id: `ev-${puzzle.code}`,
+          category: puzzle.type,
+          title: `${puzzle.name} — Evidence`,
+          state: 'DISCOVERED',
+          timestamp: new Date().toISOString(),
+          source: puzzle.code,
+          content: `Simulated evidence from ${puzzle.name} at ${puzzle.location}.`,
+        }
     : null
+
+  const storedObjective = pickString(storedContent, 'narrativeObjective')
+  const storedInvestigation = pickObject(storedContent, 'operatorInvestigation')
 
   return {
     unlocked: true,
     code: puzzle.code,
-    title: puzzle.name,
-    type: puzzle.type as string,
+    title: qaData?.title ?? puzzle.name,
+    type: (qaData?.type as string) ?? (puzzle.type as string),
     difficulty: puzzle.difficulty,
     estimatedMinutes: puzzle.time ? parseTimeToMinutes(puzzle.time) : 5,
-    location: puzzle.location,
-    stage: puzzle.stage,
-    narrativeObjective: `Investigate ${puzzle.name} at ${puzzle.location}.`,
+    location: qaData?.location ?? puzzle.location,
+    stage: qaData?.stage ?? puzzle.stage,
+    narrativeObjective: storedObjective ?? `Investigate ${puzzle.name} at ${puzzle.location}.`,
     roleDependencyLevel: puzzle.type === 'FINAL_BOSS' ? 'TRIAD' : puzzle.type === 'META' ? 'PAIR' : 'SOLO',
     roleContent,
     operatorInvestigation:
       role === 'OPERATOR'
-        ? {
-            operatorOwnEvidence: `Operator-only evidence for ${puzzle.name}`,
-            operatorTaskDescription: `Coordinate Observer and Analyst findings to solve ${puzzle.name}`,
-          }
+        ? storedInvestigation
+          ? {
+              operatorOwnEvidence:
+                pickString(storedInvestigation, 'operatorOwnEvidence') ??
+                `Operator-only evidence for ${puzzle.name}`,
+              operatorTaskDescription:
+                pickString(storedInvestigation, 'operatorTaskDescription') ??
+                `Coordinate Observer and Analyst findings to solve ${puzzle.name}`,
+            }
+          : {
+              operatorOwnEvidence: `Operator-only evidence for ${puzzle.name}`,
+              operatorTaskDescription: `Coordinate Observer and Analyst findings to solve ${puzzle.name}`,
+            }
         : null,
     coordinationChain,
     failurePropagation,
     locationClue,
     evidenceUnlocked,
-    storyReveal: `Solving ${puzzle.name} reveals the next piece of the narrative.`,
-    whyTeamworkMatters: `The ${role}'s unique perspective on ${puzzle.name} is essential for the team's success.`,
+    storyReveal:
+      pickString(storedMetadata, 'storyReveal') ??
+      `Solving ${puzzle.name} reveals the next piece of the narrative.`,
+    whyTeamworkMatters:
+      pickString(storedMetadata, 'whyTeamworkMatters') ??
+      `The ${role}'s unique perspective on ${puzzle.name} is essential for the team's success.`,
     branchConditions: [],
     prerequisites: puzzle.prerequisiteNodes.map(targetId => ({
       type: 'NODE_SOLVED' as const,
       targetId,
     })),
     points: puzzle.points,
+    contentIsReal,
   }
 }
 
@@ -559,6 +644,8 @@ export function QASimulatorProvider({ children }: { children: ReactNode }) {
   const [puzzleQAData, setPuzzleQAData] = useState<Record<string, PuzzleQAEntry>>({})
   const [qrMarkers, setQrMarkers] = useState<QRCodeEntry[]>([])
   const [isQALoaded, setIsQALoaded] = useState(false)
+  const [qaLoadError, setQaLoadError] = useState<string | null>(null)
+  const [qaLoadedCodes, setQaLoadedCodes] = useState<number>(0)
   // The ref is the source of truth for counting, the state mirrors it for
   // rendering. Two submissions in the same tick would both read the same state
   // snapshot and both report the same attempt number.
@@ -578,8 +665,16 @@ export function QASimulatorProvider({ children }: { children: ReactNode }) {
         map[entry.code] = entry
       }
       setPuzzleQAData(map)
-    } catch (_err) {
-      // QA data is optional — simulator falls back to generated content
+      setQaLoadError(null)
+      // A successful call that returns nothing is a different failure from a
+      // refused call: the row is genuinely absent, not unreachable.
+      setQaLoadedCodes(Object.keys(map).length)
+    } catch (err) {
+      // The emulation is worthless if it cannot read the stored rows: it would
+      // silently show placeholder prose that looks like content. Record the
+      // failure so the hub can say so plainly instead of pretending.
+      setQaLoadError(err instanceof Error ? err.message : 'QA content could not be loaded.')
+      setQaLoadedCodes(0)
     }
 
     // Real markers, so a simulated scan is answered by the same lookup the
@@ -812,17 +907,28 @@ export function QASimulatorProvider({ children }: { children: ReactNode }) {
       }
 
       const qaEntry = puzzleQAData[nodeId]
-      const accepted = qaEntry?.answerMetadata?.acceptedAnswer as string | undefined
-      const method = (qaEntry?.answerMetadata?.validationMethod as string | undefined) ?? 'case_insensitive'
+      const answerMeta = (qaEntry?.answerMetadata ?? {}) as Record<string, unknown>
+      const accepted = answerMeta.acceptedAnswer as string | undefined
+      const alternatives = Array.isArray(answerMeta.acceptedAnswers)
+        ? (answerMeta.acceptedAnswers as unknown[]).filter((v): v is string => typeof v === 'string')
+        : []
 
-      let isCorrect = false
-      if (accepted && accepted.length > 0) {
-        if (method === 'exact') {
-          isCorrect = answer === accepted
-        } else {
-          isCorrect = answer.toUpperCase().trim() === accepted.toUpperCase().trim()
-        }
-      }
+      // Mirrors submit_puzzle_answer (2026100608): the comparison is
+      // case-insensitive with runs of whitespace collapsed to a single space,
+      // an empty submission never matches, and the accepted set is
+      // `acceptedAnswer` PLUS every entry of `acceptedAnswers`. The finale
+      // (P37) carries its real answers only in `acceptedAnswers`, so an
+      // emulator that read `acceptedAnswer` alone rejected DELETE / RETAIN /
+      // SHARE - the exact defect 2026100610 repaired on the server. The
+      // simulator must agree with the server or the QA tool lies.
+      const canonical = (value: string) => value.trim().toUpperCase().replace(/\s+/g, ' ')
+      const submitted = canonical(answer)
+      const acceptedSet = [accepted, ...alternatives]
+        .filter((v): v is string => typeof v === 'string')
+        .map(canonical)
+        .filter(v => v.length > 0)
+
+      const isCorrect = submitted.length > 0 && acceptedSet.includes(submitted)
 
       // A real attempt count, by puzzle.
       //
@@ -838,7 +944,18 @@ export function QASimulatorProvider({ children }: { children: ReactNode }) {
       attemptCountsRef.current = { ...attemptCountsRef.current, [nodeId]: attemptNumber }
       setAttemptCounts(attemptCountsRef.current)
 
-      const pointsAwarded = isCorrect ? puzzle.points : 0
+      // Mirrors the server's retry schedule (submit_puzzle_answer, 2026100608):
+      // attempt 1 pays the full base, attempt 2 pays (base + 1) / 2, and any
+      // later attempt pays nothing. The simulator used to pay full points on
+      // every correct attempt, so a QA walk never reproduced the halving the
+      // server actually applies on a second try.
+      const attemptPoints = isCorrect
+        ? attemptNumber === 1
+          ? puzzle.points
+          : attemptNumber === 2
+            ? Math.floor((puzzle.points + 1) / 2)
+            : 0
+        : 0
 
       // A once-only claim, decided synchronously.
       //
@@ -857,7 +974,7 @@ export function QASimulatorProvider({ children }: { children: ReactNode }) {
         const next = new Set([...solvedNodesRef.current, nodeId])
         solvedNodesRef.current = next
         setSolvedNodes(next)
-        setScore(prev => prev + pointsAwarded)
+        setScore(prev => prev + attemptPoints)
 
         const nextCode = puzzle.nextNodes?.[0] ?? null
         if (nextCode && PUZZLES_BY_CODE[nextCode]) {
@@ -866,7 +983,7 @@ export function QASimulatorProvider({ children }: { children: ReactNode }) {
       }
 
       const nextId = puzzle.nextNodes?.[0] ?? null
-      const paidPoints = isCorrect && alreadySolved ? 0 : pointsAwarded
+      const paidPoints = isCorrect && alreadySolved ? 0 : attemptPoints
       return {
         isCorrect,
         pointsAwarded: paidPoints,
@@ -1261,6 +1378,8 @@ interface SimulatedScanResult {
       fetchNodeProgress,
       isInitializing,
       isAuthenticated,
+      qaLoadError,
+      qaLoadedCodes,
       logout,
       login,
     }),
@@ -1292,6 +1411,8 @@ interface SimulatedScanResult {
       scanQR,
       isInitializing,
       isAuthenticated,
+      qaLoadError,
+      qaLoadedCodes,
     ],
   )
 

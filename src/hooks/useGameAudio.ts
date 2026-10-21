@@ -13,13 +13,37 @@ import { useEffect, useReducer } from 'react'
 
 const MUTE_KEY = 'nexus_audio_muted'
 
-const CTX =
-  typeof window !== 'undefined'
-    ? (() => {
-        const Ctor = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
-        return Ctor ? new Ctor() : null
-      })()
-    : null
+/**
+ * The audio context is created LAZILY, on the first sound the game actually
+ * plays.
+ *
+ * It used to be constructed at module scope, the moment this file was imported.
+ * Browsers apply an autoplay policy to AudioContext: a context created before
+ * any user gesture starts `suspended`, and one created at import time is
+ * created before any gesture could possibly have happened. The old code then
+ * called `resume()` on every tone, which is only granted once the page has
+ * already been interacted with - so the first sounds of a session were silently
+ * dropped. Creating it on demand means it is built inside the gesture that
+ * asked for it, when the policy permits it to start running.
+ */
+let ctx: AudioContext | null = null
+
+function audioContext(): AudioContext | null {
+  if (typeof window === 'undefined') return null
+  if (ctx) return ctx
+  const Ctor =
+    window.AudioContext ||
+    (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+  if (!Ctor) return null
+  try {
+    ctx = new Ctor()
+  } catch {
+    // A browser may refuse construction outright (rare, and not fatal): the
+    // game simply runs silent rather than crashing a screen over sound.
+    ctx = null
+  }
+  return ctx
+}
 
 let muted =
   typeof window !== 'undefined'
@@ -48,43 +72,47 @@ export function useAudioMute() {
   return { muted, toggle: () => setAudioMuted(!muted) }
 }
 
-function resume() {
-  if (CTX && typeof (CTX as unknown as { resume?: () => Promise<void> }).resume === 'function') {
-    void (CTX as unknown as { resume: () => Promise<void> }).resume()
+function resume(active: AudioContext) {
+  if (typeof active.resume === 'function' && active.state === 'suspended') {
+    void active.resume()
   }
 }
 
 function tone(freq: number, duration = 0.12, type: OscillatorType = 'square', gain = 0.04) {
-  if (!CTX || muted) return
-  resume()
-  const t = CTX.currentTime
-  const osc = CTX.createOscillator()
-  const g = CTX.createGain()
+  if (muted) return
+  const active = audioContext()
+  if (!active) return
+  resume(active)
+  const t = active.currentTime
+  const osc = active.createOscillator()
+  const g = active.createGain()
   osc.type = type
   osc.frequency.setValueAtTime(freq, t)
   g.gain.setValueAtTime(gain, t)
   g.gain.exponentialRampToValueAtTime(0.0001, t + duration)
   osc.connect(g)
-  g.connect(CTX.destination)
+  g.connect(active.destination)
   osc.start(t)
   osc.stop(t + duration)
 }
 
 function noise(duration = 0.18, gain = 0.02) {
-  if (!CTX || muted) return
-  resume()
-  const t = CTX.currentTime
-  const bufferSize = Math.floor(CTX.sampleRate * duration)
-  const buffer = CTX.createBuffer(1, bufferSize, CTX.sampleRate)
+  if (muted) return
+  const active = audioContext()
+  if (!active) return
+  resume(active)
+  const t = active.currentTime
+  const bufferSize = Math.floor(active.sampleRate * duration)
+  const buffer = active.createBuffer(1, bufferSize, active.sampleRate)
   const data = buffer.getChannelData(0)
   for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.3))
-  const src = CTX.createBufferSource()
-  const g = CTX.createGain()
+  const src = active.createBufferSource()
+  const g = active.createGain()
   src.buffer = buffer
   g.gain.setValueAtTime(gain, t)
   g.gain.exponentialRampToValueAtTime(0.0001, t + duration)
   src.connect(g)
-  g.connect(CTX.destination)
+  g.connect(active.destination)
   src.start(t)
 }
 

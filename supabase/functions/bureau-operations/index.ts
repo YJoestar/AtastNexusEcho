@@ -1524,10 +1524,16 @@ email_confirm: true,
 
         const nodeCodes = (nodes ?? []).map(n => n.code)
 
+        // `->>` (text extraction), not `->` (json extraction). With the single
+        // arrow PostgREST embeds the right-hand side as JSON, so `in.(P01,...)`
+        // is rejected by Postgres with 22P02 "invalid input syntax for type
+        // json" — which dbError() maps to 400 "Invalid request". That made the
+        // whole action fail against the live database, so the QA simulator
+        // could never read stored puzzle content. Verified live.
         const { data: evidenceItems, error: evidenceError } = await supabaseAdmin
           .from('evidence')
           .select('id, type, title, content, metadata')
-          .in('metadata->nodeCode', nodeCodes)
+          .in('metadata->>nodeCode', nodeCodes)
 
         // Checked: an unchecked failure returned puzzles with no evidence
         // attached, which the QA screen reads as "this puzzle rewards nothing"
@@ -1584,6 +1590,7 @@ email_confirm: true,
             branches: n.branches,
             content: n.content,
             answerMetadata: n.answer_metadata,
+            metadata: n.metadata,
             evidence: nodeEvidence,
             audioEvidence,
           }
@@ -2086,7 +2093,11 @@ email_confirm: true,
             updated_by,
             puzzle_nodes:node_id (code, title, type, stage)
           `)
-          .order('puzzle_nodes.code', { foreignTable: 'puzzle_nodes', ascending: true })
+          // PostgREST parses `order=puzzle_nodes.code.asc` as an unknown order
+          // term, failing with PGRST100 ("unexpected \"c\" expecting \"asc\"").
+          // The embedded-table form is `puzzle_nodes(code).asc`. Verified live:
+          // the wrong form made this action answer 500 on every call.
+          .order('puzzle_nodes(code)', { foreignTable: 'puzzle_nodes', ascending: true })
 
         // Checked: an unchecked failure rendered as "no locations configured",
         // which would have an operator conclude every puzzle is at its default

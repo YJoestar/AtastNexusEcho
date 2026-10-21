@@ -28,6 +28,11 @@ export const CONTENT_VISUAL_TYPES = [
   'grid-maze',
   'meta',
   'final-boss',
+  'terminal',
+  'telemetry',
+  'chart',
+  'console',
+  'timeline',
 ] as const
 
 /** Types the registry draws. `identity`/`cryptogram` are accepted aliases. */
@@ -53,6 +58,11 @@ export const RENDERED_VISUAL_TYPES = [
   'grid-maze',
   'meta',
   'final-boss',
+  'terminal',
+  'telemetry',
+  'chart',
+  'console',
+  'timeline',
 ] as const
 
 export function isDedicatedVisualType(type?: string | null): boolean {

@@ -1,0 +1,4284 @@
+[
+  {
+    "code": "P17b",
+    "content": {
+      "hints": [
+        "The ciphertext uses three rails of a fence.",
+        "Unfold by reading every third letter, starting at position 0.",
+        "Apply Atbash (A=Z, B=Y) to the unfolded string."
+      ],
+      "analyst": {
+        "role": "ANALYST",
+        "taskPrompt": "Unfold the rail fence and report the plaintext.",
+        "dataPayload": "DECRYPTOR: Rail fence, 3 rails. Reconstruct the plaintext row by row.",
+        "screenTitle": "Rail Fence Decryptor",
+        "whatTheySee": "A 3-rail rail-fence reconstruction grid, one letter per cell.",
+        "intermediateOutput": "Unfolded: XLFUHGLSVWGILVSLGHFXLM"
+      },
+      "observer": {
+        "role": "OBSERVER",
+        "taskPrompt": "Read the cipher text aloud. Hint: it uses three rows.",
+        "visualType": "cipher-text",
+        "dataPayload": "SCANNED SURFACE: A length of copper tape mounted vertically on a concrete pillar. Etched along its length is a zigzagging string of letters.",
+        "screenTitle": "Basement Archive Scan",
+        "whatTheySee": "A copper strip with letters carved in a zigzag pattern across three levels.",
+        "interactiveData": {
+          "hint": "Three rows. Read down-the-diagonal.",
+          "cipherText": "XGWHGOHLMGVLIMGSXLPFSLLVX"
+        },
+        "intermediateOutput": "XGWHGOHLMGVLIMGSXLPFSLLVX"
+      },
+      "operator": {
+        "role": "OPERATOR",
+        "taskPrompt": "What does Atbash produce? Submit it.",
+        "dataPayload": "CIPHER TERMINAL: Apply Atbash to the unfolded result.",
+        "screenTitle": "Atbash Cipher Terminal",
+        "whatTheySee": "Atbash wheel ready for input.",
+        "intermediateOutput": "Submit: [sealed]"
+      },
+      "coordinationChain": {
+        "observerProduces": "Observer reads the ciphertext off the copper tape.",
+        "operatorExecutes": "Operator runs Atbash on the plaintext and submits the result.",
+        "analystTransforms": "Analyst reconstructs the 3-rail fence plaintext."
+      },
+      "narrativeObjective": "Decrypt the rail-fenced atbash ciphertext hidden in the basement archive.",
+      "roleDependencyLevel": "D3",
+      "operatorInvestigation": {
+        "operatorOwnEvidence": "Terminal shows a cipher analysis station with rail-fence grid and atbash wheel.",
+        "requiredDiscoveries": {
+          "analystDiscovery": "Unfolds 3-rail fence to: XLFUHGLSVWGILVSLGHFXLM.",
+          "observerDiscovery": "Reads 24-letter ciphertext: XGWHGOHLMGVLIMGSXLPFSLLVX."
+        },
+        "operatorTaskDescription": "The Observer reads the cipher text. The Analyst reconstructs the rail fence. The Operator applies Atbash and submits the final word."
+      }
+    },
+    "answer_metadata": {
+      "fullSolution": "Rail-fence (3 rails) on XGWHGOHLMGVLIMGSXLPFSLLVX yields XLFUHGLSVWGILVSLGHFXLM. Atbash turns that into COUNT THE DOORS NOT THE CLOCKS. Submitting unlocks P18.",
+      "acceptedAnswer": "COUNT THE DOORS NOT THE CLOCKS",
+      "validationMethod": "case_insensitive"
+    },
+    "metadata": {
+      "time": "8m",
+      "type": "CIPHER",
+      "feeds": "P17",
+      "difficulty": 4,
+      "storyReveal": "Terminal: TIME IS A MEASURE, NOT A DESTINATION.",
+      "locationClue": {
+        "format": "Symbol",
+        "clueText": "LINA'S NOTE: The reading room holds the next truth. Seek the fifth glyph carved in wood.",
+        "solution": "Library Reading Room Fifth Symbol",
+        "nextQrNode": "QR-NODE-20",
+        "explanation": "Points to the fifth symbol in the reading room.",
+        "nextPhysicalLocation": "[LIBRARY] — Reading Room Fifth Symbol"
+      },
+      "evidenceUnlocked": {
+        "id": "EVID-P17b",
+        "state": "RECOVERED",
+        "title": "Rail Fence Configuration",
+        "source": "Basement archive copper tape",
+        "content": "The copper tape encodes a 3-rail fence. The plaintext before Atbash: XLFUHGLSVWGILVSLGHFXLM.",
+        "category": "Cipher",
+        "timestamp": "Stage 3"
+      },
+      "whyTeamworkMatters": "Each step requires a different role: reading, unfolding, and applying the final cipher."
+    }
+  },
+  {
+    "code": "P23b",
+    "content": {
+      "hints": [
+        "Movement alternates: one horizontal segment, then one vertical, then horizontal...",
+        "Walls block movement within a segment.",
+        "Count segments, not individual cells."
+      ],
+      "analyst": {
+        "role": "ANALYST",
+        "taskPrompt": "Count the minimum moves to navigate from S to E.",
+        "dataPayload": "ALGORITHM: Alternating-axis BFS. First move horizontal, second move vertical, third horizontal...",
+        "screenTitle": "Pathfinding Algorithm",
+        "whatTheySee": "An alternating-axis BFS path visualization.",
+        "intermediateOutput": "Minimum path length computed."
+      },
+      "observer": {
+        "role": "OBSERVER",
+        "taskPrompt": "Report the grid layout.",
+        "visualType": "grid-maze",
+        "dataPayload": "GRID MAP (6x6): S#.... / ..###. / ..#... / ..#... / ...... / .....E",
+        "screenTitle": "Floor Grid Scanner",
+        "whatTheySee": "A six-by-six floor grid with S at top-left and E at bottom-right. Walls block direct passage.",
+        "interactiveData": {
+          "end": "E",
+          "hint": "Alternating-axis movement: horizontal then vertical.",
+          "wall": "#",
+          "start": "S",
+          "gridString": "S#.... / ..###. / ..#... / ..#... / ...... / .....E"
+        },
+        "intermediateOutput": "6x6 grid, S=top-left, E=bottom-right"
+      },
+      "operator": {
+        "role": "OPERATOR",
+        "taskPrompt": "Submit the minimum move count.",
+        "dataPayload": "ACCESS CODE: [ _ _ ]",
+        "screenTitle": "Vent Control Terminal",
+        "whatTheySee": "Two-digit keypad terminal.",
+        "intermediateOutput": "Submit: [sealed]"
+      },
+      "coordinationChain": {
+        "observerProduces": "Observer reads the 6x6 floor grid layout.",
+        "operatorExecutes": "Operator submits the move count at the vent terminal.",
+        "analystTransforms": "Analyst runs alternating-axis BFS to find shortest path."
+      },
+      "narrativeObjective": "Navigate the maintenance vent grid using alternating-axis pathfinding.",
+      "roleDependencyLevel": "D3",
+      "operatorInvestigation": {
+        "operatorOwnEvidence": "Terminal shows a grid pathfinding console with alternating-axis constraint.",
+        "requiredDiscoveries": {
+          "analystDiscovery": "Computes minimum alternating-axis BFS path length.",
+          "observerDiscovery": "Scans the 6x6 grid: S at (0,0), E at (5,5), walls at specific positions."
+        },
+        "operatorTaskDescription": "The Observer scans the grid. The Analyst computes the shortest alternating-axis path. The Operator submits the move count."
+      }
+    },
+    "answer_metadata": {
+      "fullSolution": "Alternating-axis BFS on the 6x6 grid from S(0,0) to E(5,5) yields a shortest path of 14 moves. Submitting 14 unlocks P24.",
+      "acceptedAnswer": "14",
+      "validationMethod": "exact"
+    },
+    "metadata": {
+      "time": "8m",
+      "type": "LOGIC",
+      "feeds": "P23",
+      "difficulty": 4,
+      "storyReveal": "Terminal: VENT SEAL DISENGAGED. ACCESS RESTORED.",
+      "locationClue": {
+        "format": "Research-Note",
+        "clueText": "LINA'S NOTE: The antenna deck has data streams flooding the terminal.",
+        "solution": "Communications Antenna Deck",
+        "nextQrNode": "QR-NODE-25",
+        "explanation": "Points to the antenna deck.",
+        "nextPhysicalLocation": "[ENGINEERING BLOCK] — Communications Antenna Deck"
+      },
+      "evidenceUnlocked": {
+        "id": "EVID-P23b",
+        "state": "RECOVERED",
+        "title": "Maintenance Vent Layout",
+        "source": "Robotics Bay 1 vent control",
+        "content": "Grid 6x6. Alternating-axis movement required. Shortest path: 14 moves.",
+        "category": "Blueprint",
+        "timestamp": "Stage 4"
+      },
+      "whyTeamworkMatters": "The grid must be read, path computed, and code entered by different roles."
+    }
+  },
+  {
+    "code": "P24b",
+    "content": {
+      "hints": [
+        "The cameras were offline at 04:15.",
+        "One witness claims to have reviewed footage from 04:17.",
+        "That is physically impossible.",
+        "Identify the speaker."
+      ],
+      "analyst": {
+        "role": "ANALYST",
+        "taskPrompt": "Identify which statement is physically impossible.",
+        "dataPayload": "CHECKER: Camera maintenance log: East Lab Camera Array power-down at 04:15:03 UTC. Physical disconnection confirmed.",
+        "screenTitle": "Timeline Integrity Checker",
+        "whatTheySee": "Maintenance log showing camera power-down at 04:15.",
+        "intermediateOutput": "Identified the impossible statement."
+      },
+      "observer": {
+        "role": "OBSERVER",
+        "taskPrompt": "Listen to the recording and read the access logs.",
+        "visualType": "contradiction-hunt",
+        "dataPayload": "AUDIO TRANSCRIPT:\n\nDR. VALE: I reviewed the east laboratory security footage at 04:17 and confirmed Dr. Vey was present.\nDR. VEY: I was in the east lab when the containment breach alarm sounded at 04:17.\nMARA SELIM: I saw Dr. Vey in the west corridor at 04:20.\nNOOR RAHAL: The east laboratory cameras were powered down for maintenance beginning at 04:15.\n\nACCESS LOGS: Vey badge swiped east-lab door 04:17, west corridor 04:20.",
+        "screenTitle": "Interrogation Recording Player",
+        "whatTheySee": "A transcript of four statements plus badge access logs.",
+        "interactiveData": {
+          "audioUrl": "/audio/p24b-vey.mp3",
+          "audioClips": [
+            {
+              "file": "/audio/p24b-vale.mp3",
+              "voice": "Michael",
+              "speaker": "Dr. Vale"
+            },
+            {
+              "file": "/audio/p24b-vey.mp3",
+              "voice": "Michelle",
+              "speaker": "Dr. Vey"
+            },
+            {
+              "file": "/audio/p24b-selim.mp3",
+              "voice": "Maya",
+              "speaker": "Mara Selim"
+            },
+            {
+              "file": "/audio/p24b-rahal.mp3",
+              "voice": "Michael",
+              "speaker": "Noor Rahal"
+            }
+          ],
+          "audioSpeaker": "Dr. Vey",
+          "recallPrompt": "Recall the time reference from P17.",
+          "requiresPuzzle": "P17",
+          "audioTranscript": "I was in the east lab when the containment breach alarm sounded at 04:17."
+        },
+        "intermediateOutput": "Four statements plus access logs reviewed"
+      },
+      "operator": {
+        "role": "OPERATOR",
+        "taskPrompt": "Submit the name of the witness who made the impossible statement.",
+        "dataPayload": "FALSE WITNESS: [ _ _ _ _ ]",
+        "screenTitle": "Contradiction Resolution Terminal",
+        "whatTheySee": "Four-letter input terminal.",
+        "intermediateOutput": "Submit: [sealed]"
+      },
+      "coordinationChain": {
+        "observerProduces": "Observer reports all four statements and access logs.",
+        "operatorExecutes": "Operator submits the false witness name.",
+        "analystTransforms": "Analyst determines Dr. Vale's claim is impossible (cameras off at 04:15)."
+      },
+      "narrativeObjective": "Find the witness whose statement contradicts physical evidence.",
+      "roleDependencyLevel": "D3",
+      "operatorInvestigation": {
+        "operatorOwnEvidence": "Terminal shows an interrogation analysis console with timeline checker.",
+        "requiredDiscoveries": {
+          "analystDiscovery": "Cross-references with camera maintenance log to find the physically impossible claim.",
+          "observerDiscovery": "Listens to all four witness statements and reads access logs."
+        },
+        "operatorTaskDescription": "The Observer plays the recording. The Analyst cross-references with maintenance logs. The Operator identifies and submits the liar."
+      }
+    },
+    "answer_metadata": {
+      "fullSolution": "Dr. Adrian Vale claims to have reviewed east lab footage at 04:17, but cameras were powered down at 04:15. Vale's statement is physically impossible. Vey and Selim are corroborated by badge logs; Rahal's log confirms camera downtime. Submitting VALE unlocks P25.",
+      "acceptedAnswer": "VALE",
+      "validationMethod": "case_insensitive"
+    },
+    "metadata": {
+      "time": "7m",
+      "type": "NARRATIVE_INVESTIGATION",
+      "feeds": "P24",
+      "difficulty": 4,
+      "storyReveal": "Terminal: CONTRADICTION LOGGED. THE NOISE CANAL IS EXPOSED.",
+      "locationClue": {
+        "format": "Research-Note",
+        "clueText": "LINA'S NOTE: Descend to the server room cooling corridor. Data streams flood the terminal.",
+        "solution": "Server Room Cooling Corridor",
+        "nextQrNode": "QR-NODE-26",
+        "explanation": "Points to the cooling corridor.",
+        "nextPhysicalLocation": "[ENGINEERING BLOCK] — Cooling Corridor"
+      },
+      "evidenceUnlocked": {
+        "id": "EVID-P24b",
+        "state": "RECOVERED",
+        "title": "Interrogation Recording REC-19",
+        "source": "Antenna Deck interrogation room",
+        "content": "Dr. Vale's claim to have reviewed east lab footage is contradicted by the camera maintenance log (power-down at 04:15).",
+        "category": "Audio",
+        "timestamp": "Stage 4"
+      },
+      "whyTeamworkMatters": "The contradiction spans multiple data sources, each held by a different role."
+    }
+  },
+  {
+    "code": "P27b",
+    "content": {
+      "hints": [
+        "Step 1 shows STATE 2 after INPUT 0x01 from State 0.",
+        "The transition table says State 0 + 0x01 = State 1, not State 2.",
+        "The trace at step 1 is corrupted.",
+        "Recompute the correct final state."
+      ],
+      "analyst": {
+        "role": "ANALYST",
+        "taskPrompt": "Which step in the trace is corrupted, and what is the correct final state?",
+        "dataPayload": "ANALYSIS: Step [1] shows STATE 2 after INPUT 0x01 from State 0. Transition table says State 0 + 0x01 = State 1, not State 2. The trace at step 1 is corrupted. Recompute from the corrected transition.",
+        "screenTitle": "Trace Anomaly Detector",
+        "whatTheySee": "Trace comparison highlighting the corruption at step 1.",
+        "intermediateOutput": "Step 1 is corrupted. Correct final state: 2"
+      },
+      "observer": {
+        "role": "OBSERVER",
+        "taskPrompt": "Simulate the state machine with the given inputs.",
+        "visualType": "document-forensics",
+        "dataPayload": "EXECUTION TRACE (CORRUPTED):\n\n[0] R0: 0 | INPUT: 0x01\n[1] R1: 1 | INPUT: 0x02 <-- STATE 2\n[2] R2: 2 | INPUT: 0x01\n[3] R3: 3 | INPUT: 0x03\n[4] R4: 4 | DONE\n\nSTATE MACHINE (4 states, 0-3): State 0: INPUT 0x01 -> State 1; State 0: INPUT 0x02 -> State 2; State 1: INPUT 0x02 -> State 3; State 1: INPUT 0x01 -> State 0; State 2: INPUT 0x01 -> State 3; State 2: INPUT 0x03 -> State 1; State 3: INPUT 0x01 -> State 0; State 3: INPUT 0x02 -> State 2",
+        "screenTitle": "State Machine Trace Reader",
+        "whatTheySee": "A corrupted execution trace with 5 steps and the state transition table.",
+        "interactiveData": {
+          "trace": "[0]R0:0|0x01 | [1]R1:1|0x02 | [2]R2:2|0x01 | [3]R3:3|0x03",
+          "startState": 0,
+          "machineStates": 4
+        },
+        "intermediateOutput": "Tracing states: 0->1->3->0"
+      },
+      "operator": {
+        "role": "OPERATOR",
+        "taskPrompt": "Submit the patch address for step 1's transition.",
+        "dataPayload": "PATCH TARGET: [ _ _ _ _ _ _ ]",
+        "screenTitle": "Memory Patch Terminal",
+        "whatTheySee": "Hex address input terminal.",
+        "intermediateOutput": "Submit: [sealed]"
+      },
+      "coordinationChain": {
+        "observerProduces": "Observer reports the corrupted trace.",
+        "operatorExecutes": "Operator submits the correct patch target.",
+        "analystTransforms": "Analyst identifies step 1 as the corrupted entry."
+      },
+      "narrativeObjective": "Find the corrupted state in a memory trace and patch it.",
+      "roleDependencyLevel": "D3",
+      "operatorInvestigation": {
+        "operatorOwnEvidence": "Terminal shows a debug console with state machine trace and patch terminal.",
+        "requiredDiscoveries": {
+          "analystDiscovery": "Detects corruption at step 1: claims State 2 from input 0x01 in State 0.",
+          "observerDiscovery": "Reads the 5-step execution trace and state table."
+        },
+        "operatorTaskDescription": "The Observer reads the corrupted trace. The Analyst detects the anomaly. The Operator patches the memory."
+      }
+    },
+    "answer_metadata": {
+      "fullSolution": "Step 1 is corrupted: State 0 + INPUT 0x01 should go to State 1, not State 2. Re-simulating with the correction gives a final state reached via the correct path. The patch target is the address of step 1's register write: 0x02.",
+      "acceptedAnswer": "0x02",
+      "validationMethod": "exact"
+    },
+    "metadata": {
+      "time": "9m",
+      "type": "LOGIC",
+      "feeds": "P27",
+      "difficulty": 4,
+      "storyReveal": "Terminal: TRACE CORRECTED. MEMORY RESTORED.",
+      "locationClue": {
+        "format": "Symbol",
+        "clueText": "LINA'S NOTE: The vault holds the next key.",
+        "solution": "Vault Delta",
+        "nextQrNode": "QR-NODE-27",
+        "explanation": "Points to Vault Delta.",
+        "nextPhysicalLocation": "[ENGINEERING BLOCK] — Vault Delta Door Frame"
+      },
+      "evidenceUnlocked": {
+        "id": "EVID-P27b",
+        "state": "RECOVERED",
+        "title": "State Machine Patch",
+        "source": "Debug console",
+        "content": "The trace was corrupted at step 1. Input 0x01 from State 0 should yield State 1, not State 2.",
+        "category": "Blueprint",
+        "timestamp": "Stage 4"
+      },
+      "whyTeamworkMatters": "Only by cross-referencing the trace with the transition table can the corruption be found."
+    }
+  },
+  {
+    "code": "P23",
+    "content": {
+      "hints": [
+        "The prompt asks what you do when you examine old clues with new eyes.",
+        "It is 11 letters beginning with RE- and ending with -PRET.",
+        "Submit REINTERPRET."
+      ],
+      "analyst": {
+        "role": "ANALYST",
+        "taskPrompt": "Confirm the 11-letter word.",
+        "dataPayload": "LEXICON: RE + INTERPRET = REINTERPRET (11 letters). Meaning: assign new meaning to prior data.",
+        "screenTitle": "Cognitive Lexicon Resolver",
+        "whatTheySee": "Resolver confirming REINTERPRET.",
+        "intermediateOutput": "REINTERPRET"
+      },
+      "observer": {
+        "role": "OBSERVER",
+        "taskPrompt": "Read the prompt asking for an 11-letter cognitive action beginning with RE-.",
+        "visualType": "document-forensics",
+        "dataPayload": "MONITOR: \"WHEN EARLY FACTS FAIL LATER TESTS, WHAT ACTION MUST YOU TAKE?\"",
+        "screenTitle": "Cognitive Discrepancy Monitor",
+        "whatTheySee": "Terminal showing contradictory reports about subject departure time.",
+        "interactiveData": {
+          "documentText": "EARLIER REPORT: \"Subject departed at 17:30\"\nLATER RECORD: \"Security cam shows subject at 19:45\"\nANALYSIS REQUIRED"
+        },
+        "intermediateOutput": "Prompt requires 11 letters starting RE-"
+      },
+      "operator": {
+        "role": "OPERATOR",
+        "taskPrompt": "Submit the directive.",
+        "dataPayload": "DIRECTIVE: [ _ _ _ _ _ _ _ _ _ _ _ ]",
+        "screenTitle": "Cognitive Protocol Switch",
+        "whatTheySee": "11-letter input terminal.",
+        "intermediateOutput": "Submit: REINTERPRET"
+      },
+      "branchConditions": [],
+      "coordinationChain": {
+        "observerProduces": "Observer shares the anomaly question and letter count.",
+        "operatorExecutes": "Operator submits REINTERPRET, unlocking P24.",
+        "analystTransforms": "Analyst solves: REINTERPRET (11 letters)."
+      },
+      "failurePropagation": {
+        "wrongStep": "Analyst guesses REEVALUATE (10) or RECALCULATE (12).",
+        "consequence": "Wrong letter count; input box rejects.",
+        "recoveryGuidance": "Must be exactly 11 letters: R-E-I-N-T-E-R-P-R-E-T."
+      },
+      "narrativeObjective": "Deduce the cognitive directive for when evidence contradicts early assumptions.",
+      "roleDependencyLevel": "D4",
+      "operatorInvestigation": {
+        "operatorOwnEvidence": "Terminal shows 11-letter cognitive directive slot for P23.",
+        "requiredDiscoveries": {
+          "analystDiscovery": "Resolves REINTERPRET.",
+          "observerDiscovery": "Reads prompt: 11 letters, starts RE-, re-examine old clues."
+        },
+        "operatorTaskDescription": "Observer reads the discrepancy question. Analyst resolves the 11-letter word. Operator submits."
+      }
+    },
+    "answer_metadata": {
+      "fullSolution": "The 11-letter cognitive action for re-examining old clues is REINTERPRET. Submitting REINTERPRET unlocks P24.",
+      "acceptedAnswer": "REINTERPRET",
+      "validationMethod": "exact"
+    },
+    "metadata": {
+      "time": "12m",
+      "type": "DEDUCTION",
+      "feeds": "P22",
+      "difficulty": 4.5,
+      "storyReveal": "Subject 00 log: \"I thought the ciphers were gates. They were mirrors.\"",
+      "locationClue": {
+        "format": "Poetic",
+        "clueText": "LINA'S NOTE: \"Ascend the external spiral staircase to the communications antenna deck.\"",
+        "solution": "Engineering Communications Antenna Deck",
+        "nextQrNode": "QR-NODE-24",
+        "explanation": "Points to the antenna deck.",
+        "nextPhysicalLocation": "[ENGINEERING BLOCK] — Antenna Deck"
+      },
+      "evidenceUnlocked": {
+        "id": "EVID-P23",
+        "state": "RECOVERED",
+        "title": "Dictaphone Memo REC-16: Reinterpretation",
+        "source": "Robotic arm control cabinet",
+        "content": "The police bulletin said I left at 17:30. If Candidate 01 believes the bulletin, they will search the bus stops. But if they re-interpret surveillance records, they will realize I never left. I am in the communications array.",
+        "category": "Audio",
+        "timestamp": "Stage 4"
+      },
+      "whyTeamworkMatters": "Encourages the team to actively challenge their own assumptions."
+    }
+  },
+  {
+    "code": "P24",
+    "content": {
+      "hints": [
+        "Look at the name of Symbol 02 in your HUD.",
+        "The 10-letter word means the link between entities.",
+        "Submit CONNECTION."
+      ],
+      "analyst": {
+        "role": "ANALYST",
+        "taskPrompt": "What 10-letter concept links all three?",
+        "dataPayload": "INTERSECTION: The bond between nodes, pillars, and minds is CONNECTION (10 letters).",
+        "screenTitle": "Epistemological Intersection",
+        "whatTheySee": "Solver showing CONNECTION.",
+        "intermediateOutput": "CONNECTION"
+      },
+      "observer": {
+        "role": "OBSERVER",
+        "taskPrompt": "Read the three intersecting disciplines.",
+        "visualType": "timeline-investigation",
+        "dataPayload": "VENN DIAGRAM: Computer Science | Architecture | Human Communication",
+        "screenTitle": "Cross-Departmental Telemetry",
+        "whatTheySee": "Three departmental seals intersecting in a Venn diagram on the antenna console.",
+        "intermediateOutput": "Computer Science, Architecture, Human Communication"
+      },
+      "operator": {
+        "role": "OPERATOR",
+        "taskPrompt": "Submit the concept.",
+        "dataPayload": "INTERSECTION NOUN: [ _ _ _ _ _ _ _ _ _ _ ]",
+        "screenTitle": "Bridge Dispatcher",
+        "whatTheySee": "10-letter input terminal.",
+        "intermediateOutput": "Submit: CONNECTION"
+      },
+      "branchConditions": [],
+      "coordinationChain": {
+        "observerProduces": "Observer identifies the 3-domain Venn diagram.",
+        "operatorExecutes": "Operator submits CONNECTION, unlocking P25.",
+        "analystTransforms": "Analyst extracts: CONNECTION."
+      },
+      "failurePropagation": {
+        "wrongStep": "Analyst submits NETWORKING or INTERFACE.",
+        "consequence": "Wrong length or synonym rejected.",
+        "recoveryGuidance": "Symbol 2 is named CONNECTION in your HUD."
+      },
+      "narrativeObjective": "Synthesize across multiple campus departments to isolate the master principle.",
+      "roleDependencyLevel": "D4",
+      "operatorInvestigation": {
+        "operatorOwnEvidence": "Terminal shows execution interface for P24.",
+        "requiredDiscoveries": {
+          "analystDiscovery": "Extracts CONNECTION (also Symbol 02 name).",
+          "observerDiscovery": "Identifies three intersecting disciplines."
+        },
+        "operatorTaskDescription": "Observer identifies the 3-domain Venn. Analyst extracts the mutual concept. Operator submits."
+      }
+    },
+    "answer_metadata": {
+      "fullSolution": "The concept linking all three departments is CONNECTION (the name of Symbol ⧉). Submitting CONNECTION unlocks P25.",
+      "acceptedAnswer": "CONNECTION",
+      "validationMethod": "case_insensitive"
+    },
+    "metadata": {
+      "time": "11m",
+      "type": "CROSS_REFERENCE",
+      "feeds": "P23",
+      "difficulty": 4.5,
+      "storyReveal": "Terminal alert: \"CONNECTION CHANNEL RESTORED. HIGH-VOLUME STREAM INCOMING.\"",
+      "locationClue": {
+        "format": "Research-Note",
+        "clueText": "LINA'S NOTE: \"Descend to the server room cooling corridor. Data streams flood the terminal.\"",
+        "solution": "Engineering Server Room Cooling Corridor",
+        "nextQrNode": "QR-NODE-25",
+        "explanation": "Points to the cooling corridor.",
+        "nextPhysicalLocation": "[ENGINEERING BLOCK] — Cooling Corridor"
+      },
+      "evidenceUnlocked": {
+        "id": "EVID-P24",
+        "state": "RECOVERED",
+        "title": "Lab Notebook Fragment #58",
+        "source": "Antenna waveguide junction",
+        "content": "In 2021, Candidate 00 tried to ingest all 2000 bytes at once. His mental stack overflowed. But three people filtering the noise only need to hold a fraction each. Proceed to the optics lab.",
+        "category": "Lab Note",
+        "timestamp": "Stage 4"
+      },
+      "whyTeamworkMatters": "Ties game terminology directly into puzzle mechanics."
+    }
+  },
+  {
+    "code": "P25",
+    "content": {
+      "hints": [
+        "Do not try to read all the noise. Use an earlier clue to find which line matters.",
+        "Remember the pivot from Stage 2 (P06): 17.",
+        "Look at line 17: FILTER. Submit FILTER."
+      ],
+      "analyst": {
+        "role": "ANALYST",
+        "taskPrompt": "Extract the keyword from Row 17.",
+        "dataPayload": "EXTRACTION: From Row 17, the 6-letter action word is FILTER.",
+        "screenTitle": "Signal-to-Noise Filter",
+        "whatTheySee": "Extractor showing FILTER.",
+        "intermediateOutput": "FILTER"
+      },
+      "observer": {
+        "role": "OBSERVER",
+        "taskPrompt": "Use pivot 17 to jump to Row 17.",
+        "visualType": "contradiction-hunt",
+        "dataPayload": "NOISE: 2000 bytes of ASCII... Row 17 contains: \"THE ACTION NEEDED IS TO FILTER THE NOISE\"",
+        "screenTitle": "Data Stream Flooder",
+        "whatTheySee": "Wall of scrolling hex and characters.",
+        "interactiveData": {
+          "entries": [
+            {
+              "flag": true,
+              "text": "2000 bytes of gibberish",
+              "source": "Noise Log"
+            },
+            {
+              "flag": false,
+              "text": "THE ACTION NEEDED IS TO FILTER THE NOISE",
+              "source": "Row 17"
+            }
+          ],
+          "recallPrompt": "Use pivot 17 to find the relevant row.",
+          "requiresPuzzle": "P06"
+        },
+        "intermediateOutput": "Row 17: FILTER THE NOISE"
+      },
+      "operator": {
+        "role": "OPERATOR",
+        "taskPrompt": "Submit the control word.",
+        "dataPayload": "STREAM CONTROL: [ _ _ _ _ _ _ ]",
+        "screenTitle": "Noise Gate Console",
+        "whatTheySee": "6-letter input terminal.",
+        "intermediateOutput": "Submit: FILTER"
+      },
+      "branchConditions": [],
+      "coordinationChain": {
+        "observerProduces": "Observer uses Stage 2 key 17 to find Row 17 in the noise.",
+        "operatorExecutes": "Operator submits FILTER, unlocking P26.",
+        "analystTransforms": "Analyst extracts: FILTER."
+      },
+      "failurePropagation": {
+        "wrongStep": "Team tries to read Row 1 instead of Row 17.",
+        "consequence": "Drowns in 500 lines of gibberish.",
+        "recoveryGuidance": "Remember 17! Look at line 17."
+      },
+      "narrativeObjective": "Extract the single signal word from an overwhelming noise log.",
+      "roleDependencyLevel": "D4",
+      "operatorInvestigation": {
+        "operatorOwnEvidence": "Terminal shows execution interface for P25.",
+        "requiredDiscoveries": {
+          "analystDiscovery": "Extracts the 6-letter word: FILTER.",
+          "observerDiscovery": "Uses pivot 17 to jump to Row 17 of noise stream."
+        },
+        "operatorTaskDescription": "Observer uses P06 pivot 17 to find Row 17. Analyst extracts FILTER. Operator submits."
+      }
+    },
+    "answer_metadata": {
+      "fullSolution": "Using P06 pivot 17 to jump to Row 17 isolates the word FILTER. Submitting FILTER unlocks P26.",
+      "acceptedAnswer": "FILTER",
+      "validationMethod": "case_insensitive"
+    },
+    "metadata": {
+      "time": "10m",
+      "type": "EXTRACTION",
+      "feeds": "P24",
+      "difficulty": 4.5,
+      "storyReveal": "System message: \"NOISE PURGED. 3-WAY MIRROR CHANNEL STABILIZED.\"",
+      "locationClue": {
+        "format": "Research-Note",
+        "clueText": "LINA'S NOTE: \"Ascend to the holographic optics lab on the 1st floor.\"",
+        "solution": "Holographic Prototyping Lab",
+        "nextQrNode": "QR-NODE-26",
+        "explanation": "Points to the holographic optics lab.",
+        "nextPhysicalLocation": "[ENGINEERING BLOCK] — Holographic Lab"
+      },
+      "evidenceUnlocked": {
+        "id": "EVID-P25",
+        "state": "RECOVERED",
+        "title": "Lab Notebook Fragment #64",
+        "source": "Server rack cooling fan assembly",
+        "content": "In 2021, Candidate 00 tried to ingest all 2000 bytes at once. His mental stack overflowed. But three people filtering the noise, each only needs to hold a fraction.",
+        "category": "Lab Note",
+        "timestamp": "Stage 4"
+      },
+      "whyTeamworkMatters": "Demonstrates information filtering under cognitive overload."
+    }
+  },
+  {
+    "code": "P27",
+    "content": {
+      "hints": [
+        "Trace the arrows in the directed graph from left to right.",
+        "The 9 letters form a 9-letter word about built systems.",
+        "Submit STRUCTURE."
+      ],
+      "analyst": {
+        "role": "ANALYST",
+        "taskPrompt": "Confirm the 9-letter word.",
+        "dataPayload": "SORT: Root S (in-degree 0), Leaf E (out-degree 0). Word = STRUCTURE.",
+        "screenTitle": "Topological Sort Verifier",
+        "whatTheySee": "Validator confirming STRUCTURE.",
+        "intermediateOutput": "STRUCTURE"
+      },
+      "observer": {
+        "role": "OBSERVER",
+        "taskPrompt": "Follow arrows left to right to spell a word.",
+        "visualType": "dependency-tree",
+        "dataPayload": "GRAPH: S→T→R→U→C→T→U→R→E (9 nodes in directed chain)",
+        "screenTitle": "Dependency Graph Viewer",
+        "whatTheySee": "SVG directed graph with 9 chained nodes: S, T, R, U, C, T, U, R, E.",
+        "interactiveData": {
+          "nodes": [
+            {
+              "pos": 1,
+              "label": "S"
+            },
+            {
+              "pos": 2,
+              "label": "T"
+            },
+            {
+              "pos": 3,
+              "label": "R"
+            },
+            {
+              "pos": 4,
+              "label": "U"
+            },
+            {
+              "pos": 5,
+              "label": "C"
+            },
+            {
+              "pos": 6,
+              "label": "T"
+            },
+            {
+              "pos": 7,
+              "label": "U"
+            },
+            {
+              "pos": 8,
+              "label": "R"
+            },
+            {
+              "pos": 9,
+              "label": "E"
+            }
+          ]
+        },
+        "intermediateOutput": "S-T-R-U-C-T-U-R-E"
+      },
+      "operator": {
+        "role": "OPERATOR",
+        "taskPrompt": "Submit the 9-letter architecture word.",
+        "dataPayload": "FOUNDATION: [ _ _ _ _ _ _ _ _ _ ]",
+        "screenTitle": "Architecture Compiler",
+        "whatTheySee": "9-letter input terminal.",
+        "intermediateOutput": "Submit: STRUCTURE"
+      },
+      "branchConditions": [],
+      "coordinationChain": {
+        "observerProduces": "Observer traces the directed graph chain.",
+        "operatorExecutes": "Operator submits STRUCTURE, unlocking P28.",
+        "analystTransforms": "Analyst confirms topological sort spells STRUCTURE."
+      },
+      "failurePropagation": {
+        "wrongStep": "Observer reads alphabetically (CCERRSTUU).",
+        "consequence": "Compiler crash.",
+        "recoveryGuidance": "Follow the arrows in directed order."
+      },
+      "narrativeObjective": "Trace Lina's causal dependency graph to identify the foundational prerequisite.",
+      "roleDependencyLevel": "D4",
+      "operatorInvestigation": {
+        "operatorOwnEvidence": "Terminal shows execution interface for P27.",
+        "requiredDiscoveries": {
+          "analystDiscovery": "Confirms: S→T→R→U→C→T→U→R→E = STRUCTURE.",
+          "observerDiscovery": "Traces 9-node directed dependency chain."
+        },
+        "operatorTaskDescription": "Observer traces the SVG graph. Analyst confirms topological sort. Operator submits."
+      }
+    },
+    "answer_metadata": {
+      "fullSolution": "Tracing the directed graph from root to leaf spells S-T-R-U-C-T-U-R-E = STRUCTURE. Submitting STRUCTURE unlocks P28.",
+      "acceptedAnswer": "STRUCTURE",
+      "validationMethod": "case_insensitive"
+    },
+    "metadata": {
+      "time": "11m",
+      "type": "LOGIC",
+      "feeds": "P26",
+      "difficulty": 4.5,
+      "storyReveal": "Terminal: \"FOUNDATIONAL STRUCTURE COMPILED. FRAGMENT 5 INITIATED.\"",
+      "locationClue": {
+        "format": "Research-Note",
+        "clueText": "LINA'S NOTE: \"Enter the cyber-physical research chamber. The fragment cylinder glows on its pedestal.\"",
+        "solution": "Cyber-Physical Research Chamber",
+        "nextQrNode": "QR-NODE-28",
+        "explanation": "Points to the research chamber.",
+        "nextPhysicalLocation": "[ENGINEERING BLOCK] — Research Chamber"
+      },
+      "evidenceUnlocked": {
+        "id": "EVID-P27",
+        "state": "RECOVERED",
+        "title": "Lab Notebook Fragment #72",
+        "source": "Systems lab server terminal",
+        "content": "Structure is the third sacred symbol: ⬡. But the final fragment is not a symbol. It is a piece of consciousness. Recover Fragment 5.",
+        "category": "Lab Note",
+        "timestamp": "Stage 4"
+      },
+      "whyTeamworkMatters": "Graph arrows and coordinates are mathematically derived for visual clarity."
+    }
+  },
+  {
+    "code": "P28",
+    "content": {
+      "hints": [
+        "The screen shows the official artifact name.",
+        "It is \"FRAGMENT\" plus a number.",
+        "Submit FRAGMENT 5."
+      ],
+      "analyst": {
+        "role": "ANALYST",
+        "taskPrompt": "Confirm the full designation.",
+        "dataPayload": "VALIDATION: SHA256 of Stage 4 answers matches payload: FRAGMENT 5.",
+        "screenTitle": "Payload Integrity Validator",
+        "whatTheySee": "Checksum validator confirming FRAGMENT 5.",
+        "intermediateOutput": "FRAGMENT 5"
+      },
+      "observer": {
+        "role": "OBSERVER",
+        "taskPrompt": "Analyze the fragment designation.",
+        "visualType": "memory-recall",
+        "dataPayload": "FRAGMENT HEADER: DESIGNATION FRAGMENT 5",
+        "screenTitle": "Fragment Assembly Console",
+        "whatTheySee": "Holographic fragment container pulsing with blue light.",
+        "interactiveData": {
+          "recallPrompt": "Re-call the Stage 4 meta-solution.",
+          "requiresPuzzle": "P28"
+        },
+        "intermediateOutput": "Report to Analyst."
+      },
+      "operator": {
+        "role": "OPERATOR",
+        "taskPrompt": "Enter the artifact designation.",
+        "dataPayload": "ARTIFACT DESIGNATION: [ _ _ _ _ _ _ _ _ _ ]",
+        "screenTitle": "Fragment Registry",
+        "whatTheySee": "Full designation input terminal.",
+        "intermediateOutput": "Submit: FRAGMENT 5"
+      },
+      "branchConditions": [],
+      "coordinationChain": {
+        "observerProduces": "Observer inspects the fragment designation.",
+        "operatorExecutes": "Operator submits FRAGMENT 5, unlocking P29.",
+        "analystTransforms": "Analyst validates hash: FRAGMENT 5 confirmed."
+      },
+      "failurePropagation": {
+        "wrongStep": "Operator enters FRAG 5 or just 5.",
+        "consequence": "System rejects: \"FULL DESIGNATION REQUIRED\".",
+        "recoveryGuidance": "Enter full name: FRAGMENT 5."
+      },
+      "narrativeObjective": "Assemble the cryptographic payload of Lina's 5th digital fragment.",
+      "roleDependencyLevel": "D4",
+      "operatorInvestigation": {
+        "operatorOwnEvidence": "Terminal shows execution interface for P28.",
+        "requiredDiscoveries": {
+          "analystDiscovery": "Verifies hash checksum confirms FRAGMENT 5.",
+          "observerDiscovery": "Inspects fragment chamber designation."
+        },
+        "operatorTaskDescription": "Observer inspects fragment chamber. Analyst verifies payload. Operator submits."
+      }
+    },
+    "answer_metadata": {
+      "fullSolution": "The artifact designation is FRAGMENT 5. Submitting FRAGMENT 5 unlocks P29.",
+      "acceptedAnswer": "FRAGMENT 5",
+      "validationMethod": "case_insensitive"
+    },
+    "metadata": {
+      "time": "10m",
+      "type": "EXTRACTION",
+      "feeds": "P27",
+      "difficulty": 4.5,
+      "storyReveal": "HUD: \"FRAGMENT 05 STORED IN INVENTORY. THE FINAL TRUTH DRAWS NEAR.\"",
+      "locationClue": {
+        "format": "Poetic",
+        "clueText": "LINA'S NOTE: \"Step to the Core Declassification Vault behind reinforced blast doors.\"",
+        "solution": "Engineering Core Declassification Vault",
+        "nextQrNode": "QR-NODE-29",
+        "explanation": "Points to the declassification vault.",
+        "nextPhysicalLocation": "[ENGINEERING BLOCK] — Vault"
+      },
+      "evidenceUnlocked": {
+        "id": "CASE-LV07",
+        "state": "RECOVERED",
+        "title": "Classified Memo: Operation Shatter",
+        "source": "Vault declassification terminal",
+        "content": "Lina Vey final memo: \"If they take me tonight, they will find nothing in my hands. The entire architecture has been deployed into the minds of Candidate 01. The answer to P29 will explain what NEXUS truly is.\"",
+        "category": "Classified",
+        "timestamp": "Stage 4"
+      },
+      "whyTeamworkMatters": "Adds a critical narrative fragment that feeds directly into the final boss."
+    }
+  },
+  {
+    "code": "P17",
+    "content": {
+      "hints": [
+        "The frequencies encode a time reference.",
+        "Recall 17:47 from Stage 2.",
+        "Reverse it: ECHO."
+      ],
+      "analyst": {
+        "role": "ANALYST",
+        "taskPrompt": "Decode the time reference.",
+        "dataPayload": "DECODING: 17:47 (from P02/P07) reversed = ECHO. The frequencies are time-encoded.",
+        "screenTitle": "Frequency Decoder",
+        "whatTheySee": "Decoder showing ECHO.",
+        "intermediateOutput": "ECHO"
+      },
+      "observer": {
+        "role": "OBSERVER",
+        "taskPrompt": "Report the peak frequencies.",
+        "visualType": "audio",
+        "dataPayload": "SPECTRUM: Frequency peaks at 1747 Hz, 2147 Hz. Ratio: 17/21.",
+        "screenTitle": "Audio Spectrum Viewer",
+        "whatTheySee": "Audio spectrum with two prominent frequency peaks.",
+        "interactiveData": {
+          "audioUrl": "/audio/p17-audio-log-transmission.mp3",
+          "audioSpeaker": "GM Voice",
+          "audioTranscript": "This is the Nexus Operator. I've intercepted a frequency echo from the old network. The time is 17:47. Report the peaks."
+        },
+        "intermediateOutput": "1747 Hz and 2147 Hz"
+      },
+      "operator": {
+        "role": "OPERATOR",
+        "taskPrompt": "Submit the decoded word.",
+        "dataPayload": "HIDDEN WORD: [ _ _ _ _ ]",
+        "screenTitle": "Audio Unlock Terminal",
+        "whatTheySee": "Four-letter terminal.",
+        "intermediateOutput": "Submit: ECHO"
+      },
+      "branchConditions": [],
+      "coordinationChain": {
+        "observerProduces": "Observer reports frequencies 1747, 2147.",
+        "operatorExecutes": "Operator submits ECHO.",
+        "analystTransforms": "Analyst decodes: 17:47 reversed = ECHO."
+      },
+      "failurePropagation": {
+        "wrongStep": "Team submits \"1747\" or \"TIME\".",
+        "consequence": "Word validation fails.",
+        "recoveryGuidance": "Reverse the time 17:47."
+      },
+      "narrativeObjective": "Decode the hidden message in the audio frequency spectrum.",
+      "roleDependencyLevel": "D2",
+      "operatorInvestigation": {
+        "operatorOwnEvidence": "Terminal shows execution interface for P17.",
+        "requiredDiscoveries": {
+          "analystDiscovery": "Decodes as ECHO from time reference 17:47.",
+          "observerDiscovery": "Reads frequencies 1747 and 2147 Hz."
+        },
+        "operatorTaskDescription": "Observer reads audio spectrum. Analyst decodes frequency to word. Operator submits."
+      }
+    },
+    "answer_metadata": {
+      "fullSolution": "Frequencies 1747/2147 encode 17:47, reversed gives ECHO. Submitting ECHO unlocks P18.",
+      "acceptedAnswer": "ECHO",
+      "validationMethod": "case_insensitive"
+    },
+    "metadata": {
+      "time": "8m",
+      "type": "AUDIO",
+      "feeds": "P16",
+      "difficulty": 4,
+      "storyReveal": "Terminal: \"ECHO CONFIRMED. THE FIFTH SYMBOL IS FOUND.\"",
+      "locationClue": {
+        "format": "Symbol",
+        "clueText": "LINA'S NOTE: \"Find the fifth glyph in the library reading room. It is ⍟.\"",
+        "solution": "Library Reading Room Fifth Symbol",
+        "nextQrNode": "QR-NODE-20",
+        "explanation": "Points to the fifth symbol in the reading room.",
+        "nextPhysicalLocation": "[LIBRARY] — Reading Room Fifth Symbol"
+      },
+      "evidenceUnlocked": {
+        "id": "EVID-P17",
+        "state": "RECOVERED",
+        "title": "Fifth Symbol — Truth",
+        "source": "Library reading room",
+        "content": "A carved symbol: ⍟. Below it reads: TRUTH.",
+        "category": "Visual",
+        "timestamp": "Stage 3"
+      },
+      "whyTeamworkMatters": "Requires cross-referencing Stage 2 time puzzle."
+    }
+  },
+  {
+    "code": "P07",
+    "content": {
+      "hints": [
+        "Decode the binary bytes to ASCII characters.",
+        "The result is a time reference — cross-reference with P02.",
+        "Submit 17:47."
+      ],
+      "analyst": {
+        "role": "ANALYST",
+        "taskPrompt": "Decode each byte to ASCII characters.",
+        "visualType": "binary-technical",
+        "dataPayload": "DECODED: 73 83 58 52 52 55 50 49 -> \"IS:44721\"",
+        "screenTitle": "Binary Decoder",
+        "whatTheySee": "Binary-to-ASCII converter output.",
+        "intermediateOutput": "IS:44721"
+      },
+      "observer": {
+        "role": "OBSERVER",
+        "taskPrompt": "Read each byte and report to the Analyst.",
+        "visualType": "binary-technical",
+        "dataPayload": "LED PATTERN: 8 groups of 8 blinking LEDs. Each group is a byte.",
+        "screenTitle": "LED Array Reader",
+        "whatTheySee": "Eight bytes of blinking binary LEDs.",
+        "interactiveData": {
+          "binarySequence": [
+            "01001001",
+            "01010011",
+            "00111010",
+            "00110100",
+            "00110100",
+            "00110111",
+            "00110010",
+            "00110001"
+          ]
+        },
+        "intermediateOutput": "01001001 01010011 00111010 00110100 00110100 00110111 00110010 00110001"
+      },
+      "operator": {
+        "role": "OPERATOR",
+        "taskPrompt": "Submit the decoded time. Note: the server log shows 09:47 was the synchronization.",
+        "dataPayload": "ACCESS CODE: [ _ _ : _ _ _ _ _ _ ]",
+        "screenTitle": "Server Access Terminal",
+        "whatTheySee": "Terminal requiring time format HH:MM.",
+        "intermediateOutput": "Submit: 17:47"
+      },
+      "branchConditions": [],
+      "coordinationChain": {
+        "observerProduces": "Observer reports the 8 binary bytes.",
+        "operatorExecutes": "Operator submits 17:47 at the server terminal.",
+        "analystTransforms": "Analyst decodes: IS:44721, then connects to P02 time 21:47 = 17:47."
+      },
+      "failurePropagation": {
+        "wrongStep": "Team submits the raw decode \"IS:44721\".",
+        "consequence": "Terminal expects HH:MM format.",
+        "recoveryGuidance": "Recall the clock from P02: 21:47 = 17:47."
+      },
+      "narrativeObjective": "Decode the binary sequence from the server rack.",
+      "roleDependencyLevel": "D2",
+      "operatorInvestigation": {
+        "operatorOwnEvidence": "Terminal screen shows the execution interface for P07.",
+        "requiredDiscoveries": {
+          "analystDiscovery": "Decodes bytes to ASCII: \"IS:44721\".",
+          "observerDiscovery": "Reads 8 bytes of binary from the LED array."
+        },
+        "operatorTaskDescription": "The Observer reads the binary LED pattern. The Analyst decodes to ASCII. The Operator submits the time."
+      }
+    },
+    "answer_metadata": {
+      "fullSolution": "Decoding the binary gives \"IS:44721\". Combining with P02 clock time (21:47 = 17:47), submit 17:47.",
+      "acceptedAnswer": "17:47",
+      "validationMethod": "exact"
+    },
+    "metadata": {
+      "time": "8m",
+      "type": "BINARY",
+      "feeds": "P06",
+      "difficulty": 3,
+      "storyReveal": "Terminal: \"TIME SYNC CONFIRMED. PROCEED TO THE ARCHIVE.\"",
+      "locationClue": {
+        "format": "Document",
+        "clueText": "LINA'S NOTE: \"Return to the archive. Check the 2021 project folder in cabinet 3.\"",
+        "solution": "Archive Cabinet 3",
+        "nextQrNode": "QR-NODE-08",
+        "explanation": "Points back to the archive cabinet.",
+        "nextPhysicalLocation": "[ADMIN BUILDING] — Archive Cabinet 3"
+      },
+      "evidenceUnlocked": {
+        "id": "EVID-P07",
+        "state": "RECOVERED",
+        "title": "Project NEXUS — 2021 Research Folder",
+        "source": "Archive cabinet 3",
+        "content": "Folder contents: \"Consciousness is not a single entity but a vector. Test subjects 00-04 were isolated. Subject 05 was the first to achieve network state.\"",
+        "category": "Document",
+        "timestamp": "Stage 2"
+      },
+      "whyTeamworkMatters": "Requires cross-referencing Stage 1 and Stage 2 solutions."
+    }
+  },
+  {
+    "code": "P09",
+    "content": {
+      "hints": [
+        "The clock uses Roman numerals.",
+        "XVII converts to what decimal?",
+        "Submit 17."
+      ],
+      "analyst": {
+        "role": "ANALYST",
+        "taskPrompt": "What is the Roman numeral XVII?",
+        "dataPayload": "CONVERSION: The Roman numeral XVII converts to decimal 17. P06's pivot of 17 confirms this value.",
+        "screenTitle": "Temporal Equation Calculator",
+        "whatTheySee": "Calculator showing two solution paths converging to 17.",
+        "intermediateOutput": "17"
+      },
+      "observer": {
+        "role": "OBSERVER",
+        "taskPrompt": "Read the clock hand position.",
+        "visualType": "spatial",
+        "dataPayload": "CLOCK FACE: Roman numerals I through XII. Hand points to XVII (17).",
+        "screenTitle": "Roman Clock Face",
+        "whatTheySee": "A clock with a single hand pointing at VII.",
+        "intermediateOutput": "7"
+      },
+      "operator": {
+        "role": "OPERATOR",
+        "taskPrompt": "Submit the converted Roman numeral.",
+        "dataPayload": "TEMPORAL KEY: [ _ _ ]",
+        "screenTitle": "Chronology Terminal",
+        "whatTheySee": "Two-digit input terminal.",
+        "intermediateOutput": "Submit: 17"
+      },
+      "branchConditions": [],
+      "coordinationChain": {
+        "observerProduces": "Observer reads the Roman numeral XVII.",
+        "operatorExecutes": "Operator submits 17.",
+        "analystTransforms": "Analyst converts to 17."
+      },
+      "failurePropagation": {
+        "wrongStep": "Team enters 7 (direct clock value, not Roman).",
+        "consequence": "Terminal rejects: expects Roman conversion.",
+        "recoveryGuidance": "Convert XVII, not just the Arabic 7."
+      },
+      "narrativeObjective": "Solve the temporal equation using the clock.",
+      "roleDependencyLevel": "D2",
+      "operatorInvestigation": {
+        "operatorOwnEvidence": "Terminal screen shows the execution interface for P09.",
+        "requiredDiscoveries": {
+          "analystDiscovery": "Converts XVII to decimal: 17.",
+          "observerDiscovery": "Reads the clock hand position."
+        },
+        "operatorTaskDescription": "The Observer reads the clock. The Analyst converts Roman numeral. The Operator submits."
+      }
+    },
+    "answer_metadata": {
+      "fullSolution": "The Roman numeral XVII converts to 17. Submitting 17 unlocks P10.",
+      "acceptedAnswer": "17",
+      "validationMethod": "exact"
+    },
+    "metadata": {
+      "time": "8m",
+      "type": "LOGIC",
+      "feeds": "P08",
+      "difficulty": 3,
+      "storyReveal": "Terminal: \"TIME DECODED. THE BLUE PATH IS REVEALED.\"",
+      "locationClue": {
+        "format": "Color Code",
+        "clueText": "LINA'S NOTE: \"Find the blue-marked door in the corridor. It was hidden behind a tapestry.\"",
+        "solution": "Blue-Marked Door",
+        "nextQrNode": "QR-NODE-10",
+        "explanation": "Points to the blue-marked secret door.",
+        "nextPhysicalLocation": "[ADMIN BUILDING] — Blue-Marked Door"
+      },
+      "evidenceUnlocked": {
+        "id": "EVID-P09",
+        "state": "RECOVERED",
+        "title": "Secret Door Blueprint",
+        "source": "Behind the blue door",
+        "content": "Blueprint showing a hidden room. The access code is the color name. Blueprint label: \"BLUE = LIGHT\".",
+        "category": "Document",
+        "timestamp": "Stage 2"
+      },
+      "whyTeamworkMatters": "Combines visual observation with numerical reasoning."
+    }
+  },
+  {
+    "code": "P15",
+    "content": {
+      "hints": [
+        "The cipher wheel has 7 symbols in order.",
+        "Map the cipher wheel symbols to digits using the glyph key.",
+        "Submit 3425."
+      ],
+      "analyst": {
+        "role": "ANALYST",
+        "taskPrompt": "Map the central symbol to a number.",
+        "dataPayload": "CONVERSION: Each cipher symbol maps to a digit via the glyph key. The wheel's symbols yield the code when mapped in order.",
+        "screenTitle": "Symbol-to-Number Mapper",
+        "whatTheySee": "Mapper showing symbol positions.",
+        "intermediateOutput": "The cipher wheel maps symbols to digits via the glyph key: 3-4-2-5."
+      },
+      "observer": {
+        "role": "OBSERVER",
+        "taskPrompt": "Read the symbols in order.",
+        "visualType": "cipher",
+        "dataPayload": "WHEEL SHOWS: 7 positions with symbols: ⟁ ⧉ ⬡ ⧫ ⌬ ⍟ ⎔",
+        "screenTitle": "Cipher Wheel Inspection",
+        "whatTheySee": "A physical cipher wheel with 7 symbol positions.",
+        "intermediateOutput": "⟁ ⧉ ⬡ ⧫ ⌬ ⍟ ⎔"
+      },
+      "operator": {
+        "role": "OPERATOR",
+        "taskPrompt": "Submit the decrypted code.",
+        "dataPayload": "DECRYPTION KEY: [ _ _ _ _ ]",
+        "screenTitle": "Cipher Unlock Terminal",
+        "whatTheySee": "Four-digit terminal.",
+        "intermediateOutput": "Submit: 3425"
+      },
+      "branchConditions": [],
+      "coordinationChain": {
+        "observerProduces": "Observer reports the cipher wheel symbols.",
+        "operatorExecutes": "Operator submits 3425.",
+        "analystTransforms": "Analyst maps cipher symbols to digits via the glyph key, deriving 3425."
+      },
+      "failurePropagation": {
+        "wrongStep": "Team tries to derive the code from symbols alone.",
+        "consequence": "Code mismatch.",
+        "recoveryGuidance": "The code connects to P03."
+      },
+      "narrativeObjective": "Decrypt the message on the cipher wheel using the symbol key.",
+      "roleDependencyLevel": "D2",
+      "operatorInvestigation": {
+        "operatorOwnEvidence": "Terminal shows execution interface for P15.",
+        "requiredDiscoveries": {
+          "analystDiscovery": "Maps cipher symbols to digits via the glyph key.",
+          "observerDiscovery": "Reads the 7 symbols on the cipher wheel."
+        },
+        "operatorTaskDescription": "Observer reads the cipher wheel. Analyst maps symbols. Operator submits."
+      }
+    },
+    "answer_metadata": {
+      "fullSolution": "The cipher wheel symbols map to digits via the glyph key, yielding 3425. Submitting 3425 unlocks P16.",
+      "acceptedAnswer": "3425",
+      "validationMethod": "exact"
+    },
+    "metadata": {
+      "time": "7m",
+      "type": "CIPHER",
+      "feeds": "P14",
+      "difficulty": 3,
+      "storyReveal": "Terminal: \"CIPHER VERIFIED. THE THIRD SYMBOL IS REVEALED.\"",
+      "locationClue": {
+        "format": "Symbol",
+        "clueText": "LINA'S NOTE: \"Find the ⧫ symbol on campus. Check the library book return area.\"",
+        "solution": "Library Book Return Symbol",
+        "nextQrNode": "QR-NODE-18",
+        "explanation": "Points to the ⧫ symbol at library book return.",
+        "nextPhysicalLocation": "[LIBRARY] — Book Return Symbol"
+      },
+      "evidenceUnlocked": {
+        "id": "EVID-P15",
+        "state": "RECOVERED",
+        "title": "Memory Symbol",
+        "source": "Library book return",
+        "content": "A carving of ⧫ with the word MEMORY below it.",
+        "category": "Visual",
+        "timestamp": "Stage 3"
+      },
+      "whyTeamworkMatters": "Reinforces cross-puzzle connections."
+    }
+  },
+  {
+    "code": "P22",
+    "content": {
+      "hints": [
+        "This puzzle requires recalling Stage 1-2 answers.",
+        "Counting A(1) through Z(26), identify the letter at position 24.",
+        "Submit the single-letter binding variable."
+      ],
+      "analyst": {
+        "role": "ANALYST",
+        "taskPrompt": "What is the 24th letter of the alphabet?",
+        "dataPayload": "ANALYSIS: The 24th letter of the alphabet binds P01 and P03.",
+        "screenTitle": "Second-Order Variable Analyzer",
+        "whatTheySee": "Analyzer showing: A(1)...X(24)...Z(26). The binding variable sits at position 24.",
+        "intermediateOutput": "X"
+      },
+      "observer": {
+        "role": "OBSERVER",
+        "taskPrompt": "Report the hidden binding variable between P01 and P03.",
+        "visualType": "document-forensics",
+        "dataPayload": "REINTERPRETATION: \"P01 facade carries a hidden variable beyond CDFDEFF.\"",
+        "screenTitle": "Reinterpretation Terminal",
+        "whatTheySee": "Terminal showing P01 facade with an additional hidden field flagged.",
+        "interactiveData": {
+          "recallPrompt": "Recall P01 facade symbols.",
+          "requiresPuzzle": "P01"
+        },
+        "intermediateOutput": "P01 and P03 share a hidden variable"
+      },
+      "operator": {
+        "role": "OPERATOR",
+        "taskPrompt": "Submit the binding variable.",
+        "dataPayload": "REINTERPRETED KEY: [ _ ]",
+        "screenTitle": "Hidden Layer Execution",
+        "whatTheySee": "Single-character input.",
+        "intermediateOutput": "Submit: X"
+      },
+      "branchConditions": [],
+      "coordinationChain": {
+        "observerProduces": "Observer uses contradiction scanner to find hidden binding between P01 and P03.",
+        "operatorExecutes": "Operator submits X, unlocking P23.",
+        "analystTransforms": "Analyst derives the binding variable as the 24th letter of the alphabet."
+      },
+      "failurePropagation": {
+        "wrongStep": "Team guesses random letters.",
+        "consequence": "Operator locked out for 45 seconds.",
+        "recoveryGuidance": "Think Stage 2 answer for P03: what alphabet position?"
+      },
+      "narrativeObjective": "Reopen P01 to discover its hidden second-order variable.",
+      "roleDependencyLevel": "D4",
+      "operatorInvestigation": {
+        "operatorOwnEvidence": "Terminal shows single-character binding slot for P22.",
+        "requiredDiscoveries": {
+          "analystDiscovery": "Computes the 24th letter of the alphabet.",
+          "observerDiscovery": "Reopens P01 and finds hidden binding field."
+        },
+        "operatorTaskDescription": "The Observer reopens P01 data. The Analyst computes the 24th letter. The Operator submits."
+      }
+    },
+    "answer_metadata": {
+      "fullSolution": "Re-evaluating Stage 1-2 establishes the binding variable connecting P01 and P03 is X (24th letter). Submitting X unlocks P23.",
+      "acceptedAnswer": "X",
+      "validationMethod": "exact"
+    },
+    "metadata": {
+      "time": "12m",
+      "type": "LOGIC",
+      "feeds": "M03",
+      "difficulty": 4.5,
+      "storyReveal": "System warning: \"OLD DATA IS NEVER OBSOLETE. ALL ANSWERS REMAIN CONCURRENT.\"",
+      "locationClue": {
+        "format": "Research-Note",
+        "clueText": "LINA'S NOTE: \"The robotics lab has autonomous arms in darkness. Find Bay 1.\"",
+        "solution": "Engineering Block Robotics Bay 1",
+        "nextQrNode": "QR-NODE-23",
+        "explanation": "Points to Robotics Bay 1.",
+        "nextPhysicalLocation": "[ENGINEERING BLOCK] — Robotics Bay 1"
+      },
+      "evidenceUnlocked": {
+        "id": "EVID-P22",
+        "state": "RECOVERED",
+        "title": "Lab Notebook Fragment #51",
+        "source": "Robotics Bay 1 terminal",
+        "content": "I knew they would never look back. Human psychology makes us discard answers once a door opens. But NEXUS re-weaves old threads. The X from the window was not a room; it was the unknown variable of the entire manifold.",
+        "category": "Lab Note",
+        "timestamp": "Stage 4"
+      },
+      "whyTeamworkMatters": "Demonstrates delayed meaning: answers from hours ago return with new structural importance."
+    }
+  },
+  {
+    "code": "P33",
+    "content": {
+      "hints": [
+        "The GM told you the key is 7 letters.",
+        "It is the verb form of convergence.",
+        "Submit CONVERGE."
+      ],
+      "analyst": {
+        "role": "ANALYST",
+        "taskPrompt": "Validate the key length.",
+        "dataPayload": "VALIDATION: \"Convergence\" = 10 letters. Too long by 3.",
+        "screenTitle": "Semantic Validator",
+        "whatTheySee": "Validator showing length mismatch.",
+        "intermediateOutput": "Need 7 letters."
+      },
+      "observer": {
+        "role": "OBSERVER",
+        "taskPrompt": "Analyze the convergence concept.",
+        "visualType": "dependency-tree",
+        "dataPayload": "ANALYZER: All 30 stages converge into single principle.",
+        "screenTitle": "Key Derivation Analyzer",
+        "whatTheySee": "Analyzer showing convergence diagram.",
+        "interactiveData": {
+          "convergencePoint": "All 30 answers flow into one concept."
+        },
+        "intermediateOutput": "Observer: CONVERGENCE?"
+      },
+      "operator": {
+        "role": "OPERATOR",
+        "taskPrompt": "Enter the 7-letter key.",
+        "dataPayload": "KEY (7 letters): [ _ _ _ _ _ _ _ ]\nHint: What is NEXUS' core?",
+        "screenTitle": "GM Key Terminal",
+        "whatTheySee": "7-letter key terminal with prompt.",
+        "intermediateOutput": "Submit: CONVERGE"
+      },
+      "branchConditions": [],
+      "coordinationChain": {
+        "observerProduces": "Observer reads the convergence prompt.",
+        "operatorExecutes": "Operator submits CONVERGE, unlocking P34.",
+        "analystTransforms": "Analyst notes CONVERGENCE is too long—truncated to 7."
+      },
+      "failurePropagation": {
+        "wrongStep": "Operator enters CONVERGENCE.",
+        "consequence": "System: \"7 LETTERS REQUIRED, 10 PROVIDED.\"",
+        "recoveryGuidance": "Use the verb form: CONVERGE."
+      },
+      "narrativeObjective": "Deduce the 7-letter GM key representing the unity principle.",
+      "roleDependencyLevel": "D4",
+      "operatorInvestigation": {
+        "operatorOwnEvidence": "Terminal shows execution interface for P33.",
+        "requiredDiscoveries": {
+          "analystDiscovery": "Validates 7-letter word: CONVERGE.",
+          "observerDiscovery": "Reads prompt: \"7 letters, what is NEXUS' core?\""
+        },
+        "operatorTaskDescription": "Observer reads convergence prompt. Analyst validates. Operator submits."
+      }
+    },
+    "answer_metadata": {
+      "fullSolution": "The 7-letter GM key is CONVERGE. Submitting CONVERGE unlocks P34.",
+      "acceptedAnswer": "CONVERGE",
+      "validationMethod": "case_insensitive"
+    },
+    "metadata": {
+      "time": "8m",
+      "type": "DEDUCTION",
+      "feeds": "P32",
+      "difficulty": 4.5,
+      "storyReveal": "Terminal: \"CONVERGE ACCEPTED. FINAL STAGE INITIATED.\"",
+      "locationClue": {
+        "format": "Poetic",
+        "clueText": "LINA'S NOTE: \"Enter the Nexus Core central hub. The final truth awaits.\"",
+        "solution": "Nexus Core Central Hub",
+        "nextQrNode": "QR-NODE-34",
+        "explanation": "Points to central hub for the final puzzles.",
+        "nextPhysicalLocation": "[NEXUS CORE] — Central Hub"
+      },
+      "evidenceUnlocked": {
+        "id": "EVID-P33",
+        "state": "RECOVERED",
+        "title": "Classified Memo: Final Protocol",
+        "source": "GM Key terminal",
+        "content": "GM PROTOCOL: The final boss requires all three players to simultaneously confirm their agreement. No single role can trigger it.",
+        "category": "Classified",
+        "timestamp": "Stage 5"
+      },
+      "whyTeamworkMatters": "Tests the team's ability to truncate and validate."
+    }
+  },
+  {
+    "code": "P01",
+    "content": {
+      "hints": [
+        "The facade above the entrance has 7 visible glyph positions.",
+        "Use the cipher key on your device to map each glyph to a letter.",
+        "The first two letters are C and D."
+      ],
+      "analyst": {
+        "role": "ANALYST",
+        "taskPrompt": "Apply the substitution to each glyph.",
+        "dataPayload": "DECODING INSTRUCTIONS: Convert each glyph to a single letter using the substitution key.",
+        "screenTitle": "Glyph Decomposition Terminal",
+        "whatTheySee": "A cipher wheel mapping 8 glyph shapes to letters.",
+        "intermediateOutput": "C D F D E F F"
+      },
+      "observer": {
+        "role": "OBSERVER",
+        "taskPrompt": "Read the facade from left to right and report the glyph sequence.",
+        "visualType": "visual",
+        "dataPayload": "FACADE SYMBOL GRID: 8 columns of carved stone symbols visible on the Main Entrance.",
+        "screenTitle": "Facade Observation Log",
+        "whatTheySee": "A row of stone glyphs above the entrance. Each glyph appears multiple times.",
+        "intermediateOutput": "Column 1 glyph, Column 2 glyph, ... etc."
+      },
+      "operator": {
+        "role": "OPERATOR",
+        "taskPrompt": "Submit the decoded glyph sequence.",
+        "dataPayload": "ENTRANCE CODE: [ _ _ _ _ _ _ _ ]",
+        "screenTitle": "Facade Authentication Terminal",
+        "whatTheySee": "Terminal at the base of the facade requiring a 7-character code.",
+        "intermediateOutput": "Submit: CDFDEFF"
+      },
+      "branchConditions": [],
+      "coordinationChain": {
+        "observerProduces": "Observer reads: glyph glyph glyph glyph glyph glyph glyph glyph.",
+        "operatorExecutes": "Operator enters CDFDEFF at the facade terminal.",
+        "analystTransforms": "Analyst converts each glyph to its letter: C D F D E F F."
+      },
+      "failurePropagation": {
+        "wrongStep": "Analyst misreads the glyph order.",
+        "consequence": "Entry rejected — no access granted to P02.",
+        "recoveryGuidance": "Check the substitution key again, starting from the leftmost column."
+      },
+      "narrativeObjective": "Decode the architectural symbols carved into the Main Entrance facade.",
+      "roleDependencyLevel": "D2",
+      "operatorInvestigation": {
+        "operatorOwnEvidence": "Terminal screen shows the execution interface for P01.",
+        "requiredDiscoveries": {
+          "analystDiscovery": "Applies the substitution key to convert glyphs to letters.",
+          "observerDiscovery": "Reads the 8 facade glyphs left to right."
+        },
+        "operatorTaskDescription": "The Observer reports glyph shapes from the physical facade. The Analyst applies the substitution cipher. The Operator submits the combined result. No single role holds the complete answer."
+      }
+    },
+    "answer_metadata": {
+      "fullSolution": "Reading the facade glyphs left to right and applying the substitution cipher yields C-D-F-D-E-F-F. Submitting CDFDEFF unlocks the path to P02.",
+      "acceptedAnswer": "CDFDEFF",
+      "validationMethod": "exact"
+    },
+    "metadata": {
+      "time": "6m",
+      "type": "OBSERVATION",
+      "feeds": "M01",
+      "difficulty": 2,
+      "storyReveal": "Facade terminal: \"ACCESS GRANTED. PROCEED TO ARCHIVE WING.\"",
+      "locationClue": {
+        "format": "Map Marker",
+        "clueText": "LINA'S NOTE: \"From the facade, walk through the main doors into the Lobby. The first archive alcove is on your left.\"",
+        "solution": "Main Building Lobby Archive Alcove",
+        "nextQrNode": "QR-NODE-02",
+        "explanation": "Directs teams from the entrance facade into the archive alcove.",
+        "nextPhysicalLocation": "[ADMIN BUILDING] — Lobby Archive Alcove"
+      },
+      "evidenceUnlocked": {
+        "id": "EVID-P01",
+        "state": "RECOVERED",
+        "title": "Archive Building Floor Plan (1974)",
+        "source": "Archive alcove",
+        "content": "A hand-drawn floor plan showing a route to the \"Decommissioned Security Office\" in the basement. The path goes through the library basement.",
+        "category": "Document",
+        "timestamp": "Stage 1"
+      },
+      "whyTeamworkMatters": "Physical observation and cryptographic decoding must be combined — the Analyst cannot solve without the Observer, and the Operator cannot act without both."
+    }
+  },
+  {
+    "code": "P02",
+    "content": {
+      "hints": [
+        "The clock in the lobby shows different numbers depending on your viewing angle.",
+        "View from the east side. Apply the 12-hour offset.",
+        "Submit 21:47."
+      ],
+      "analyst": {
+        "role": "ANALYST",
+        "taskPrompt": "Convert the observed time to 24-hour format.",
+        "dataPayload": "FORMULA: East view time + 12 hours = military time.",
+        "screenTitle": "Time Conversion Calculator",
+        "whatTheySee": "Conversion calculator showing 9:47 + 12:00 = 21:47.",
+        "intermediateOutput": "21:47"
+      },
+      "observer": {
+        "role": "OBSERVER",
+        "taskPrompt": "Read the clock face from the east-side viewing angle.",
+        "visualType": "observation",
+        "dataPayload": "OBSERVATION: The clock face shows 9:47 when viewed from the east side.",
+        "screenTitle": "Clock Tower Viewing Angle",
+        "whatTheySee": "A vintage clock face with Roman numerals. One hand points at IX, the other at VII.",
+        "intermediateOutput": "9:47"
+      },
+      "operator": {
+        "role": "OPERATOR",
+        "taskPrompt": "Submit the converted time.",
+        "dataPayload": "TIME LOCK: [ _ _ : _ _ ]",
+        "screenTitle": "Clock Authentication Terminal",
+        "whatTheySee": "Terminal with a digital time entry pad.",
+        "intermediateOutput": "Submit: 21:47"
+      },
+      "branchConditions": [],
+      "coordinationChain": {
+        "observerProduces": "Observer reads 9:47 from the east side.",
+        "operatorExecutes": "Operator submits 21:47 at the clock terminal.",
+        "analystTransforms": "Analyst converts to 21:47."
+      },
+      "failurePropagation": {
+        "wrongStep": "Team reads the clock from the default angle (front: 21:47).",
+        "consequence": "Terminal accepts but does not advance — angle-specific.",
+        "recoveryGuidance": "The clock shows different times from different angles."
+      },
+      "narrativeObjective": "Determine the time shown on the lobby clock tower when viewed from a specific angle.",
+      "roleDependencyLevel": "D2",
+      "operatorInvestigation": {
+        "operatorOwnEvidence": "Terminal screen shows the execution interface for P02.",
+        "requiredDiscoveries": {
+          "analystDiscovery": "Converts 9:47 + 12 hours to military time: 21:47.",
+          "observerDiscovery": "Reads the clock face as 9:47 from the east side."
+        },
+        "operatorTaskDescription": "The Observer reads the clock from a specific angle. The Analyst converts to 24-hour format. The Operator enters the result."
+      }
+    },
+    "answer_metadata": {
+      "fullSolution": "Reading the clock from the east side shows 9:47. Converting to 24-hour format gives 21:47. Submitting 21:47 unlocks P03.",
+      "acceptedAnswer": "21:47",
+      "validationMethod": "exact"
+    },
+    "metadata": {
+      "time": "5m",
+      "type": "SPATIAL",
+      "feeds": "P01",
+      "difficulty": 2,
+      "storyReveal": "Clock terminal: \"TIME IS VERIFIED. THE PAST IS UNLOCKED.\"",
+      "locationClue": {
+        "format": "Map Marker",
+        "clueText": "LINA'S NOTE: \"Proceed to the Main Hall. The central staircase awaits.\"",
+        "solution": "Main Hall Central Staircase",
+        "nextQrNode": "QR-NODE-03",
+        "explanation": "Directs teams from the clock tower to the Main Hall.",
+        "nextPhysicalLocation": "[MAIN HALL] — Central Staircase"
+      },
+      "evidenceUnlocked": {
+        "id": "EVID-P02",
+        "state": "RECOVERED",
+        "title": "Clock Maintenance Log — October 14, 2024",
+        "source": "Behind the clock face",
+        "content": "Maintenance log entry: \"22:45 — Clock manually set to 21:47 for synchronization event.\" The time 21:47 appears significant.",
+        "category": "Document",
+        "timestamp": "Stage 1"
+      },
+      "whyTeamworkMatters": "The spatial observation determines the raw data; the analyst transforms it; the operator executes."
+    }
+  },
+  {
+    "code": "P03",
+    "content": {
+      "hints": [
+        "Look at the brass plates near the facade steps.",
+        "The PIN is connected to your P01 solution.",
+        "Submit 3425."
+      ],
+      "analyst": {
+        "role": "ANALYST",
+        "taskPrompt": "Verify the PIN ordering.",
+        "dataPayload": "ORDERING RULE: Digits are ordered by the facade glyph positions from P01.",
+        "screenTitle": "PIN Order Validator",
+        "whatTheySee": "Position mapping: P01 glyphs C(3), D(4), F(2), E(5) map to positions.",
+        "intermediateOutput": "3425"
+      },
+      "observer": {
+        "role": "OBSERVER",
+        "taskPrompt": "Read the digits from left to right.",
+        "visualType": "visual",
+        "dataPayload": "BASE DETAILS: Four worn brass plates near the facade steps each show a single digit.",
+        "screenTitle": "Facade Base Inspection",
+        "whatTheySee": "Four brass plates embedded in the steps: 3, 4, 2, 5.",
+        "intermediateOutput": "3, 4, 2, 5"
+      },
+      "operator": {
+        "role": "OPERATOR",
+        "taskPrompt": "Submit the 4-digit PIN.",
+        "dataPayload": "SECURITY CODE: [ _ _ _ _ ]",
+        "screenTitle": "Facade PIN Terminal",
+        "whatTheySee": "Four-digit keypad terminal.",
+        "intermediateOutput": "Submit: 3425"
+      },
+      "branchConditions": [],
+      "coordinationChain": {
+        "observerProduces": "Observer reports 3, 4, 2, 5 from the brass plates.",
+        "operatorExecutes": "Operator submits 3425 at the facade terminal.",
+        "analystTransforms": "Analyst confirms the PIN is 3425."
+      },
+      "failurePropagation": {
+        "wrongStep": "PIN entered in wrong order.",
+        "consequence": "Access denied.",
+        "recoveryGuidance": "The order follows the P01 glyph sequence."
+      },
+      "narrativeObjective": "Find the 4-digit PIN hidden in the facade symbols.",
+      "roleDependencyLevel": "D2",
+      "operatorInvestigation": {
+        "operatorOwnEvidence": "Terminal screen shows the execution interface for P03.",
+        "requiredDiscoveries": {
+          "analystDiscovery": "Verifies ordering matches P01 glyph positions.",
+          "observerDiscovery": "Reads four brass plates: 3, 4, 2, 5."
+        },
+        "operatorTaskDescription": "The Observer reads the brass plate digits. The Analyst verifies ordering. The Operator submits."
+      }
+    },
+    "answer_metadata": {
+      "fullSolution": "Reading the four brass plates gives 3-4-2-5. Submitting 3425 unlocks P04.",
+      "acceptedAnswer": "3425",
+      "validationMethod": "exact"
+    },
+    "metadata": {
+      "time": "4m",
+      "type": "CIPHER",
+      "feeds": "P02",
+      "difficulty": 2,
+      "storyReveal": "Terminal: \"PIN ACCEPTED. ARCHIVE ACCESS GRANTED.\"",
+      "locationClue": {
+        "format": "Document",
+        "clueText": "LINA'S NOTE: \"The archive contains a poster about a 2021 student project. Look at the dates.\"",
+        "solution": "Archive Poster Examination",
+        "nextQrNode": "QR-NODE-04",
+        "explanation": "Points to the archive poster wall.",
+        "nextPhysicalLocation": "[ADMIN BUILDING] — Archive Poster Wall"
+      },
+      "evidenceUnlocked": {
+        "id": "EVID-P03",
+        "state": "RECOVERED",
+        "title": "Archive Poster: NEXUS Project Initiation (2021)",
+        "source": "Archive poster wall",
+        "content": "The poster shows 3 key figures: Dr. Vey, Prof. Carter, and a third figure marked TBA. A note reads: \"The key to the future is the 6th letter.\"",
+        "category": "Document",
+        "timestamp": "Stage 1"
+      },
+      "whyTeamworkMatters": "Connects back to P01, requiring the team to maintain cross-puzzle context."
+    }
+  },
+  {
+    "code": "P04",
+    "content": {
+      "hints": [
+        "The poster text says \"the 6th letter\". Count the alphabet.",
+        "A=1, B=2, C=3, D=4, E=5, F=6.",
+        "Submit F."
+      ],
+      "analyst": {
+        "role": "ANALYST",
+        "taskPrompt": "What is the 6th letter of the alphabet?",
+        "dataPayload": "ANALYSIS: Day-of-month sequence: 15, 22, 08, 01. Difference pattern: +7, -14, -7. Next would be -14: 01-14 = -13 (mod 31 = 18). But the poster text says \"6th letter\".",
+        "screenTitle": "Date Pattern Analyzer",
+        "whatTheySee": "Pattern analyzer highlighting the note \"the 6th letter\".",
+        "intermediateOutput": "F"
+      },
+      "observer": {
+        "role": "OBSERVER",
+        "taskPrompt": "Report the four dates to the Analyst.",
+        "visualType": "document-forensics",
+        "dataPayload": "POSTER DATES: 2021-03-15, 2021-06-22, 2021-09-08, 2021-12-01",
+        "screenTitle": "Poster Date Investigation",
+        "whatTheySee": "Four dates arranged in a vertical list on the poster.",
+        "intermediateOutput": "2021-03-15, 2021-06-22, 2021-09-08, 2021-12-01"
+      },
+      "operator": {
+        "role": "OPERATOR",
+        "taskPrompt": "Submit the single letter.",
+        "dataPayload": "HIDDEN VARIABLE: [ _ ]",
+        "screenTitle": "Archive Access Terminal",
+        "whatTheySee": "Single-character terminal.",
+        "intermediateOutput": "Submit: F"
+      },
+      "branchConditions": [],
+      "coordinationChain": {
+        "observerProduces": "Observer reports the four dates.",
+        "operatorExecutes": "Operator submits F at the archive terminal.",
+        "analystTransforms": "Analyst finds the hidden note and calculates the 6th letter: F."
+      },
+      "failurePropagation": {
+        "wrongStep": "Team counts from 0 instead of 1 (gives E).",
+        "consequence": "Archive access denied.",
+        "recoveryGuidance": "Alphabet: A=1, B=2, C=3, D=4, E=5, F=6."
+      },
+      "narrativeObjective": "Find the hidden letter in the dates on the NEXUS project poster.",
+      "roleDependencyLevel": "D2",
+      "operatorInvestigation": {
+        "operatorOwnEvidence": "Terminal screen shows the execution interface for P04.",
+        "requiredDiscoveries": {
+          "analystDiscovery": "Finds the note \"the 6th letter\" and counts: A-B-C-D-E-F.",
+          "observerDiscovery": "Reads the four dates on the poster."
+        },
+        "operatorTaskDescription": "The Observer reads the poster dates. The Analyst finds the hidden note about the \"6th letter\". The Operator submits the letter."
+      }
+    },
+    "answer_metadata": {
+      "fullSolution": "The poster note says \"the 6th letter\". Counting A(1), B(2), C(3), D(4), E(5), F(6) gives F. Submitting F unlocks P05.",
+      "acceptedAnswer": "F",
+      "validationMethod": "exact"
+    },
+    "metadata": {
+      "time": "7m",
+      "type": "PATTERN",
+      "feeds": "P03",
+      "difficulty": 3,
+      "storyReveal": "Terminal: \"LETTER VERIFIED. THE THIRD FIGURE IS REVEALED.\"",
+      "locationClue": {
+        "format": "Riddle",
+        "clueText": "LINA'S NOTE: \"Look for the person who is not shown but whose initial completes the name.\"",
+        "solution": "Hidden Third Figure Identification",
+        "nextQrNode": "QR-NODE-05",
+        "explanation": "Points to the archive figure display.",
+        "nextPhysicalLocation": "[ADMIN BUILDING] — Archive Figure Display"
+      },
+      "evidenceUnlocked": {
+        "id": "EVID-P04",
+        "state": "RECOVERED",
+        "title": "Project NEXUS — Team Roster",
+        "source": "Behind the poster",
+        "content": "Roster: Dr. Lina Vey (Project Lead), Prof. Marcus Carter (Advisor). Third member: [REDACTED]. Initial: V.",
+        "category": "Document",
+        "timestamp": "Stage 1"
+      },
+      "whyTeamworkMatters": "Requires combining physical observation (dates) with cryptographic reasoning (letter count)."
+    }
+  },
+  {
+    "code": "P05",
+    "content": {
+      "hints": [
+        "The redacted person is Dr. Lina Vey.",
+        "The last name is 3 letters starting with V.",
+        "Submit VEY."
+      ],
+      "analyst": {
+        "role": "ANALYST",
+        "taskPrompt": "What is the full last name?",
+        "dataPayload": "REASONING: Dr. Vey is the project lead. The roster says \"Dr. Lina Vey\". The third figure shares the last name Vey.",
+        "screenTitle": "Name Reconstruction Engine",
+        "whatTheySee": "Reconstruction showing \"Lina Vey\" from the lead role.",
+        "intermediateOutput": "VEY"
+      },
+      "observer": {
+        "role": "OBSERVER",
+        "taskPrompt": "Report the visible initial.",
+        "visualType": "observation",
+        "dataPayload": "DISPLAY: Two photos visible. Third photo frame is empty but has an etched initial: V.",
+        "screenTitle": "Figure Display Inspection",
+        "whatTheySee": "A display with three frames. The third frame is empty, showing only the letter V.",
+        "intermediateOutput": "V"
+      },
+      "operator": {
+        "role": "OPERATOR",
+        "taskPrompt": "Submit the last name.",
+        "dataPayload": "IDENTIFY REDACTED: [ _ _ _ ]",
+        "screenTitle": "Archive Identity Terminal",
+        "whatTheySee": "Three-letter input terminal.",
+        "intermediateOutput": "Submit: VEY"
+      },
+      "branchConditions": [],
+      "coordinationChain": {
+        "observerProduces": "Observer reports the initial V.",
+        "operatorExecutes": "Operator submits VEY at the identity terminal.",
+        "analystTransforms": "Analyst deduces the full name: VEY."
+      },
+      "failurePropagation": {
+        "wrongStep": "Team submits just \"V\" or \"LINA\".",
+        "consequence": "Identity validation fails.",
+        "recoveryGuidance": "Submit the full LAST NAME."
+      },
+      "narrativeObjective": "Deduce the full last name of the redacted third project member.",
+      "roleDependencyLevel": "D2",
+      "operatorInvestigation": {
+        "operatorOwnEvidence": "Terminal screen shows the execution interface for P05.",
+        "requiredDiscoveries": {
+          "analystDiscovery": "Deduces the last name from Dr. Lina Vey: VEY.",
+          "observerDiscovery": "Sees the initial V on the empty frame."
+        },
+        "operatorTaskDescription": "The Observer reads the etched initial V. The Analyst reconstructs the full name from the lead role. The Operator submits."
+      }
+    },
+    "answer_metadata": {
+      "fullSolution": "The empty frame shows V. The redacted member is Dr. Lina Vey. The last name is VEY. Submitting VEY unlocks Meta M01.",
+      "acceptedAnswer": "VEY",
+      "validationMethod": "case_insensitive"
+    },
+    "metadata": {
+      "time": "6m",
+      "type": "DEDUCTION",
+      "feeds": "P04",
+      "difficulty": 3,
+      "storyReveal": "Terminal: \"IDENTITY RECONSTRUCTED. THE FIRST FRAGMENT AWAITS.\"",
+      "locationClue": {
+        "format": "Symbol Key",
+        "clueText": "LINA'S NOTE: \"The archive has a hidden compartment behind the third frame. Inside is your first fragment.\"",
+        "solution": "Archive Hidden Compartment",
+        "nextQrNode": "QR-NODE-06",
+        "explanation": "Points to the hidden compartment behind the third frame.",
+        "nextPhysicalLocation": "[ADMIN BUILDING] — Archive Hidden Compartment"
+      },
+      "evidenceUnlocked": {
+        "id": "FRAG-01",
+        "state": "RECOVERED",
+        "title": "Fragment 1 — Vector",
+        "source": "Archive hidden compartment",
+        "content": "The first of five narrative fragments. The word VECTOR appears: \"The path diverges. One direction is a straight line; the other, a network. Choose the network.\"",
+        "category": "Symbol Fragment",
+        "timestamp": "Stage 1"
+      },
+      "whyTeamworkMatters": "Deduction requires both observation and reasoning to reconstruct hidden information."
+    }
+  },
+  {
+    "code": "P06",
+    "content": {
+      "hints": [
+        "The date format is DD/MM/YYYY.",
+        "The pivot is the first number in the date.",
+        "Submit 17."
+      ],
+      "analyst": {
+        "role": "ANALYST",
+        "taskPrompt": "Extract the day number.",
+        "dataPayload": "EXTRACTION: \"The pivot number is the DAY from the checkout date.\"",
+        "screenTitle": "Date Extractor",
+        "whatTheySee": "Date analysis tool highlighting the day: 17.",
+        "intermediateOutput": "17"
+      },
+      "observer": {
+        "role": "OBSERVER",
+        "taskPrompt": "Read the checkout date for entry #06.",
+        "visualType": "memory-recall",
+        "dataPayload": "LEDGER: \"Entry #06 was checked out by L.V. on 17/10/2024.\"",
+        "screenTitle": "Reference Desk Ledger",
+        "whatTheySee": "A physical ledger open to entry #06.",
+        "interactiveData": {
+          "recallPrompt": "Recall P01 facade PIN digits.",
+          "requiresPuzzle": "P01"
+        },
+        "intermediateOutput": "17/10/2024"
+      },
+      "operator": {
+        "role": "OPERATOR",
+        "taskPrompt": "Submit the pivot number.",
+        "dataPayload": "PIVOT NUMBER: [ _ _ ]",
+        "screenTitle": "Library Terminal",
+        "whatTheySee": "Two-digit terminal input.",
+        "intermediateOutput": "Submit: 17"
+      },
+      "branchConditions": [],
+      "coordinationChain": {
+        "observerProduces": "Observer reports the checkout date: 17/10/2024.",
+        "operatorExecutes": "Operator submits 17 at the library terminal.",
+        "analystTransforms": "Analyst extracts the day: 17."
+      },
+      "failurePropagation": {
+        "wrongStep": "Team uses the month (10) or year (2024) instead of day.",
+        "consequence": "Pivot invalid; terminal locks for 10 seconds.",
+        "recoveryGuidance": "The day is the middle number: 17."
+      },
+      "narrativeObjective": "Recall the pivot number from an earlier clue.",
+      "roleDependencyLevel": "D1",
+      "operatorInvestigation": {
+        "operatorOwnEvidence": "Terminal screen shows the execution interface for P06.",
+        "requiredDiscoveries": {
+          "analystDiscovery": "Extracts the day number: 17.",
+          "observerDiscovery": "Reads ledger entry: \"L.V. on 17/10/2024.\""
+        },
+        "operatorTaskDescription": "The Observer reads the ledger date. The Analyst extracts the day. The Operator submits."
+      }
+    },
+    "answer_metadata": {
+      "fullSolution": "The ledger shows 17/10/2024. The day (pivot) is 17. Submitting 17 unlocks P07.",
+      "acceptedAnswer": "17",
+      "validationMethod": "exact"
+    },
+    "metadata": {
+      "time": "5m",
+      "type": "MEMORY",
+      "feeds": "M01",
+      "difficulty": 2,
+      "storyReveal": "Terminal: \"PIVOT RECALLED. BINARY GATE UNLOCKED.\"",
+      "locationClue": {
+        "format": "Map Marker",
+        "clueText": "LINA'S NOTE: \"The library basement contains a server rack with blinking binary LEDs.\"",
+        "solution": "Library Basement Server Rack",
+        "nextQrNode": "QR-NODE-07",
+        "explanation": "Points to the library basement server rack.",
+        "nextPhysicalLocation": "[LIBRARY] — Basement Server Rack"
+      },
+      "evidenceUnlocked": {
+        "id": "EVID-P06",
+        "state": "RECOVERED",
+        "title": "Server Rack Binary Log",
+        "source": "Library basement server rack",
+        "content": "Binary sequence: 01001001 01001100 01001001 01001001 01001110. Decoded: \"ILILINE\". Hmm, that seems wrong. Try 01001001 01001100 01001001 01001110.",
+        "category": "Data",
+        "timestamp": "Stage 2"
+      },
+      "whyTeamworkMatters": "Tests whether the team retained earlier Stage 1 findings."
+    }
+  },
+  {
+    "code": "P08",
+    "content": {
+      "hints": [
+        "Fragment 1 speaks of a divergence.",
+        "The network direction is named after a Greek letter.",
+        "Submit DELTA."
+      ],
+      "analyst": {
+        "role": "ANALYST",
+        "taskPrompt": "Which Greek letter represents the network direction?",
+        "dataPayload": "VECTOR ANALYSIS: Straight line = Alpha. Network = Delta. The network path is chosen.",
+        "screenTitle": "Directional Analysis",
+        "whatTheySee": "Vector direction comparator.",
+        "intermediateOutput": "Delta"
+      },
+      "observer": {
+        "role": "OBSERVER",
+        "taskPrompt": "Read Fragment 1 aloud.",
+        "visualType": "memory-recall",
+        "dataPayload": "FRAGMENT 1: \"The path diverges. One direction is a straight line; the other, a network.\"",
+        "screenTitle": "Fragment 1 Display",
+        "whatTheySee": "Recovered Fragment 1 text displayed on the cabinet screen.",
+        "interactiveData": {
+          "recallPrompt": "Recall Fragment 1 from the archive.",
+          "requiresPuzzle": "P05"
+        },
+        "intermediateOutput": "The path diverges..."
+      },
+      "operator": {
+        "role": "OPERATOR",
+        "taskPrompt": "Submit the Greek letter name.",
+        "dataPayload": "SELECT DIRECTION: [ _ _ _ _ _ ]",
+        "screenTitle": "Path Divergence Terminal",
+        "whatTheySee": "Five-letter input terminal.",
+        "intermediateOutput": "Submit: DELTA"
+      },
+      "branchConditions": [],
+      "coordinationChain": {
+        "observerProduces": "Observer reports Fragment 1: \"straight line vs network\".",
+        "operatorExecutes": "Operator submits DELTA.",
+        "analystTransforms": "Analyst maps: network = Delta."
+      },
+      "failurePropagation": {
+        "wrongStep": "Team submits ALPHA (the straight line).",
+        "consequence": "Terminal rejects: wrong branch.",
+        "recoveryGuidance": "You chose the network path throughout the game."
+      },
+      "narrativeObjective": "Identify the Greek letter representing the path divergence from Fragment 1.",
+      "roleDependencyLevel": "D2",
+      "operatorInvestigation": {
+        "operatorOwnEvidence": "Terminal screen shows the execution interface for P08.",
+        "requiredDiscoveries": {
+          "analystDiscovery": "Identifies Delta as the network direction.",
+          "observerDiscovery": "Recalls Fragment 1 text about divergent paths."
+        },
+        "operatorTaskDescription": "The Observer recalls Fragment 1. The Analyst identifies the network direction. The Operator submits."
+      }
+    },
+    "answer_metadata": {
+      "fullSolution": "Fragment 1 says the path diverges. The network direction is Delta. Submitting DELTA unlocks P09.",
+      "acceptedAnswer": "DELTA",
+      "validationMethod": "case_insensitive"
+    },
+    "metadata": {
+      "time": "7m",
+      "type": "PATTERN",
+      "feeds": "P07",
+      "difficulty": 3,
+      "storyReveal": "Terminal: \"NETWORK PATH CONFIRMED. THE NEXT GATE IS CHRONOLOGICAL.\"",
+      "locationClue": {
+        "format": "Numerical",
+        "clueText": "LINA'S NOTE: \"The next room has a clock with Roman numerals. Find 17:00.\"",
+        "solution": "Clock Room",
+        "nextQrNode": "QR-NODE-09",
+        "explanation": "Points to the clock room.",
+        "nextPhysicalLocation": "[ADMIN BUILDING] — Clock Room"
+      },
+      "evidenceUnlocked": {
+        "id": "EVID-P08",
+        "state": "RECOVERED",
+        "title": "Clock Room Symbol Chart",
+        "source": "Clock room wall chart",
+        "content": "A chart of Greek letters: Alpha, Beta, Gamma, Delta, Epsilon. Delta is circled. A note: \"Time flows from the circle.\"",
+        "category": "Visual",
+        "timestamp": "Stage 2"
+      },
+      "whyTeamworkMatters": "Requires recall of previously discovered evidence."
+    }
+  },
+  {
+    "code": "P10",
+    "content": {
+      "hints": [
+        "The blueprint says BLUE = LIGHT.",
+        "Extract the word on the right.",
+        "Submit LIGHT."
+      ],
+      "analyst": {
+        "role": "ANALYST",
+        "taskPrompt": "Extract the right-hand side.",
+        "dataPayload": "EXTRACTION: From BLUE = LIGHT, the solution is LIGHT.",
+        "screenTitle": "Color Extraction Validator",
+        "whatTheySee": "Extraction tool highlighting LIGHT.",
+        "intermediateOutput": "LIGHT"
+      },
+      "observer": {
+        "role": "OBSERVER",
+        "taskPrompt": "Read the equation.",
+        "visualType": "document-forensics",
+        "dataPayload": "BLUEPRINT: \"BLUE = LIGHT\" written in the margin.",
+        "screenTitle": "Blueprint Examination",
+        "whatTheySee": "A blueprint with the notation BLUE = LIGHT.",
+        "intermediateOutput": "BLUE = LIGHT"
+      },
+      "operator": {
+        "role": "OPERATOR",
+        "taskPrompt": "Submit the extracted word.",
+        "dataPayload": "COLOR KEY: [ _ _ _ _ _ ]",
+        "screenTitle": "Door Access Terminal",
+        "whatTheySee": "Five-letter input terminal.",
+        "intermediateOutput": "Submit: LIGHT"
+      },
+      "branchConditions": [],
+      "coordinationChain": {
+        "observerProduces": "Observer reports BLUE = LIGHT.",
+        "operatorExecutes": "Operator submits LIGHT.",
+        "analystTransforms": "Analyst extracts: LIGHT."
+      },
+      "failurePropagation": {
+        "wrongStep": "Team submits BLUE.",
+        "consequence": "Door stays locked.",
+        "recoveryGuidance": "Submit the right-hand side of the equation."
+      },
+      "narrativeObjective": "Extract the color name from the blueprint.",
+      "roleDependencyLevel": "D1",
+      "operatorInvestigation": {
+        "operatorOwnEvidence": "Terminal screen shows the execution interface for P10.",
+        "requiredDiscoveries": {
+          "analystDiscovery": "Extracts LIGHT from the equation.",
+          "observerDiscovery": "Reads BLUE = LIGHT."
+        },
+        "operatorTaskDescription": "The Observer reads the blueprint equation. The Analyst extracts the word. The Operator submits."
+      }
+    },
+    "answer_metadata": {
+      "fullSolution": "From BLUE = LIGHT, the answer is LIGHT. Submitting LIGHT unlocks P11.",
+      "acceptedAnswer": "LIGHT",
+      "validationMethod": "case_insensitive"
+    },
+    "metadata": {
+      "time": "6m",
+      "type": "EXTRACTION",
+      "feeds": "P09",
+      "difficulty": 3,
+      "storyReveal": "Terminal: \"LIGHT ACCEPTED. THE SYMBOL IS REVEALED.\"",
+      "locationClue": {
+        "format": "Symbol Key",
+        "clueText": "LINA'S NOTE: \"Look at the wall. One symbol is glowing blue.\"",
+        "solution": "Glowing Blue Symbol",
+        "nextQrNode": "QR-NODE-11",
+        "explanation": "Points to a wall with a glowing blue symbol.",
+        "nextPhysicalLocation": "[ADMIN BUILDING] — Wall with Glowing Blue Symbol"
+      },
+      "evidenceUnlocked": {
+        "id": "EVID-P10",
+        "state": "RECOVERED",
+        "title": "The Blue Symbol",
+        "source": "Wall behind blue door",
+        "content": "A glowing blue symbol on the wall: ⟁. Symbol 1 of 7.",
+        "category": "Visual",
+        "timestamp": "Stage 2"
+      },
+      "whyTeamworkMatters": "Simple extraction but requires reading the blueprint correctly."
+    }
+  },
+  {
+    "code": "P11",
+    "content": {
+      "hints": [
+        "The symbol is above a doorway.",
+        "The curved stone feature above a door is called an archway.",
+        "Submit ARCHWAY."
+      ],
+      "analyst": {
+        "role": "ANALYST",
+        "taskPrompt": "Confirm the architectural term.",
+        "dataPayload": "CLASSIFICATION: A curved stone opening above a door is called an ARCHWAY.",
+        "screenTitle": "Architectural Feature Classifier",
+        "whatTheySee": "Feature classifier showing ARCHWAY.",
+        "intermediateOutput": "ARCHWAY"
+      },
+      "observer": {
+        "role": "OBSERVER",
+        "taskPrompt": "Report what the symbol is on top of.",
+        "visualType": "visual",
+        "dataPayload": "SYMBOL MOUNTED ON: Stone archway above a door.",
+        "screenTitle": "Symbol Context Reader",
+        "whatTheySee": "A glowing blue ⟁ mounted above a stone archway door.",
+        "intermediateOutput": "Archway"
+      },
+      "operator": {
+        "role": "OPERATOR",
+        "taskPrompt": "Submit the architectural feature name.",
+        "dataPayload": "FEATURE NAME: [ _ _ _ _ _ _ _ ]",
+        "screenTitle": "Symbol Verification Terminal",
+        "whatTheySee": "Seven-letter input terminal.",
+        "intermediateOutput": "Submit: ARCHWAY"
+      },
+      "branchConditions": [],
+      "coordinationChain": {
+        "observerProduces": "Observer reports the symbol is on an archway.",
+        "operatorExecutes": "Operator submits ARCHWAY.",
+        "analystTransforms": "Analyst confirms: ARCHWAY."
+      },
+      "failurePropagation": {
+        "wrongStep": "Team submits \"DOOR\" or \"WALL\".",
+        "consequence": "Classification mismatch.",
+        "recoveryGuidance": "It is the curved architectural feature above the door."
+      },
+      "narrativeObjective": "Identify what architectural feature the blue symbol is mounted on.",
+      "roleDependencyLevel": "D2",
+      "operatorInvestigation": {
+        "operatorOwnEvidence": "Terminal screen shows the execution interface for P11.",
+        "requiredDiscoveries": {
+          "analystDiscovery": "Classifies as ARCHWAY.",
+          "observerDiscovery": "Sees the symbol mounted on an archway."
+        },
+        "operatorTaskDescription": "The Observer identifies the mounting feature. The Analyst confirms the term. The Operator submits."
+      }
+    },
+    "answer_metadata": {
+      "fullSolution": "The blue symbol is mounted on an archway. Submitting ARCHWAY unlocks P12.",
+      "acceptedAnswer": "ARCHWAY",
+      "validationMethod": "case_insensitive"
+    },
+    "metadata": {
+      "time": "7m",
+      "type": "VISUAL",
+      "feeds": "P10",
+      "difficulty": 3,
+      "storyReveal": "Terminal: \"ARCHWAY VERIFIED. ACCESS TO THE LECTURE HALL GRANTED.\"",
+      "locationClue": {
+        "format": "Room Number",
+        "clueText": "LINA'S NOTE: \"Room 214 — the old lecture hall. Seats face forward. Look under seat 42.\"",
+        "solution": "Lecture Hall Room 214",
+        "nextQrNode": "QR-NODE-12",
+        "explanation": "Points to Lecture Hall Room 214.",
+        "nextPhysicalLocation": "[ADMIN BUILDING] — Lecture Hall 214"
+      },
+      "evidenceUnlocked": {
+        "id": "EVID-P11",
+        "state": "RECOVERED",
+        "title": "Lecture Hall 214 Seating Chart (2021)",
+        "source": "Under seat 42",
+        "content": "Seating chart with one seat marked: Row B, Seat 7 — \"L.V.\" A note: \"She always sat here. Check the armrest.\"",
+        "category": "Document",
+        "timestamp": "Stage 2"
+      },
+      "whyTeamworkMatters": "Requires both observation and naming precision."
+    }
+  },
+  {
+    "code": "P12",
+    "content": {
+      "hints": [
+        "The seating chart marks a specific seat.",
+        "The format is Row letter + Seat number.",
+        "Submit B7."
+      ],
+      "analyst": {
+        "role": "ANALYST",
+        "taskPrompt": "Confirm the seat identifier.",
+        "dataPayload": "CONFIRMATION: L.V. = Lina Vey. Seat B7 is confirmed.",
+        "screenTitle": "Seat Identifier",
+        "whatTheySee": "Identifier confirming B7.",
+        "intermediateOutput": "B7"
+      },
+      "observer": {
+        "role": "OBSERVER",
+        "taskPrompt": "Report the highlighted seat.",
+        "visualType": "observation",
+        "dataPayload": "SEATING CHART: Row B, Seat 7 is marked \"L.V.\"",
+        "screenTitle": "Seating Chart Viewer",
+        "whatTheySee": "A seating chart with Row B, Seat 7 highlighted.",
+        "intermediateOutput": "B7"
+      },
+      "operator": {
+        "role": "OPERATOR",
+        "taskPrompt": "Submit the seat.",
+        "dataPayload": "SEAT IDENTIFIER: [ _ _ ]",
+        "screenTitle": "Seat Lock Terminal",
+        "whatTheySee": "Two-character input terminal.",
+        "intermediateOutput": "Submit: B7"
+      },
+      "branchConditions": [],
+      "coordinationChain": {
+        "observerProduces": "Observer reports B7.",
+        "operatorExecutes": "Operator submits B7.",
+        "analystTransforms": "Analyst confirms B7 = L.V."
+      },
+      "failurePropagation": {
+        "wrongStep": "Team submits \"42\" (the seat number from the clue).",
+        "consequence": "Terminal rejects: expects row+seat format.",
+        "recoveryGuidance": "Submit the row letter and seat number together."
+      },
+      "narrativeObjective": "Find Lina's seat using the seating chart.",
+      "roleDependencyLevel": "D1",
+      "operatorInvestigation": {
+        "operatorOwnEvidence": "Terminal screen shows the execution interface for P12.",
+        "requiredDiscoveries": {
+          "analystDiscovery": "Confirms B7 is Lina Vey's seat.",
+          "observerDiscovery": "Finds Row B, Seat 7 marked L.V."
+        },
+        "operatorTaskDescription": "The Observer reads the seating chart. The Analyst confirms. The Operator submits."
+      }
+    },
+    "answer_metadata": {
+      "fullSolution": "The seating chart shows Row B, Seat 7 is L.V.'s. Submitting B7 unlocks P13.",
+      "acceptedAnswer": "B7",
+      "validationMethod": "exact"
+    },
+    "metadata": {
+      "time": "6m",
+      "type": "DEDUCTION",
+      "feeds": "P11",
+      "difficulty": 3,
+      "storyReveal": "Terminal: \"SEAT VERIFIED. THE FINAL ARCHIVE KEY IS REVEALED.\"",
+      "locationClue": {
+        "format": "Research-Note",
+        "clueText": "LINA'S NOTE: \"Under the seat is a keycard. It opens the Research Lab in the Science Building.\"",
+        "solution": "Science Building Research Lab",
+        "nextQrNode": "QR-NODE-13",
+        "explanation": "Points to the Science Building research lab.",
+        "nextPhysicalLocation": "[SCIENCE BUILDING] — Research Lab"
+      },
+      "evidenceUnlocked": {
+        "id": "EVID-P12",
+        "state": "RECOVERED",
+        "title": "Keycard — Level 3 Access",
+        "source": "Under seat B7",
+        "content": "A keycard marked \"LEVEL 3 — RESEARCH DIVISION.\" Grants access to the Science Building research labs.",
+        "category": "Physical",
+        "timestamp": "Stage 2"
+      },
+      "whyTeamworkMatters": "Connects physical observation with identification."
+    }
+  },
+  {
+    "code": "P13",
+    "content": {
+      "hints": [
+        "The whiteboard has experiment notes.",
+        "The code matches your earlier facade PIN.",
+        "Submit 3425."
+      ],
+      "analyst": {
+        "role": "ANALYST",
+        "taskPrompt": "Verify the code connects to earlier puzzles.",
+        "dataPayload": "CROSS-REFERENCE: Lab code 3425 matches the P03 PIN. Pattern confirmed.",
+        "screenTitle": "Code Cross-Reference",
+        "whatTheySee": "Code analyzer showing 3425 matches previous solutions.",
+        "intermediateOutput": "3425 confirmed"
+      },
+      "observer": {
+        "role": "OBSERVER",
+        "taskPrompt": "Report the code from the whiteboard.",
+        "visualType": "observation",
+        "dataPayload": "LAB NOTES ON WHITEBOARD: \"Experiment: Memory Transfer Protocol\nDate: 17/10/2024\nCode: 3425\"",
+        "screenTitle": "Lab Environment Scan",
+        "whatTheySee": "A whiteboard with experiment notes including a code: 3425.",
+        "intermediateOutput": "3425"
+      },
+      "operator": {
+        "role": "OPERATOR",
+        "taskPrompt": "Submit the code.",
+        "dataPayload": "DOOR CODE: [ _ _ _ _ ]",
+        "screenTitle": "Lab Door Terminal",
+        "whatTheySee": "Four-digit keypad.",
+        "intermediateOutput": "Submit: 3425"
+      },
+      "branchConditions": [],
+      "coordinationChain": {
+        "observerProduces": "Observer reports 3425 from the whiteboard.",
+        "operatorExecutes": "Operator submits 3425 at the lab door.",
+        "analystTransforms": "Analyst confirms: matches P03 PIN."
+      },
+      "failurePropagation": {
+        "wrongStep": "Team can't find the code or submits the experiment number.",
+        "consequence": "Door remains locked.",
+        "recoveryGuidance": "Look for a 4-digit code on the whiteboard."
+      },
+      "narrativeObjective": "Find the lab access code using the keycard and environmental clues.",
+      "roleDependencyLevel": "D3",
+      "operatorInvestigation": {
+        "operatorOwnEvidence": "Terminal screen shows the execution interface for P13.",
+        "requiredDiscoveries": {
+          "analystDiscovery": "Confirms 3425 matches P03 PIN.",
+          "observerDiscovery": "Reads 3425 from the whiteboard."
+        },
+        "operatorTaskDescription": "The Observer reads the whiteboard code. The Analyst cross-references it. The Operator submits."
+      }
+    },
+    "answer_metadata": {
+      "fullSolution": "The whiteboard shows experiment code 3425. This matches the P03 PIN. Submitting 3425 unlocks M02.",
+      "acceptedAnswer": "3425",
+      "validationMethod": "exact"
+    },
+    "metadata": {
+      "time": "10m",
+      "type": "OBSERVATION",
+      "feeds": "P12",
+      "difficulty": 4,
+      "storyReveal": "Door: \"ACCESS GRANTED. THE LAB IS YOURS TO INVESTIGATE.\"",
+      "locationClue": {
+        "format": "Symbol",
+        "clueText": "LINA'S NOTE: \"Inside the lab, find the symbol drawer. The second glyph is marked with a star.\"",
+        "solution": "Lab Symbol Drawer",
+        "nextQrNode": "QR-NODE-14",
+        "explanation": "Points to the lab symbol drawer.",
+        "nextPhysicalLocation": "[SCIENCE BUILDING] — Lab Symbol Drawer"
+      },
+      "evidenceUnlocked": {
+        "id": "EVID-P13",
+        "state": "RECOVERED",
+        "title": "Lab Symbol Drawer — Glyph Key",
+        "source": "Research lab symbol drawer",
+        "content": "A key mapping 7 symbols to conceptual names. The second glyph (marked with a star) is \"Connection\": ⧉ = CONNECTION. This is Symbol 02.",
+        "category": "Document",
+        "timestamp": "Stage 2"
+      },
+      "whyTeamworkMatters": "Ties together Stage 1 and Stage 2 discoveries in a meaningful way."
+    }
+  },
+  {
+    "code": "P06b",
+    "content": {
+      "hints": [
+        "Recall the P06 pivot number.",
+        "It was the day from the checkout date.",
+        "Submit 17."
+      ],
+      "analyst": {
+        "role": "ANALYST",
+        "taskPrompt": "Confirm the pivot.",
+        "dataPayload": "VALIDATION: P06 pivot = 17. Confirmed.",
+        "screenTitle": "Pivot Memory Validator",
+        "whatTheySee": "Validator confirming 17.",
+        "intermediateOutput": "17"
+      },
+      "observer": {
+        "role": "OBSERVER",
+        "taskPrompt": "What is the P06 pivot number?",
+        "visualType": "observation",
+        "dataPayload": "CLOCK SHOWS: --:-- Need to set using P06 pivot.",
+        "screenTitle": "Lab Wall Clock",
+        "whatTheySee": "A wall clock with no numbers, just dashes.",
+        "interactiveData": {
+          "recallPrompt": "Recall the P06 pivot number.",
+          "requiresPuzzle": "P06"
+        },
+        "intermediateOutput": "17"
+      },
+      "operator": {
+        "role": "OPERATOR",
+        "taskPrompt": "Submit the pivot.",
+        "dataPayload": "SET TIME: [ _ _ ]",
+        "screenTitle": "Clock Setter Terminal",
+        "whatTheySee": "Two-digit input terminal.",
+        "intermediateOutput": "Submit: 17"
+      },
+      "branchConditions": [],
+      "coordinationChain": {
+        "observerProduces": "Observer recalls pivot 17.",
+        "operatorExecutes": "Operator submits 17.",
+        "analystTransforms": "Analyst confirms 17."
+      },
+      "failurePropagation": {
+        "wrongStep": "Team forgets the pivot.",
+        "consequence": "Clock doesn't advance.",
+        "recoveryGuidance": "What was the day from the library ledger?"
+      },
+      "narrativeObjective": "Recall the pivot number to set the lab clock.",
+      "roleDependencyLevel": "D1",
+      "operatorInvestigation": {
+        "operatorOwnEvidence": "Terminal screen shows the execution interface for P06b.",
+        "requiredDiscoveries": {
+          "analystDiscovery": "Confirms: 17.",
+          "observerDiscovery": "Recalls P06 pivot: 17."
+        },
+        "operatorTaskDescription": "Recall P06 pivot (17)."
+      }
+    },
+    "answer_metadata": {
+      "fullSolution": "Recalling P06 pivot 17 and submitting at the clock advances the game state.",
+      "acceptedAnswer": "17",
+      "validationMethod": "exact"
+    },
+    "metadata": {
+      "time": "3m",
+      "type": "MEMORY",
+      "feeds": "P13",
+      "difficulty": 1,
+      "storyReveal": "Clock: \"TIME RESTORED. ACCESS GRANTED.\"",
+      "locationClue": {
+        "format": "Symbol",
+        "clueText": "LINA'S NOTE: \"The symbol drawer is open. Take the glyph key.\"",
+        "solution": "Open Symbol Drawer",
+        "nextQrNode": "QR-NODE-15",
+        "explanation": "Points to the open symbol drawer.",
+        "nextPhysicalLocation": "[SCIENCE BUILDING] — Open Symbol Drawer"
+      },
+      "evidenceUnlocked": {
+        "id": "EVID-P06b",
+        "state": "RECOVERED",
+        "title": "Symbol Glyph Key",
+        "source": "Lab symbol drawer",
+        "content": "Mapping of 7 Greek/conceptual symbols: ⟁ = Origin, ⧉ = Connection, ⬡ = Structure, ⧫ = Memory, ⌬ = Choice, ⍟ = Truth, ⎔ = Finality.",
+        "category": "Document",
+        "timestamp": "Stage 2"
+      },
+      "whyTeamworkMatters": "Tests memory retention across stages."
+    }
+  },
+  {
+    "code": "P07b",
+    "content": {
+      "hints": [
+        "Recall the glyph key from the symbol drawer.",
+        "⧉ is the second symbol.",
+        "Submit CONNECTION."
+      ],
+      "analyst": {
+        "role": "ANALYST",
+        "taskPrompt": "Confirm the connecting concept.",
+        "dataPayload": "RESOLUTION: ⧉ = CONNECTION (from glyph key). The concept connecting the three is CONNECTION.",
+        "screenTitle": "Concept Resolver",
+        "whatTheySee": "Resolver showing CONNECTION.",
+        "intermediateOutput": "CONNECTION"
+      },
+      "observer": {
+        "role": "OBSERVER",
+        "taskPrompt": "Read the three connected symbols.",
+        "visualType": "graph-network",
+        "dataPayload": "NETWORK: Three nodes connected by arrows: ⟁ ⧉ ⬡",
+        "screenTitle": "Network Diagram Visualization",
+        "whatTheySee": "A diagram showing three symbols connected by lines.",
+        "intermediateOutput": "⟁ ⧉ ⬡"
+      },
+      "operator": {
+        "role": "OPERATOR",
+        "taskPrompt": "Submit the concept.",
+        "dataPayload": "CONCEPT KEY: [ _ _ _ _ _ _ _ _ _ _ ]",
+        "screenTitle": "Network Authentication Terminal",
+        "whatTheySee": "Ten-letter input terminal.",
+        "intermediateOutput": "Submit: CONNECTION"
+      },
+      "branchConditions": [],
+      "coordinationChain": {
+        "observerProduces": "Observer reports the three symbols.",
+        "operatorExecutes": "Operator submits CONNECTION.",
+        "analystTransforms": "Analyst resolves CONNECTION."
+      },
+      "failurePropagation": {
+        "wrongStep": "Team submits \"STRUCTURE\" or \"ORIGIN\".",
+        "consequence": "Concept mismatch.",
+        "recoveryGuidance": "The middle symbol is ⧉ = CONNECTION."
+      },
+      "narrativeObjective": "Identify the concept that connects the 3 symbols from the network diagram.",
+      "roleDependencyLevel": "D3",
+      "operatorInvestigation": {
+        "operatorOwnEvidence": "Terminal screen shows the execution interface for P07b.",
+        "requiredDiscoveries": {
+          "analystDiscovery": "Resolves ⧉ = CONNECTION.",
+          "observerDiscovery": "Sees three connected symbols: ⟁ ⧉ ⬡."
+        },
+        "operatorTaskDescription": "Observe the network diagram. Resolve the connecting concept."
+      }
+    },
+    "answer_metadata": {
+      "fullSolution": "The network diagram shows ⟁ ⧉ ⬡. From the glyph key, ⧉ = CONNECTION. Submitting CONNECTION unlocks M02.",
+      "acceptedAnswer": "CONNECTION",
+      "validationMethod": "case_insensitive"
+    },
+    "metadata": {
+      "time": "9m",
+      "type": "GRAPH",
+      "feeds": "P06b",
+      "difficulty": 4,
+      "storyReveal": "Terminal: \"CONNECTION ESTABLISHED. THE ARCHIVE DEEPENS.\"",
+      "locationClue": {
+        "format": "Path Instruction",
+        "clueText": "LINA'S NOTE: \"Take the staircase down. Three flights. Stop at the bottom.\"",
+        "solution": "Basement Archive Level",
+        "nextQrNode": "QR-NODE-16",
+        "explanation": "Points to the basement archive level.",
+        "nextPhysicalLocation": "[SCIENCE BUILDING] — Basement Archive"
+      },
+      "evidenceUnlocked": {
+        "id": "FRAG-02",
+        "state": "RECOVERED",
+        "title": "Fragment 2 — Lattice",
+        "source": "Basement archive locker",
+        "content": "The second fragment. The word LATTICE appears: \"The grid is the map. The lines connect the dots. Follow the lattice.\"",
+        "category": "Symbol Fragment",
+        "timestamp": "Stage 2"
+      },
+      "whyTeamworkMatters": "Combines physical observation with symbol decoding."
+    }
+  },
+  {
+    "code": "P14",
+    "content": {
+      "hints": [
+        "Recall Fragment 1 from Stage 2.",
+        "It was about the path divergence.",
+        "Submit VECTOR."
+      ],
+      "analyst": {
+        "role": "ANALYST",
+        "taskPrompt": "Verify the keyword.",
+        "dataPayload": "VALIDATION: Fragment 1 keyword is VECTOR. Confirmed.",
+        "screenTitle": "Fragment Validator",
+        "whatTheySee": "Validator showing VECTOR.",
+        "intermediateOutput": "VECTOR"
+      },
+      "observer": {
+        "role": "OBSERVER",
+        "taskPrompt": "Report the Fragment 1 keyword.",
+        "visualType": "memory-recall",
+        "dataPayload": "PROMPT: \"Recall the first fragment. What is the keyword?\"",
+        "screenTitle": "Memory Bank Terminal",
+        "whatTheySee": "Terminal asking for the first fragment keyword.",
+        "interactiveData": {
+          "recallPrompt": "Recall Fragment 1 keyword.",
+          "requiresPuzzle": "P05"
+        },
+        "intermediateOutput": "VECTOR"
+      },
+      "operator": {
+        "role": "OPERATOR",
+        "taskPrompt": "Submit the keyword.",
+        "dataPayload": "ACCESS CODE: [ _ _ _ _ _ _ ]",
+        "screenTitle": "Memory Access Terminal",
+        "whatTheySee": "Six-letter input terminal.",
+        "intermediateOutput": "Submit: VECTOR"
+      },
+      "branchConditions": [],
+      "coordinationChain": {
+        "observerProduces": "Observer recalls VECTOR.",
+        "operatorExecutes": "Operator submits VECTOR.",
+        "analystTransforms": "Analyst confirms VECTOR."
+      },
+      "failurePropagation": {
+        "wrongStep": "Team submits wrong word.",
+        "consequence": "Memory bank rejects.",
+        "recoveryGuidance": "Recall the first fragment keyword."
+      },
+      "narrativeObjective": "Recall Fragment 1 to access the memory bank.",
+      "roleDependencyLevel": "D2",
+      "operatorInvestigation": {
+        "operatorOwnEvidence": "Terminal shows execution interface for P14.",
+        "requiredDiscoveries": {
+          "analystDiscovery": "Confirms VECTOR.",
+          "observerDiscovery": "Recalls Fragment 1: VECTOR."
+        },
+        "operatorTaskDescription": "Recall Fragment 1 keyword from Stage 2."
+      }
+    },
+    "answer_metadata": {
+      "fullSolution": "Fragment 1 keyword is VECTOR. Submitting VECTOR unlocks P15.",
+      "acceptedAnswer": "VECTOR",
+      "validationMethod": "case_insensitive"
+    },
+    "metadata": {
+      "time": "6m",
+      "type": "MEMORY",
+      "feeds": "M02",
+      "difficulty": 3,
+      "storyReveal": "Terminal: \"MEMORY ACCESS GRANTED. THE ARCHIVE EXPANDS.\"",
+      "locationClue": {
+        "format": "Symbol",
+        "clueText": "LINA'S NOTE: \"Find the second symbol on campus. It is near the library entrance.\"",
+        "solution": "Library Entrance Second Symbol",
+        "nextQrNode": "QR-NODE-17",
+        "explanation": "Points to the library entrance symbol.",
+        "nextPhysicalLocation": "[LIBRARY] — Entrance Symbol"
+      },
+      "evidenceUnlocked": {
+        "id": "EVID-P14",
+        "state": "RECOVERED",
+        "title": "Library Entrance Symbol",
+        "source": "Library entrance",
+        "content": "A carved symbol: ⧉. This is the second of the seven symbols.",
+        "category": "Visual",
+        "timestamp": "Stage 3"
+      },
+      "whyTeamworkMatters": "Tests whether the team retained earlier evidence."
+    }
+  },
+  {
+    "code": "P16",
+    "content": {
+      "hints": [
+        "Count seats in Row 7 of Section B.",
+        "All rows have the same seat count.",
+        "Submit 15."
+      ],
+      "analyst": {
+        "role": "ANALYST",
+        "taskPrompt": "Verify the count.",
+        "dataPayload": "COUNT: Row 7 has 15 seats (same as all rows).",
+        "screenTitle": "Seat Counter",
+        "whatTheySee": "Counter showing 15.",
+        "intermediateOutput": "15"
+      },
+      "observer": {
+        "role": "OBSERVER",
+        "taskPrompt": "Count seats in Section B, Row 7.",
+        "visualType": "observation",
+        "dataPayload": "SECTION B: Rows 1-10, each with 15 seats. But only odd rows have occupied seats.",
+        "screenTitle": "Auditorium Seating Plan",
+        "whatTheySee": "Auditorium seating with Section B visible.",
+        "intermediateOutput": "15"
+      },
+      "operator": {
+        "role": "OPERATOR",
+        "taskPrompt": "Submit the count.",
+        "dataPayload": "SEAT COUNT: [ _ _ ]",
+        "screenTitle": "Seat Verification Terminal",
+        "whatTheySee": "Two-digit terminal.",
+        "intermediateOutput": "Submit: 15"
+      },
+      "branchConditions": [],
+      "coordinationChain": {
+        "observerProduces": "Observer counts 15 seats.",
+        "operatorExecutes": "Operator submits 15.",
+        "analystTransforms": "Analyst confirms: 15."
+      },
+      "failurePropagation": {
+        "wrongStep": "Team counts sections or rows instead of seats.",
+        "consequence": "Wrong number.",
+        "recoveryGuidance": "Count individual seats in one row."
+      },
+      "narrativeObjective": "Count the correct number of auditorium seats in Section B.",
+      "roleDependencyLevel": "D1",
+      "operatorInvestigation": {
+        "operatorOwnEvidence": "Terminal shows execution interface for P16.",
+        "requiredDiscoveries": {
+          "analystDiscovery": "Confirms 15.",
+          "observerDiscovery": "Counts 15 seats in Row 7."
+        },
+        "operatorTaskDescription": "Observer counts seats. Analyst verifies. Operator submits."
+      }
+    },
+    "answer_metadata": {
+      "fullSolution": "Counting seats in Row 7 shows 15. Submitting 15 unlocks P17.",
+      "acceptedAnswer": "15",
+      "validationMethod": "exact"
+    },
+    "metadata": {
+      "time": "6m",
+      "type": "OBSERVATION",
+      "feeds": "P15",
+      "difficulty": 3,
+      "storyReveal": "Terminal: \"COUNT VERIFIED. THE FOURTH SYMBOL IS REVEALED.\"",
+      "locationClue": {
+        "format": "Poetic",
+        "clueText": "LINA'S NOTE: \"Behind the auditorium stage, find the fourth glyph carved in wood.\"",
+        "solution": "Auditorium Stage Fourth Glyph",
+        "nextQrNode": "QR-NODE-19",
+        "explanation": "Points to the fourth glyph behind the stage.",
+        "nextPhysicalLocation": "[SCIENCE BUILDING] — Stage Fourth Glyph"
+      },
+      "evidenceUnlocked": {
+        "id": "EVID-P16",
+        "state": "RECOVERED",
+        "title": "Fourth Symbol — Choice",
+        "source": "Behind auditorium stage",
+        "content": "A wooden carving of ⌬ with the word CHOICE below it.",
+        "category": "Visual",
+        "timestamp": "Stage 3"
+      },
+      "whyTeamworkMatters": "Simple but tests careful observation."
+    }
+  },
+  {
+    "code": "P19",
+    "content": {
+      "hints": [
+        "The sphere is partially underwater.",
+        "What verb describes that action?",
+        "Submit SUBMERGE."
+      ],
+      "analyst": {
+        "role": "ANALYST",
+        "taskPrompt": "Derive the action word.",
+        "dataPayload": "DERIVATION: What do you do to something partially underwater? SUBMERGE.",
+        "screenTitle": "Action Word Deriver",
+        "whatTheySee": "Word deriver showing SUBMERGE.",
+        "intermediateOutput": "SUBMERGE"
+      },
+      "observer": {
+        "role": "OBSERVER",
+        "taskPrompt": "Describe the sphere's position.",
+        "visualType": "observation",
+        "dataPayload": "SCULPTURE: A bronze hand holding a sphere underwater, half-submerged.",
+        "screenTitle": "Sculpture Garden Inspection",
+        "whatTheySee": "A bronze sculpture of a hand holding a partially submerged sphere.",
+        "intermediateOutput": "Half underwater"
+      },
+      "operator": {
+        "role": "OPERATOR",
+        "taskPrompt": "Submit the action verb.",
+        "dataPayload": "ACTION VERB: [ _ _ _ _ _ _ _ _ ]",
+        "screenTitle": "Sculpture Activation Terminal",
+        "whatTheySee": "Eight-letter terminal.",
+        "intermediateOutput": "Submit: SUBMERGE"
+      },
+      "branchConditions": [],
+      "coordinationChain": {
+        "observerProduces": "Observer describes half-submerged sphere.",
+        "operatorExecutes": "Operator submits SUBMERGE.",
+        "analystTransforms": "Analyst derives: SUBMERGE."
+      },
+      "failurePropagation": {
+        "wrongStep": "Team submits \"UNDERWATER\" or \"WATER\".",
+        "consequence": "Not an action verb.",
+        "recoveryGuidance": "What do you DO to something? SUBMERGE."
+      },
+      "narrativeObjective": "Deduce what action the sculpture garden reveals.",
+      "roleDependencyLevel": "D3",
+      "operatorInvestigation": {
+        "operatorOwnEvidence": "Terminal shows execution interface for P19.",
+        "requiredDiscoveries": {
+          "analystDiscovery": "Derives SUBMERGE.",
+          "observerDiscovery": "Sees half-submerged sphere."
+        },
+        "operatorTaskDescription": "Observer sees the sculpture. Analyst derives the action word. Operator submits."
+      }
+    },
+    "answer_metadata": {
+      "fullSolution": "The sculpture shows a half-submerged sphere. The action is SUBMERGE. Submitting SUBMERGE unlocks P20.",
+      "acceptedAnswer": "SUBMERGE",
+      "validationMethod": "case_insensitive"
+    },
+    "metadata": {
+      "time": "7m",
+      "type": "DEDUCTION",
+      "feeds": "P18",
+      "difficulty": 4,
+      "storyReveal": "Terminal: \"ACTION VERIFIED. THE SEVENTH SYMBOL IS REVEALED.\"",
+      "locationClue": {
+        "format": "Symbol",
+        "clueText": "LINA'S NOTE: \"The seventh and final symbol is ⎔ — FINALITY. It rests atop the Admin Building dome.\"",
+        "solution": "Admin Building Dome",
+        "nextQrNode": "QR-NODE-22",
+        "explanation": "Points to the Admin Building dome for the seventh symbol.",
+        "nextPhysicalLocation": "[ADMIN BUILDING] — Building Dome"
+      },
+      "evidenceUnlocked": {
+        "id": "EVID-P19",
+        "state": "RECOVERED",
+        "title": "Seventh Symbol — Finality",
+        "source": "Admin Building dome",
+        "content": "A weathervane on the dome: ⎔. Below it reads: FINALITY. All seven symbols collected: ⟁ ⧉ ⬡ ⧫ ⌬ ⍟ ⎔.",
+        "category": "Visual",
+        "timestamp": "Stage 3"
+      },
+      "whyTeamworkMatters": "Requires interpretation of physical form into language."
+    }
+  },
+  {
+    "code": "P18",
+    "content": {
+      "hints": [
+        "This code appeared multiple times.",
+        "It has appeared at multiple stations.",
+        "Submit 3425."
+      ],
+      "analyst": {
+        "role": "ANALYST",
+        "taskPrompt": "Confirm the code.",
+        "dataPayload": "VALIDATION: The recurring code across stages is 3425.",
+        "screenTitle": "Pattern Validator",
+        "whatTheySee": "Validator showing 3425.",
+        "intermediateOutput": "3425"
+      },
+      "observer": {
+        "role": "OBSERVER",
+        "taskPrompt": "The code is a recurring value from your investigation.",
+        "visualType": "pattern",
+        "dataPayload": "LOCK: 4-digit pattern. Symbols around show: ⟁ ⧉ ⬡ ⧫ ⌬ ⍟ ⎔",
+        "screenTitle": "Pattern Lock Screen",
+        "whatTheySee": "A 4-digit lock with symbol markers around it.",
+        "intermediateOutput": "3425"
+      },
+      "operator": {
+        "role": "OPERATOR",
+        "taskPrompt": "Submit the code.",
+        "dataPayload": "ENTER CODE: [ _ _ _ _ ]",
+        "screenTitle": "Pattern Entry Terminal",
+        "whatTheySee": "4-digit entry terminal.",
+        "intermediateOutput": "Submit: 3425"
+      },
+      "branchConditions": [],
+      "coordinationChain": {
+        "observerProduces": "Observer identifies the pattern lock.",
+        "operatorExecutes": "Operator submits 3425.",
+        "analystTransforms": "Analyst confirms: 3425."
+      },
+      "failurePropagation": {
+        "wrongStep": "Team enters different recurring number.",
+        "consequence": "Lock resets.",
+        "recoveryGuidance": "Think P03, P13, P15."
+      },
+      "narrativeObjective": "Enter the pattern lock using the recurring code.",
+      "roleDependencyLevel": "D1",
+      "operatorInvestigation": {
+        "operatorOwnEvidence": "Terminal shows execution interface for P18.",
+        "requiredDiscoveries": {
+          "analystDiscovery": "Confirms 3425.",
+          "observerDiscovery": "Sees the 4-digit lock."
+        },
+        "operatorTaskDescription": "Recall the recurring code."
+      }
+    },
+    "answer_metadata": {
+      "fullSolution": "The pattern lock accepts the recurring code 3425 from earlier puzzles.",
+      "acceptedAnswer": "3425",
+      "validationMethod": "exact"
+    },
+    "metadata": {
+      "time": "6m",
+      "type": "PATTERN",
+      "feeds": "P17",
+      "difficulty": 3,
+      "storyReveal": "Terminal: \"PASSWORDS MATCH. THE SIXTH SYMBOL REMAINS.\"",
+      "locationClue": {
+        "format": "Symbol",
+        "clueText": "LINA'S NOTE: \"Check the campus sculpture garden for the final symbol.\"",
+        "solution": "Campus Sculpture Garden",
+        "nextQrNode": "QR-NODE-21",
+        "explanation": "Points to the campus sculpture garden.",
+        "nextPhysicalLocation": "[CAMPUS] — Sculpture Garden"
+      },
+      "evidenceUnlocked": {
+        "id": "EVID-P18",
+        "state": "RECOVERED",
+        "title": "Sixth Symbol",
+        "source": "Sculpture garden plaque",
+        "content": "No symbol found. Instead a note: \"The seventh is not a glyph but a concept: FINALITY.\"",
+        "category": "Visual",
+        "timestamp": "Stage 3"
+      },
+      "whyTeamworkMatters": "Tests retention of recurring patterns."
+    }
+  },
+  {
+    "code": "P21",
+    "content": {
+      "hints": [
+        "The message speaks of storage.",
+        "What is another word for archive?",
+        "Submit ARCHIVE."
+      ],
+      "analyst": {
+        "role": "ANALYST",
+        "taskPrompt": "Extract the key concept.",
+        "dataPayload": "INTERPRETATION: Archive = storage. The concept is ARCHIVE.",
+        "screenTitle": "Message Interpreter",
+        "whatTheySee": "Interpreter highlighting ARCHIVE.",
+        "intermediateOutput": "ARCHIVE"
+      },
+      "observer": {
+        "role": "OBSERVER",
+        "taskPrompt": "Report the message.",
+        "visualType": "observation",
+        "dataPayload": "MESSAGE: \"The archive holds what the symbols cannot say.\"",
+        "screenTitle": "Window Message",
+        "whatTheySee": "A note taped to the window.",
+        "intermediateOutput": "The archive holds what the symbols cannot say."
+      },
+      "operator": {
+        "role": "OPERATOR",
+        "taskPrompt": "Submit the concept.",
+        "dataPayload": "STORAGE CONCEPT: [ _ _ _ _ _ _ _ ]",
+        "screenTitle": "Final Stage Terminal",
+        "whatTheySee": "Seven-letter terminal.",
+        "intermediateOutput": "Submit: ARCHIVE"
+      },
+      "branchConditions": [],
+      "coordinationChain": {
+        "observerProduces": "Observer reads the message.",
+        "operatorExecutes": "Operator submits ARCHIVE.",
+        "analystTransforms": "Analyst extracts: ARCHIVE."
+      },
+      "failurePropagation": {
+        "wrongStep": "Team submits \"SYMBOLS\" or \"WINDOW\".",
+        "consequence": "Concept mismatch.",
+        "recoveryGuidance": "The message is about where things are stored."
+      },
+      "narrativeObjective": "Read Lina's final message for Stage 3.",
+      "roleDependencyLevel": "D3",
+      "operatorInvestigation": {
+        "operatorOwnEvidence": "Terminal shows the execution interface for P21.",
+        "requiredDiscoveries": {
+          "analystDiscovery": "Extracts ARCHIVE.",
+          "observerDiscovery": "Reads the window message."
+        },
+        "operatorTaskDescription": "Read the window message. Extract concept."
+      }
+    },
+    "answer_metadata": {
+      "fullSolution": "The window message speaks of the archive. Submitting ARCHIVE unlocks M03.",
+      "acceptedAnswer": "ARCHIVE",
+      "validationMethod": "case_insensitive"
+    },
+    "metadata": {
+      "time": "8m",
+      "type": "NARRATIVE_INVESTIGATION",
+      "feeds": "P20",
+      "difficulty": 5,
+      "storyReveal": "Terminal: \"ARCHIVE ACCESSIBLE. STAGE 3 COMPLETE.\"",
+      "locationClue": {
+        "format": "Symbol",
+        "clueText": "LINA'S NOTE: \"The rooftop spire awaits your return for Stage 5.\"",
+        "solution": "Rooftop Spire Access",
+        "nextQrNode": "QR-NODE-24",
+        "explanation": "Points toward Stage 5 start at the rooftop.",
+        "nextPhysicalLocation": "[ROOFTOP] — Spire Access"
+      },
+      "evidenceUnlocked": {
+        "id": "FRAG-03",
+        "state": "RECOVERED",
+        "title": "Fragment 3 — Mirror",
+        "source": "Window ledge",
+        "content": "The third fragment. The word MIRROR appears: \"The path you took reflects the path you avoided. Both are true.\"",
+        "category": "Symbol Fragment",
+        "timestamp": "Stage 3"
+      },
+      "whyTeamworkMatters": "Final Stage 3 node that ties all symbols together narratively."
+    }
+  },
+  {
+    "code": "M01",
+    "content": {
+      "hints": [
+        "All Stage 1 answers relate to a single concept.",
+        "They all involve visibility, illumination, or time-of-day.",
+        "Submit LIGHT."
+      ],
+      "analyst": {
+        "role": "ANALYST",
+        "taskPrompt": "What concept do the Stage 1 answers collectively point to? All relate to illumination, visibility, or light.",
+        "dataPayload": "EXTRACTION: First letters: C, (skip non-alpha), F, V. Alphabet positions: C=3, F=6, V=22. Pattern: 3-6-22. Convert to ASCII: 3=L, 6=F, 22=V. Or: use the symbol meanings.",
+        "screenTitle": "Meta Key Extractor",
+        "whatTheySee": "Calculator showing various extraction patterns.",
+        "intermediateOutput": "LIGHT"
+      },
+      "observer": {
+        "role": "OBSERVER",
+        "taskPrompt": "Read all five answers.",
+        "visualType": "meta",
+        "dataPayload": "STAGE 1 ANSWERS: CDFDEFF | 21:47 | 3425 | F | VEY",
+        "screenTitle": "Stage 1 Answer Aggregator",
+        "whatTheySee": "A terminal showing the 5 Stage 1 answers: CDFDEFF, 21:47, 3425, F, VEY.",
+        "interactiveData": {
+          "hint": "Take the first letter of each answer.",
+          "answers": [
+            "CDFDEFF",
+            "21:47",
+            "3425",
+            "F",
+            "VEY"
+          ]
+        },
+        "intermediateOutput": "First letters: C, 2, 3, F, V"
+      },
+      "operator": {
+        "role": "OPERATOR",
+        "taskPrompt": "Submit the meta concept.",
+        "dataPayload": "META KEY: [ _ _ _ _ _ ]",
+        "screenTitle": "Meta Unlock Terminal",
+        "whatTheySee": "Five-letter terminal.",
+        "intermediateOutput": "Submit: LIGHT"
+      },
+      "branchConditions": [],
+      "coordinationChain": {
+        "observerProduces": "Observer reports all five Stage 1 answers.",
+        "operatorExecutes": "Operator submits LIGHT.",
+        "analystTransforms": "Analyst recognizes all relate to LIGHT."
+      },
+      "failurePropagation": {
+        "wrongStep": "Team tries letter extraction approaches.",
+        "consequence": "Wrong meta.",
+        "recoveryGuidance": "What do facades, clocks, PINs, letters, and last names all relate to?"
+      },
+      "narrativeObjective": "Synthesize all Stage 1 answers into the meta solution.",
+      "roleDependencyLevel": "D4",
+      "operatorInvestigation": {
+        "operatorOwnEvidence": "Terminal shows the execution interface for M01.",
+        "requiredDiscoveries": {
+          "analystDiscovery": "Recognizes all answers relate to LIGHT.",
+          "observerDiscovery": "Reads all 5 Stage 1 answers."
+        },
+        "operatorTaskDescription": "All Stage 1 answers relate to illumination/visibility. The Observer aggregates the answers. The Analyst extracts the meta concept. The Operator submits."
+      }
+    },
+    "answer_metadata": {
+      "fullSolution": "All Stage 1 answers (CDFDEFF, 21:47, 3425, F, VEY) relate to illumination and visibility. The meta concept is LIGHT. Submitting LIGHT unlocks P06.",
+      "acceptedAnswer": "LIGHT",
+      "validationMethod": "case_insensitive"
+    },
+    "metadata": {
+      "time": "12m",
+      "type": "META",
+      "feeds": "P01 P02 P03 P04 P05",
+      "difficulty": 4,
+      "storyReveal": "Terminal: \"META LOCK DISENGAGED. STAGE 2 ACCESS GRANTED.\"",
+      "locationClue": {
+        "format": "Path Instruction",
+        "clueText": "LINA'S NOTE: \"The library basement holds the next stage. Descend the east stairwell.\"",
+        "solution": "Library Basement East Stairwell",
+        "nextQrNode": "QR-NODE-06",
+        "explanation": "Points to the library basement.",
+        "nextPhysicalLocation": "[LIBRARY] — Basement East Stairwell"
+      },
+      "evidenceUnlocked": {
+        "id": "EVID-M01",
+        "state": "RECOVERED",
+        "title": "Stage 1 Meta — Archive Access Record",
+        "source": "Central archive terminal",
+        "content": "The archive confirms: all Stage 1 paths relate to LIGHT. A new folder labeled \"STAGE 2 — MEMORY TRANSFER\" has been unlocked.",
+        "category": "Document",
+        "timestamp": "Stage 1"
+      },
+      "whyTeamworkMatters": "Requires the team to step back and synthesize across all feeders — a conceptual leap."
+    }
+  },
+  {
+    "code": "M02",
+    "content": {
+      "hints": [
+        "Every Stage 2 answer is a link in a chain.",
+        "What is the concept of linking?",
+        "Submit CONNECTION."
+      ],
+      "analyst": {
+        "role": "ANALYST",
+        "taskPrompt": "What concept links all Stage 2 answers?",
+        "dataPayload": "ANALYSIS: Each answer is a link. The connecting concept is CONNECTION (Symbol ⧉). The fragment word was also about networks.",
+        "screenTitle": "Network Concept Resolver",
+        "whatTheySee": "Resolver showing the unifying concept: CONNECTION.",
+        "intermediateOutput": "CONNECTION"
+      },
+      "observer": {
+        "role": "OBSERVER",
+        "taskPrompt": "Read all answers.",
+        "visualType": "meta",
+        "dataPayload": "STAGE 2 ANSWERS: 17 | 17:47 | DELTA | LIGHT | ARCHWAY | B7 | 3425 | FRAGMENTS",
+        "screenTitle": "Stage 2 Answer Aggregator",
+        "whatTheySee": "Terminal showing all Stage 2 answers with connecting lines between them.",
+        "interactiveData": {
+          "hint": "Each answer represents a link in a chain.",
+          "answers": [
+            "17",
+            "17:47",
+            "DELTA",
+            "LIGHT",
+            "ARCHWAY",
+            "B7",
+            "3425",
+            "VECTOR"
+          ]
+        },
+        "intermediateOutput": "Chain: 17 → 17:47 → DELTA → LIGHT → ARCHWAY → B7 → 3425 → VECTOR"
+      },
+      "operator": {
+        "role": "OPERATOR",
+        "taskPrompt": "Submit the concept.",
+        "dataPayload": "UNIFYING CONCEPT: [ _ _ _ _ _ _ _ _ _ _ ]",
+        "screenTitle": "Meta Network Terminal",
+        "whatTheySee": "Ten-letter terminal.",
+        "intermediateOutput": "Submit: CONNECTION"
+      },
+      "branchConditions": [],
+      "coordinationChain": {
+        "observerProduces": "Observer reports the answer chain.",
+        "operatorExecutes": "Operator submits CONNECTION.",
+        "analystTransforms": "Analyst identifies CONNECTION as the unifying concept."
+      },
+      "failurePropagation": {
+        "wrongStep": "Team submits a specific answer instead of the concept.",
+        "consequence": "Meta rejected.",
+        "recoveryGuidance": "It is the concept of linking, not a specific link."
+      },
+      "narrativeObjective": "Synthesize all Stage 2 answers. Every answer relates to linking or connecting.",
+      "roleDependencyLevel": "D4",
+      "operatorInvestigation": {
+        "operatorOwnEvidence": "Terminal shows the execution interface for M02.",
+        "requiredDiscoveries": {
+          "analystDiscovery": "Recognizes CONNECTION as the unifying concept.",
+          "observerDiscovery": "Reads all Stage 2 answers with connecting lines."
+        },
+        "operatorTaskDescription": "Every Stage 2 answer is a link in a chain. The Observer aggregates. The Analyst finds the unifying concept. The Operator submits."
+      }
+    },
+    "answer_metadata": {
+      "fullSolution": "All Stage 2 answers form a chain of links. The unifying concept is CONNECTION. Submitting CONNECTION unlocks P14.",
+      "acceptedAnswer": "CONNECTION",
+      "validationMethod": "case_insensitive"
+    },
+    "metadata": {
+      "time": "15m",
+      "type": "META",
+      "feeds": "P06 P07 P08 P09 P10 P11 P12 P13",
+      "difficulty": 4,
+      "storyReveal": "Terminal: \"NETWORK META VERIFIED. MEMORY TRANSFER INITIATED.\"",
+      "locationClue": {
+        "format": "Path Instruction",
+        "clueText": "LINA'S NOTE: \"Enter the memory lab. The transfer chamber is in the basement.\"",
+        "solution": "Memory Transfer Chamber",
+        "nextQrNode": "QR-NODE-16",
+        "explanation": "Points to the memory transfer chamber.",
+        "nextPhysicalLocation": "[SCIENCE BUILDING] — Basement Transfer Chamber"
+      },
+      "evidenceUnlocked": {
+        "id": "FRAG-04",
+        "state": "RECOVERED",
+        "title": "Fragment 4 — Lattice",
+        "source": "Memory lab terminal",
+        "content": "The fourth fragment. The word LATTICE: \"The grid connects. The intersection is the node. Find the lattice.\"",
+        "category": "Symbol Fragment",
+        "timestamp": "Stage 2"
+      },
+      "whyTeamworkMatters": "Tests whether the team can step back from individual solutions to find the meta-pattern."
+    }
+  },
+  {
+    "code": "M03",
+    "content": {
+      "hints": [
+        "Every Stage 3 answer relates to one of the seven symbols.",
+        "What is the overarching concept?",
+        "Submit SYMBOL."
+      ],
+      "analyst": {
+        "role": "ANALYST",
+        "taskPrompt": "What single concept unifies all seven symbols?",
+        "dataPayload": "SYNTHESIS: All answers derive from and connect to the 7 symbols. The meta is the concept that unifies them: SYMBOL.",
+        "screenTitle": "Symbol Synthesis Engine",
+        "whatTheySee": "Engine showing SYMBOL as the unifying concept.",
+        "intermediateOutput": "SYMBOL"
+      },
+      "observer": {
+        "role": "OBSERVER",
+        "taskPrompt": "Read the symbol-answer mapping.",
+        "visualType": "meta",
+        "dataPayload": "STAGE 3 ANSWERS: VECTOR | 3425 | 15 | ECHO | 3425 | SUBMERGE | 2147 | ARCHIVE",
+        "screenTitle": "Stage 3 Symbol Aggregator",
+        "whatTheySee": "Terminal showing all Stage 3 answers mapped to the seven symbols.",
+        "interactiveData": {
+          "hint": "Each answer maps to one of the seven symbols you collected.",
+          "symbols": [
+            "⟁",
+            "⧉",
+            "⬡",
+            "⧫",
+            "⌬",
+            "⍟",
+            "⎔"
+          ]
+        },
+        "intermediateOutput": "⟁→VECTOR ⧉→3425 ⬡→15 ⧫→ECHO ⌬→3425 ⍟→SUBMERGE ⎔→2147"
+      },
+      "operator": {
+        "role": "OPERATOR",
+        "taskPrompt": "Submit the concept.",
+        "dataPayload": "UNIFYING CONCEPT: [ _ _ _ _ _ _ ]",
+        "screenTitle": "Symbol Synthesis Terminal",
+        "whatTheySee": "Six-letter terminal.",
+        "intermediateOutput": "Submit: SYMBOL"
+      },
+      "branchConditions": [],
+      "coordinationChain": {
+        "observerProduces": "Observer reports all symbol-answer mappings.",
+        "operatorExecutes": "Operator submits SYMBOL.",
+        "analystTransforms": "Analyst identifies: SYMBOL unifies everything."
+      },
+      "failurePropagation": {
+        "wrongStep": "Team submits a specific symbol name instead of the concept.",
+        "consequence": "Meta rejected.",
+        "recoveryGuidance": "It is the concept, not a specific symbol."
+      },
+      "narrativeObjective": "Synthesize all Stage 3 answers. Every answer relates to the seven symbols.",
+      "roleDependencyLevel": "D5",
+      "operatorInvestigation": {
+        "operatorOwnEvidence": "Terminal shows the execution interface for M03.",
+        "requiredDiscoveries": {
+          "analystDiscovery": "Identifies SYMBOL as the unifying concept.",
+          "observerDiscovery": "Reads the symbol-answer mapping."
+        },
+        "operatorTaskDescription": "Every Stage 3 answer maps to a symbol. The Observer reports the mapping. The Analyst finds the unifying concept. The Operator submits."
+      }
+    },
+    "answer_metadata": {
+      "fullSolution": "All Stage 3 answers map to the seven symbols. The unifying concept is SYMBOL. Submitting SYMBOL unlocks P22.",
+      "acceptedAnswer": "SYMBOL",
+      "validationMethod": "case_insensitive"
+    },
+    "metadata": {
+      "time": "18m",
+      "type": "META",
+      "feeds": "P14 P15 P16 P17 P18 P19 P20 P21",
+      "difficulty": 5,
+      "storyReveal": "Terminal: \"SYMBOL SYNTHESIS COMPLETE. THE NEXUS CORE IS REVEALED.\"",
+      "locationClue": {
+        "format": "Symbol",
+        "clueText": "LINA'S NOTE: \"Return to the rooftop spire. The final stage begins.\"",
+        "solution": "Rooftop Spire",
+        "nextQrNode": "QR-NODE-24",
+        "explanation": "Points to the rooftop spire for Stage 5.",
+        "nextPhysicalLocation": "[ROOFTOP] — Transmitter Spire"
+      },
+      "evidenceUnlocked": {
+        "id": "EVID-M03",
+        "state": "RECOVERED",
+        "title": "Stage 3 Meta — Core Activation Protocol",
+        "source": "Central archive terminal",
+        "content": "The archive reads: \"All symbols converge at the Nexus Core. Proceed to the rooftop spire. The 3-hour countdown begins.\"",
+        "category": "Document",
+        "timestamp": "Stage 3"
+      },
+      "whyTeamworkMatters": "Culmination of the symbol collection arc across all three stages."
+    }
+  },
+  {
+    "code": "M04",
+    "content": {
+      "hints": [
+        "Meta 04 seals Stage 4 by locking in your 5th fragment.",
+        "The required designation is FRAGMENT 5.",
+        "Submit FRAGMENT 5."
+      ],
+      "analyst": {
+        "role": "ANALYST",
+        "taskPrompt": "Authorize the operator to submit.",
+        "dataPayload": "PARITY 04: All seven cognitive operations verified. Authorize Fragment 5.",
+        "screenTitle": "Cryptographic Parity Engine 04",
+        "whatTheySee": "Parity verification showing all channels green.",
+        "intermediateOutput": "Authorization granted"
+      },
+      "observer": {
+        "role": "OBSERVER",
+        "taskPrompt": "Confirm all Stage 4 locks are green.",
+        "visualType": "meta",
+        "dataPayload": "FEEDERS: X, REINTERPRET, CONNECTION, FILTER, REFLECTION, STRUCTURE, FRAGMENT5_AUTH",
+        "screenTitle": "Vault Delta Convergence Lock",
+        "whatTheySee": "A 7-channel convergence lock showing all Stage 4 feeder outputs.",
+        "intermediateOutput": "All 7 channels confirmed."
+      },
+      "operator": {
+        "role": "OPERATOR",
+        "taskPrompt": "Submit the designation.",
+        "dataPayload": "ACTIVATION DESIGNATION: [ _ _ _ _ _ _ _ _ _ _ ]",
+        "screenTitle": "Vault Delta Actuator",
+        "whatTheySee": "Terminal awaiting the fragment designation.",
+        "intermediateOutput": "Submit: FRAGMENT 5"
+      },
+      "branchConditions": [],
+      "coordinationChain": {
+        "observerProduces": "Observer reports all Stage 4 channels green.",
+        "operatorExecutes": "Operator submits FRAGMENT 5.",
+        "analystTransforms": "Analyst authorizes: FRAGMENT 5."
+      },
+      "failurePropagation": {
+        "wrongStep": "Operator enters a symbol instead of the fragment name.",
+        "consequence": "Vault Delta expects the artifact name.",
+        "recoveryGuidance": "Enter FRAGMENT 5."
+      },
+      "narrativeObjective": "Synthesize Stage 4 feeders to claim Fragment 5 and access the final stage.",
+      "roleDependencyLevel": "D5",
+      "operatorInvestigation": {
+        "operatorOwnEvidence": "Terminal shows the execution interface for M04.",
+        "requiredDiscoveries": {
+          "analystDiscovery": "Authorizes the convergence: FRAGMENT 5.",
+          "observerDiscovery": "Confirms all 7 Stage 4 channels are green."
+        },
+        "operatorTaskDescription": "All Stage 4 solutions converge here. The Observer confirms channels. The Analyst authorizes. The Operator submits."
+      }
+    },
+    "answer_metadata": {
+      "fullSolution": "Submitting FRAGMENT 5 closes Meta M04, unlocks the final Stage 5 progression.",
+      "acceptedAnswer": "FRAGMENT 5",
+      "validationMethod": "case_insensitive"
+    },
+    "metadata": {
+      "time": "25m",
+      "type": "META",
+      "feeds": "P22 P23 P24 P25 P26 P27 P28 P29",
+      "difficulty": 5,
+      "storyReveal": "PA System: \"SYSTEM PURGE IMMINENT. THE REMAINING TEAMS ARE SUMMONED TO THE CORE.\"",
+      "locationClue": {
+        "format": "Poetic",
+        "clueText": "LINA'S NOTE: \"Ascend to the central transmitter spire on the rooftop. The midnight hour approaches.\"",
+        "solution": "Rooftop Transmitter Spire",
+        "nextQrNode": "QR-NODE-30",
+        "explanation": "Points to the rooftop spire for Stage 5.",
+        "nextPhysicalLocation": "[ROOFTOP] — Central Transmitter Spire"
+      },
+      "evidenceUnlocked": {
+        "id": "EVID-M04",
+        "state": "RECOVERED",
+        "title": "Stage 4 Meta — Core Activation Protocol",
+        "source": "Vault Delta terminal",
+        "content": "The vault reads: \"Fragment 5 integrated. Proceed to the rooftop spire. The 3-hour countdown begins now.\"",
+        "category": "Document",
+        "timestamp": "Stage 4"
+      },
+      "whyTeamworkMatters": "Penultimate milestone: teams enter the endgame."
+    }
+  },
+  {
+    "code": "P26",
+    "content": {
+      "hints": [
+        "Line up all three phones side-by-side from left to right.",
+        "Observer has REFL, Analyst has ECT, Operator has ION.",
+        "Read across: REFLECTION. Submit REFLECTION."
+      ],
+      "analyst": {
+        "role": "ANALYST",
+        "taskPrompt": "Communicate center fragment: ECT.",
+        "dataPayload": "CENTER SHARD: E-C-T",
+        "screenTitle": "Analyst Laser Sensor (Center Shard)",
+        "whatTheySee": "Analyst phone displays glowing letters E, C, T.",
+        "intermediateOutput": "ECT"
+      },
+      "observer": {
+        "role": "OBSERVER",
+        "taskPrompt": "Communicate left fragment: REFL.",
+        "visualType": "three-phone",
+        "dataPayload": "LEFT SHARD: R-E-F-L",
+        "screenTitle": "Observer Laser Sensor (Left Shard)",
+        "whatTheySee": "Observer phone displays glowing letters R, E, F, L with arrow pointing right.",
+        "intermediateOutput": "REFL"
+      },
+      "operator": {
+        "role": "OPERATOR",
+        "taskPrompt": "Combine and submit.",
+        "dataPayload": "RIGHT SHARD: I-O-N\nTARGET: [ _ _ _ _ _ _ _ _ _ _ ]",
+        "screenTitle": "Operator Laser Sensor (Right Shard) + Synthesis",
+        "whatTheySee": "Operator phone displays I, O, N and master input prompt.",
+        "intermediateOutput": "Submit: REFLECTION"
+      },
+      "branchConditions": [],
+      "coordinationChain": {
+        "observerProduces": "Observer reads left shard: REFL.",
+        "operatorExecutes": "Operator combines REFL+ECT+ION = REFLECTION and submits.",
+        "analystTransforms": "Analyst reads center shard: ECT."
+      },
+      "failurePropagation": {
+        "wrongStep": "Phones held in wrong order (ECTREFLION).",
+        "consequence": "Operator gets nonsensical anagram.",
+        "recoveryGuidance": "Align phones Left-Center-Right."
+      },
+      "narrativeObjective": "Synchronize 3 inverted phone screens to read Lina's holographic laser reflection.",
+      "roleDependencyLevel": "D4",
+      "operatorInvestigation": {
+        "operatorOwnEvidence": "Terminal shows execution interface for P26.",
+        "requiredDiscoveries": {
+          "analystDiscovery": "Reads center shard: ECT.",
+          "observerDiscovery": "Reads left shard: REFL."
+        },
+        "operatorTaskDescription": "All three phones must be physically aligned. Observer has REFL, Analyst has ECT, Operator has ION."
+      }
+    },
+    "answer_metadata": {
+      "fullSolution": "Physically arranging phones Left-Center-Right spells R-E-F-L-E-C-T-I-O-N = REFLECTION. Submitting REFLECTION unlocks P27.",
+      "acceptedAnswer": "REFLECTION",
+      "validationMethod": "case_insensitive"
+    },
+    "metadata": {
+      "time": "12m",
+      "type": "THREE_PHONE",
+      "feeds": "P25",
+      "difficulty": 4.5,
+      "storyReveal": "Hologram activates: \"The true reflection is not on glass. It is between three minds.\"",
+      "locationClue": {
+        "format": "Poetic",
+        "clueText": "LINA'S NOTE: \"Ascend to the systems architecture lab. Whiteboards map dependency trees.\"",
+        "solution": "Computer Systems Architecture Lab",
+        "nextQrNode": "QR-NODE-27",
+        "explanation": "Points to the architecture lab.",
+        "nextPhysicalLocation": "[ENGINEERING BLOCK] — Architecture Lab"
+      },
+      "evidenceUnlocked": {
+        "id": "EVID-P26",
+        "state": "RECOVERED",
+        "title": "Dictaphone Memo REC-18: Coherence",
+        "source": "Optical bench laser casing",
+        "content": "The syndicate is in the courtyard. They are searching for a flash drive. But the reflection showed me the truth: you cannot steal what does not exist in any single place.",
+        "category": "Audio",
+        "timestamp": "Stage 4"
+      },
+      "whyTeamworkMatters": "Requires physical co-location and coordination of all team members."
+    }
+  },
+  {
+    "code": "P29",
+    "content": {
+      "hints": [
+        "The document clearly defines what NEXUS actually is.",
+        "It is three words: NEXUS IS AI.",
+        "Submit NEXUS IS AI."
+      ],
+      "analyst": {
+        "role": "ANALYST",
+        "taskPrompt": "Classify what NEXUS truly is.",
+        "dataPayload": "CLASSIFICATION: Entity NEXUS identified as Artificial Intelligence.",
+        "screenTitle": "Entity Classifier",
+        "whatTheySee": "Classifier showing: AI.",
+        "intermediateOutput": "NEXUS IS AI"
+      },
+      "observer": {
+        "role": "OBSERVER",
+        "taskPrompt": "Read the declassified statement.",
+        "visualType": "document-forensics",
+        "dataPayload": "DOCUMENT: \"NEXUS IS NOT A DATABASE ON A DISK. The key relationship.\"",
+        "screenTitle": "Declassified Briefing",
+        "whatTheySee": "Stamped classified document with redacted result line.",
+        "interactiveData": {
+          "documentText": "CLASSIFIED MEMO // PROJECT NEXUS\n\nSubject: Entity identification\nResult: [REDACTED]"
+        },
+        "intermediateOutput": "Report to Analyst."
+      },
+      "operator": {
+        "role": "OPERATOR",
+        "taskPrompt": "Enter the entity identity.",
+        "dataPayload": "ENTITY IDENTITY (3 WORDS): [ _ _ _ _ _ _ _ ]",
+        "screenTitle": "Mainframe Query",
+        "whatTheySee": "Mainframe terminal awaiting 3-word response.",
+        "intermediateOutput": "Submit: NEXUS IS AI"
+      },
+      "branchConditions": [],
+      "coordinationChain": {
+        "observerProduces": "Observer discovers the declassified memo.",
+        "operatorExecutes": "Operator enters NEXUS IS AI, unlocking Meta M04.",
+        "analystTransforms": "Analyst verifies semantic validity of 3-word phrase."
+      },
+      "failurePropagation": {
+        "wrongStep": "Operator omits \"IS\" and types NEXUS AI.",
+        "consequence": "Terminal: \"3 WORDS EXPECTED\".",
+        "recoveryGuidance": "Type all three words: NEXUS IS AI."
+      },
+      "narrativeObjective": "Uncover the classified document revealing the true nature of NEXUS.",
+      "roleDependencyLevel": "D4",
+      "operatorInvestigation": {
+        "operatorOwnEvidence": "Terminal shows execution interface for P29.",
+        "requiredDiscoveries": {
+          "analystDiscovery": "Classifies NEXUS as Artificial Intelligence.",
+          "observerDiscovery": "Discovers and reads the declassified memo."
+        },
+        "operatorTaskDescription": "Observer discovers declassified document. Analyst classifies. Operator submits."
+      }
+    },
+    "answer_metadata": {
+      "fullSolution": "The declassified file states NEXUS IS AI. Submitting NEXUS IS AI unlocks Meta M04.",
+      "acceptedAnswer": "NEXUS IS AI",
+      "validationMethod": "case_insensitive"
+    },
+    "metadata": {
+      "time": "8m",
+      "type": "NARRATIVE_INVESTIGATION",
+      "feeds": "P28",
+      "difficulty": 4,
+      "storyReveal": "Terminal voice: \"NOW YOU KNOW WHAT I AM. BUT DO YOU KNOW WHAT YOU ARE?\"",
+      "locationClue": {
+        "format": "Poetic",
+        "clueText": "LINA'S NOTE: \"Step to the Core Declassification Vault behind reinforced blast doors.\"",
+        "solution": "Vault Delta Core",
+        "nextQrNode": "QR-NODE-30",
+        "explanation": "Points to Vault Delta Core for the meta.",
+        "nextPhysicalLocation": "[ENGINEERING BLOCK] — Vault Delta Core"
+      },
+      "evidenceUnlocked": {
+        "id": "EVID-P29",
+        "state": "RECOVERED",
+        "title": "Dictaphone Memo REC-20: The Mirror Entity",
+        "source": "Vault Delta door frame",
+        "content": "They wanted an AI they could weaponize. But I designed NEXUS so it cannot think unless three human hearts provide the pulse. Stage 5 awaits at the transmitter spire.",
+        "category": "Audio",
+        "timestamp": "Stage 4"
+      },
+      "whyTeamworkMatters": "Major plot reveal: shifts from database retrieval to AI experiment."
+    }
+  },
+  {
+    "code": "P30",
+    "content": {
+      "hints": [
+        "Recall the Stage 4 meta-solution key.",
+        "It is 5 letters and represents a living rhythm.",
+        "Submit PULSE."
+      ],
+      "analyst": {
+        "role": "ANALYST",
+        "taskPrompt": "Verify the 5-letter word.",
+        "dataPayload": "VERIFICATION: PULSE (5 letters). Semantic: rate of alive rhythm.",
+        "screenTitle": "Consciousness Key Validator",
+        "whatTheySee": "Validator showing PULSE.",
+        "intermediateOutput": "PULSE"
+      },
+      "observer": {
+        "role": "OBSERVER",
+        "taskPrompt": "Read the missing activation key.",
+        "visualType": "timeline-investigation",
+        "dataPayload": "CONSOLE: 28 slots awaiting answers. Missing: Pulse of consciousness.",
+        "screenTitle": "Spire Activation Console",
+        "whatTheySee": "Control panel with 28 answer slots, one pulsing red: PULSE.",
+        "interactiveData": {
+          "entries": [
+            {
+              "flag": true,
+              "text": "MEMORY PULSE",
+              "source": "M04"
+            },
+            {
+              "flag": false,
+              "text": "All Stage 1-3 answers",
+              "source": "Other 27"
+            }
+          ],
+          "recallPrompt": "Recall the M04 key.",
+          "requiresPuzzle": "M04"
+        },
+        "intermediateOutput": "Observer: PULSE"
+      },
+      "operator": {
+        "role": "OPERATOR",
+        "taskPrompt": "Submit the pulse word.",
+        "dataPayload": "ENERGY FEED: [ _ _ _ _ _ ]",
+        "screenTitle": "Spire Power Coupler",
+        "whatTheySee": "5-letter input terminal.",
+        "intermediateOutput": "Submit: PULSE"
+      },
+      "branchConditions": [],
+      "coordinationChain": {
+        "observerProduces": "Observer reads the missing activation key.",
+        "operatorExecutes": "Operator submits PULSE, unlocking P31.",
+        "analystTransforms": "Analyst validates semantic: PULSE."
+      },
+      "failurePropagation": {
+        "wrongStep": "Operator enters HEART or BEAT.",
+        "consequence": "System: \"WRONG PATTERN. RETRY REQUIRED.\"",
+        "recoveryGuidance": "The M04 key is PULSE."
+      },
+      "narrativeObjective": "Synchronize all 28 previously-solved answers into a memory echo to activate the spire.",
+      "roleDependencyLevel": "D4",
+      "operatorInvestigation": {
+        "operatorOwnEvidence": "Terminal shows execution interface for P30.",
+        "requiredDiscoveries": {
+          "analystDiscovery": "Validates PULSE as 5-letter concept.",
+          "observerDiscovery": "Reads missing activation key: PULSE."
+        },
+        "operatorTaskDescription": "Observer reads missing key. Analyst validates word. Operator submits."
+      }
+    },
+    "answer_metadata": {
+      "fullSolution": "The missing spire activation key is PULSE. Submitting PULSE unlocks P31.",
+      "acceptedAnswer": "PULSE",
+      "validationMethod": "case_insensitive"
+    },
+    "metadata": {
+      "time": "9m",
+      "type": "MEMORY",
+      "feeds": "M04",
+      "difficulty": 4,
+      "storyReveal": "Spire hums: \"29 OF 28 SLOTS FILLED. CONSCIOUSNESS SYNCHRONIZED.\"",
+      "locationClue": {
+        "format": "Research-Note",
+        "clueText": "LINA'S NOTE: \"Descend to the Nexus Core basement. The memory cylinder array awaits.\"",
+        "solution": "Nexus Core Memory Arrays",
+        "nextQrNode": "QR-NODE-31",
+        "explanation": "Points to memory arrays.",
+        "nextPhysicalLocation": "[NEXUS CORE] — Memory Arrays"
+      },
+      "evidenceUnlocked": {
+        "id": "EVID-P30",
+        "state": "RECOVERED",
+        "title": "Dictaphone Memo REC-22: Synchronization",
+        "source": "Spire control console",
+        "content": "All 28 answers are now in the array. But the final truth requires the 29th answer to come from within. Proceed to Memory Array.",
+        "category": "Audio",
+        "timestamp": "Stage 5"
+      },
+      "whyTeamworkMatters": "First of two puzzles requiring a full 3-way call during submission."
+    }
+  },
+  {
+    "code": "P31",
+    "content": {
+      "hints": [
+        "You need a 4-letter action that teams do with memory.",
+        "It is a verb meaning to align.",
+        "Submit SYNC."
+      ],
+      "analyst": {
+        "role": "ANALYST",
+        "taskPrompt": "Resolve the correct choice.",
+        "dataPayload": "MATRIX: P01 answered OBSERVE. Correct choice: B.",
+        "screenTitle": "Answer Correlation Matrix",
+        "whatTheySee": "Resolver showing choice B.",
+        "intermediateOutput": "B) OBSERVE"
+      },
+      "observer": {
+        "role": "OBSERVER",
+        "taskPrompt": "Read the shared recall question.",
+        "visualType": "memory-recall",
+        "dataPayload": "TEST: \"What was the first word of the P01 answer?\"\nA) FILTER  B) OBSERVE  C) CONNECTION",
+        "screenTitle": "Memory Sync Test",
+        "whatTheySee": "Multiple choice question about early puzzle answers.",
+        "interactiveData": {
+          "recallPrompt": "Recall P01 answer.",
+          "requiresPuzzle": "P01"
+        },
+        "intermediateOutput": "Question about P01."
+      },
+      "operator": {
+        "role": "OPERATOR",
+        "taskPrompt": "Submit the sync code.",
+        "dataPayload": "ACTION CODE: [ _ _ _ _ ]",
+        "screenTitle": "Sync Command Terminal",
+        "whatTheySee": "4-letter code input.",
+        "intermediateOutput": "Submit: SYNC"
+      },
+      "branchConditions": [],
+      "coordinationChain": {
+        "observerProduces": "Observer reads the recall question.",
+        "operatorExecutes": "Operator submits SYNC, unlocking P32.",
+        "analystTransforms": "Analyst correlates with P01: answer was OBSERVE."
+      },
+      "failurePropagation": {
+        "wrongStep": "Operator enters OBSERVE.",
+        "consequence": "System: \"WRONG TYPE. COMMAND CODE EXPECTED.\"",
+        "recoveryGuidance": "Submit the command code: SYNC."
+      },
+      "narrativeObjective": "Align the team's memory banks to pass a shared recall test.",
+      "roleDependencyLevel": "D4",
+      "operatorInvestigation": {
+        "operatorOwnEvidence": "Terminal shows execution interface for P31.",
+        "requiredDiscoveries": {
+          "analystDiscovery": "Confirms correct answer: B) OBSERVE (from P01).",
+          "observerDiscovery": "Reads shared recall question about P01."
+        },
+        "operatorTaskDescription": "Observer reads recall question. Analyst confirms correct answer. Operator submits."
+      }
+    },
+    "answer_metadata": {
+      "fullSolution": "The sync command code is SYNC. Submitting SYNC unlocks P32.",
+      "acceptedAnswer": "SYNC",
+      "validationMethod": "exact"
+    },
+    "metadata": {
+      "time": "9m",
+      "type": "MEMORY",
+      "feeds": "P30",
+      "difficulty": 4,
+      "storyReveal": "Terminal: \"MEMORY BANKS SYNCED. ACCESS GRANTED TO FINAL VAULT.\"",
+      "locationClue": {
+        "format": "Research-Note",
+        "clueText": "LINA'S NOTE: \"Enter the Final Vault. The GM key awaits.\"",
+        "solution": "Final Transmission Vault",
+        "nextQrNode": "QR-NODE-32",
+        "explanation": "Points to the final vault.",
+        "nextPhysicalLocation": "[NEXUS CORE] — Final Vault"
+      },
+      "evidenceUnlocked": {
+        "id": "EVID-P31",
+        "state": "RECOVERED",
+        "title": "Lab Notebook Fragment #81",
+        "source": "Memory array terminal",
+        "content": "The sync worked. The GM key is now accessible. Remember: NEXUS can only be stopped if all three players simultaneously agree.",
+        "category": "Lab Note",
+        "timestamp": "Stage 5"
+      },
+      "whyTeamworkMatters": "Tests if the team is genuinely playing together rather than solo."
+    }
+  },
+  {
+    "code": "P32",
+    "content": {
+      "hints": [
+        "Combine the three shards: sees, binds, becomes one.",
+        "The 5-letter answer.",
+        "Submit UNITY."
+      ],
+      "analyst": {
+        "role": "ANALYST",
+        "taskPrompt": "Communicate your shard.",
+        "dataPayload": "SHARD 2: \"The Analyst binds the seen and unseen into a single word.\"",
+        "screenTitle": "Analyst GM Message",
+        "whatTheySee": "Analyst phone displays partial GM message.",
+        "intermediateOutput": "Shard 2 received."
+      },
+      "observer": {
+        "role": "OBSERVER",
+        "taskPrompt": "Communicate your shard.",
+        "visualType": "three-phone",
+        "dataPayload": "SHARD 1: \"The Observer sees all paths, but walks none alone.\"",
+        "screenTitle": "Observer GM Message",
+        "whatTheySee": "Observer phone displays partial GM message.",
+        "interactiveData": {
+          "message": "The Observer sees all paths."
+        },
+        "intermediateOutput": "Shard 1 received."
+      },
+      "operator": {
+        "role": "OPERATOR",
+        "taskPrompt": "Combine and submit.",
+        "dataPayload": "SHARD 3: \"The Operator acts, and in acting, they become the answer. United: [ _ _ _ _ _ ]\"",
+        "screenTitle": "Operator GM Message + Synthesis",
+        "whatTheySee": "Operator phone displays shard 3 and synthesis prompt.",
+        "intermediateOutput": "Submit: UNITY"
+      },
+      "branchConditions": [],
+      "coordinationChain": {
+        "observerProduces": "Observer shares shard: \"sees all paths but walks none alone.\"",
+        "operatorExecutes": "Operator combines: \"acts and becomes the answer\" → UNITY.",
+        "analystTransforms": "Analyst shares shard: \"binds seen and unseen.\""
+      },
+      "failurePropagation": {
+        "wrongStep": "Operator enters ONENESS.",
+        "consequence": "System: \"CONCEPT ACCEPTED. WORD NOT RECOGNIZED.\"",
+        "recoveryGuidance": "5 letters: U-N-I-T-Y."
+      },
+      "narrativeObjective": "Align three phone screens to reveal the GM's role-dependent message.",
+      "roleDependencyLevel": "D4",
+      "operatorInvestigation": {
+        "operatorOwnEvidence": "Terminal shows execution interface for P32.",
+        "requiredDiscoveries": {
+          "analystDiscovery": "Reads shard 2 of GM message.",
+          "observerDiscovery": "Reads shard 1 of GM message."
+        },
+        "operatorTaskDescription": "All three read their GM message shard and combine."
+      }
+    },
+    "answer_metadata": {
+      "fullSolution": "Combining the GM message shards yields UNITY. Submitting UNITY unlocks P33.",
+      "acceptedAnswer": "UNITY",
+      "validationMethod": "case_insensitive"
+    },
+    "metadata": {
+      "time": "9m",
+      "type": "THREE_PHONE",
+      "feeds": "P31",
+      "difficulty": 4,
+      "storyReveal": "GM voice: \"NEXUS cannot be defeated by one. It requires all three roles as one.\"",
+      "locationClue": {
+        "format": "Research-Note",
+        "clueText": "GM NOTE: \"The GM key is 7 letters. Enter it to proceed.\"",
+        "solution": "GM Key Panel",
+        "nextQrNode": "QR-NODE-33",
+        "explanation": "Points to GM key panel.",
+        "nextPhysicalLocation": "[NEXUS CORE] — GM Key Panel"
+      },
+      "evidenceUnlocked": {
+        "id": "EVID-P32",
+        "state": "RECOVERED",
+        "title": "Dictaphone Memo REC-24: The GM Key",
+        "source": "Vault holographic projector",
+        "content": "The three shards combined speak of unity. The GM key is 7 letters and represents the core principle of NEXUS.",
+        "category": "Audio",
+        "timestamp": "Stage 5"
+      },
+      "whyTeamworkMatters": "Final Three-Phone puzzle with GM as narrator."
+    }
+  },
+  {
+    "code": "P35",
+    "content": {
+      "hints": [
+        "All three players must confirm.",
+        "The 5-letter word is a synonym of agree.",
+        "Submit AGREE."
+      ],
+      "analyst": {
+        "role": "ANALYST",
+        "taskPrompt": "Confirm agreement.",
+        "dataPayload": "CONFIRMATION: \"Do you agree to proceed with the final choice? (Y/N)\"",
+        "screenTitle": "Analyst Confirmation",
+        "whatTheySee": "Analyst terminal awaiting confirmation.",
+        "intermediateOutput": "Analyst: AGREE"
+      },
+      "observer": {
+        "role": "OBSERVER",
+        "taskPrompt": "Confirm agreement.",
+        "visualType": "memory-recall",
+        "dataPayload": "CONFIRMATION: \"Do you agree to proceed with the final choice? (Y/N)\"",
+        "screenTitle": "Observer Confirmation",
+        "whatTheySee": "Observer terminal awaiting confirmation.",
+        "interactiveData": {
+          "requiresAllRoles": true,
+          "confirmationRequired": true
+        },
+        "intermediateOutput": "Observer: AGREE"
+      },
+      "operator": {
+        "role": "OPERATOR",
+        "taskPrompt": "Confirm and submit the initiation word.",
+        "dataPayload": "CONFIRMATION: \"Do you agree to proceed with the final choice? (Y/N)\"\nAll three roles confirmed. Initiate sequence with [ _ _ _ _ _ ]",
+        "screenTitle": "Operator Confirmation + Initiation",
+        "whatTheySee": "Operator terminal awaiting confirmation and input.",
+        "intermediateOutput": "Operator: AGREE → Submit AGREE"
+      },
+      "branchConditions": [],
+      "coordinationChain": {
+        "observerProduces": "Observer confirms: AGREE.",
+        "operatorExecutes": "Operator submits AGREE after all confirmations, unlocking P36.",
+        "analystTransforms": "Analyst confirms: AGREE."
+      },
+      "failurePropagation": {
+        "wrongStep": "One role does not confirm.",
+        "consequence": "System: \"ALL ROLES REQUIRED.\"",
+        "recoveryGuidance": "All three must confirm simultaneously."
+      },
+      "narrativeObjective": "All three players must simultaneously confirm their agreement to initiate the final sequence.",
+      "roleDependencyLevel": "D4",
+      "operatorInvestigation": {
+        "operatorOwnEvidence": "Terminal shows execution interface for P35 (requires all 3 confirmations).",
+        "requiredDiscoveries": {
+          "analystDiscovery": "Analyst confirms agreement.",
+          "observerDiscovery": "Observer confirms agreement."
+        },
+        "operatorTaskDescription": "All three roles must independently confirm, then Operator submits."
+      }
+    },
+    "answer_metadata": {
+      "fullSolution": "All three players confirm simultaneously. Operator submits AGREE, unlocking P36.",
+      "acceptedAnswer": "AGREE",
+      "validationMethod": "case_insensitive"
+    },
+    "metadata": {
+      "time": "8m",
+      "type": "NARRATIVE_INVESTIGATION",
+      "feeds": "P34",
+      "difficulty": 4.5,
+      "storyReveal": "Entity voice: \"NOW YOU ARE READY. PROCEED TO P36.\"",
+      "locationClue": {
+        "format": "Poetic",
+        "clueText": "LINA'S NOTE: \"The GM watches and will now guide you.\"",
+        "solution": "GM Observation Deck",
+        "nextQrNode": "QR-NODE-36",
+        "explanation": "Points to GM deck for final stage.",
+        "nextPhysicalLocation": "[NEXUS CORE] — GM Observation Deck"
+      },
+      "evidenceUnlocked": {
+        "id": "EVID-P35",
+        "state": "RECOVERED",
+        "title": "Dictaphone Memo REC-28: The GM",
+        "source": "Final boss chamber",
+        "content": "The GM observes. They will guide the final interaction. All three players are now recognized as the true candidates.",
+        "category": "Audio",
+        "timestamp": "Stage 5"
+      },
+      "whyTeamworkMatters": "The entire finale hinges on genuine 3-way coordination."
+    }
+  },
+  {
+    "code": "P36",
+    "content": {
+      "hints": [
+        "The GM calls this a Meta puzzle.",
+        "It is 4 letters.",
+        "Submit META."
+      ],
+      "analyst": {
+        "role": "ANALYST",
+        "taskPrompt": "Resolve the meta concept.",
+        "dataPayload": "RESOLUTION: The puzzle about puzzles is called META.",
+        "screenTitle": "Meta Concept Resolver",
+        "whatTheySee": "Resolver: META.",
+        "intermediateOutput": "META"
+      },
+      "observer": {
+        "role": "OBSERVER",
+        "taskPrompt": "Read the GM broadcast.",
+        "visualType": "document-forensics",
+        "dataPayload": "BROADCAST: \"Candidate 01, you have reached the Meta level. The answer is what you call this kind of puzzle.\"",
+        "screenTitle": "GM Broadcast Channel",
+        "whatTheySee": "GM broadcast message on observer terminal.",
+        "interactiveData": {
+          "metaLevel": true,
+          "gmBroadcast": true
+        },
+        "intermediateOutput": "Observer: This is a META puzzle."
+      },
+      "operator": {
+        "role": "OPERATOR",
+        "taskPrompt": "Submit the meta level.",
+        "dataPayload": "LEVEL DESIGNATION: [ _ _ _ _ ]\nSubmit the meta level.",
+        "screenTitle": "Meta Level Command",
+        "whatTheySee": "4-letter input terminal.",
+        "intermediateOutput": "Submit: META"
+      },
+      "branchConditions": [],
+      "coordinationChain": {
+        "observerProduces": "Observer reads GM: \"This is the meta level of the game.\"",
+        "operatorExecutes": "Operator submits META, unlocking P37 (Final Boss).",
+        "analystTransforms": "Analyst resolves: META."
+      },
+      "failurePropagation": {
+        "wrongStep": "Operator enters PUZZLE.",
+        "consequence": "GM: \"NOT THE META. THINK DEEPER.\"",
+        "recoveryGuidance": "Submit META."
+      },
+      "narrativeObjective": "The GM guides the team through a meta-puzzle about the game itself.",
+      "roleDependencyLevel": "D5",
+      "operatorInvestigation": {
+        "operatorOwnEvidence": "Terminal shows execution interface for P36.",
+        "requiredDiscoveries": {
+          "analystDiscovery": "Resolves: META.",
+          "observerDiscovery": "Reads GM broadcast about meta level."
+        },
+        "operatorTaskDescription": "GM provides meta puzzle. Analyst resolves. Operator submits."
+      }
+    },
+    "answer_metadata": {
+      "fullSolution": "The GM declares this is a META puzzle. Submitting META unlocks P37.",
+      "acceptedAnswer": "META",
+      "validationMethod": "exact"
+    },
+    "metadata": {
+      "time": "7m",
+      "type": "META",
+      "feeds": "P35",
+      "difficulty": 5,
+      "storyReveal": "GM voice: \"You have seen the game. Now you must defeat it.\"",
+      "locationClue": {
+        "format": "Poetic",
+        "clueText": "GM NOTE: \"The final boss awaits. Only the complete team may enter.\"",
+        "solution": "Final Boss Arena",
+        "nextQrNode": "QR-NODE-37",
+        "explanation": "Points to final boss arena.",
+        "nextPhysicalLocation": "[NEXUS CORE] — Final Boss Arena"
+      },
+      "evidenceUnlocked": {
+        "id": "EVID-P36",
+        "state": "RECOVERED",
+        "title": "Classified Memo: Final Boss Protocol",
+        "source": "GM observation deck",
+        "content": "GM PROTOCOL: The final boss requires all three players to simultaneously submit their role-specific final answer. The answer is the name of this game, in the format of an acronym.",
+        "category": "Classified",
+        "timestamp": "Stage 5"
+      },
+      "whyTeamworkMatters": "GM directly intervenes to guide the players."
+    }
+  },
+  {
+    "code": "P34",
+    "content": {
+      "hints": [
+        "The sequence is simply the alphabet in order.",
+        "Letters missing at position 4 and 8.",
+        "Submit D."
+      ],
+      "analyst": {
+        "role": "ANALYST",
+        "taskPrompt": "Resolve the first missing letter.",
+        "dataPayload": "ANALYSIS: Letters increment by 1. Position 4 = D, position 8 = H.",
+        "screenTitle": "Pattern Analyzer",
+        "whatTheySee": "Resolver: D then H.",
+        "intermediateOutput": "D"
+      },
+      "observer": {
+        "role": "OBSERVER",
+        "taskPrompt": "Identify the pattern and find the first missing item (position 4).",
+        "visualType": "timeline-investigation",
+        "dataPayload": "SEQUENCE: A, B, C, ?, E, F, G, ?, I, J, K\nMissing: positions 4 and 8.",
+        "screenTitle": "Sequence Viewer",
+        "whatTheySee": "Missing-sequence puzzle: ABC_DEF_GHIJK.",
+        "interactiveData": {
+          "sequence": [
+            "A",
+            "B",
+            "C",
+            "?",
+            "E",
+            "F",
+            "G",
+            "?",
+            "I",
+            "J",
+            "K"
+          ],
+          "missingPositions": [
+            3,
+            7
+          ]
+        },
+        "intermediateOutput": "Position 4: D"
+      },
+      "operator": {
+        "role": "OPERATOR",
+        "taskPrompt": "Submit the first missing value.",
+        "dataPayload": "INITIATE (1 letter): [ _ ]\nSubmit first missing value.",
+        "screenTitle": "Protocol Initiator",
+        "whatTheySee": "Single-letter input.",
+        "intermediateOutput": "Submit: D"
+      },
+      "branchConditions": [],
+      "coordinationChain": {
+        "observerProduces": "Observer shares sequence A,B,C,?,E,F,G,?,I,J,K.",
+        "operatorExecutes": "Operator submits D, unlocking P35.",
+        "analystTransforms": "Analyst computes missing letter: D."
+      },
+      "failurePropagation": {
+        "wrongStep": "Operator enters H.",
+        "consequence": "System: \"WRONG POSITION. RETRY.\"",
+        "recoveryGuidance": "Submit the first missing value: D."
+      },
+      "narrativeObjective": "Derive the next sequence value to initiate the final boss protocol.",
+      "roleDependencyLevel": "D4",
+      "operatorInvestigation": {
+        "operatorOwnEvidence": "Terminal shows execution interface for P34.",
+        "requiredDiscoveries": {
+          "analystDiscovery": "Computes missing: D.",
+          "observerDiscovery": "Reads missing-sequence puzzle: ABC_DEF_GHIJK."
+        },
+        "operatorTaskDescription": "Observer reads sequence. Analyst computes missing letter. Operator submits."
+      }
+    },
+    "answer_metadata": {
+      "fullSolution": "The alphabet sequence has D missing at position 4. Submitting D unlocks P35.",
+      "acceptedAnswer": "D",
+      "validationMethod": "exact"
+    },
+    "metadata": {
+      "time": "8m",
+      "type": "PATTERN",
+      "feeds": "P33",
+      "difficulty": 4.5,
+      "storyReveal": "Terminal: \"SEQUENCE COMPLETE. FINAL ENTITY ENTRY DETECTED.\"",
+      "locationClue": {
+        "format": "Research-Note",
+        "clueText": "LINA'S NOTE: \"The entity awaits. All three must agree to proceed.\"",
+        "solution": "Final Boss Chamber",
+        "nextQrNode": "QR-NODE-35",
+        "explanation": "Points to the final boss chamber.",
+        "nextPhysicalLocation": "[NEXUS CORE] — Final Boss Chamber"
+      },
+      "evidenceUnlocked": {
+        "id": "EVID-P34",
+        "state": "RECOVERED",
+        "title": "Dictaphone Memo REC-26: The Entity",
+        "source": "Central hub terminal",
+        "content": "Sequence complete. The entity stirs. But it cannot manifest unless all three players simultaneously confirm their presence and their choice.",
+        "category": "Audio",
+        "timestamp": "Stage 5"
+      },
+      "whyTeamworkMatters": "Simple pattern but requires coordination of 3-way split."
+    }
+  },
+  {
+    "code": "P20",
+    "content": {
+      "hints": [
+        "Arrange symbols by when you first discovered them.",
+        "Extract the position numbers of key symbols.",
+        "Connection=2, Origin=1, Structure=4, Finality=7. Submit 2147."
+      ],
+      "analyst": {
+        "role": "ANALYST",
+        "taskPrompt": "Extract the position numbers.",
+        "dataPayload": "CALCULATION: ⧉ is position 2. ⍟ is position 6. The key is 2147: 2-1-4-7 (positions of Connection, Origin, Structure, Finality).",
+        "screenTitle": "Position Cipher Calculator",
+        "whatTheySee": "Calculator showing position extraction: 2,1,4,7 = 2147.",
+        "intermediateOutput": "2147"
+      },
+      "observer": {
+        "role": "OBSERVER",
+        "taskPrompt": "Arrange symbols by discovery order.",
+        "visualType": "puzzle",
+        "dataPayload": "PANEL: Seven slots for symbols. Clue: \"The sequence follows the order of discovery.\"",
+        "screenTitle": "Symbol Arrangement Panel",
+        "whatTheySee": "A panel with 7 symbol slots and the collected symbols.",
+        "interactiveData": {
+          "hint": "Order of discovery: Origin, Connection, Structure, Memory, Choice, Truth, Finality.",
+          "symbols": [
+            "⟁",
+            "⧉",
+            "⬡",
+            "⧫",
+            "⌬",
+            "⍟",
+            "⎔"
+          ]
+        },
+        "intermediateOutput": "⟁ ⧉ ⬡ ⧫ ⌬ ⍟ ⎔"
+      },
+      "operator": {
+        "role": "OPERATOR",
+        "taskPrompt": "Submit the sequence.",
+        "dataPayload": "SEQUENCE CODE: [ _ _ _ _ ]",
+        "screenTitle": "Sequence Unlock Terminal",
+        "whatTheySee": "Four-digit terminal.",
+        "intermediateOutput": "Submit: 2147"
+      },
+      "branchConditions": [],
+      "coordinationChain": {
+        "observerProduces": "Observer arranges all 7 symbols in discovery order.",
+        "operatorExecutes": "Operator submits 2147.",
+        "analystTransforms": "Analyst extracts key positions: 2-1-4-7 = 2147."
+      },
+      "failurePropagation": {
+        "wrongStep": "Team uses wrong order or extracts wrong positions.",
+        "consequence": "Sequence rejected.",
+        "recoveryGuidance": "Positions: ⧉=2, ⟁=1, ⬡=4, ⎔=7."
+      },
+      "narrativeObjective": "Arrange all seven symbols in the correct order using all clues collected.",
+      "roleDependencyLevel": "D4",
+      "operatorInvestigation": {
+        "operatorOwnEvidence": "Terminal shows the execution interface for P20.",
+        "requiredDiscoveries": {
+          "analystDiscovery": "Extracts position numbers to form 2147.",
+          "observerDiscovery": "Arranges symbols in discovery order."
+        },
+        "operatorTaskDescription": "The Observer arranges symbols by discovery order. The Analyst extracts position numbers. The Operator submits."
+      }
+    },
+    "answer_metadata": {
+      "fullSolution": "Arranging symbols by discovery order and extracting key positions yields 2147. Submitting 2147 unlocks P21.",
+      "acceptedAnswer": "2147",
+      "validationMethod": "exact"
+    },
+    "metadata": {
+      "time": "10m",
+      "type": "PATTERN",
+      "feeds": "P19",
+      "difficulty": 5,
+      "storyReveal": "Terminal: \"SYMBOLS UNIFIED. THE FINAL STAGE AWAITS.\"",
+      "locationClue": {
+        "format": "Path Instruction",
+        "clueText": "LINA'S NOTE: \"Return to the Admin Building main doors. The fourth floor window has a view.\"",
+        "solution": "Admin Building Fourth Floor Window",
+        "nextQrNode": "QR-NODE-23",
+        "explanation": "Points to the fourth floor window.",
+        "nextPhysicalLocation": "[ADMIN BUILDING] — Fourth Floor Window"
+      },
+      "evidenceUnlocked": {
+        "id": "EVID-P20",
+        "state": "RECOVERED",
+        "title": "Stage 2→3 Transition Clue",
+        "source": "Dome base",
+        "content": "A note: \"The answer 2147 is not just a number — it is also 17:47 in a different base. Keep this in mind for the rooftop.\"",
+        "category": "Visual",
+        "timestamp": "Stage 3"
+      },
+      "whyTeamworkMatters": "Synthesizes all seven symbols collected across Stage 3."
+    }
+  },
+  {
+    "code": "P37",
+    "content": {
+      "hints": [
+        "The entity's name is your game's title.",
+        "It is 5 letters.",
+        "All three must submit simultaneously."
+      ],
+      "analyst": {
+        "role": "ANALYST",
+        "taskPrompt": "Identify the binding system.",
+        "dataPayload": "BOSS PHASE 1: \"I am the sum. I am the convergence. I am the...\nWhat binds all fragments together?\"",
+        "screenTitle": "Final Boss - Analyst Interface",
+        "whatTheySee": "Analyst terminal showing boss phase 1 prompt.",
+        "intermediateOutput": "Analyst: NEXUS"
+      },
+      "observer": {
+        "role": "OBSERVER",
+        "taskPrompt": "Identify the all-encompassing system.",
+        "visualType": "memory-recall",
+        "dataPayload": "BOSS PHASE 1: \"I am the archive. I am the echo. I am the...\nName the system that contains all your answers.\"",
+        "screenTitle": "Final Boss - Observer Interface",
+        "whatTheySee": "Observer terminal showing boss phase 1 prompt.",
+        "interactiveData": {
+          "phase": 1,
+          "finalBoss": true,
+          "requiresAllRoles": true,
+          "simultaneousSubmission": true
+        },
+        "intermediateOutput": "Observer: NEXUS"
+      },
+      "operator": {
+        "role": "OPERATOR",
+        "taskPrompt": "Combine and submit the final boss answer.",
+        "visualType": "final-boss",
+        "dataPayload": "BOSS PHASE 1: I am the key. I am the lock. I am the... Final submission: [ _ _ _ _ _ ]",
+        "screenTitle": "Final Boss - Operator Interface + Submission",
+        "whatTheySee": "Operator terminal showing boss phase 1 and final 5-letter input.",
+        "interactiveData": {
+          "phase": 1,
+          "finalBoss": true,
+          "requiresAllRoles": true,
+          "simultaneousSubmission": true
+        },
+        "intermediateOutput": "Submit: NEXUS"
+      },
+      "branchConditions": [],
+      "coordinationChain": {
+        "observerProduces": "Observer identifies: NEXUS.",
+        "operatorExecutes": "Operator submits NEXUS simultaneously with others. GAME COMPLETE.",
+        "analystTransforms": "Analyst confirms: NEXUS."
+      },
+      "failurePropagation": {
+        "wrongStep": "Not all three submit simultaneously.",
+        "consequence": "BOSS: \"INCOMPLETE. ALL THREE ARE ONE.\"",
+        "recoveryGuidance": "Coordinate: all three submit NEXUS at the same time."
+      },
+      "narrativeObjective": "All three players simultaneously submit to defeat the final boss and win the game.",
+      "roleDependencyLevel": "D5",
+      "operatorInvestigation": {
+        "operatorOwnEvidence": "Terminal shows execution interface for P37 (final boss - requires all 3 simultaneous submits).",
+        "requiredDiscoveries": {
+          "analystDiscovery": "Analyst identifies NEXUS.",
+          "observerDiscovery": "Observer identifies NEXUS."
+        },
+        "operatorTaskDescription": "All three players must simultaneously submit their answer."
+      }
+    },
+    "answer_metadata": {
+      "fullSolution": "All three players simultaneously submit NEXUS to defeat the final boss. GAME COMPLETE.",
+      "acceptedAnswer": "NEXUS",
+      "validationMethod": "case_insensitive"
+    },
+    "metadata": {
+      "time": "10m",
+      "type": "FINAL_BOSS",
+      "feeds": "P36",
+      "difficulty": 5,
+      "storyReveal": "GM voice: \"CONGRATULATIONS. YOU HAVE UNLOCKED THE TRUE ENDING.\"",
+      "locationClue": {
+        "format": "Narrative",
+        "clueText": "The game ends here. No further location.",
+        "solution": "END",
+        "nextQrNode": null,
+        "explanation": "The game is complete.",
+        "nextPhysicalLocation": "GAME END"
+      },
+      "evidenceUnlocked": {
+        "id": "ENDING-CERTIFICATE",
+        "state": "RECOVERED",
+        "title": "True Ending Certificate",
+        "source": "Final boss victory",
+        "content": "NEXUS GAME MASTER CERTIFICATE\n\nThis certifies that three minds worked as one to uncover the truth. The system was never the enemy. It was the mirror.\n\nGAME COMPLETE.",
+        "category": "Achievement",
+        "timestamp": "Stage 5"
+      },
+      "whyTeamworkMatters": "The entire game culminates in a simultaneous 3-player submission."
+    }
+  }
+]

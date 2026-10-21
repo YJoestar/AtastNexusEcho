@@ -72,7 +72,6 @@ export function FieldHub() {
     allNodes: allNodesForMap,
     teamStatus: gameState?.status,
     currentNodeId,
-    solvedNodes: [],
   })
 
   const narrative = useNarrative({

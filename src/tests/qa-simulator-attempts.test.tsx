@@ -155,6 +155,98 @@ describe('QA attempt counting', () => {
   })
 })
 
+describe('QA simulator agrees with the server about acceptance', () => {
+  // submit_puzzle_answer (2026100608) accepts `acceptedAnswer` PLUS every entry
+  // of `acceptedAnswers`, case-insensitively with collapsed whitespace. The
+  // simulator read `acceptedAnswer` alone, so a QA walk of the finale rejected
+  // the very dispositions the server accepts - the simulator lied about what
+  // production would do.
+  beforeEach(() => {
+    h.QAData = [
+      {
+        code: 'P01',
+        answerMetadata: {
+          acceptedAnswer: 'NEXUS IS AI',
+          acceptedAnswers: ['NEXUS AI'],
+          validationMethod: 'case_insensitive',
+        },
+      },
+      {
+        code: 'P37',
+        answerMetadata: {
+          acceptedAnswer: '###37###',
+          acceptedAnswers: ['DELETE', 'RETAIN', 'SHARE', 'ERASE', 'KEEP', 'RELEASE'],
+          validationMethod: 'exact',
+        },
+      },
+    ]
+  })
+
+  it('accepts every alternative in acceptedAnswers, not just acceptedAnswer', async () => {
+    const { qa } = renderProbe()
+    await waitFor(() => expect(qa().role).toBeTruthy())
+    act(() => { qa().setRole('OPERATOR') })
+
+    const result = await qa().submitAnswer('P01', 'NEXUS AI')
+    expect(result.isCorrect).toBe(true)
+  })
+
+  it('accepts the finale dispositions the console prints', async () => {
+    const { qa } = renderProbe()
+    await waitFor(() => expect(qa().role).toBeTruthy())
+    act(() => { qa().setRole('OPERATOR') })
+
+    for (const verdict of ['ERASE', 'KEEP', 'RELEASE']) {
+      const result = await qa().submitAnswer('P37', verdict)
+      expect(result.isCorrect, `${verdict} must be accepted`).toBe(true)
+    }
+  })
+
+  it('collapses whitespace and ignores case, as the server does', async () => {
+    const { qa } = renderProbe()
+    await waitFor(() => expect(qa().role).toBeTruthy())
+    act(() => { qa().setRole('OPERATOR') })
+
+    const result = await qa().submitAnswer('P01', '  nexus   is   ai  ')
+    expect(result.isCorrect).toBe(true)
+  })
+
+  it('rejects a blank submission even when the answer set is empty-safe', async () => {
+    const { qa } = renderProbe()
+    await waitFor(() => expect(qa().role).toBeTruthy())
+    act(() => { qa().setRole('OPERATOR') })
+
+    const result = await qa().submitAnswer('P01', '   ')
+    expect(result.isCorrect).toBe(false)
+  })
+
+  it('halves the payout on a second attempt and pays nothing on the third', async () => {
+    const { qa } = renderProbe()
+    await waitFor(() => expect(qa().role).toBeTruthy())
+    act(() => { qa().setRole('OPERATOR') })
+
+    const base = PUZZLES_BY_CODE['P01'].points
+
+    // Wrong, then right: attempt 2 pays (base + 1) / 2.
+    await qa().submitAnswer('P01', 'wrong')
+    const second = await qa().submitAnswer('P01', 'NEXUS IS AI')
+    expect(second.isCorrect).toBe(true)
+    expect(second.pointsAwarded).toBe(Math.floor((base + 1) / 2))
+  })
+
+  it('pays nothing on a correct third attempt', async () => {
+    const { qa } = renderProbe()
+    await waitFor(() => expect(qa().role).toBeTruthy())
+    act(() => { qa().setRole('OPERATOR') })
+
+    await qa().submitAnswer('P01', 'wrong')
+    await qa().submitAnswer('P01', 'wrong again')
+    const third = await qa().submitAnswer('P01', 'NEXUS IS AI')
+    expect(third.isCorrect).toBe(true)
+    expect(third.pointsAwarded).toBe(0)
+  })
+})
+
 describe('QA solve control actually solves', () => {
   it('marks the current node solved, awards its points and advances', async () => {
     const { qa } = renderProbe()

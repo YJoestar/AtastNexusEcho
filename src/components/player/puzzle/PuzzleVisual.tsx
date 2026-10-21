@@ -655,6 +655,290 @@ const GridMazeVisual: Renderer = ({ dataPayload, interactiveData }) => {
 }
 
 /* ------------------------------------------------------------------------- */
+/* terminal - a machine readout of command or register lines                  */
+/* ------------------------------------------------------------------------- */
+
+const TerminalVisual: Renderer = ({ dataPayload, interactiveData }) => {
+  const lines = useMemo(() => readEntries(interactiveData, 'lines'), [interactiveData])
+
+  return (
+    <VisualShell label="Terminal Readout" tone="accent">
+      <div className="space-y-4">
+        <PayloadText>{dataPayload}</PayloadText>
+        {lines.length > 0 && (
+          <div className="border border-nexus-borderSubtle bg-nexus-bg p-3 space-y-1">
+            {lines.map((entry, i) => (
+              <div key={`${entry.source}-${i}`} className="font-mono text-xs flex gap-3">
+                <span className="text-nexus-textSubtle shrink-0">{entry.source}</span>
+                <span className={cn('break-all', entry.flag ? 'text-nexus-warning' : 'text-nexus-text')}>
+                  {entry.text}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+        <RecallLine data={interactiveData} />
+      </div>
+    </VisualShell>
+  )
+}
+
+/* ------------------------------------------------------------------------- */
+/* telemetry - gauges and indicators with a state per reading                 */
+/* ------------------------------------------------------------------------- */
+
+interface MetricEntry {
+  label: string
+  value: string
+  state: string
+}
+
+function readMetrics(data: InteractiveData, key = 'metrics'): MetricEntry[] {
+  const value = data?.[key]
+  if (!Array.isArray(value)) return []
+  return value
+    .filter((entry): entry is Record<string, unknown> => typeof entry === 'object' && entry !== null)
+    .map(entry => ({
+      label: typeof entry.label === 'string' ? entry.label : 'READING',
+      value: typeof entry.value === 'string' ? entry.value : String(entry.value ?? '—'),
+      state: typeof entry.state === 'string' ? entry.state : '',
+    }))
+}
+
+const TelemetryVisual: Renderer = ({ dataPayload, interactiveData }) => {
+  const metrics = useMemo(() => readMetrics(interactiveData), [interactiveData])
+
+  return (
+    <VisualShell label="Telemetry Board" tone="accent">
+      <div className="space-y-4">
+        <PayloadText>{dataPayload}</PayloadText>
+        {metrics.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {metrics.map((metric, i) => (
+              <div
+                key={`${metric.label}-${i}`}
+                className={cn(
+                  'border p-2.5 flex items-baseline justify-between gap-3',
+                  metric.state === 'dark' || metric.state === 'sealed'
+                    ? 'border-nexus-borderSubtle bg-nexus-bg'
+                    : 'border-nexus-accent/30 bg-nexus-accentBg/10',
+                )}
+              >
+                <span className="text-xs uppercase tracking-wider text-nexus-textSubtle">
+                  {metric.label}
+                </span>
+                <span
+                  className={cn(
+                    'font-mono text-sm',
+                    metric.state === 'dark' || metric.state === 'sealed'
+                      ? 'text-nexus-textSubtle'
+                      : 'text-nexus-accent',
+                  )}
+                >
+                  {metric.value}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+        <RecallLine data={interactiveData} />
+      </div>
+    </VisualShell>
+  )
+}
+
+/* ------------------------------------------------------------------------- */
+/* chart - a labelled bar readout for a node that names a distribution        */
+/* ------------------------------------------------------------------------- */
+
+interface BarEntry {
+  label: string
+  value: number
+  flag: boolean
+}
+
+function readBars(data: InteractiveData, key = 'bars'): BarEntry[] {
+  const value = data?.[key]
+  if (!Array.isArray(value)) return []
+  return value
+    .filter((entry): entry is Record<string, unknown> => typeof entry === 'object' && entry !== null)
+    .map(entry => ({
+      label: typeof entry.label === 'string' ? entry.label : '?',
+      value: typeof entry.value === 'number' ? entry.value : Number(entry.value) || 0,
+      flag: entry.flag === true,
+    }))
+}
+
+const ChartVisual: Renderer = ({ dataPayload, interactiveData }) => {
+  const bars = useMemo(() => readBars(interactiveData), [interactiveData])
+  const max = useMemo(() => bars.reduce((m, b) => Math.max(m, Math.abs(b.value)), 0) || 1, [bars])
+
+  return (
+    <VisualShell label="Chart Readout" tone="accent">
+      <div className="space-y-4">
+        <PayloadText>{dataPayload}</PayloadText>
+        {bars.length > 0 && (
+          <div className="space-y-2">
+            {bars.map((bar, i) => (
+              <div key={`${bar.label}-${i}`} className="flex items-center gap-3">
+                <span className="font-mono text-xs text-nexus-textSubtle w-16 shrink-0 truncate">
+                  {bar.label}
+                </span>
+                <div className="flex-1 h-4 bg-nexus-bg border border-nexus-borderSubtle">
+                  <div
+                    className={cn('h-full', bar.flag ? 'bg-nexus-warning' : 'bg-nexus-accent/60')}
+                    style={{ width: `${Math.round((Math.abs(bar.value) / max) * 100)}%` }}
+                  />
+                </div>
+                <span className="font-mono text-xs text-nexus-text w-12 text-right">
+                  {bar.value}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+        <RecallLine data={interactiveData} />
+      </div>
+    </VisualShell>
+  )
+}
+
+/* ------------------------------------------------------------------------- */
+/* console - an indexed execution trace with one flagged step                 */
+/* ------------------------------------------------------------------------- */
+
+interface StepEntry {
+  index: string
+  register: string
+  input: string
+  state: string
+  flag: boolean
+}
+
+function readSteps(data: InteractiveData, key = 'steps'): StepEntry[] {
+  const value = data?.[key]
+  if (!Array.isArray(value)) return []
+  return value
+    .filter((entry): entry is Record<string, unknown> => typeof entry === 'object' && entry !== null)
+    .map(entry => ({
+      index: typeof entry.index === 'string' ? entry.index : String(entry.index ?? ''),
+      register: typeof entry.register === 'string' ? entry.register : String(entry.register ?? '—'),
+      input: typeof entry.input === 'string' ? entry.input : String(entry.input ?? '—'),
+      state: typeof entry.state === 'string' ? entry.state : String(entry.state ?? '—'),
+      flag: entry.flag === true,
+    }))
+}
+
+const ConsoleVisual: Renderer = ({ dataPayload, interactiveData }) => {
+  const steps = useMemo(() => readSteps(interactiveData), [interactiveData])
+
+  return (
+    <VisualShell label="Execution Trace" tone="accent">
+      <div className="space-y-4">
+        <PayloadText>{dataPayload}</PayloadText>
+        {steps.length > 0 && (
+          <div className="border border-nexus-borderSubtle overflow-x-auto">
+            <table className="w-full text-xs font-mono">
+              <thead>
+                <tr className="border-b border-nexus-borderSubtle text-nexus-textSubtle">
+                  <th className="text-left py-1.5 px-3">STEP</th>
+                  <th className="text-left py-1.5 px-3">REGISTER</th>
+                  <th className="text-left py-1.5 px-3">INPUT</th>
+                  <th className="text-left py-1.5 px-3">STATE</th>
+                </tr>
+              </thead>
+              <tbody>
+                {steps.map((step, i) => (
+                  <tr
+                    key={`${step.index}-${i}`}
+                    className={cn(
+                      'border-b border-nexus-borderSubtle/30',
+                      step.flag && 'bg-nexus-warningBg/20 text-nexus-warning',
+                    )}
+                  >
+                    <td className="py-1.5 px-3">{step.index}</td>
+                    <td className="py-1.5 px-3">{step.register}</td>
+                    <td className="py-1.5 px-3">{step.input}</td>
+                    <td className="py-1.5 px-3">
+                      {step.state}
+                      {step.flag && <span className="ml-2 text-[10px]">SUSPECT</span>}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        <RecallLine data={interactiveData} />
+      </div>
+    </VisualShell>
+  )
+}
+
+/* ------------------------------------------------------------------------- */
+/* timeline - dated or indexed events in running order                        */
+/* ------------------------------------------------------------------------- */
+
+interface EventEntry {
+  time: string
+  label: string
+  flag: boolean
+}
+
+function readEvents(data: InteractiveData, key = 'events'): EventEntry[] {
+  const value = data?.[key]
+  if (!Array.isArray(value)) return []
+  return value
+    .filter((entry): entry is Record<string, unknown> => typeof entry === 'object' && entry !== null)
+    .map(entry => ({
+      time: typeof entry.time === 'string' ? entry.time : '',
+      label: typeof entry.label === 'string' ? entry.label : '',
+      flag: entry.flag === true,
+    }))
+}
+
+const TimelineVisual: Renderer = ({ dataPayload, interactiveData }) => {
+  const events = useMemo(() => readEvents(interactiveData), [interactiveData])
+
+  return (
+    <VisualShell label="Timeline" tone="accent">
+      <div className="space-y-4">
+        <PayloadText>{dataPayload}</PayloadText>
+        {events.length > 0 && (
+          <ol className="space-y-0">
+            {events.map((event, i) => (
+              <li key={`${event.label}-${i}`} className="flex gap-3">
+                <div className="flex flex-col items-center">
+                  <span
+                    className={cn(
+                      'w-2.5 h-2.5 mt-1.5',
+                      event.flag ? 'bg-nexus-warning' : 'bg-nexus-accent',
+                    )}
+                    aria-hidden="true"
+                  />
+                  {i < events.length - 1 && (
+                    <span className="flex-1 w-px bg-nexus-borderSubtle" aria-hidden="true" />
+                  )}
+                </div>
+                <div className="pb-4">
+                  {event.time && (
+                    <span className="font-mono text-xs text-nexus-textSubtle">{event.time}</span>
+                  )}
+                  <p className={cn('text-sm', event.flag ? 'text-nexus-warning' : 'text-nexus-text')}>
+                    {event.label}
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        )}
+        <RecallLine data={interactiveData} />
+      </div>
+    </VisualShell>
+  )
+}
+
+/* ------------------------------------------------------------------------- */
 /* fallback                                                                  */
 /* ------------------------------------------------------------------------- */
 
@@ -694,6 +978,11 @@ const RENDERERS: Record<string, Renderer> = {
   'grid-maze': GridMazeVisual,
   meta: MetaVisual,
   'final-boss': FinalBossVisual,
+  terminal: TerminalVisual,
+  telemetry: TelemetryVisual,
+  chart: ChartVisual,
+  console: ConsoleVisual,
+  timeline: TimelineVisual,
 }
 
 // Development guard: a shipped type with no renderer would silently degrade to
@@ -714,10 +1003,17 @@ export function PuzzleVisual({ type, dataPayload, interactiveData }: PuzzleVisua
   const declared = (type ?? '').toLowerCase()
   const hasSequence = readStringArray(interactiveData, 'sequence').length > 0
 
-  const renderer: Renderer =
+  const Renderer: Renderer =
     (hasSequence ? SequenceVisual : undefined) ??
     RENDERERS[declared] ??
     (readStringArray(interactiveData, 'symbols').length > 0 ? PuzzleBoardVisual : GenericVisual)
 
-  return renderer({ type, dataPayload, interactiveData })
+  // Renderers are React components and several of them use hooks (useMemo /
+  // useState). They must be rendered as an element, not invoked as a plain
+  // function: calling one directly attaches its hooks to THIS component, so
+  // navigating from a node whose renderer used three hooks to one whose
+  // renderer used two changes this component's hook order and React throws
+  // "Rendered fewer hooks than expected". A distinct element gives each
+  // renderer its own fiber and its own hook list.
+  return <Renderer type={type} dataPayload={dataPayload} interactiveData={interactiveData} />
 }

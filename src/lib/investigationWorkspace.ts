@@ -317,12 +317,27 @@ export function detectEvidenceEvolution(
   }
 }
 
+/**
+ * Record which fields of an artifact the player has now seen.
+ *
+ * PURE, like `recordDiscoveries` below: it returns a NEW workspace and does not
+ * touch the one it was given. It used to assign straight into
+ * `workspace.revelations` and return a bare boolean, which meant the caller
+ * (`updateWorkspace`, via `setStored`) had its PREVIOUS state object mutated in
+ * place - the shallow `{ ...current }` at the call site shares the nested
+ * `revelations` map, so writing through it edited the state React had already
+ * committed. Anything holding the old reference saw it change under them, and
+ * change detection could not tell the two apart.
+ *
+ * `hasNewInfo` is still reported (it drives the "new intel" badge), now from the
+ * returned workspace rather than as the return value.
+ */
 export function recordEvidenceInspection(
   artifactId: string,
   contentKeys: string[],
   workspace: InvestigationWorkspace,
   nowISO: string = new Date().toISOString(),
-): boolean {
+): InvestigationWorkspace {
   const existing = workspace.revelations[artifactId]
   const seenFields = new Set(existing?.seenFields ?? [])
   let hasNewInfo = false
@@ -334,14 +349,47 @@ export function recordEvidenceInspection(
     }
   }
 
-  workspace.revelations[artifactId] = {
-    seenFields,
-    firstSeenAt: existing?.firstSeenAt ?? nowISO,
-    lastInspectedAt: nowISO,
-    hasNewInfo,
+  return {
+    ...workspace,
+    revelations: {
+      ...workspace.revelations,
+      [artifactId]: {
+        seenFields,
+        firstSeenAt: existing?.firstSeenAt ?? nowISO,
+        lastInspectedAt: nowISO,
+        hasNewInfo,
+      },
+    },
   }
+}
 
-  return hasNewInfo
+/**
+ * Clear an artifact's "new intel" badge.
+ *
+ * Opening an artifact is the moment the player has actually read it, so whatever
+ * `recordEvidenceInspection` flagged as unseen is now seen and the badge comes
+ * down. Pure, like every other operation in this module: returns a NEW workspace.
+ * When the artifact was never recorded there is nothing to clear and the input is
+ * returned untouched, so callers never create a phantom revelation row.
+ */
+export function clearEvidenceNewInfo(
+  artifactId: string,
+  workspace: InvestigationWorkspace,
+  nowISO: string = new Date().toISOString(),
+): InvestigationWorkspace {
+  const existing = workspace.revelations[artifactId]
+  if (!existing || !existing.hasNewInfo) return workspace
+  return {
+    ...workspace,
+    revelations: {
+      ...workspace.revelations,
+      [artifactId]: {
+        ...existing,
+        lastInspectedAt: nowISO,
+        hasNewInfo: false,
+      },
+    },
+  }
 }
 
 /* ───────────────────── board operations (pure, undoable) ───────────────────── */

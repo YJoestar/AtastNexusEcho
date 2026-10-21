@@ -7,6 +7,7 @@ import { useGameEngine } from '@/hooks/useGameEngine'
 import { useGameAudio } from '@/hooks/useGameAudio'
 import { useInvestigationWorkspace } from '@/hooks/useInvestigationWorkspace'
 import {
+  clearEvidenceNewInfo,
   detectEvidenceEvolution,
   recordEvidenceInspection,
   type EvidenceMark,
@@ -149,19 +150,12 @@ export function PlayerEvidenceArchive() {
   const markInspection = useCallback(
     (artifactId: string, content: Record<string, unknown>) => {
       const contentKeys = Object.keys(content ?? {})
-      updateWorkspace(current => {
-        const next = { ...current }
-        const updated = recordEvidenceInspection(artifactId, contentKeys, next)
-        if (updated) {
-          next.revelations[artifactId] = {
-            ...next.revelations[artifactId],
-            seenFields: next.revelations[artifactId]?.seenFields ?? new Set(),
-            hasNewInfo: false,
-            lastInspectedAt: new Date().toISOString(),
-          }
-        }
-        return next
-      })
+      // Opening an artifact records the fields the player has now seen AND clears
+      // the "new intel" badge - they are looking at it. Both steps are pure
+      // functions over the workspace, so the updater simply returns the result.
+      updateWorkspace(current =>
+        clearEvidenceNewInfo(artifactId, recordEvidenceInspection(artifactId, contentKeys, current)),
+      )
     },
     [updateWorkspace],
   )

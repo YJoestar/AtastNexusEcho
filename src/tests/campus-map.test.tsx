@@ -170,6 +170,58 @@ describe('DynamicMinimap', () => {
   })
 })
 
+/**
+ * The minimap clamps an out-of-range teammate to the rim of the dial. That clamp
+ * used to mix coordinate spaces: it measured the gap in WORLD units (`halfView`,
+ * the world radius the dial covers) but then placed the marker at
+ * `center * 0.85`, where `center` is half the canvas in PIXELS - so the marker was
+ * pushed to a world offset unrelated to the edge and drew only ~30% of the way
+ * out, nowhere near the rim. These tests read the arcs the component actually
+ * draws and assert the clamped marker sits just inside the dial.
+ */
+describe('DynamicMinimap teammate clamping', () => {
+  it('draws a far-off teammate inside the dial, not at a mis-scaled world offset', () => {
+    const ctx = (HTMLCanvasElement.prototype.getContext as unknown as () => {
+      arc: { mock: { calls: unknown[][] } }
+    })()
+    const arcMock = ctx.arc as unknown as { mockClear: () => void; mock: { calls: Array<[number, number, number]> } }
+    arcMock.mockClear()
+
+    const viewRadius = 280
+    const size = 200
+    // A teammate far outside the 280-unit view radius, straight east of the
+    // player, so the clamp engages and the marker should land on the east rim.
+    const farMember = {
+      id: 'far', playerId: 'pf', role: 'ANALYST', displayName: 'Far',
+      position: [500 + 2000, 550], building: 'LIBRARY', isCurrent: false, isConnected: true,
+    } as unknown as TeamMember
+
+    render(
+      <DynamicMinimap
+        playerPosition={[500, 550]}
+        nodes={SAMPLE_NODES}
+        teamMembers={[farMember]}
+        orientation="north"
+        playerCentered
+        viewRadius={viewRadius}
+        size={size}
+      />,
+    )
+
+    // The teammate marker is drawn as an arc of radius 4 (clamped). Its centre
+    // must be inside the dial: within `size` from the canvas centre on each axis.
+    const center = size / 2
+    const memberArcs = arcMock.mock.calls.filter(([, , r]) => r === 4)
+    expect(memberArcs.length, 'the clamped teammate marker should be drawn').toBeGreaterThan(0)
+    const [mx, my] = memberArcs[memberArcs.length - 1]
+    expect(Math.abs(mx - center)).toBeLessThanOrEqual(center)
+    expect(Math.abs(my - center)).toBeLessThanOrEqual(center)
+    // And it should be out toward the rim, not bunched near the centre: the
+    // previous pixel/world mix put it at roughly 30% of the radius.
+    expect(Math.hypot(mx - center, my - center)).toBeGreaterThan(center * 0.6)
+  })
+})
+
 describe('useCampusMapState', () => {
   it('maps solved nodes to VERIFIED knowledge', () => {
     const solvedCodes = new Set(['P01'])

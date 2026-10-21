@@ -846,3 +846,35 @@ describe('two migration defects that shipped once cannot ship again', () => {
     }
   })
 })
+
+describe('two PostgREST defects that only a live database exposes', () => {
+  /**
+   * Both were reproduced against the live project through the real
+   * bureau-operations edge function, not inferred from the source:
+   *
+   *   list-puzzle-qa   -> 400 {"error":"Invalid request"}
+   *   list-locations   -> 500 {"error":"Internal server error"}
+   *
+   * Each is a PostgREST query-shape mistake that every static suite passed,
+   * because nothing in the repository checks the string the client builds.
+   */
+  const ops = functions.find(f => f.name === 'bureau-operations')!.src
+
+  it('extracts JSON text with ->> when filtering on a metadata key', () => {
+    // PostgREST treats the right-hand side of `->` as JSON, so
+    // `.in('metadata->nodeCode', ['P01',...])` sends `in.(P01,...)`, which
+    // Postgres rejects with 22P02 "invalid input syntax for type json". The
+    // 22xxx class maps through dbError() to 400, so the whole action failed and
+    // the QA simulator could never read a single stored puzzle row.
+    expect(ops).not.toMatch(/['"]metadata->nodeCode['"]/)
+    expect(ops).toContain('.in(\'metadata->>nodeCode\'')
+  })
+
+  it('orders an embedded table with the parentheses form', () => {
+    // `order=puzzle_nodes.code.asc` fails to parse (PGRST100: unexpected "c",
+    // expecting "asc"), and the unclassified error code surfaces as a 500.
+    // The embedded term is `puzzle_nodes(code).asc`, verified live to return 200.
+    expect(ops).not.toMatch(/\.order\(\s*'[A-Za-z_]+\.code'\s*,\s*\{\s*foreignTable/)
+    expect(ops).toContain(".order('puzzle_nodes(code)', { foreignTable: 'puzzle_nodes'")
+  })
+})

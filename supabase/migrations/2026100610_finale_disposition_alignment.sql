@@ -1,0 +1,47 @@
+-- Finale disposition alignment - a repair of the P37 answer set.
+--
+-- DEFECT (found by the 2026-10 audit, docs/NEXUS_PUZZLE_LOGIC_REPAIR.md):
+-- the disposition console the teams actually read prints three verdicts and
+-- names them -
+--
+--   operator.dataPayload : "DISPOSITION CONSOLE: [ ] ERASE [ ] KEEP [ ] RELEASE"
+--   analyst.dataPayload  : "you may erase what you have uncovered, keep it, or
+--                           release it to the world"
+--   answer_metadata.fullSolution : "to erase what was uncovered, to keep it
+--                           sealed, or to release it"
+--
+-- while 2026100609_finale_dispositions.sql installed the servable set as
+-- acceptedAnswers ["DELETE","RETAIN","SHARE"]. submit_puzzle_answer matches on
+-- an upper-cased, whitespace-collapsed exact string and has NO synonym mapping
+-- (verified: 2026100608_multi_answer_disposition.sql, the jsonb_array_elements
+-- comparison). A team that reads the console and submits a word it can actually
+-- see - ERASE, KEEP or RELEASE - is rejected on the last gate of the game. The
+-- finale was unwinnable by reasoning from the evidence.
+--
+-- REPAIR: widen the servable set to BOTH word families. Every reading a team can
+-- honestly reach from the printed console now ends the case:
+--
+--   ERASE   / KEEP    / RELEASE   (the words on the console and in the prose)
+--   DELETE  / RETAIN  / SHARE     (the earlier, equivalent verdict vocabulary)
+--
+-- This adds acceptance, never removes it: acceptedAnswer stays the non-prose
+-- sentinel "###37###" and every one of the six words is a deliberate, moral
+-- disposition rather than one right answer among two wrong ones. Difficulty is
+-- not touched - the decision is unchanged; only the spelling is made tolerant.
+--
+-- REDACTION SAFETY: get_player_node_detail seals a player-visible string that
+-- contains the normalised acceptedAnswer. The sentinel normalises to "37", which
+-- is under three alphanumerics, so nexus_contains_answer never matches it and the
+-- console text that PRESENTS the choice is not sealed. The six disposition words
+-- deliberately still do NOT appear in acceptedAnswer for the same reason - they
+-- live only in acceptedAnswers, which the redactor does not read. The case
+-- content files are therefore untouched and stay ASCII-only; only the answer
+-- column changes here.
+--
+-- Migration history is immutable, so this repairs forward. acceptedAnswers is
+-- additive by construction (2026100608), so no other node is affected.
+-- ============================================================================
+
+UPDATE puzzle_nodes
+SET answer_metadata = '{"acceptedAnswer":"###37###","acceptedAnswers":["DELETE","RETAIN","SHARE","ERASE","KEEP","RELEASE"],"validationMethod":"exact","fullSolution":"The three interfaces hold three faces of one speaker: the archive and the echo, the sum of every submitted answer, the key and the lock. The entity is the case itself. Identity is settled; the open decision is the disposition, and the console takes the team''s single verdict. The console prints three verdicts and the team may carry any one of them: ERASE, KEEP or RELEASE (DELETE, RETAIN and SHARE are the same three dispositions and are accepted interchangeably). None is more correct than the others; all three end the case, and the case remembers which one the team chose."}'
+WHERE code = 'P37';

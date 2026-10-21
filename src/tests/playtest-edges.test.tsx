@@ -169,9 +169,8 @@ beforeEach(() => {
 })
 
 describe('Edge: wrong-answer avalanche', () => {
-  it('allows multiple wrong answers then accepts the correct one without score decay', async () => {
+  it('allows multiple wrong answers and still accepts the correct one, at the server payout for that attempt', async () => {
     await startSimulation()
-    const points = PUZZLES_BY_CODE['P01'].points
     let scoreBefore = 0
 
     for (let i = 0; i < 5; i++) {
@@ -182,11 +181,35 @@ describe('Edge: wrong-answer avalanche', () => {
       expect(scoreBefore).toBe(0)
     }
 
+    // The fifth submission is attempt 6. submit_puzzle_answer (2026100608)
+    // pays the base on attempt 1, (base + 1) / 2 on attempt 2, and NOTHING on
+    // attempt 3 - so an avalanche of wrong answers costs the team the node's
+    // points rather than costing it only time. The score still never goes
+    // negative (no decay): it simply stays at zero, and the node is still
+    // solved and recorded as progress.
     const correctResult = await act(async () => qaApi.submitAnswer('P01', acceptedFor('P01')))
     expect(correctResult.isCorrect).toBe(true)
-    expect(correctResult.pointsAwarded).toBe(points)
-    expect(qaApi.score).toBe(points)
+    expect(correctResult.attemptNumber).toBe(6)
+    expect(correctResult.pointsAwarded).toBe(0)
+    expect(qaApi.score).toBe(0)
     expect(qaApi.solvedNodes.has('P01')).toBe(true)
+  })
+
+  it('pays the base then half the base, matching the server retry schedule', async () => {
+    await startSimulation()
+    const points = PUZZLES_BY_CODE['P01'].points
+
+    const first = await act(async () => qaApi.submitAnswer('P01', acceptedFor('P01')))
+    expect(first.attemptNumber).toBe(1)
+    expect(first.pointsAwarded).toBe(points)
+
+    // A second node, solved on attempt 2, pays (base + 1) / 2.
+    const other = PUZZLES_BY_CODE['P02']
+    const wrong = await act(async () => qaApi.submitAnswer('P02', 'wrong'))
+    expect(wrong.pointsAwarded).toBe(0)
+    const second = await act(async () => qaApi.submitAnswer('P02', acceptedFor('P02')))
+    expect(second.attemptNumber).toBe(2)
+    expect(second.pointsAwarded).toBe(Math.floor((other.points + 1) / 2))
   })
 
   it('tracks incrementing attempt numbers across wrong answers', async () => {

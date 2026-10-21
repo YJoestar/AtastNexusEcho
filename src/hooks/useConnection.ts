@@ -126,6 +126,16 @@ const listeners = new Set<() => void>()
 let inFlight = false
 let subscribers = 0
 let abortInFlight: AbortController | null = null
+/**
+ * Identifies the probe that currently owns the `inFlight` guard.
+ *
+ * Teardown aborts a running probe and clears the guard immediately so the
+ * StrictMode remount's probe can start at once. That means an aborted probe can
+ * still be settling when a *newer* probe is already running, and its `finally`
+ * must not then clear a guard the newer probe holds. Each probe carries its own
+ * controller identity and only releases the guard if it still owns it.
+ */
+let probeOwner: AbortController | null = null
 let teardown: (() => void) | null = null
 
 function withStatus(next: Store): ConnectionSnapshot {
@@ -161,39 +171,56 @@ async function runProbe(): Promise<void> {
   }
 
   inFlight = true
+  const base = SUPABASE_URL.replace(/\/+$/, '')
+  const controller = new AbortController()
+  abortInFlight = controller
+  probeOwner = controller
+  const timeout = setTimeout(() => controller.abort(), PROBE_TIMEOUT_MS)
   try {
-    const base = SUPABASE_URL.replace(/\/+$/, '')
-    const controller = new AbortController()
-    abortInFlight = controller
-    const timeout = setTimeout(() => controller.abort(), PROBE_TIMEOUT_MS)
-    try {
-      const response = await fetch(`${base}/auth/v1/health`, {
-        method: 'GET',
-        cache: 'no-store',
-        signal: controller.signal,
-        headers: SUPABASE_ANON_KEY ? { apikey: SUPABASE_ANON_KEY } : undefined,
-      })
-      // We got a response, so there is a route to the server. A 401 from a
-      // gated endpoint means reachable-and-refusing, not unreachable.
-      setStore({
-        isServerReachable: true,
-        isServerHealthy: response.ok,
-        lastProbeStatus: response.status,
-      })
-    } finally {
-      clearTimeout(timeout)
-      abortInFlight = null
-    }
-  } catch {
-    // Abort, DNS failure, TLS failure, offline — all mean "cannot reach".
-    setStore({
-      isServerReachable: false,
-      isServerHealthy: false,
-      lastProbeStatus: null,
+    const response = await fetch(`${base}/auth/v1/health`, {
+      method: 'GET',
+      cache: 'no-store',
+      signal: controller.signal,
+      headers: SUPABASE_ANON_KEY ? { apikey: SUPABASE_ANON_KEY } : undefined,
     })
+    // We got a response, so there is a route to the server. A 401 from a
+    // gated endpoint means reachable-and-refusing, not unreachable.
+    setStore({
+      isServerReachable: true,
+      isServerHealthy: response.ok,
+      lastProbeStatus: response.status,
+      lastProbedAt: new Date().toISOString(),
+    })
+  } catch {
+    // A superseded probe must not speak. React StrictMode mounts, unmounts and
+    // remounts every effect, so the teardown of the first mount aborts this
+    // probe while the remount's probe is still starting — and the remount's
+    // probe is skipped by the `inFlight` guard. If the aborted probe then
+    // published "unreachable" (with a timestamp, so it reads as a *completed*
+    // degraded verdict rather than "still probing"), a perfectly healthy device
+    // was reported as "NO ROUTE TO SERVER" and the game engine, which refuses
+    // to fetch state while offline, left the hub on "CASE NOT OPEN" until the
+    // player tapped RETRY. An abort() here is the teardown talking, not the
+    // network, so record nothing.
+    if (!controller.signal.aborted) {
+      // DNS failure, TLS failure, a real link drop: all mean "cannot reach".
+      setStore({
+        isServerReachable: false,
+        isServerHealthy: false,
+        lastProbeStatus: null,
+        lastProbedAt: new Date().toISOString(),
+      })
+    }
   } finally {
-    setStore({ lastProbedAt: new Date().toISOString() })
-    inFlight = false
+    clearTimeout(timeout)
+    // Release the guard only if this probe still owns it. A probe superseded by
+    // teardown settles late, after the remount's probe has already taken the
+    // guard; clearing it here would let a third probe start alongside that one.
+    if (abortInFlight === controller) abortInFlight = null
+    if (probeOwner === controller) {
+      probeOwner = null
+      inFlight = false
+    }
   }
 }
 
@@ -259,6 +286,15 @@ function subscribe(listener: () => void): () => void {
     if (subscribers > 0) return
     teardown?.()
     abortInFlight?.abort()
+    // The abandoned probe is aborted above. It must not hold the `inFlight`
+    // guard: React StrictMode's remount calls runProbe() again immediately, and
+    // if the guard were still set that second probe would be skipped outright —
+    // leaving the device "reconnecting" until the next 20s tick. Clearing it
+    // lets the remount prove the link at once. The abandoned probe's own
+    // `finally` only clears the guard when it still owns it, so this is safe.
+    abortInFlight = null
+    probeOwner = null
+    inFlight = false
     // Reset so the next mount re-probes instead of showing a stale verdict
     // from a previous session on the device.
     store = initialStore()
