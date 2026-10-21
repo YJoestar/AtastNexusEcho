@@ -119,13 +119,21 @@ The emulator's purpose is undermined if it *lies about itself*. Two safeguards:
 
 The emulator and the player device were exercised in a real browser against the
 real project. That pass found defects the whole static suite had missed — see
-`NEXUS_QA_RESULTS.md` §"Live browser session" and register entries D-20…D-23. Two
+`NEXUS_QA_RESULTS.md` §"Live browser session" and register entries D-20…D-24. Two
 of them (`list-puzzle-qa` 400, `list-locations` 500) are exactly the class of
 fault this audit warned about: a **string a client builds**, invisible to a
 source scan (the intent reads as correct) and to a unit test with a mocked client
-(mocked clients never build the string). They are repaired at source and guarded;
-the fixes are **not deployed**, so the live function still answers with the buggy
-shapes until a deploy happens.
+(mocked clients never build the string).
+
+The list-locations fault then demonstrated the limit of the warning's own remedy.
+Its first repair was recorded as verified because the check hand-built a URL the
+function never sends; deploying it proved otherwise, and the action still answered
+500. The genuine shape only appeared when the call was replayed through
+supabase-js itself (`puzzle_nodes.order=puzzle_nodes(code).asc` → **400 PGRST108**),
+and the guard that "covered" the repair had asserted that broken string literally.
+Both are now fixed: `bureau-operations` is **deployed**, `list-locations` and
+`list-puzzle-qa` answer **200** live, and the guard asserts the shape rather than
+one spelling of it (D-24).
 
 ### Harness route coverage (recorded limitation, not an app defect)
 

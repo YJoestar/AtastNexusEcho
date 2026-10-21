@@ -870,11 +870,28 @@ describe('two PostgREST defects that only a live database exposes', () => {
     expect(ops).toContain('.in(\'metadata->>nodeCode\'')
   })
 
-  it('orders an embedded table with the parentheses form', () => {
-    // `order=puzzle_nodes.code.asc` fails to parse (PGRST100: unexpected "c",
-    // expecting "asc"), and the unclassified error code surfaces as a 500.
-    // The embedded term is `puzzle_nodes(code).asc`, verified live to return 200.
-    expect(ops).not.toMatch(/\.order\(\s*'[A-Za-z_]+\.code'\s*,\s*\{\s*foreignTable/)
-    expect(ops).toContain(".order('puzzle_nodes(code)', { foreignTable: 'puzzle_nodes'")
+  it('orders an embedded table by a bare column, not a qualified name', () => {
+    // supabase-js serialises `{ foreignTable }` as a *nested* order param
+    // keyed by the foreign table: `puzzle_nodes.order=<value>`. The value must
+    // be a bare column of that embed. Two qualified forms were tried and both
+    // were rejected live:
+    //
+    //   puzzle_nodes.order=puzzle_nodes.code.asc      -> 400 PGRST100
+    //     "\"failed to parse filter\"" (old code)
+    //   puzzle_nodes.order=puzzle_nodes(code).asc     -> 400 PGRST108
+    //     "'puzzle_nodes' is not an embedded resource in this request"
+    //     (the embed is aliased `puzzle_nodes:node_id`, so its own name does
+    //      not resolve inside the nested order)
+    //   puzzle_nodes.order=code.asc                   -> 200
+    //
+    // The earlier guard asserted the literal `'puzzle_nodes(code)'` string, so
+    // it locked in the second broken form and passed while the action answered
+    // 500 for every caller. Assert the shape instead of one spelling of it.
+    const foreignTableOrders = [...ops.matchAll(/\.order\(\s*'([^']*)'\s*,\s*\{[^}]*foreignTable/g)]
+    expect(foreignTableOrders.length).toBeGreaterThan(0)
+    for (const [, column] of foreignTableOrders) {
+      expect(column).not.toMatch(/[().]/)
+    }
+    expect(ops).toContain(".order('code', { foreignTable: 'puzzle_nodes'")
   })
 })

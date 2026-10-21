@@ -2093,11 +2093,21 @@ email_confirm: true,
             updated_by,
             puzzle_nodes:node_id (code, title, type, stage)
           `)
-          // PostgREST parses `order=puzzle_nodes.code.asc` as an unknown order
-          // term, failing with PGRST100 ("unexpected \"c\" expecting \"asc\"").
-          // The embedded-table form is `puzzle_nodes(code).asc`. Verified live:
-          // the wrong form made this action answer 500 on every call.
-          .order('puzzle_nodes(code)', { foreignTable: 'puzzle_nodes', ascending: true })
+          // Order by the embedded node's code. supabase-js serialises
+          // `{ foreignTable }` as a *nested* order param keyed by the foreign
+          // table: `puzzle_nodes.order=<value>`. The value must therefore be a
+          // bare column of that embed, not a table-qualified one.
+          //
+          // Verified live against PostgREST:
+          //   puzzle_nodes.order=puzzle_nodes(code).asc -> 400 PGRST108
+          //     "'puzzle_nodes' is not an embedded resource in this request"
+          //     (the embed is aliased `puzzle_nodes:node_id`, so the qualified
+          //      name does not resolve inside its own order)
+          //   puzzle_nodes.order=code.asc               -> 200
+          //
+          // The previous `puzzle_nodes.code.asc` form failed PGRST100 instead,
+          // so this action answered 500 for every caller either way.
+          .order('code', { foreignTable: 'puzzle_nodes', ascending: true })
 
         // Checked: an unchecked failure rendered as "no locations configured",
         // which would have an operator conclude every puzzle is at its default

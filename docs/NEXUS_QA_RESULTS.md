@@ -131,7 +131,8 @@ suite was green while all four were present.
 | **D-20** | High | `useConnection`'s shared probe published an **aborted** probe as a completed *degraded* verdict. Under `<StrictMode>` (which the app uses) the first mount's probe is aborted by the unmount, the remount's probe is skipped by the `inFlight` guard, and the abort's `catch` wrote `isServerReachable:false` **with a timestamp** — a finished "NO ROUTE TO SERVER". Because `useGameEngine` refuses to fetch while offline, the hub then showed "CASE NOT OPEN" on a **healthy** device until the player tapped RETRY. Reproduced live: health probe 200 in the same page, hub permanently `SIGNAL: DEGRADED`; tapping RETRY cleared it instantly. |
 | **D-21** | Medium | Same code path: an abort set `lastProbedAt` without ever reaching the server, so the hook reported the *completed* `degraded` state instead of the *in-progress* `reconnecting` state — collapsing "still probing" into "probe failed". |
 | **D-22** | P0 | `bureau-operations` `list-puzzle-qa` used `.in('metadata->nodeCode', …)`. The single arrow makes PostgREST send the right-hand side as JSON, which Postgres rejects with `22P02` ("invalid input syntax for type json"); `dbError()` maps `22xxx` to **400**, so the whole action failed and the QA simulator could never load stored puzzle content against the live database. **Reconfirmed live at the REST layer**: `metadata->nodeCode=in.(P01,P02)` → **400** `{"code":"22P02","details":"Token \"P01\" is invalid.","message":"invalid input syntax for type json"}`; the corrected `metadata->>nodeCode` shape → **200** from the function's own client. |
-| **D-23** | P1 | `bureau-operations` `list-locations` ordered an embedded table with `.order('puzzle_nodes.code', { foreignTable: 'puzzle_nodes' })`. PostgREST fails to parse the term, surfacing as **500** on every call. **Reconfirmed live at the REST layer**: `order=puzzle_nodes.code.asc` → **400** `{"code":"PGRST100","details":"unexpected \"c\" expecting \"asc\", \"desc\", \"nullsfirst\" or \"nullslast\"","message":"failed to parse order (puzzle_nodes.code)"}` — the server's own parser rejecting the exact string the function built; the corrected `order=puzzle_nodes(code).asc` shape → **200** from the function's own client. |
+| **D-23** | P1 | `bureau-operations` `list-locations` ordered an embedded table with `.order('puzzle_nodes.code', { foreignTable: 'puzzle_nodes' })`. PostgREST fails to parse the term, surfacing as **500** on every call. **Reconfirmed live at the REST layer**: `order=puzzle_nodes.code.asc` → **400** `{"code":"PGRST100","details":"unexpected \"c\" expecting \"asc\", \"desc\", \"nullsfirst\" or \"nullslast\"","message":"failed to parse order (puzzle_nodes.code)"}` — the server's own parser rejecting the exact string the function built. |
+| **D-24** | P1 | The **first repair for D-23 was itself wrong**, and the live verification that "confirmed" it tested a shape the function never sends. `{ foreignTable }` makes supabase-js emit a **nested** order param keyed by the foreign table (`puzzle_nodes.order=<value>`); the value must therefore be a bare column of the embed. The repaired string `puzzle_nodes(code).asc` was still table-qualified, so PostgREST answered **400 `PGRST108`** "'puzzle_nodes' is not an embedded resource in this request" — the embed is aliased `puzzle_nodes:node_id`, so its own name does not resolve inside its own nested order. Reproduced by replaying the call through supabase-js 2.45.0 (the version the function pins) rather than by hand-building a URL: the client serialises `puzzle_nodes.order=puzzle_nodes(code).asc`. Live after deploying the corrected form: `list-locations` **200**; before it, **500** on every call. |
 
 ### Live repairs
 
@@ -140,7 +141,8 @@ suite was green while all four were present.
 | D-20 | An aborted probe no longer records a verdict (an `abort()` is the teardown talking, not the network); teardown clears the `inFlight` guard and the `abortInFlight` handle so the remount's probe runs at once instead of being skipped | `connection.test.tsx` — a probe that honours its `AbortSignal` **fails before the fix** (times out waiting for `online`) and passes after |
 | D-21 | Same fix: `lastProbedAt` is written only by a probe that actually reached the server (or genuinely failed) | covered by the D-20 guard |
 | D-22 | `.in('metadata->>nodeCode', …)` | `invariants.test.ts` — forbids `metadata->nodeCode` as a filter, requires the `->>` form |
-| D-23 | `.order('puzzle_nodes(code)', { foreignTable: 'puzzle_nodes' })` | `invariants.test.ts` — forbids `'<table>.code'` in a `foreignTable` order, requires the parenthesised form |
+| D-23 | `.order('puzzle_nodes(code)', { foreignTable: 'puzzle_nodes' })` — **superseded, see D-24** | `invariants.test.ts` — forbids `'<table>.code'` in a `foreignTable` order, requires the parenthesised form |
+| D-24 | `.order('code', { foreignTable: 'puzzle_nodes' })` — a bare column, since `{ foreignTable }` emits a nested param keyed by the foreign table | `invariants.test.ts` — forbids any `(`, `)` or `.` in a `foreignTable` order value; the guard was rewritten after the D-23 literal-string assertion was found to have **locked in** the broken form (it fails against that form, passes against the fix) |
 
 ### Additional live observation (not a defect)
 
@@ -210,16 +212,26 @@ Stated plainly, because a green suite is not the same as a verified product.
    the finale's delete/retain/share decision were **not** driven in the browser —
    they are covered by the replay, the gating invariants and the 51-test full-chain
    simulation, not by three devices clearing all five stages.
-4. **Two live defects were fixed in this repo but are not deployed.** The live
-   project still runs the pre-fix `bureau-operations`; D-22/D-23 were confirmed
-   by reproducing the exact failing query shapes at the live REST layer — the
-   server's own parser rejecting them with `22P02` and `PGRST100` — and the
-   corrected shapes returning 200 from the function's own client, not by deploying
-   the fix.
-5. **The live session created real data** — a throwaway `live-walk-*` team with
+4. **The two live defects were fixed, deployed and reconfirmed live — the first
+   repair attempt was wrong.** Deploying `bureau-operations` turned D-22 off
+   (`list-puzzle-qa` → **200**, 47 rows) but `list-locations` kept answering
+   **500**: the D-23 repair had kept the table-qualified order, and the "live
+   confirmation" for it had been measured against a top-level `order=` URL that
+   the function never builds. Replaying the call through supabase-js 2.45.0 (the
+   version the function pins) exposed the real shape, `puzzle_nodes.order=puzzle_nodes(code).asc`
+   → **400 `PGRST108`**. Corrected and redeployed: both actions now answer **200**
+   live. Recorded as **D-24** rather than edited into D-23, so the wrong repair and
+   the guard that hid it stay on the record.
+5. **The five audit migrations were applied to the live project.** Migrations
+   `2026100610`–`2026100614` were pushed with `supabase db push` and all 65
+   migrations now read `local == remote`. The live rows were then read back
+   through the service role and confirm the repairs landed: P37 accepts all six
+   dispositions, P27b is `0x02`, P29 is `NEXUS IS AI`, and exactly P04/M01/P21
+   carry `presentedEvidence: true`.
+6. **The live session created real data** — a throwaway `live-walk-*` team with
    three players, matching the `smoke-*` practice already present on the project.
    It was disclosed when created, not hidden.
-6. **The `NEXUS_CANON_LEDGER.md` mandated by the case bible still does not
+7. **The `NEXUS_CANON_LEDGER.md` mandated by the case bible still does not
    exist.** Recorded as a documentation gap in `NEXUS_STORY_AND_PROGRESSION_AUDIT.md`.
 
 None of these limits was worked around by asserting a weaker thing and labelling
